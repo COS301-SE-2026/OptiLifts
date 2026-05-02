@@ -1,0 +1,25 @@
+{
+  "name": "OptiLifts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "setup": "pnpm install && cd backend/core-api && dotnet restore && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
+    "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "cd backend/core-api && dotnet run --project OptiLifts.API/OptiLifts.API.csproj",
+    "dev:ai": "cd backend/ai-api && uvicorn main:app --reload",
+    "dev:db": "docker compose up -d",
+    "db:down": "docker compose down",
+    "test": "concurrently \"pnpm test:frontend\" \"pnpm test:backend\"",
+    "test:frontend": "pnpm --filter frontend test",
+    "test:backend": "cd backend/core-api && dotnet test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.0",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

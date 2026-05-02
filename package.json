@@ -5,20 +5,35 @@
   "main": "index.js",
   "scripts": {
     "setup": "pnpm install && cd backend/core-api && dotnet restore && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
-    "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",
     "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    
+    "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
     "dev:ai": "cd backend/ai-api && ./venv/bin/uvicorn main:app --reload --port 8000",
     "dev:db": "docker-compose up -d",
     "db:down": "docker-compose down",
+
     "test": "concurrently \"pnpm test:frontend\" \"pnpm test:backend\" \"pnpm test:ai\"",
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd backend/core-api && dotnet test",
     "test:ai": "cd backend/ai-api && ./venv/bin/pytest",
+    
     "build:frontend": "pnpm --filter frontend build",
-  "build:backend": "cd backend/core-api && dotnet build -c Release",
-  "build": "pnpm build:frontend && pnpm build:backend"
+    "build:backend": "cd backend/core-api && dotnet build -c Release",
+    "build": "pnpm build:frontend && pnpm build:backend",
+
+    "lint:frontend": "pnpm --filter frontend lint",
+    "lint:frontend:fix": "pnpm --filter frontend run lint --fix",
+    
+    "lint:backend": "cd backend/core-api && dotnet format --verify-no-changes",
+    "lint:backend:fix": "cd backend/core-api && dotnet format",
+    
+    "lint:ai": "cd backend/ai-api && ./venv/bin/ruff check .",
+    "lint:ai:fix": "cd backend/ai-api && ./venv/bin/ruff format . && ./venv/bin/ruff check . --fix",
+    
+    "lint": "pnpm lint:frontend && pnpm lint:backend && pnpm lint:ai",
+    "lint:fix": "pnpm lint:frontend:fix && pnpm lint:backend:fix && pnpm lint:ai:fix"
   },
   "keywords": [],
   "author": "",

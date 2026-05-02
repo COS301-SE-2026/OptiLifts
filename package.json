@@ -6,7 +6,7 @@
   "scripts": {
     "setup": "pnpm install && cd backend/core-api && dotnet restore && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
     "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",
-    "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:ai\" \"pnpm dev:frontend\"",
+    "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
     "dev:ai": "cd backend/ai-api && ./venv/bin/uvicorn main:app --reload --port 8000",

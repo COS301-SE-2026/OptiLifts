@@ -15,7 +15,10 @@
     "test": "concurrently \"pnpm test:frontend\" \"pnpm test:backend\" \"pnpm test:ai\"",
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd backend/core-api && dotnet test",
-    "test:ai": "cd backend/ai-api && ./venv/bin/pytest"
+    "test:ai": "cd backend/ai-api && ./venv/bin/pytest",
+    "build:frontend": "pnpm --filter frontend build",
+  "build:backend": "cd backend/core-api && dotnet build -c Release",
+  "build": "pnpm build:frontend && pnpm build:backend"
   },
   "keywords": [],
   "author": "",

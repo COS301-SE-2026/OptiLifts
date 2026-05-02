@@ -1,0 +1,23 @@
+# Node
+node_modules
+node_modules/
+dist/
+.env
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

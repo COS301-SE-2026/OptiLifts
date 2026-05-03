@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "setup": "pnpm install && cd backend/core-api && dotnet restore && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
+    "setup": "pnpm install && cd backend/core-api && dotnet restore && dotnet tool update --global dotnet-ef && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
     "dev": "concurrently \"pnpm db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     
     "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",

@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 290" width="440" height="290">
+  <defs>
+    <linearGradient id="crimsonH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D94060"/>
+      <stop offset="100%" stop-color="#B01030"/>
+    </linearGradient>
+
+    <linearGradient id="chevronGrad" x1="220" y1="74" x2="220" y2="126"
+      gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D94060"/>
+      <stop offset="100%" stop-color="#B01030"/>
+    </linearGradient>
+
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="flashGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;display=swap');
+  </style>
+
+  <!-- Pulsing background glow -->
+  <circle cx="220" cy="100" r="52" fill="#B01030" opacity="0.07">
+    <animate attributeName="r"       values="52;66;52" dur="3s" repeatCount="indefinite"
+      calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+    <animate attributeName="opacity" values="0.07;0.14;0.07" dur="3s" repeatCount="indefinite"
+      calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+  </circle>
+
+  <!-- Rotating large arc (~270°) -->
+  <circle cx="220" cy="100" r="76" fill="none"
+    stroke="url(#crimsonH)" stroke-width="3.5"
+    stroke-dasharray="358 120" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 220 100" to="360 220 100" dur="6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Counter-rotating small accent arc -->
+  <circle cx="220" cy="100" r="76" fill="none"
+    stroke="#D94060" stroke-width="2" opacity="0.55"
+    stroke-dasharray="80 398" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="rotate"
+      from="90 220 100" to="-270 220 100" dur="4s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Outer hex -->
+  <polygon points="220,42 270.2,71 270.2,129 220,158 169.8,129 169.8,71"
+    fill="#26262B" stroke="#B01030" stroke-width="1.5"/>
+
+  <!-- Inner hex ring -->
+  <polygon points="220,54 259.8,77 259.8,123 220,146 180.2,123 180.2,77"
+    fill="none" stroke="#3A3A42" stroke-width="1"/>
+
+  <!-- ── BASE CHEVRONS (static) ── -->
+  <!-- Centered: span y=74→126, midpoint=100 = hex centre -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top — brightest base -->
+    <polyline points="202,92 220,74 238,92"
+      stroke="url(#chevronGrad)" stroke-width="5.5" filter="url(#glow)"/>
+    <polyline points="202,92 220,74 238,92"
+      stroke="url(#chevronGrad)" stroke-width="5.5"/>
+    <!-- Middle -->
+    <polyline points="202,109 220,91 238,109"
+      stroke="url(#chevronGrad)" stroke-width="5.5" opacity="0.38"/>
+    <!-- Bottom -->
+    <polyline points="202,126 220,108 238,126"
+      stroke="url(#chevronGrad)" stroke-width="5.5" opacity="0.16"/>
+  </g>
+
+  <!-- ── SEQUENTIAL FLASH OVERLAYS (5s cycle: bottom → middle → top) ──
+       Each flash: 0.25s fade-in, 0.35s hold, 0.4s fade-out
+       Bottom:  t=0.0–1.0s  (keyTimes ÷5: 0, 0.05, 0.12, 0.20)
+       Middle:  t=1.2–2.2s  (keyTimes ÷5: 0.24, 0.29, 0.36, 0.44)
+       Top:     t=2.4–3.4s  (keyTimes ÷5: 0.48, 0.53, 0.60, 0.68)
+       Then silent until t=5s -->
+
+  <!-- Bottom flash -->
+  <polyline points="202,126 220,108 238,126" fill="none"
+    stroke="#FFB8C8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"
+    opacity="0" filter="url(#flashGlow)">
+    <animate attributeName="opacity"
+      values="0;1;1;0;0"
+      keyTimes="0;0.05;0.12;0.20;1"
+      calcMode="linear" dur="5s" repeatCount="indefinite"/>
+  </polyline>
+
+  <!-- Middle flash -->
+  <polyline points="202,109 220,91 238,109" fill="none"
+    stroke="#FFB8C8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"
+    opacity="0" filter="url(#flashGlow)">
+    <animate attributeName="opacity"
+      values="0;0;1;1;0;0"
+      keyTimes="0;0.24;0.29;0.36;0.44;1"
+      calcMode="linear" dur="5s" repeatCount="indefinite"/>
+  </polyline>
+
+  <!-- Top flash -->
+  <polyline points="202,92 220,74 238,92" fill="none"
+    stroke="#FFB8C8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"
+    opacity="0" filter="url(#flashGlow)">
+    <animate attributeName="opacity"
+      values="0;0;1;1;0;0"
+      keyTimes="0;0.48;0.53;0.60;0.68;1"
+      calcMode="linear" dur="5s" repeatCount="indefinite"/>
+  </polyline>
+
+  <!-- Wordmark -->
+  <text x="220" y="248"
+    font-family="'Bebas Neue', Impact, 'Arial Narrow', Arial, sans-serif"
+    font-size="52" font-weight="400" text-anchor="middle" letter-spacing="3">
+    <tspan fill="#E8E8EC">OPTI</tspan><tspan fill="url(#crimsonH)">LIFTS</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="220" y="268"
+    font-family="'Bebas Neue', Impact, 'Arial Narrow', Arial, sans-serif"
+    font-size="11" font-weight="400"
+    fill="#9A9AA8" text-anchor="middle" letter-spacing="5">
+    INTELLIGENT STRENGTH TRAINING
+  </text>
+
+  <!-- Accent underline -->
+  <rect x="178" y="277" width="84" height="2" rx="1" fill="url(#crimsonH)" opacity="0.65"/>
+</svg>

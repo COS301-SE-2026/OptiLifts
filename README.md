@@ -26,21 +26,21 @@
 
 ## <img src="docs/images/telescope.svg" width="24" height="24" style="vertical-align: middle;"> The Problem
 
-Traditional fitness applications act as digital notebooks — they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
+Traditional fitness applications act as digital notebooks - they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
 
 <table width="100%">
   <tr>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/snail.svg" width="20" height="20" style="vertical-align: middle;"> Plateau Effect</h3>
-      <p align="center">Without a systematic approach to progressive overload, athletes stagnate — going weeks or months without measurable improvement.</p>
+      <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Plateau Effect</h3>
+      <p align="center">Without a systematic approach to progressive overload, athletes stagnate - going weeks or months without measurable improvement.</p>
     </td>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/circle-pile.svg" width="20" height="20" style="vertical-align: middle;"> Rigid Plans</h3>
+      <h3 align="center"><img src="docs/images/calendar-x.svg" width="20" height="20" style="vertical-align: middle;"> Rigid Plans</h3>
       <p align="center">Pre-planned routines break down the moment life intervenes. Missed sessions leave users with no guidance on how to recover or adapt.</p>
     </td>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/locate-fixed.svg" width="20" height="20" style="vertical-align: middle;"> No Context-Awareness</h3>
-      <p align="center">Apps ignore fatigue, schedule constraints, and recovery needs — forcing users to make complex athletic science decisions themselves.</p>
+      <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> No Context-Awareness</h3>
+      <p align="center">Apps ignore fatigue, schedule constraints, and recovery needs - forcing users to make complex athletic science decisions themselves.</p>
     </td>
   </tr>
 </table>
@@ -49,7 +49,7 @@ Traditional fitness applications act as digital notebooks — they record data w
 
 ## <img src="docs/images/cpu.svg" width="24" height="24" style="vertical-align: middle;"> The Solution
 
-OptiLifts transforms manual strength training into an intelligent, automatic experience. The system addresses the "athletic plateau" by using historical workout data to generate personalised, optimised training programs — automatically adjusting when life gets in the way.
+OptiLifts transforms manual strength training into an intelligent, automatic experience. The system addresses the "athletic plateau" by using historical workout data to generate personalised, optimised training programs - automatically adjusting when life gets in the way.
 
 - **Progression Engine:** Analyses your history and recommends precise weight and rep increments using XGBoost-powered plateau detection.
 - **Dynamic Scheduling:** Automatically re-prioritises or reschedules missed sessions to keep muscle groups balanced and recovery on track.
@@ -66,8 +66,8 @@ OptiLifts transforms manual strength training into an intelligent, automatic exp
 | **Core API** | <img src="https://skillicons.dev/icons?i=dotnet" valign="middle" /> | ASP.NET Core with EF Core for data access and MediatR for clean CQRS-style command/query handling. |
 | **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service using LiteLLM as a unified LLM gateway, with Langfuse for LLM observability and tracing. |
 | **Machine Learning** | <img src="https://img.shields.io/badge/XGBoost-Plateau%20Detection-EC6C2D?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PC9zdmc+" valign="middle" /> | XGBoost gradient-boosted model for plateau detection and progression recommendation. |
-| **LLM** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Azure OpenAI — GPT-4o mini for natural language coaching, workout summarisation, and intelligent suggestions. |
-| **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure — App Service, Container Registry, and managed PostgreSQL under Azure for Students. |
+| **LLM** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Azure OpenAI - GPT-4o mini for natural language coaching, workout summarisation, and intelligent suggestions. |
+| **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure - App Service, Container Registry, and managed PostgreSQL under Azure for Students. |
 | **IaC** | <img src="https://cdn.simpleicons.org/pulumi/8A3391" width="40" valign="middle" /> | Pulumi for defining and provisioning all Azure infrastructure as code. |
 | **CI/CD** | <img src="https://skillicons.dev/icons?i=githubactions" valign="middle" /> | GitHub Actions pipelines for automated testing, linting, and deployment on every push to `main`. |
 | **Containerisation** | <img src="https://skillicons.dev/icons?i=docker" valign="middle" /> | Docker Compose for local development orchestration of all services. |
@@ -98,7 +98,7 @@ OptiLifts transforms manual strength training into an intelligent, automatic exp
 
 ## <img src="docs/images/map.svg" width="24" height="24" style="vertical-align: middle;"> Roadmap
 
-### Demo 1 — 22 May 2026
+### Demo 1 - 22 May 2026
 - [x] Repo Setup
 - [ ] CI & Code Quality
 - [ ] Base Features
@@ -115,9 +115,9 @@ OptiLifts transforms manual strength training into an intelligent, automatic exp
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
-## Getting Started
+## <img src="docs/images/compass.svg" width="24" height="24" style="vertical-align: middle;"> Getting Started
 
-**1. Install Prerequisites**
+### 1. Install Prerequisites
 
 Make sure you have Node, pnpm, .NET 8, Python 3.12, and Docker installed.
 
@@ -138,7 +138,7 @@ sudo apt install -y python3 python3-venv python3-pip
 sudo apt-get install -y docker.io
 ```
 
-**2. Environment Variables**
+### 2. Environment Variables
 
 Copy the example env file and fill in your values:
 
@@ -146,7 +146,7 @@ Copy the example env file and fill in your values:
 cp .env.example .env
 ```
 
-**3. Setup The Repo**
+### 3. Setup The Repo
 
 Run from the root directory. Installs all Node modules, restores C# packages, installs the EF Core CLI, and builds the Python virtual environment:
 
@@ -154,7 +154,7 @@ Run from the root directory. Installs all Node modules, restores C# packages, in
 pnpm run setup
 ```
 
-**4. Spin up the Database**
+### 4. Spin up the Database
 
 Start Docker and run:
 
@@ -162,7 +162,7 @@ Start Docker and run:
 pnpm db:sync
 ```
 
-**5. Start Development**
+### 5. Start Development
 
 ```bash
 pnpm dev
@@ -170,7 +170,7 @@ pnpm dev
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
-## Commands
+## <img src="docs/images/square-terminal.svg" width="24" height="24" style="vertical-align: middle;"> Commands
 
 | Command | What it does |
 | :--- | :--- |
@@ -185,7 +185,7 @@ pnpm dev
 
 ## <img src="docs/images/heart-handshake.svg" width="24" height="24" style="vertical-align: middle;"> Acknowledgements
 
-- **EPI-USE** — our industry client, for the vision behind OptiLifts
+- **EPI-USE** - our industry client, for the vision behind OptiLifts
 - The open-source community for the incredible tools and libraries that make this possible
 - Microsoft Azure for Students sponsorship
 

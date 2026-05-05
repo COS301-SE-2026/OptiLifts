@@ -1,11 +1,9 @@
-<!-- ─────────────────── PRODUCT LOGO ─────────────────── -->
 <p align="center">
   <img src="docs/images/optilifts-logo.svg" width="440" height="290" alt="OptiLifts" />
 </p>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
-<!-- ─────────────────── BUILT BY ─────────────────── -->
 <p align="center">
   <sub>Built by</sub><br/>
   <img src="docs/images/hatrockbanner.png" height="180" width="auto" alt="hatrock" />
@@ -78,11 +76,11 @@ OptiLifts transforms manual strength training into an intelligent, automatic exp
 
 | | Name | Role | GitHub | LinkedIn |
 | :---: | :--- | :--- | :---: | :---: |
-| <img src="docs/images/placeholder.png" width="60" height="60" style="border-radius:50%"/> | Team Member 1 | Team Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/username1) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](#) |
-| <img src="docs/images/placeholder.png" width="60" height="60" style="border-radius:50%"/> | Team Member 2 | Frontend Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/username2) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](#) |
-| <img src="docs/images/placeholder.png" width="60" height="60" style="border-radius:50%"/> | Team Member 3 | Backend Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/username3) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](#) |
-| <img src="docs/images/placeholder.png" width="60" height="60" style="border-radius:50%"/> | Team Member 4 | DevOps Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/username4) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](#) |
-| <img src="docs/images/placeholder.png" width="60" height="60" style="border-radius:50%"/> | Team Member 5 | QA Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/username5) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](#) |
+| <img src="docs/images/Jordan.png" width="60" height="60" style="border-radius:50%"/> | **Jordan Naidoo** | Team Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/JordanNaidoo) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jordan-naidoo/) |
+| <img src="docs/images/Cailin.png" width="60" height="60" style="border-radius:50%"/> | **Cailin Smith** | Frontend Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/CailinSmith) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/cailin-smith-cc1307/) |
+| <img src="docs/images/Alex.png" width="60" height="60" style="border-radius:50%"/> | **Alex Lange** | Backend Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/AlexLange1st) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alex-lange-7444b8358/) |
+| <img src="docs/images/Edwin.png" width="60" height="60" style="border-radius:50%"/> | **Edwin Küsel** | DevOps Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/EdwinKusel1) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/edwin-kusel/) |
+| <img src="docs/images/Ale.png" width="60" height="60" style="border-radius:50%"/> | **Alessandro Paravano** | QA Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/AlessandroParavano) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/aleparavano) |
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -93,25 +91,6 @@ OptiLifts transforms manual strength training into an intelligent, automatic exp
 | Functional Requirements (SRS) | [View SRS](#) |
 | Design Specification | [View Design](#) |
 | GitHub Project Board | [View Board](https://github.com/orgs/COS301-SE-2026/projects) |
-
-<p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
-
-## <img src="docs/images/map.svg" width="24" height="24" style="vertical-align: middle;"> Roadmap
-
-### Demo 1 - 22 May 2026
-- [x] Repo Setup
-- [ ] CI & Code Quality
-- [ ] Base Features
-- [ ] Use Cases (×3)
-- [ ] SRS Document
-- [ ] Design Specification
-
-### Future Milestones
-- [ ] Progression Engine
-- [ ] Dynamic Scheduling
-- [ ] AI Coaching
-- [ ] PWA Offline Mode
-- [ ] Analytics Dashboard
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

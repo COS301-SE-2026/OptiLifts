@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="605" height="544">
+
+<!--
+  ─────────────────────────────────────────────────────────────────────────────
+  15-second loop  (dur="15s" repeatCount="indefinite" on every animated element)
+  ─────────────────────────────────────────────────────────────────────────────
+  t  0.0 s          OL only visible, barbell elements parked off-screen
+  t  0.5–1.05 s     Bar (both rods) blast in from their sides
+  t  1.25–1.75 s    Inner plates slam in
+  t  1.95–2.45 s    Outer plates + nubs slam in
+  t  2.8 s          Rep 1 begins
+  t  4.8 s          Rep 2 begins
+  t  6.8 s          Rep 3 begins
+  t  8.8 s          Rep 4 begins
+  t 10.8 s          Rep 5 begins
+  t 12.8 s          Reps done, 0.3 s rest
+  t 13.1–13.5 s     Outer plates + nubs fly out
+  t 13.7–14.1 s     Inner plates fly out
+  t 14.3–14.7 s     Rods fly out
+  t 14.7–15.0 s     OL alone again → seamless loop
+
+  Slide-in  keySpline: "0 0 0.18 1"  →  blast in, aggressive deceleration (impact)
+  Slide-out keySpline: "0.75 0 1 1"  →  slow wind-up, launches away fast
+
+  Rep Y keySplines (per rep, 4 segments):
+    lift   "0.15 0 0.35 1"   explosive upward
+    hold   "0 0 1 1"         linear (static value)
+    lower  "0.35 0 0.65 1"   smooth controlled descent
+    rest   "0 0 1 1"         linear (static value)
+  ─────────────────────────────────────────────────────────────────────────────
+-->
+
+<!-- ══════════════ STATIC OL HEXAGON (never moves) ══════════════ -->
+
+<path fill-rule="evenodd"
+  d="M 287,43 L 133,150 L 133,390 L 287,490 Z
+     M 234,141 L 178,178 L 178,360 L 234,392 Z"
+  fill="#CC0022"/>
+
+<path d="M0 0 C13.81233681 8.05719648 13.81233681 8.05719648 20.125 11.9375
+  C20.125 11.9375 20.125 11.9375 20.125 11.9375
+  C27.17636578 16.25930588 32.02176906 19.24488828 36.8671875 22.23046875
+  C37.4566214 22.59355637 38.0460553 22.95664398 38.65335083 23.33073425
+  C41.60056957 25.14623609 44.54721069 26.96266015 47.49267578 28.78100586
+  C48.56759277 29.44366455 49.64250977 30.10632324 50.75 30.7890625
+  C51.71421875 31.38412598 52.6784375 31.97918945 53.671875 32.59228516
+  C55.91334423 33.99004816 55.91334423 33.99004816 58 35
+  C58 144.89 58 254.78 58 368
+  C72.45707834 359.5667043 86.90350746 351.12368968 101.30419922 342.59570312
+  C104.86703082 340.4867856 108.43206329 338.38160449 111.99707031 336.27636719
+  C125.67372141 328.19944837 139.33716791 320.10026425 153 312
+  C153.70705078 312.45093018 154.41410156 312.90186035 155.14257812 313.36645508
+  C159.98168909 316.44979328 164.82279867 319.52880145 169.69335938 322.56225586
+  C170.95630387 323.34886548 172.21791673 324.13761536 173.47851562 324.92797852
+  C177.38734816 327.37832562 181.31063545 329.80212544 185.25 332.203125
+  C187.00008754 333.28110789 188.75008899 334.35923057 190.5 335.4375
+  C191.76553711 336.19969849 191.76553711 336.19969849 193.05664062 336.97729492
+  C193.83201172 337.45787354 194.60738281 337.93845215 195.40625 338.43359375
+  C196.10041016 338.85697021 196.79457031 339.28034668 197.50976562 339.71655273
+  C198.00154297 340.14009033 198.49332031 340.56362793 199 341
+  C199 341.99 199 342.98 199 344
+  C197.3137207 345.32763672 197.3137207 345.32763672 194.92578125 346.6796875
+  C194.04196777 347.18918945 193.1581543 347.69869141 192.24755859 348.22363281
+  C191.27898926 348.76858398 190.31041992 349.31353516 189.3125 349.875
+  C187.26841238 351.05274773 185.22546877 352.23248291 183.18359375 353.4140625
+  C182.14315918 354.01379883 181.10272461 354.61353516 180.03076172 355.23144531
+  C175.59287881 357.82110407 171.23149673 360.52633533 166.875 363.25
+  C158.72277865 368.32961622 150.52842683 373.33680307 142.3125 378.3125
+  C133.18678812 383.84047108 124.08086481 389.39849205 115 395
+  C104.61999847 401.40246142 94.20717255 407.7488188 83.77539062 414.06640625
+  C73.61494536 420.22169674 63.49657729 426.44322229 53.40771484 432.71508789
+  C44.79390198 438.06743435 36.13499272 443.33367296 27.42236328 448.5234375
+  C20.47889664 452.67540081 13.63658673 456.97835634 6.82568359 461.34399414
+  C6.07496582 461.82344482 5.32424805 462.30289551 4.55078125 462.796875
+  C3.88731689 463.22323242 3.22385254 463.64958984 2.5402832 464.08886719
+  C1 465 1 465 0 465
+  C0 311.55 0 158.1 0 0 Z"
+  fill="#1A1A1A" transform="translate(314,42)"/>
+
+<!-- ══════════════ ANIMATED BARBELL GROUP ══════════════
+     Parent handles the rep Y-translation (5 reps, then sits at 0 during dis-assembly).
+     Children each carry a full-cycle X-translation for assembly/disassembly.
+     ══════════════════════════════════════════════════ -->
+<g id="barbell">
+
+  <!--
+    Rep Y animation – 15 s cycle, 5 reps encoded directly in keyTimes.
+
+    keyTimes (all ÷ 15):
+      0                   → assembly phase start
+      0.1867 (2.8 s)      → reps begin
+      [per rep: lift-top, hold-end, lower-end, rest-end  ×5]
+      0.8533 (12.8 s)     → reps done
+      1                   → cycle end
+
+    Pattern per rep (4 segments × 5 reps = 20 splines between reps):
+      lift   "0.15 0 0.35 1"
+      hold   "0 0 1 1"
+      lower  "0.35 0 0.65 1"
+      rest   "0 0 1 1"
+  -->
+  <animateTransform attributeName="transform" type="translate"
+    dur="15s" repeatCount="indefinite" calcMode="spline"
+    keyTimes="0;
+      0.1867;
+      0.2160; 0.2293; 0.2827; 0.3200;
+      0.3493; 0.3627; 0.4160; 0.4533;
+      0.4827; 0.4960; 0.5493; 0.5867;
+      0.6160; 0.6293; 0.6827; 0.7200;
+      0.7493; 0.7627; 0.8160; 0.8533;
+      1"
+    values="0,0;
+      0,0;
+      0,-22; 0,-22; 0,0; 0,0;
+      0,-22; 0,-22; 0,0; 0,0;
+      0,-22; 0,-22; 0,0; 0,0;
+      0,-22; 0,-22; 0,0; 0,0;
+      0,-22; 0,-22; 0,0; 0,0;
+      0,0"
+    keySplines="
+      0 0 1 1;
+      0.15 0 0.35 1; 0 0 1 1; 0.35 0 0.65 1; 0 0 1 1;
+      0.15 0 0.35 1; 0 0 1 1; 0.35 0 0.65 1; 0 0 1 1;
+      0.15 0 0.35 1; 0 0 1 1; 0.35 0 0.65 1; 0 0 1 1;
+      0.15 0 0.35 1; 0 0 1 1; 0.35 0 0.65 1; 0 0 1 1;
+      0.15 0 0.35 1; 0 0 1 1; 0.35 0 0.65 1; 0 0 1 1;
+      0 0 1 1"/>
+
+  <!-- ── BAR (rods slide in / fly out simultaneously) ──────────────────── -->
+
+  <!-- Red rod  x=116–126  ← from LEFT  (off=−160) -->
+  <g transform="translate(-160,0)">
+    <animateTransform attributeName="transform" type="translate"
+      dur="15s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0; 0.0333; 0.0700; 0.9533; 0.9800; 1"
+      values="-160,0; -160,0; 0,0; 0,0; -160,0; -160,0"
+      keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
+    <rect x="116" y="261" width="10" height="20" fill="#CC0022"/>
+  </g>
+
+  <!-- Grey rod  x=378–485  → from RIGHT  (off=+250) -->
+  <g transform="translate(250,0)">
+    <animateTransform attributeName="transform" type="translate"
+      dur="15s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0; 0.0333; 0.0700; 0.9533; 0.9800; 1"
+      values="250,0; 250,0; 0,0; 0,0; 250,0; 250,0"
+      keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
+    <rect x="378" y="261" width="107" height="20" fill="#1A1A1A"/>
+  </g>
+
+  <!-- ── INNER WEIGHTS ─────────────────────────────────────────────────── -->
+
+  <!-- Red inner plate  x=82–109  ← from LEFT -->
+  <g transform="translate(-160,0)">
+    <animateTransform attributeName="transform" type="translate"
+      dur="15s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0; 0.0833; 0.1167; 0.9133; 0.9400; 1"
+      values="-160,0; -160,0; 0,0; 0,0; -160,0; -160,0"
+      keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
+    <rect x="82" y="208" width="27" height="126" fill="#CC0022"/>
+  </g>
+
+  <!-- Grey inner plate  x=492–519  → from RIGHT -->
+  <g transform="translate(250,0)">
+    <animateTransform attributeName="transform" type="translate"
+      dur="15s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0; 0.0833; 0.1167; 0.9133; 0.9400; 1"
+      values="250,0; 250,0; 0,0; 0,0; 250,0; 250,0"
+      keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
+    <rect x="492" y="208" width="27" height="126" fill="#1A1A1A"/>
+  </g>
+
+  <!-- ── OUTER WEIGHTS + NUBS ──────────────────────────────────────────── -->
+
+  <!-- Red outer plate + nub  ← from LEFT -->
+  <g transform="translate(-160,0)">
+    <animateTransform attributeName="transform" type="translate"
+      dur="15s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0; 0.1300; 0.1633; 0.8733; 0.9000; 1"
+      values="-160,0; -160,0; 0,0; 0,0; -160,0; -160,0"
+      keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
+    <rect x="51" y="226" width="24" height="91" fill="#CC0022"/>
+    <rect x="32" y="261" width="19" height="20" fill="#CC0022"/>
+  </g>
+
+  <!-- Grey outer plate + nub  → from RIGHT -->
+  <g transform="translate(250,0)">
+    <animateTransform attributeName="transform" type="translate"
+      dur="15s" repeatCount="indefinite" calcMode="spline"
+      keyTimes="0; 0.1300; 0.1633; 0.8733; 0.9000; 1"
+      values="250,0; 250,0; 0,0; 0,0; 250,0; 250,0"
+      keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
+    <rect x="526" y="226" width="24" height="91" fill="#1A1A1A"/>
+    <rect x="550" y="261" width="19" height="20" fill="#1A1A1A"/>
+  </g>
+
+</g>
+</svg>

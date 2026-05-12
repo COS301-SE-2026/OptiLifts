@@ -1,5 +1,22 @@
 <p align="center">
-  <img src="docs/images/optilifts-logo.svg" width="440" height="290" alt="OptiLifts" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-animated-dark.svg">
+    <img src="docs/images/logo-animated-light.svg" width="160" alt="OptiLifts" />
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/wordmark-dark.svg">
+    <img src="docs/images/wordmark-light.svg" height="40" alt="OPTILIFTS">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/slogan-dark.svg">
+    <img src="docs/images/slogan-light.svg" height="22" alt="Stop tracking. Start progressing.">
+  </picture>
 </p>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
@@ -76,11 +93,11 @@ OptiLifts transforms manual strength training into an intelligent, automatic exp
 
 | | Name | Role | GitHub | LinkedIn |
 | :---: | :--- | :--- | :---: | :---: |
-| <img src="docs/images/Jordan.png" width="60" height="60" style="border-radius:50%"/> | **Jordan Naidoo** | Team Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/JordanNaidoo) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jordan-naidoo/) |
-| <img src="docs/images/Cailin.png" width="60" height="60" style="border-radius:50%"/> | **Cailin Smith** | Frontend Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/CailinSmith) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/cailin-smith-cc1307/) |
-| <img src="docs/images/Alex.png" width="60" height="60" style="border-radius:50%"/> | **Alex Lange** | Backend Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/AlexLange1st) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alex-lange-7444b8358/) |
-| <img src="docs/images/Edwin.png" width="60" height="60" style="border-radius:50%"/> | **Edwin Küsel** | DevOps Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/EdwinKusel1) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/edwin-kusel/) |
-| <img src="docs/images/Ale.png" width="60" height="60" style="border-radius:50%"/> | **Alessandro Paravano** | QA Lead | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/AlessandroParavano) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/aleparavano) |
+| <img src="docs/images/Jordan_circle.svg"/> | **Jordan Naidoo** | Team Lead (DevOps) | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/JordanNaidoo) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jordan-naidoo/) |
+| <img src="docs/images/Cailin_circle.svg"/> | **Cailin Smith** | Frontend | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/CailinSmith) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/cailin-smith-cc1307/) |
+| <img src="docs/images/Alex_circle.svg"/> | **Alex Lange** | Backend | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/AlexLange1st) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alex-lange-7444b8358/) |
+| <img src="docs/images/Edwin_circle.svg"/> | **Edwin Küsel** | Backend | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/EdwinKusel1) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/edwin-kusel/) |
+| <img src="docs/images/Ale_circle.svg"/> | **Alessandro Paravano** | Frontend | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/AlessandroParavano) | [![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/aleparavano) |
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

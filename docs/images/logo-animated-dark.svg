@@ -36,7 +36,7 @@
 <path fill-rule="evenodd"
   d="M 287,43 L 133,150 L 133,390 L 287,490 Z
      M 234,141 L 178,178 L 178,360 L 234,392 Z"
-  fill="#B70E25"/>
+  fill="#B01030"/>
 
 <path d="M0 0 C13.81233681 8.05719648 13.81233681 8.05719648 20.125 11.9375
   C20.125 11.9375 20.125 11.9375 20.125 11.9375
@@ -76,7 +76,7 @@
   C3.88731689 463.22323242 3.22385254 463.64958984 2.5402832 464.08886719
   C1 465 1 465 0 465
   C0 311.55 0 158.1 0 0 Z"
-  fill="#353434" transform="translate(314,42)"/>
+  fill="#E8E8EC" transform="translate(314,42)"/>
 
 <!-- ══════════════ ANIMATED BARBELL GROUP ══════════════
      Parent handles the rep Y-translation (5 reps, then sits at 0 during dis-assembly).
@@ -136,7 +136,7 @@
       keyTimes="0; 0.0333; 0.0700; 0.9533; 0.9800; 1"
       values="-160,0; -160,0; 0,0; 0,0; -160,0; -160,0"
       keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
-    <rect x="116" y="261" width="10" height="20" fill="#B70E25"/>
+    <rect x="116" y="261" width="10" height="20" fill="#B01030"/>
   </g>
 
   <!-- Grey rod  x=378–485  → from RIGHT  (off=+250) -->
@@ -146,7 +146,7 @@
       keyTimes="0; 0.0333; 0.0700; 0.9533; 0.9800; 1"
       values="250,0; 250,0; 0,0; 0,0; 250,0; 250,0"
       keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
-    <rect x="378" y="261" width="107" height="20" fill="#3A3A3A"/>
+    <rect x="378" y="261" width="107" height="20" fill="#E8E8EC"/>
   </g>
 
   <!-- ── INNER WEIGHTS ─────────────────────────────────────────────────── -->
@@ -158,7 +158,7 @@
       keyTimes="0; 0.0833; 0.1167; 0.9133; 0.9400; 1"
       values="-160,0; -160,0; 0,0; 0,0; -160,0; -160,0"
       keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
-    <rect x="82" y="208" width="27" height="126" fill="#B70E25"/>
+    <rect x="82" y="208" width="27" height="126" fill="#B01030"/>
   </g>
 
   <!-- Grey inner plate  x=492–519  → from RIGHT -->
@@ -168,7 +168,7 @@
       keyTimes="0; 0.0833; 0.1167; 0.9133; 0.9400; 1"
       values="250,0; 250,0; 0,0; 0,0; 250,0; 250,0"
       keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
-    <rect x="492" y="208" width="27" height="126" fill="#3A3A3A"/>
+    <rect x="492" y="208" width="27" height="126" fill="#E8E8EC"/>
   </g>
 
   <!-- ── OUTER WEIGHTS + NUBS ──────────────────────────────────────────── -->
@@ -180,8 +180,8 @@
       keyTimes="0; 0.1300; 0.1633; 0.8733; 0.9000; 1"
       values="-160,0; -160,0; 0,0; 0,0; -160,0; -160,0"
       keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
-    <rect x="51" y="226" width="24" height="91" fill="#B70E25"/>
-    <rect x="32" y="261" width="19" height="20" fill="#B70E25"/>
+    <rect x="51" y="226" width="24" height="91" fill="#B01030"/>
+    <rect x="32" y="261" width="19" height="20" fill="#B01030"/>
   </g>
 
   <!-- Grey outer plate + nub  → from RIGHT -->
@@ -191,8 +191,8 @@
       keyTimes="0; 0.1300; 0.1633; 0.8733; 0.9000; 1"
       values="250,0; 250,0; 0,0; 0,0; 250,0; 250,0"
       keySplines="0 0 1 1; 0 0 0.18 1; 0 0 1 1; 0.75 0 1 1; 0 0 1 1"/>
-    <rect x="526" y="226" width="24" height="91" fill="#3A3A3A"/>
-    <rect x="550" y="261" width="19" height="20" fill="#3A3A3A"/>
+    <rect x="526" y="226" width="24" height="91" fill="#E8E8EC"/>
+    <rect x="550" y="261" width="19" height="20" fill="#E8E8EC"/>
   </g>
 
 </g>

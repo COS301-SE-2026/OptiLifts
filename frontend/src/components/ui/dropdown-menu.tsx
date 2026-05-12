@@ -20,25 +20,42 @@ function DropdownMenuPortal({
   )
 }
 
-
 function DropdownMenuTrigger({
   className,
   children,
+  variant = "default",
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger> & {
+  variant?: "default" | "filter"
+}) {
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
       className={cn(
-        "group flex items-center gap-2 outline-hidden cursor-pointer",
+        "group flex items-center outline-hidden cursor-pointer transition-all",
+        variant === "default" && "gap-2",
+        variant === "filter" && "w-full justify-between gap-4 rounded-md border border-border bg-background px-3 py-2 shadow-xs hover:bg-accent/50 focus-visible:ring-1 focus-visible:ring-ring",
         className
       )}
       {...props}
     >
-      <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-      <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-background font-medium shadow-sm">
+      {variant === "default" && (
+        <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+      )}
+
+      <div
+        className={cn(
+          "flex items-center font-medium",
+          variant === "default" && "size-9 justify-center rounded-lg border border-border bg-background shadow-sm",
+          variant === "filter" && "text-sm text-foreground"
+        )}
+      >
         {children}
       </div>
+
+      {variant === "filter" && (
+        <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+      )}
     </DropdownMenuPrimitive.Trigger>
   )
 }

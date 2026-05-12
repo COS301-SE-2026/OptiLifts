@@ -3,6 +3,8 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import { Button } from '@/components/ui/button'
+import { MoreHorizontal, Plus, X } from 'lucide-react'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -115,6 +117,26 @@ function App() {
 
       <div className="ticks"></div>
       <section id="spacer"></section>
+
+      <section style={{ padding: '2rem', display: 'grid', gap: '1rem' }}>
+        <h2>Buttons</h2>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button variant="default">Start Session</Button>
+          <Button variant="secondary">Save Workout</Button>
+          <Button variant="outline">+ Add Set</Button>
+          <Button variant="icon" size="icon" aria-label="Add">
+            <Plus size={16} />
+          </Button>
+          <Button variant="icon" size="icon" aria-label="More options">
+            <MoreHorizontal size={16} />
+          </Button>
+          <Button variant="icon" size="icon" aria-label="Close">
+            <X size={16} />
+          </Button>
+        </div>
+
+        
+      </section>
     </>
   )
 }

@@ -116,6 +116,9 @@ Make sure you have Node, pnpm, .NET 8, Python 3.12, and Docker installed.
 # Node.js
 sudo apt-get install -y nodejs
 
+# npm
+sudo apt-get install -y npm
+
 # pnpm
 sudo npm install -g pnpm
 

@@ -12,12 +12,7 @@
   </picture>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/slogan-dark.svg">
-    <img src="docs/images/slogan-light.svg" height="22" alt="Stop tracking. Start progressing.">
-  </picture>
-</p>
+<p align="center"><sub>Intelligence behind every lift.</sub></p>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

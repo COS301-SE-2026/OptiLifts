@@ -124,6 +124,7 @@ function App() {
           <Button variant="default">Start Session</Button>
           <Button variant="secondary">Save Workout</Button>
           <Button variant="outline">+ Add Set</Button>
+          <Button variant="text">+ Create Exercise</Button>
           <Button variant="icon" size="icon" aria-label="Add">
             <Plus size={16} />
           </Button>

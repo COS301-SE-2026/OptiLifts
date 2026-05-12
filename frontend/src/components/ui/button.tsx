@@ -3,6 +3,12 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
+// Usage:
+// <Button>Start Session</Button>
+// <Button variant="secondary">Save Workout</Button>
+// <Button variant="outline">+ Add Set</Button>
+// <Button variant="icon" size="icon" aria-label="Add" />
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {

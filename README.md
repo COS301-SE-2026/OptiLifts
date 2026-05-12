@@ -169,6 +169,7 @@ pnpm dev
 | Command | What it does |
 | :--- | :--- |
 | `pnpm run setup` | Installs Node packages, .NET packages, and the Python virtual environment |
+| `pnpm build` | Builds the project |
 | `pnpm db` | Starts the local PostgreSQL and Redis Docker containers |
 | `pnpm db:down` | Stops the local PostgreSQL and Redis Docker containers |
 | `pnpm db:sync` | Pushes the initial database schema to your local container |

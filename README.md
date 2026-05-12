@@ -116,6 +116,9 @@ Make sure you have Node, pnpm, .NET 8, Python 3.12, and Docker installed.
 # Node.js
 sudo apt-get install -y nodejs
 
+# npm
+sudo apt-get install -y npm
+
 # pnpm
 sudo npm install -g pnpm
 
@@ -166,6 +169,7 @@ pnpm dev
 | Command | What it does |
 | :--- | :--- |
 | `pnpm run setup` | Installs Node packages, .NET packages, and the Python virtual environment |
+| `pnpm build` | Builds the project |
 | `pnpm db` | Starts the local PostgreSQL and Redis Docker containers |
 | `pnpm db:down` | Stops the local PostgreSQL and Redis Docker containers |
 | `pnpm db:sync` | Pushes the initial database schema to your local container |

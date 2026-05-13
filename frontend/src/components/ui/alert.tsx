@@ -40,6 +40,8 @@ function emit(variant: Variant, message: string, title?: string) {
 export function Toaster() {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
+  const dismiss = (id: number) => setToasts(prev => prev.filter(t => t.id !== id))
+
   useEffect(() => {
     const handler = (e: Event) => {
       const item = (e as CustomEvent<ToastItem>).detail
@@ -49,8 +51,6 @@ export function Toaster() {
     window.addEventListener('ol-toast', handler)
     return () => window.removeEventListener('ol-toast', handler)
   }, [])
-
-  const dismiss = (id: number) => setToasts(prev => prev.filter(t => t.id !== id))
 
   return (
     <div className={s.container} aria-live="polite">

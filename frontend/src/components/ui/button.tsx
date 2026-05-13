@@ -68,7 +68,7 @@ const BUTTON_STYLES = `
 .optilifts-btn[data-size="icon"] { width: 2rem; height: 2rem; padding: 0 }
 `
 
-if (typeof globalThis.window !== "undefined") {
+if (globalThis.window !== undefined) {
   const __btnStylesId = "optilifts-button-styles"
   if (!globalThis.document.getElementById(__btnStylesId)) {
     const s = globalThis.document.createElement("style")

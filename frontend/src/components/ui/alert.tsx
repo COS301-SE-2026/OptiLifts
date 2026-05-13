@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Info, CheckCircle2, AlertTriangle, AlertCircle, X } from 'lucide-react'
-import s from './alert.module.css'
 
 type Variant = 'info' | 'success' | 'warning' | 'error'
 
@@ -18,9 +17,15 @@ const ICONS = {
   error:   AlertCircle,
 }
 
+const VARIANT_STYLES: Record<Variant, { border: string; bg: string; icon: string }> = {
+  info:    { border: 'var(--brand)',       bg: 'color-mix(in srgb, var(--brand)       8%, var(--surface))', icon: 'var(--brand)'       },
+  success: { border: 'var(--success)',     bg: 'color-mix(in srgb, var(--success)     8%, var(--surface))', icon: 'var(--success)'     },
+  warning: { border: 'var(--warning)',     bg: 'color-mix(in srgb, var(--warning)     8%, var(--surface))', icon: 'var(--warning)'     },
+  error:   { border: 'var(--destructive)', bg: 'color-mix(in srgb, var(--destructive) 8%, var(--surface))', icon: 'var(--destructive)' },
+}
+
 let nextId = 0
 
-// Call anywhere — no provider needed
 export const toast = {
   info:    (message: string, title?: string) => emit('info',    message, title),
   success: (message: string, title?: string) => emit('success', message, title),
@@ -36,7 +41,6 @@ function emit(variant: Variant, message: string, title?: string) {
   )
 }
 
-// Drop <Toaster /> once in your app root
 export function Toaster() {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
@@ -53,17 +57,35 @@ export function Toaster() {
   }, [])
 
   return (
-    <div className={s.container} aria-live="polite">
+    <div
+      className="fixed top-5 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-[420px] pointer-events-none"
+      aria-live="polite"
+    >
       {toasts.map(item => {
         const Icon = ICONS[item.variant]
+        const vs = VARIANT_STYLES[item.variant]
         return (
-          <output key={item.id} className={`${s.toast} ${s[item.variant]}`}>
-            <Icon className={`${s.icon} ${s[item.variant]}`} />
-            <div className={s.body}>
-              {item.title && <p className={s.title}>{item.title}</p>}
-              <p className={s.message}>{item.message}</p>
+          <output
+            key={item.id}
+            className="flex items-start gap-3 px-4 py-[0.875rem] border-l-4 shadow-[0_4px_20px_rgba(0,0,0,0.18)] pointer-events-auto animate-slide-down"
+            style={{ borderColor: vs.border, background: vs.bg }}
+          >
+            <Icon className="flex-shrink-0 mt-[1px] w-4 h-4" style={{ color: vs.icon }} />
+            <div className="flex-1 min-w-0">
+              {item.title && (
+                <p className="font-sans text-xs font-bold uppercase tracking-[1px] text-foreground m-0 mb-[0.2rem]">
+                  {item.title}
+                </p>
+              )}
+              <p className="font-sans text-sm text-muted-foreground m-0 leading-[1.4]">
+                {item.message}
+              </p>
             </div>
-            <button className={s.dismiss} onClick={() => dismiss(item.id)} aria-label="Dismiss">
+            <button
+              className="flex-shrink-0 bg-none border-none cursor-pointer p-0 text-muted-foreground flex items-center hover:text-foreground"
+              onClick={() => dismiss(item.id)}
+              aria-label="Dismiss"
+            >
               <X size={16} />
             </button>
           </output>

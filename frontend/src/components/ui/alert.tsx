@@ -5,10 +5,10 @@ import s from './alert.module.css'
 type Variant = 'info' | 'success' | 'warning' | 'error'
 
 interface ToastItem {
-  id: number
-  variant: Variant
-  title?: string
-  message: string
+  readonly id: number
+  readonly variant: Variant
+  readonly title?: string
+  readonly message: string
 }
 
 const ICONS = {
@@ -29,7 +29,7 @@ export const toast = {
 }
 
 function emit(variant: Variant, message: string, title?: string) {
-  window.dispatchEvent(
+  globalThis.dispatchEvent(
     new CustomEvent<ToastItem>('ol-toast', {
       detail: { id: nextId++, variant, message, title },
     })
@@ -48,8 +48,8 @@ export function Toaster() {
       setToasts(prev => [...prev, item])
       setTimeout(() => dismiss(item.id), 5000)
     }
-    window.addEventListener('ol-toast', handler)
-    return () => window.removeEventListener('ol-toast', handler)
+    globalThis.addEventListener('ol-toast', handler)
+    return () => globalThis.removeEventListener('ol-toast', handler)
   }, [])
 
   return (
@@ -57,7 +57,7 @@ export function Toaster() {
       {toasts.map(item => {
         const Icon = ICONS[item.variant]
         return (
-          <div key={item.id} className={`${s.toast} ${s[item.variant]}`} role="status">
+          <output key={item.id} className={`${s.toast} ${s[item.variant]}`}>
             <Icon className={`${s.icon} ${s[item.variant]}`} />
             <div className={s.body}>
               {item.title && <p className={s.title}>{item.title}</p>}
@@ -66,7 +66,7 @@ export function Toaster() {
             <button className={s.dismiss} onClick={() => dismiss(item.id)} aria-label="Dismiss">
               <X size={16} />
             </button>
-          </div>
+          </output>
         )
       })}
     </div>

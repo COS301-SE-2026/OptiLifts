@@ -1,7 +1,7 @@
 import styles from './page-title.module.css';
 
 interface PageTitleProps {
-  title: string;
+  readonly title: string;
 }
 
 export function PageTitle({ title }: PageTitleProps) {

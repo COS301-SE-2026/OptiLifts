@@ -1,0 +1,43 @@
+name: Sync Epic Completion State
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  reopen-parent-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reopen Parent issue if a sub-issue is reopened or added
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const subIssue = context.payload.issue;
+            
+            // get the parent issue
+            const parentIssue = (subIssue.body)? subIssue.body.match(/Tracked by #(\d+)/) : null;
+            
+            if (!parentIssue) {
+              return;
+            }
+
+            const parentIssueNumber = parseInt(parentIssue[1], 10);
+            const parent = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parentIssueNumber
+            });
+
+            // change the parent issue to open if there are open sub-issues
+            if (parent.data.state === 'closed') {
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parentIssueNumber,
+                state: 'open'
+              });
+
+            }

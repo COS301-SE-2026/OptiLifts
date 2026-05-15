@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource/bebas-neue";
@@ -8,9 +9,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 :root {
   /* Light Mode Colours */

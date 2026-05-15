@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="605" height="544">
+
+<!-- ===== RED SIDE ===== -->
+<!-- Red O: clean hexagon with even-odd inner hole -->
+<path fill-rule="evenodd"
+  d="M 287,43 L 133,150 L 133,390 L 287,490 Z M 234,141 L 178,178 L 178,360 L 234,392 Z"
+  fill="#B01030"/>
+
+<!-- Red rod: gap 7px from O (133-7=126 right), 10px wide, y=261..280 -->
+<rect x="116" y="261" width="10" height="20" fill="#B01030"/>
+
+<!-- Red inner plate: gap 7px left of rod (116-7=109 right), 27px wide (109-27=82 left), y=208..333 -->
+<rect x="82" y="208" width="27" height="126" fill="#B01030"/>
+
+<!-- Red outer tall plate: gap 7px left of inner (82-7=75 right), 24px wide (75-24=51 left), y=226..316 -->
+<rect x="51" y="226" width="24" height="91" fill="#B01030"/>
+
+<!-- Red outer nub: flush with outer tall left (x=51), extends 19px more left to x=32, y=261..280 -->
+<rect x="32" y="261" width="19" height="20" fill="#B01030"/>
+
+<!-- ===== GREY SIDE ===== -->
+<!-- Grey L shape (O right half + L bottom) -->
+<path d="M0 0 C13.81233681 8.05719648 20.125 11.9375 20.125 11.9375 C27.17636578 16.25930588 36.8671875 22.23046875 36.8671875 22.23046875 C41.60056957 25.14623609 47.49267578 28.78100586 50.75 30.7890625 C53.671875 32.59228516 58 35 58 35 C58 144.89 58 254.78 58 368 C72.45707834 359.5667043 101.30419922 342.59570312 111.99707031 336.27636719 C125.67372141 328.19944837 153 312 153 312 C159.98168909 316.44979328 169.69335938 322.56225586 173.47851562 324.92797852 C181.31063545 329.80212544 190.5 335.4375 193.05664062 336.97729492 C195.40625 338.43359375 197.50976562 339.71655273 199 341 C199 342.98 199 344 199 344 C194.92578125 346.6796875 189.3125 349.875 183.18359375 353.4140625 C175.59287881 357.82110407 166.875 363.25 158.72277865 368.32961622 C142.3125 378.3125 124.08086481 389.39849205 115 395 C94.20717255 407.7488188 73.61494536 420.22169674 53.40771484 432.71508789 C36.13499272 443.33367296 20.47889664 452.67540081 6.82568359 461.34399414 C3.88731689 463.22323242 1 465 0 465 C0 311.55 0 158.1 0 0 Z" fill="#E8E8EC" transform="translate(314,42)"/>
+
+<!-- Grey rod: extended to match red side length. Shift all grey plates 97px right -->
+<rect x="378" y="261" width="107" height="20" fill="#E8E8EC"/>
+
+<!-- Grey inner plate: 395+97=492 left, 27px wide = 492..519, y=208..333 -->
+<rect x="492" y="208" width="27" height="126" fill="#E8E8EC"/>
+
+<!-- Grey outer tall plate: 492+27+7=526 left, 24px wide = 526..550, y=226..316 -->
+<rect x="526" y="226" width="24" height="91" fill="#E8E8EC"/>
+
+<!-- Grey outer nub: 550 left, 19px wide = 550..569, y=261..280 -->
+<rect x="550" y="261" width="19" height="20" fill="#E8E8EC"/>
+
+</svg>

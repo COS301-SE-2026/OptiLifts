@@ -4,7 +4,11 @@ import { Navbar } from '@/components/ui/navbar'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { DefaultTextBox, NumericalUnderscoreInput } from '@/components/ui/input'
+import { SearchInput as SimpleSearchInput } from '@/components/ui/search-input'
+import { CircularProfileImage } from '@/components/ui/circular-image'
 import { MoreHorizontal, Plus, X } from 'lucide-react'
+import edwinImg from '../../docs/images/Edwin_circle.svg'
 
 function AppLayout() {
   return (
@@ -41,13 +45,22 @@ function HomePage() {
             <X size={16} />
           </Button>
         </div>
+
+        <div style={{ padding: '1rem', display: 'grid', gap: '1rem' }}>
+          <h3>Edwin's components</h3>
+          <SimpleSearchInput />
+          <DefaultTextBox />
+          <div style={{ justifySelf: 'start' }}>
+            <NumericalUnderscoreInput className="mx-0" />
+          </div>
+          <CircularProfileImage src={edwinImg} alt="Edwin" />
+        </div>
       </section>
     </section>
   )
 }
 
-type PlaceholderPageProps = Readonly<
-{
+type PlaceholderPageProps = Readonly<{
   title: string
   description: string
 }>

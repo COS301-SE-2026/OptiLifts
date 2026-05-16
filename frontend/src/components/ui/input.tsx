@@ -44,24 +44,36 @@ function DefaultTextBox({ className, type = "text", ...props }: InputProps) {
 }
 
 function NumericalUnderscoreInput({ className, type = "text", onChange, ...props }: InputProps) {
-  const [val, setVal] = React.useState<string>(
-    props.value !== undefined ? String(props.value) : props.defaultValue !== undefined ? String(props.defaultValue) : ""
-  )
+  const initialValue = (() => {
+    if (props.value !== undefined) {
+      return String(props.value)
+    }
 
-  React.useEffect(() => {
-    if (props.value !== undefined) setVal(String(props.value))
-  }, [props.value])
+    if (props.defaultValue !== undefined) {
+      return String(props.defaultValue)
+    }
+
+    return ""
+  })()
+
+  const [val, setVal] = React.useState<string>(initialValue)
+  const isControlled = props.value !== undefined
+  const displayedValue = isControlled ? String(props.value) : val
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D+/g, "")
-    setVal(digits)
+    if (!isControlled) {
+      setVal(digits)
+    }
+
     if (onChange) {
-      const syntheticEvent = Object.assign({}, e, {
-        target: Object.assign({}, e.target, { value: digits }),
+      onChange({
+        ...e,
+        target: {
+          ...e.target,
+          value: digits,
+        },
       })
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      onChange(syntheticEvent)
     }
   }
 
@@ -71,7 +83,7 @@ function NumericalUnderscoreInput({ className, type = "text", onChange, ...props
         type={type}
         variant="underscore"
         className={cn(className)}
-        value={val}
+        value={displayedValue}
         onChange={handleChange}
         inputMode="numeric"
         pattern="\\d*"

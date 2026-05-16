@@ -5,7 +5,10 @@ import heroImg from './assets/hero.png'
 import './App.css'
 import { Button } from '@/components/ui/button'
 import { MoreHorizontal, Plus, X } from 'lucide-react'
-
+import { DefaultTextBox, NumericalUnderscoreInput } from '@/components/ui/input'
+import { SearchInput as SimpleSearchInput } from '@/components/ui/search-input'
+import edwinImg from '../../docs/images/Edwin_circle.svg'
+import { CircularProfileImage } from '@/components/ui/circular-image'
 function App() {
   const [count, setCount] = useState(0)
 
@@ -135,8 +138,16 @@ function App() {
             <X size={16} />
           </Button>
         </div>
-
         
+        <div style={{ padding: '1rem', display: 'grid', gap: '1rem' }}>
+          <h3>Edwin's components</h3>
+          <SimpleSearchInput />
+          <DefaultTextBox />
+          <div style={{ justifySelf: 'start' }}>
+            <NumericalUnderscoreInput className="mx-0" />
+          </div>
+          <CircularProfileImage src={edwinImg} />
+        </div>
       </section>
     </>
   )

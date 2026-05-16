@@ -46,7 +46,13 @@ function HomePage() {
   )
 }
 
-function PlaceholderPage({ title, description }: { title: string; description: string }) {
+type PlaceholderPageProps = Readonly<
+{
+  title: string
+  description: string
+}>
+
+function PlaceholderPage({ title, description }: PlaceholderPageProps) {
   return (
     <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col justify-center px-6 py-16">
       <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Route ready</p>

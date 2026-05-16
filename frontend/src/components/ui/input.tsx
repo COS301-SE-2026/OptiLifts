@@ -1,6 +1,5 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -36,23 +35,50 @@ function Input({ className, variant, type, ...props }: InputProps) {
   )
 }
 
-function SearchInput({ className, ...props }: InputProps) {
+function DefaultTextBox({ className, type = "text", ...props }: InputProps) {
   return (
     <div className="relative w-full max-w-sm">
-      <Input 
-        type="text" 
-        variant="default" 
-        className={cn("pr-10", className)} 
-        {...props} 
-      />
-      <button 
-        type="button" 
-        className="absolute right-0 top-0 flex h-full items-center justify-center px-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-r-lg"
-      >
-        <Search className="h-4 w-4" />
-      </button>
+      <Input type={type} variant="default" className={cn(className)} {...props} />
     </div>
   )
 }
 
-export { Input, SearchInput }
+function NumericalUnderscoreInput({ className, type = "text", onChange, ...props }: InputProps) {
+  const [val, setVal] = React.useState<string>(
+    props.value !== undefined ? String(props.value) : props.defaultValue !== undefined ? String(props.defaultValue) : ""
+  )
+
+  React.useEffect(() => {
+    if (props.value !== undefined) setVal(String(props.value))
+  }, [props.value])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D+/g, "")
+    setVal(digits)
+    if (onChange) {
+      const syntheticEvent = Object.assign({}, e, {
+        target: Object.assign({}, e.target, { value: digits }),
+      })
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      onChange(syntheticEvent)
+    }
+  }
+
+  return (
+    <div className="relative w-full max-w-sm">
+      <Input
+        type={type}
+        variant="underscore"
+        className={cn(className)}
+        value={val}
+        onChange={handleChange}
+        inputMode="numeric"
+        pattern="\\d*"
+        {...props}
+      />
+    </div>
+  )
+}
+
+export { Input, DefaultTextBox, NumericalUnderscoreInput }

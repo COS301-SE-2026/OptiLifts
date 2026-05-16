@@ -1,10 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User } from "lucide-react"
 
-export function CircularProfileImage() {
+export function CircularProfileImage({ src, alt }: { src?: string; alt?: string }) {
   return (
     <Avatar className="h-16 w-16 border border-gray-300">
-      <AvatarImage src="/path/to/your/image.jpg" alt="Profile picture" />
+      {src ? <AvatarImage src={src} alt={alt ?? ""} /> : null}
       <AvatarFallback className="bg-white">
         <User className="h-8 w-8 text-gray-400" />
       </AvatarFallback>

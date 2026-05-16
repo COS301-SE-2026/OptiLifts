@@ -1,7 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User } from "lucide-react"
 
-export function CircularProfileImage({ src, alt }: { src?: string; alt?: string }) {
+type CircularImageProps = Readonly<{
+  src?: string
+  alt?: string
+}>
+
+export function CircularProfileImage({ src, alt }: CircularImageProps) {
   return (
     <Avatar className="h-16 w-16 border border-gray-300">
       {src ? <AvatarImage src={src} alt={alt ?? ""} /> : null}

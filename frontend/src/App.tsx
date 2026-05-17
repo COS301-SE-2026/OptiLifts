@@ -7,8 +7,10 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { DefaultTextBox, NumericalUnderscoreInput } from '@/components/ui/input'
 import { SearchInput as SimpleSearchInput } from '@/components/ui/search-input'
 import { CircularProfileImage } from '@/components/ui/circular-image'
+import { CreateExercise, type CreateExerciseFormData } from '@/components/ui/create-exercise'
 import { MoreHorizontal, Plus, X } from 'lucide-react'
 import edwinImg from '../../docs/images/Edwin_circle.svg'
+import { useState } from 'react'
 
 function AppLayout() {
   return (
@@ -22,10 +24,23 @@ function AppLayout() {
 }
 
 function HomePage() {
+  const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
+
+  const handleSaveExercise = (values: CreateExerciseFormData) => {
+    console.log('Create exercise payload:', values)
+    setIsCreateExerciseOpen(false)
+  }
+
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
       <PageTitle title="Welcome to OptiLifts" />
       <p className="mt-4 text-muted-foreground">This is a minimal demo shell. Add your pages under the routes.</p>
+
+      <div className="mt-6">
+        <Button variant="default" onClick={() => setIsCreateExerciseOpen(true)}>
+          Create custom exercise
+        </Button>
+      </div>
 
       <section style={{ padding: '2rem', display: 'grid', gap: '1rem' }}>
         <h2>Buttons</h2>
@@ -56,6 +71,12 @@ function HomePage() {
           <CircularProfileImage src={edwinImg} alt="Edwin" />
         </div>
       </section>
+
+      <CreateExercise
+        isOpen={isCreateExerciseOpen}
+        onCancel={() => setIsCreateExerciseOpen(false)}
+        onSave={handleSaveExercise}
+      />
     </section>
   )
 }

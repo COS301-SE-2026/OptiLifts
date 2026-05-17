@@ -44,55 +44,20 @@ type CreateExerciseBackdropProps = Readonly<{
 }>
 
 const DEFAULT_EXERCISE_TYPE_OPTIONS: readonly ExerciseTypeOption[] = [
-  {
-    value: "weight-reps",
-    label: "Weight & Reps",
-    example: "Bench Press, Dumbbell Curls",
-    metrics: ["REPS", "KG"],
-  },
-  {
-    value: "bodyweight-reps",
-    label: "Bodyweight Reps",
-    example: "Pullups, Sit ups, Burpees",
-    metrics: ["REPS"],
-  },
-  {
-    value: "weighted-bodyweight",
-    label: "Weighted Bodyweight",
-    example: "Weighted Pull Ups, Weighted Dips",
-    metrics: ["REPS", "+KG"],
-  },
-  {
-    value: "assisted-bodyweight",
-    label: "Assisted Bodyweight",
-    example: "Assisted Pullups, Assisted Dips",
-    metrics: ["REPS", "-KG"],
-  },
-  {
-    value: "duration",
-    label: "Duration",
-    example: "Planks, Yoga, Stretching",
-    metrics: ["TIME"],
-  },
-  {
-    value: "duration-weight",
-    label: "Duration & Weight",
-    example: "Weighted Plank, Wall Sit",
-    metrics: ["KG", "TIME"],
-  },
-  {
-    value: "distance-duration",
-    label: "Distance & Duration",
-    example: "Running, Cycling, Rowing",
-    metrics: ["TIME", "KM"],
-  },
-  {
-    value: "weight-distance",
-    label: "Weight & Distance",
-    example: "Farmers walk, Suitcase Carry",
-    metrics: ["KG", "KM"],
-  },
-] as const
+  ["weight-reps", "Weight & Reps", "Bench Press, Dumbbell Curls", ["REPS", "KG"]],
+  ["bodyweight-reps", "Bodyweight Reps", "Pullups, Sit ups, Burpees", ["REPS"]],
+  ["weighted-bodyweight", "Weighted Bodyweight", "Weighted Pull Ups, Weighted Dips", ["REPS", "+KG"]],
+  ["assisted-bodyweight", "Assisted Bodyweight", "Assisted Pullups, Assisted Dips", ["REPS", "-KG"]],
+  ["duration", "Duration", "Planks, Yoga, Stretching", ["TIME"]],
+  ["duration-weight", "Duration & Weight", "Weighted Plank, Wall Sit", ["KG", "TIME"]],
+  ["distance-duration", "Distance & Duration", "Running, Cycling, Rowing", ["TIME", "KM"]],
+  ["weight-distance", "Weight & Distance", "Farmers walk, Suitcase Carry", ["KG", "KM"]],
+].map(([value, label, example, metrics]) => ({
+  value: value as string,
+  label: label as string,
+  example: example as string,
+  metrics: metrics as readonly string[],
+})) as readonly ExerciseTypeOption[]
 
 const DEFAULT_EQUIPMENT_OPTIONS = [
   "None",
@@ -119,13 +84,17 @@ const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeOp
 
 function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children }: CreateExerciseBackdropProps) {
   return (
-    <div
-      className={`fixed inset-0 ${zIndexClassName} flex items-start justify-center ${backdropClassName} p-4 pt-[13vh]`}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onDismiss()
-      }}
-    >
-      {children}
+    <div className={`fixed inset-0 ${zIndexClassName} flex items-start justify-center p-4 pt-[13vh]`}>
+      <button
+        type="button"
+        className={`absolute inset-0 block w-full outline-none cursor-default ${backdropClassName}`}
+        aria-label="Close dialog overlay"
+        onClick={onDismiss}
+        tabIndex={-1}
+      />
+      <div className="relative z-10 w-full flex justify-center">
+        {children}
+      </div>
     </div>
   )
 }

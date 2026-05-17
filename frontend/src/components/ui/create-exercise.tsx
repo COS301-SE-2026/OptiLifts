@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { ArrowLeft, Check, ImagePlus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,13 @@ type CreateExerciseProps = Readonly<{
   exerciseTypes?: readonly string[]
   exerciseTypeOptions?: readonly ExerciseTypeOption[]
   equipmentOptions?: readonly string[]
+}>
+
+type CreateExerciseBackdropProps = Readonly<{
+  zIndexClassName: string
+  backdropClassName: string
+  onDismiss: () => void
+  children: ReactNode
 }>
 
 const DEFAULT_EXERCISE_TYPE_OPTIONS: readonly ExerciseTypeOption[] = [
@@ -109,6 +116,19 @@ const ensureOption = (options: readonly string[], value: string): string[] => {
 
 const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeOption[] =>
   exerciseTypes.map((type) => ({ value: type, label: type, example: "Custom exercise type", metrics: ["REPS"] }))
+
+function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children }: CreateExerciseBackdropProps) {
+  return (
+    <div
+      className={`fixed inset-0 ${zIndexClassName} flex items-start justify-center ${backdropClassName} p-4 pt-[13vh]`}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onDismiss()
+      }}
+    >
+      {children}
+    </div>
+  )
+}
 
 export function CreateExercise({
   isOpen,
@@ -225,13 +245,7 @@ export function CreateExercise({
   return (
     <>
       {!isTypePickerOpen && (
-        <div
-          className="fixed inset-0 z-40 flex items-start justify-center bg-foreground/50 p-4 pt-[13vh]"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onCancel()
-          }}
-          role="presentation"
-        >
+        <CreateExerciseBackdrop zIndexClassName="z-40" backdropClassName="bg-foreground/50" onDismiss={onCancel}>
           <form className="w-full max-w-xl rounded-xl border border-border bg-surface p-6 shadow-xl" onSubmit={handleSave} aria-label="Create custom exercise">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
@@ -300,17 +314,11 @@ export function CreateExercise({
               <Button type="submit" disabled={!name.trim()}>Save Exercise</Button>
             </div>
           </form>
-        </div>
+        </CreateExerciseBackdrop>
       )}
 
       {isTypePickerOpen ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-start justify-center bg-foreground/95 p-4 pt-[13vh]"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setIsTypePickerOpen(false)
-          }}
-          role="presentation"
-        >
+        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/95" onDismiss={() => setIsTypePickerOpen(false)}>
           <div className="flex max-h-[78dvh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
             <div className="relative flex h-14 items-center border-b border-border bg-surface px-4">
               <button type="button" onClick={() => setIsTypePickerOpen(false)} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Back">
@@ -354,7 +362,7 @@ export function CreateExercise({
               })}
             </div>
           </div>
-        </div>
+        </CreateExerciseBackdrop>
       ) : null}
     </>
   )

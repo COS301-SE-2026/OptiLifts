@@ -31,8 +31,8 @@ function readStoredSession(): AuthSession | null {
         return null
 
     try {
-        const key = window.localStorage.getItem(STORAGE_KEY)
-        return key ? (JSON.parse(key) as AuthSession) : null
+        const raw = window.localStorage.getItem(STORAGE_KEY)
+        return raw ? (JSON.parse(raw) as AuthSession) : null
     } catch {
         return null
     }
@@ -43,7 +43,9 @@ function saveSession(session: AuthSession) {
         return
     try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-    } catch { }
+    } catch {
+        return
+    }
 }
 
 function clearSession() {
@@ -51,17 +53,14 @@ function clearSession() {
         return
     try {
         window.localStorage.removeItem(STORAGE_KEY)
-    } catch { }
+    } catch {
+        return
+    }
 }
 
 export function AuthProvider({ children }: React.PropsWithChildren) {
     const [session, setSession] = React.useState<AuthSession | null>(() => readStoredSession())
-    const [isHydrated, setIsHydrated] = React.useState(false)
-
-    React.useEffect(() => {
-        //mark hydration as complete on client mount
-        setIsHydrated(true)
-    }, [])
+    const [isHydrated] = React.useState(() => typeof window !== 'undefined')
 
     const login = React.useCallback((nextSession: AuthSession) => {
         setSession(nextSession)

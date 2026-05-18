@@ -1,7 +1,6 @@
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { DefaultTextBox, Input } from '@/components/ui/input'
@@ -32,9 +31,11 @@ type PasswordRowProps = Readonly<{
   showValue: boolean
   onToggle: () => void
   placeholder: string
+  error?: React.ReactNode
+  disclaimer?: React.ReactNode
 }>
 
-function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder }: PasswordRowProps) {
+function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder, error, disclaimer }: PasswordRowProps) {
   return (
     <label className="grid gap-2">
       <span className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">{label}</span>
@@ -59,6 +60,8 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder 
           {showValue ? <Eye size={16} /> : <EyeOff size={16} />}
         </Button>
       </div>
+      {disclaimer}
+      {error}
     </label>
   )
 }
@@ -74,11 +77,24 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  const USERNAME_MAX = 30
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+
+  const isUsernameValid = username.trim().length > 0 && username.trim().length <= USERNAME_MAX
+  const isEmailValid = email.trim().length > 0 && emailRegex.test(email.trim())
+  const isPasswordValid = password.length > 0 && passwordRegex.test(password)
+  const doPasswordsMatch = confirmPassword.length > 0 && password === confirmPassword
+  const isFormValid = isUsernameValid && isEmailValid && isPasswordValid && doPasswordsMatch
+
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
+    //stops DOM manipulation 
+    if (!isFormValid) {
+      return
+    }
     const nextUser: AuthUser = {
       id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`,
       name: username.trim() || email.split('@')[0] || 'Member',
@@ -109,16 +125,21 @@ export function RegisterPage() {
 
         <Card className="mt-6 w-full max-w-md">
           <CardContent>
-            <form onSubmit={handleSubmit} className="grid gap-6">
+            <form onSubmit={handleSubmit} className="grid gap-4">
               <label className="grid gap-2">
                 <span className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Username</span>
                 <DefaultTextBox
                   required
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
+                  maxLength={USERNAME_MAX}
                   autoComplete="username"
                   placeholder="your username"
                 />
+                <span className="text-sm text-muted-foreground">Maximum {USERNAME_MAX} characters.</span>
+                {!isUsernameValid && username.length > 0 ? (
+                  <span className="text-sm text-destructive -mt-2">Username must be 1-{USERNAME_MAX} characters.</span>
+                ) : null}
               </label>
 
               <label className="grid gap-2">
@@ -131,6 +152,9 @@ export function RegisterPage() {
                   autoComplete="email"
                   placeholder="you@example.com"
                 />
+                {!isEmailValid && email.length > 0 ? (
+                  <span className="text-sm text-destructive -mt-2">Please enter a valid email address.</span>
+                ) : null}
               </label>
 
               <PasswordRow
@@ -140,6 +164,8 @@ export function RegisterPage() {
                 showValue={showPassword}
                 onToggle={() => setShowPassword((current) => !current)}
                 placeholder="Enter password"
+                disclaimer={<div className="text-sm text-muted-foreground">Must be 8+ characters with a mix of letters (A/a), numbers (1), and symbols (#).</div>}
+                error={!isPasswordValid && password.length > 0 ? <div className="text-sm text-destructive">Password does not meet complexity requirements.</div> : null}
               />
 
               <PasswordRow
@@ -149,9 +175,15 @@ export function RegisterPage() {
                 showValue={showConfirmPassword}
                 onToggle={() => setShowConfirmPassword((current) => !current)}
                 placeholder="Confirm password"
+                error={!doPasswordsMatch && confirmPassword.length > 0 ? <div className="text-sm text-destructive">Passwords do not match.</div> : null}
               />
 
-              <Button type="submit" variant="default" className="mt-4 w-40 justify-center justify-self-center">
+              <Button
+                type="submit"
+                variant="default"
+                disabled={!isFormValid}
+                className={`w-40 justify-center justify-self-center ${!isFormValid ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
                 REGISTER
               </Button>
 

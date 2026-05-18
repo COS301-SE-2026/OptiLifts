@@ -25,7 +25,6 @@ const STORAGE_KEY = 'optilifts.auth.session'
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
-// Storage helpers: centralize localStorage access and make intent explicit.
 function readStoredSession(): AuthSession | null {
     if (typeof window === 'undefined') 
         return null

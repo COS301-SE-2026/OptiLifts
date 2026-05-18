@@ -59,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (resolvedVariant === "icon" && ariaLabel === "Add") {
-        if ((e as any)?.persist) (e as any).persist()
+        e.persist()
         setIsLoading(true)
         globalThis.setTimeout(() => {
           setIsLoading(false)
@@ -70,7 +70,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       }
     }
 
-    const disabledProp = (props as any).disabled || isLoading
+    const disabledProp = props.disabled || isLoading
 
     return (
       <Comp

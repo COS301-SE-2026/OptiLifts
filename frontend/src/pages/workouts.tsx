@@ -76,6 +76,11 @@ export default function WorkoutsPage() {
               <Plus size={20} />
             </Button>
           </div>
+            {filtered.length === 0 && (
+              <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
+                No workouts found
+              </div>
+            )}
 
           <div className="space-y-4">
             {filtered.map((w) => (

@@ -41,7 +41,9 @@ function SetRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {SET_TYPES.map(t => {
-              const label = t === 'W' ? 'Warmup' : t === 'I' ? 'Working' : 'Drop'
+              let label = 'Drop'
+              if (t === 'W') label = 'Warmup'
+              else if (t === 'I') label = 'Working'
               return (
                 <DropdownMenuItem key={t} onClick={() => onChange({ ...set, type: t })}>
                   {label}

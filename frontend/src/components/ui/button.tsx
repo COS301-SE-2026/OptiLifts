@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 // <Button variant="secondary">Save Workout</Button>
 // <Button variant="outline">+ Add Set</Button>
 // <Button variant="icon" size="icon" aria-label="Add" />
+// <Button variant="password" size="icon" aria-label="Show password" />
 // <Button variant="text">Create Exercise</Button>
 
 export interface ButtonProps
@@ -25,6 +26,7 @@ const buttonVariants = cva(
         secondary: "h-12 px-7 py-4 bg-surface-2 text-foreground border-surface-2 hover:bg-border hover:border-border",
         outline: "h-8 px-6 py-4 bg-transparent text-foreground border-2 border-dashed border-border hover:bg-surface-2",
         ghost: "h-auto px-3 py-3 bg-transparent text-foreground border-0 hover:bg-surface-2",
+        password: "h-8 w-8 p-0 bg-transparent text-foreground border-0 hover:bg-transparent focus-visible:bg-transparent focus-visible:text-brand focus-visible:outline-none",
         text: "h-auto p-0 bg-transparent text-foreground border-0 normal-case tracking-normal hover:bg-transparent",
         icon: "h-8 w-8 p-0 bg-surface text-foreground border border-border hover:bg-surface-2",
       },

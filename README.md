@@ -153,13 +153,42 @@ pnpm run setup
 Start Docker and run:
 
 ```bash
+pnpm db
 pnpm db:sync
 ```
 
-### 5. Start Development
+### 5. Seed the Database
+
+The API seeds the demo user automatically on startup using the C# seeder. Start the backend once after the schema is ready:
+
+```bash
+pnpm dev:backend
+```
+
+Then load the rest of the demo data from SQL:
+
+```bash
+pnpm db:seed:sql
+```
+
+### 6. Start Development
 
 ```bash
 pnpm dev
+```
+
+### 7. Stop Or Reset The Database
+
+Stop containers without deleting the data:
+
+```bash
+pnpm db:down
+```
+
+Stop containers and delete the persisted volume so the records are removed:
+
+```bash
+pnpm db:down:clean
 ```
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
@@ -172,7 +201,9 @@ pnpm dev
 | `pnpm build` | Builds the project |
 | `pnpm db` | Starts the local PostgreSQL and Redis Docker containers |
 | `pnpm db:down` | Stops the local PostgreSQL and Redis Docker containers |
+| `pnpm db:down:clean` | Stops containers and removes the database volume so all records are deleted |
 | `pnpm db:sync` | Pushes the initial database schema to your local container |
+| `pnpm db:seed:sql` | Loads the demo workout data from the SQL script |
 | `pnpm dev` | Starts the Frontend, .NET Core API, and Python AI API all at once |
 | `pnpm test` | Runs all tests at once |
 

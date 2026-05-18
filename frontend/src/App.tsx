@@ -16,7 +16,6 @@ import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import WorkoutsPage from '@/pages/workouts'
-import CreateWorkoutPage from '@/pages/create-workout'
 
 function AppLayout() {
   return (

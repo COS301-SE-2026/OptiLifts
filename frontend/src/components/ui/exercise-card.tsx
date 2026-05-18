@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { MoreHorizontal, User, X } from 'lucide-react'
+import { ChevronDown, MoreHorizontal, User, X } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { NumericalUnderscoreInput, Input } from '@/components/ui/input'
-import { ChevronDown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -25,12 +24,12 @@ function SetRow({
   workingIndex,
   onChange,
   onRemove,
-}: {
+}: Readonly<{
   set: ExerciseSet
   workingIndex: number
   onChange: (updated: ExerciseSet) => void
   onRemove: () => void
-}) {
+}>) {
   return (
     <div className="flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 gap-4">
       <div className="flex items-center w-20 shrink-0">
@@ -39,11 +38,14 @@ function SetRow({
             <ChevronDown className="w-4 h-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {SET_TYPES.map(t => (
-              <DropdownMenuItem key={t} onClick={() => onChange({ ...set, type: t })}>
-                {t === 'W' ? 'Warmup' : t === 'I' ? 'Working' : 'Drop'}
-              </DropdownMenuItem>
-            ))}
+            {SET_TYPES.map(t => {
+              const label = t === 'W' ? 'Warmup' : t === 'I' ? 'Working' : 'Drop'
+              return (
+                <DropdownMenuItem key={t} onClick={() => onChange({ ...set, type: t })}>
+                  {label}
+                </DropdownMenuItem>
+              )
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
         <Input

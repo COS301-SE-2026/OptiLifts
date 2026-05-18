@@ -43,10 +43,11 @@ export function CreateWorkoutPage() {
               <PageTitle title="Create Workout" />
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1 w-96">
-                  <label className="text-xs font-semibold uppercase tracking-[1px] text-muted-foreground font-sans">
+                  <label htmlFor="workout-name" className="text-xs font-semibold uppercase tracking-[1px] text-muted-foreground font-sans">
                     Workout Name
                   </label>
                   <Input
+                    id="workout-name"
                     variant="default"
                     placeholder="e.g. Push Day A"
                     value={workoutName}

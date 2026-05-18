@@ -105,7 +105,7 @@ export function RegisterPage() {
   const showPasswordError = !isPasswordValid && password.length > 0
   const showConfirmError = !doPasswordsMatch && confirmPassword.length > 0
 
-  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
+  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/workouts'
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -168,9 +168,7 @@ export function RegisterPage() {
                   autoComplete="email"
                   placeholder="you@example.com"
                 />
-                {showEmailError && (
-                  <span className="text-sm text-destructive -mt-2">Please enter a valid email address.</span>
-                )}
+                {showEmailError && <div className="text-sm text-destructive">Please enter a valid email address.</div> }
               </label>
 
               <PasswordRow

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
@@ -72,8 +73,10 @@ export default function WorkoutsPage() {
             <div className="min-w-0 flex-1">
               <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search workouts" />
             </div>
-            <Button variant="icon" size="icon" aria-label="Add">
-              <Plus size={20} />
+            <Button asChild variant="icon" size="icon" aria-label="Add">
+              <Link to="/workouts/create" aria-label="Create workout">
+                <Plus size={20} />
+              </Link>
             </Button>
           </div>
             {filtered.length === 0 && (

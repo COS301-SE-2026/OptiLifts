@@ -32,7 +32,7 @@ INSERT INTO exercises (
 VALUES (
     '11111111-1111-1111-1111-111111111112',
     'Back Squat',
-    'compound',
+    'complex',
     'barbell',
     '',
     ARRAY['Quadriceps','Glutes']::text[],
@@ -52,7 +52,7 @@ INSERT INTO exercises (
 VALUES (
     '11111111-1111-1111-1111-111111111113',
     'Lat Pulldown',
-    'compound',
+    'isolated',
     'machine',
     '',
     ARRAY['Lats']::text[],

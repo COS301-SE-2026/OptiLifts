@@ -30,6 +30,8 @@ function SetRow({
   onChange: (updated: ExerciseSet) => void
   onRemove: () => void
 }>) {
+  const setLabel = set.type === 'I' ? workingIndex : set.type
+
   return (
     <div className="flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 gap-4">
       <div className="flex items-center w-20 shrink-0">
@@ -50,7 +52,7 @@ function SetRow({
         </DropdownMenu>
         <Input
           readOnly
-          value={set.type === 'I' ? workingIndex : set.type}
+          value={setLabel}
           className="w-8 h-8 text-center text-sm font-bold px-0"
         />
       </div>

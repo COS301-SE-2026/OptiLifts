@@ -8,7 +8,7 @@ import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context
 
 function createToken(email: string) {
   //placeholder for now till backend is setup
-  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll(/=+$/g, '')
+  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
 
   const header = encode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
   const payload = encode(JSON.stringify({ email, demo: true, iat: Math.floor(Date.now() / 1000) }))
@@ -91,7 +91,7 @@ export function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const USERNAME_MAX = 30
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const emailRegex = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
 
   const isUsernameValid = username.trim().length > 0 && username.trim().length <= USERNAME_MAX

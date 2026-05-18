@@ -10,7 +10,7 @@ public class WorkoutConfiguration : IEntityTypeConfiguration<Workout>
     public void Configure(EntityTypeBuilder<Workout> builder)
     {
         builder.ToTable("workouts");
-        
+
         builder.HasKey(w => w.Id);
         builder.Property(w => w.Id).HasColumnName("workout_id");
 

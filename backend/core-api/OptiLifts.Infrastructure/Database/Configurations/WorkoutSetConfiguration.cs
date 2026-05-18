@@ -14,10 +14,10 @@ public class WorkoutSetConfiguration : IEntityTypeConfiguration<WorkoutSet>
         builder.Property(s => s.Id).HasColumnName("set_id");
         builder.Property(s => s.WorkoutId).HasColumnName("workout_id").IsRequired();
         builder.Property(s => s.ExerciseId).HasColumnName("exercise_id").IsRequired();
-        
+
         //EF core converts to an integer if left as an enum so rather make it a string 
         builder.Property(s => s.Type).HasColumnName("set_type").HasConversion<string>().IsRequired();
-        
+
         builder.Property(s => s.Reps).HasColumnName("reps").IsRequired();
         builder.Property(s => s.Weight).HasColumnName("weight").IsRequired();
         builder.Property(s => s.OrderIndex).HasColumnName("order_index").IsRequired();

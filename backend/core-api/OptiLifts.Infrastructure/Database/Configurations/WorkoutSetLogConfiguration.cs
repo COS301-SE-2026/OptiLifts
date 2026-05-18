@@ -9,7 +9,7 @@ public class WorkoutLogSetConfiguration : IEntityTypeConfiguration<WorkoutSetLog
     public void Configure(EntityTypeBuilder<WorkoutSetLog> builder)
     {
         builder.ToTable("workout_log_sets");
-        
+
         builder.HasKey(w => w.Id);
         builder.Property(w => w.Id).HasColumnName("log_set_id");
 

@@ -10,7 +10,7 @@ public class FolderConfiguration : IEntityTypeConfiguration<Folder>
     public void Configure(EntityTypeBuilder<Folder> builder)
     {
         builder.ToTable("folders");
-        
+
         builder.HasKey(f => f.Id);
         builder.Property(f => f.Id).HasColumnName("folder_id");
 

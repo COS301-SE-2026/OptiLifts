@@ -1,4 +1,4 @@
-import { Outlet, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
 import { PageTitle } from '@/components/ui/page-title'
@@ -11,6 +11,9 @@ import { CreateExercise, type CreateExerciseFormData } from '@/components/ui/cre
 import { MoreHorizontal, Plus, X } from 'lucide-react'
 import edwinImg from '../../docs/images/Edwin_circle.svg'
 import { useState } from 'react'
+import { useAuth } from '@/context/auth-context'
+import { RegisterPage } from '@/pages/auth/RegisterPage'
+import { LoginPage } from '@/pages/auth/LoginPage'
 import WorkoutsPage from '@/pages/workouts'
 import CreateWorkoutPage from '@/pages/create-workout'
 
@@ -23,6 +26,25 @@ function AppLayout() {
       </main>
     </div>
   )
+}
+
+function RequireAuth() {
+  const { isAuthenticated, isHydrated } = useAuth()
+  const location = useLocation()
+
+  if (!isHydrated) {
+    return (
+      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl items-center justify-center px-6 py-16">
+        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Checking session</p>
+      </section>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/register" replace state={{ from: location }} />
+  }
+
+  return <Outlet />
 }
 
 function HomePage() {
@@ -103,12 +125,16 @@ function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
-        <Route path="workouts" element={<WorkoutsPage />} />
-        <Route path="workouts/create" element={<CreateWorkoutPage />} />
-        <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
-        <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
-        <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route element={<RequireAuth />}>
+          <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
+          <Route path="workouts" element={<WorkoutsPage />} />
+          <Route path="workouts/create" element={<CreateWorkoutPage />} />
+          <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
+          <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
+          <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />
+        </Route>
       </Route>
     </Routes>
   )

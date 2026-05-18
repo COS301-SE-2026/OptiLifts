@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +20,7 @@ function MuscleDiagramPlaceholder() {
 }
 
 export function CreateWorkoutPage() {
+  const navigate = useNavigate()
   const [workoutName, setWorkoutName] = useState('')
   const [exercises, setExercises] = useState<WorkoutExercise[]>(DUMMY_EXERCISES)
 
@@ -51,7 +53,7 @@ export function CreateWorkoutPage() {
                     onChange={e => setWorkoutName(e.target.value)}
                   />
                 </div>
-                <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim()}>
+                <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim()} onClick={() => navigate('/workouts')}>
                   Save Workout
                 </Button>
               </div>

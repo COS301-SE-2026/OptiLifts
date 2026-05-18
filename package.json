@@ -7,12 +7,17 @@
     "setup": "pnpm install && cd backend/core-api && dotnet restore && dotnet tool update --global dotnet-ef && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
     "dev": "concurrently \"pnpm db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     
-    "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
     "dev:ai": "cd backend/ai-api && ./venv/bin/uvicorn main:app --reload --port 8000",
+
     "db": "docker-compose up -d",
+    "db:start": "docker-compose start",
+    "db:stop": "docker-compose stop",
+    "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",
+    "db:seed:sql": "bash -lc 'set -a; source .env; set +a; cat backend/core-api/OptiLifts.Infrastructure/Database/SqlScripts/seed-demo-data.sql | docker-compose exec -T db psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\"'",
     "db:down": "docker-compose down",
+    "db:down:clean": "docker-compose down -v --remove-orphans",
 
     "test": "concurrently \"pnpm test:frontend\" \"pnpm test:backend\" \"pnpm test:ai\"",
     "test:frontend": "pnpm --filter frontend test",

@@ -11,6 +11,8 @@ CREATE TEMP TABLE seed_constants (
     set_bench_id uuid NOT NULL,
     set_squat_id uuid NOT NULL,
     set_pulldown_id uuid NOT NULL,
+    test_user_email text NOT NULL,
+    demo_user_email text NOT NULL,
     set_type text NOT NULL
 ) ON COMMIT DROP;
 
@@ -25,6 +27,8 @@ INSERT INTO seed_constants (
     set_bench_id,
     set_squat_id,
     set_pulldown_id,
+    test_user_email,
+    demo_user_email,
     set_type
 )
 VALUES (
@@ -38,6 +42,8 @@ VALUES (
     '44444444-4444-4444-4444-444444444444',
     '44444444-4444-4444-4444-444444444445',
     '44444444-4444-4444-4444-444444444446',
+    'test@optilifts.com',
+    'demo2@optilifts.com',
     'Normal'
 );
 
@@ -59,7 +65,7 @@ SELECT
     ARRAY['Chest']::text[],
     ARRAY['Triceps', 'Shoulders']::text[]
 FROM seed_constants c
-JOIN users u ON u.email = 'test@optilifts.com'
+JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -80,7 +86,7 @@ SELECT
     ARRAY['Quadriceps', 'Glutes']::text[],
     ARRAY['Hamstrings']::text[]
 FROM seed_constants c
-JOIN users u ON u.email = 'test@optilifts.com'
+JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -101,7 +107,7 @@ SELECT
     ARRAY['Lats']::text[],
     ARRAY['Biceps']::text[]
 FROM seed_constants c
-JOIN users u ON u.email = 'test@optilifts.com'
+JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO folders (
@@ -118,7 +124,7 @@ SELECT
     'Demo folder for local testing',
     NOW()
 FROM seed_constants c
-JOIN users u ON u.email = 'test@optilifts.com'
+JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (folder_id) DO NOTHING;
 
 INSERT INTO folders (
@@ -135,7 +141,7 @@ SELECT
     'Demo folder for user two',
     NOW()
 FROM seed_constants c
-JOIN users u ON u.email = 'demo2@optilifts.com'
+JOIN users u ON u.email = c.demo_user_email
 ON CONFLICT (folder_id) DO NOTHING;
 
 INSERT INTO workouts (
@@ -156,7 +162,7 @@ SELECT
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email = 'test@optilifts.com'
+WHERE u.email = c.test_user_email
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (
@@ -177,7 +183,7 @@ SELECT
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email = 'demo2@optilifts.com'
+WHERE u.email = c.demo_user_email
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO sets (

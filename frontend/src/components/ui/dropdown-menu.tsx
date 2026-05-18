@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-import { CheckIcon, ChevronRightIcon, ChevronDown } from "lucide-react"
+import { CheckIcon, ChevronRightIcon, ChevronDown, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -82,9 +82,16 @@ function DropdownMenuContent({
   )
 }
 
-function DropdownMenuGroup({
+function DropdownMenuEllipsisContent({
+  className,
+  align = "start",
+  sideOffset = 4,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
+}: Readonly<React.ComponentProps<typeof DropdownMenuPrimitive.Content>>) {
+  return <DropdownMenuContent sideOffset={sideOffset} align={align} className={className} {...props} />
+}
+
+function DropdownMenuGroup(props: Readonly<React.ComponentProps<typeof DropdownMenuPrimitive.Group>>) {
   return (
     <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
   )
@@ -283,6 +290,21 @@ function DropdownMenuSubContent({
   )
 }
 
+function DropdownMenuEllipsisTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  return (
+    <DropdownMenuPrimitive.Trigger
+      data-slot="dropdown-menu-ellipsis-trigger"
+      className={cn(className)}
+      {...props}
+    >
+      <MoreHorizontal />
+    </DropdownMenuPrimitive.Trigger>
+  )
+}
+
 export {
   DropdownMenu,
   DropdownMenuPortal,
@@ -299,4 +321,6 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuEllipsisTrigger,
+  DropdownMenuEllipsisContent,
 }

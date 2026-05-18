@@ -103,8 +103,7 @@ function App() {
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
-        <Route path="workouts" element={<PlaceholderPage title="Workouts" description="Workouts shell." />} />
-        <Route path="workouts/create" element={<CreateWorkoutPage />} />
+        <Route path="workouts" element={<CreateWorkoutPage />} />
         <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
         <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
         <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />

@@ -18,8 +18,6 @@ namespace OptiLifts.Infrastructure.Migrations
                 {
                     exercise_id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    force = table.Column<string>(type: "text", nullable: true),
-                    level = table.Column<string>(type: "text", nullable: false),
                     mechanic = table.Column<string>(type: "text", nullable: true),
                     equipment = table.Column<string>(type: "text", nullable: true),
                     category = table.Column<string>(type: "text", nullable: false),

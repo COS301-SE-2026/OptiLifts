@@ -15,7 +15,9 @@
     "db:start": "docker-compose start",
     "db:stop": "docker-compose stop",
     "db:sync": "cd backend/core-api && dotnet ef database update --project OptiLifts.Infrastructure --startup-project OptiLifts.API",
+    "db:seed:sql": "bash -lc 'set -a; source .env; set +a; cat backend/core-api/OptiLifts.Infrastructure/Database/SqlScripts/seed-demo-data.sql | docker-compose exec -T db psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\"'",
     "db:down": "docker-compose down",
+    "db:down:clean": "docker-compose down -v --remove-orphans",
 
     "test": "concurrently \"pnpm test:frontend\" \"pnpm test:backend\" \"pnpm test:ai\"",
     "test:frontend": "pnpm --filter frontend test",

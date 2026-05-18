@@ -8,7 +8,7 @@ import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context
 
 function createToken(email: string) {
   //placeholder for now till backend is setup
-  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
 
   const header = encode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
   const payload = encode(JSON.stringify({ email, demo: true, iat: Math.floor(Date.now() / 1000) }))

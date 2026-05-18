@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/context/auth-context'
 
 const PUBLIC_LINKS = [
@@ -17,30 +16,13 @@ const LINKS = [
   { to: '/profile',   label: 'Profile'   },
 ]
 
-function getInitials(name: string = '') {
-  const matches = name.match(/\b\p{L}/gu) || [] //uses word boundary to get first letter of each unicode word
-  return matches.slice(0, 2).join('').toUpperCase()
-}
-
 export function Navbar() {
   const { pathname } = useLocation()
-  const { user, isHydrated, isAuthenticated, logout } = useAuth()
+  const { isHydrated, isAuthenticated, logout } = useAuth()
 
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
-  const activeUser = isAuthenticated ? user : null
-  const authControls = isHydrated && activeUser ? (
+  const authControls = isHydrated && isAuthenticated ? (
     <div className="ml-3 flex items-center gap-3 border-l border-border pl-4">
-      <Link to="/profile" className="flex items-center gap-3 no-underline text-foreground">
-        <Avatar className="size-8">
-          <AvatarFallback className="bg-brand text-brand-foreground text-xs font-bold">
-            {getInitials(activeUser.name)}
-          </AvatarFallback>
-        </Avatar>
-        <span className="hidden max-w-[12rem] truncate text-sm font-semibold text-foreground sm:block">
-          {activeUser.name}
-        </span>
-      </Link>
-
       <Button
         type="button"
         variant="outline"
@@ -82,7 +64,7 @@ export function Navbar() {
         ))}
         
         
-        {authControls} {/* shows avatar and logout if they're logged in and state is hydrated */}
+        {authControls} {/* shows logout if they're logged in and state is hydrated */}
       </nav>
 
     </header>

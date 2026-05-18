@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import WorkoutsPage from '@/pages/workouts'
 
 function AppLayout() {
   return (
@@ -75,7 +76,7 @@ function HomePage() {
           <Button variant="icon" size="icon" aria-label="Add">
             <Plus size={16} />
           </Button>
-          <Button variant="icon" size="icon" aria-label="More options">
+          <Button variant="icon" size="icon" aria-label="Options">
             <MoreHorizontal size={16} />
           </Button>
           <Button variant="icon" size="icon" aria-label="Close">
@@ -127,7 +128,7 @@ function App() {
         <Route path="login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
           <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
-          <Route path="workouts" element={<PlaceholderPage title="Workouts" description="Workouts shell." />} />
+          <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />

@@ -43,17 +43,34 @@ const buttonVariants = cva(
 )
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onClick, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     const resolvedVariant = variant ?? "default"
     const resolvedSize = size ?? "default"
     const extraClasses: string[] = []
     const ariaLabel = props["aria-label"]
 
+    const [isLoading, setIsLoading] = React.useState(false)
+
     if (resolvedVariant === "icon") {
-      if (ariaLabel === "Add") extraClasses.push("border-2", "border-foreground")
+      if (ariaLabel === "Add") extraClasses.push("border-2", "border-foreground", "hover:bg-border")
       if (ariaLabel === "Close") extraClasses.push("border-0", "bg-transparent", "hover:bg-transparent", "focus-visible:outline-none")
     }
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (resolvedVariant === "icon" && ariaLabel === "Add") {
+        e.persist()
+        setIsLoading(true)
+        globalThis.setTimeout(() => {
+          setIsLoading(false)
+          onClick?.(e)
+        }, 600)
+      } else {
+        onClick?.(e)
+      }
+    }
+
+    const disabledProp = props.disabled || isLoading
 
     return (
       <Comp
@@ -61,8 +78,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         data-variant={resolvedVariant}
         data-size={resolvedSize}
         ref={ref}
+        onClick={handleClick}
+        disabled={disabledProp}
         {...props}
-      />
+      >
+        {resolvedVariant === "icon" && ariaLabel === "Add" && isLoading ? (
+          <span className="inline-block size-4 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" />
+        ) : (
+          children
+        )}
+      </Comp>
     )
   }
 )

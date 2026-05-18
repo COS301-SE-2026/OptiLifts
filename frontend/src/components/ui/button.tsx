@@ -55,6 +55,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (resolvedVariant === "icon") {
       if (ariaLabel === "Add") extraClasses.push("border-2", "border-foreground", "hover:bg-border")
       if (ariaLabel === "Close") extraClasses.push("border-0", "bg-transparent", "hover:bg-transparent", "focus-visible:outline-none")
+      extraClasses.push("focus-visible:border-red-500", "focus-visible:ring-0")
     }
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {

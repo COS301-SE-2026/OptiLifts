@@ -12,6 +12,7 @@ import { MoreHorizontal, Plus, X } from 'lucide-react'
 import edwinImg from '../../docs/images/Edwin_circle.svg'
 import { useState } from 'react'
 import WorkoutsPage from '@/pages/workouts'
+import CreateWorkoutPage from '@/pages/create-workout'
 
 function AppLayout() {
   return (
@@ -104,6 +105,7 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
         <Route path="workouts" element={<WorkoutsPage />} />
+        <Route path="workouts/create" element={<CreateWorkoutPage />} />
         <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
         <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
         <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />

@@ -17,9 +17,35 @@ import { PageTitle } from '@/components/ui/page-title'
 import { SearchInput } from '@/components/ui/search-input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
+const RECOMMENDED_EXERCISES = [
+	{ name: 'Bicep curl', muscleGroup: 'Biceps' },
+	{ name: 'Tricep pushdown', muscleGroup: 'Triceps' },
+	{ name: 'Lat pulldown', muscleGroup: 'Lats' },
+] as const
+
+const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
+const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
 
     function addExercise(name: string) {
 		console.log('Add exercise:', name)
+	}
+	function refreshRecommended() {
+		console.log('Refresh recommended exercises')
+	}
+
+export default function CreateWorkoutPage() {
+	const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
+	const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
+	const [searchQuery, setSearchQuery] = useState('')
+
+
+	const filteredRecommended = RECOMMENDED_EXERCISES.filter((exercise) => {
+		const q = searchQuery.trim().toLowerCase()
+		if (q && !exercise.name.toLowerCase().includes(q) && !exercise.muscleGroup.toLowerCase().includes(q)) return false
+		if (selectedMuscle !== 'All Muscles' && exercise.muscleGroup !== selectedMuscle) return false
+		return true
+	})
+
 	return (
 			<section className="w-full px-2 py-6 sm:px-3 lg:px-2 lg:py-6">
 				<div className="grid grid-cols-12 gap-1 lg:gap-2">
@@ -99,7 +125,45 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 							</CardHeader>
 
 							<CardContent className="space-y-2 px-3 pb-2 sm:space-y-2 sm:px-4 sm:pb-3">
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										variant="filter"
+										className="w-full rounded-md border border-border bg-background px-3 py-2 text-left text-sm font-medium text-foreground shadow-none"
+									>
+										<span>{selectedMuscle}</span>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+										{MUSCLE_OPTIONS.map((option) => (
+											<DropdownMenuItem key={option} onSelect={() => setSelectedMuscle(option)}>
+												{option}
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuContent>
+								</DropdownMenu>
 
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										variant="filter"
+										className="w-full rounded-md border border-border bg-background px-3 py-2 text-left text-sm font-medium text-foreground shadow-none"
+									>
+										<span>{selectedEquipment}</span>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+										{EQUIPMENT_OPTIONS.map((option) => (
+											<DropdownMenuItem key={option} onSelect={() => setSelectedEquipment(option)}>
+												{option}
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuContent>
+								</DropdownMenu>
+
+								<SearchInput
+									value={searchQuery}
+									onChange={(event) => setSearchQuery(event.target.value)}
+									placeholder="Search"
+									aria-label="Search exercises"
+									className="h-8 rounded-md border border-border bg-background pr-10 text-sm text-foreground placeholder:text-muted-foreground"
+								/>
 							</CardContent>
 						</Card>
 					</div>

@@ -13,10 +13,10 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
-        Title       = "OptiLifts Core API",
-        Version     = "v1",
+        Title = "OptiLifts Core API",
+        Version = "v1",
         Description = "REST API for workout management, exercise tracking, and user data.",
-        Contact     = new Microsoft.OpenApi.Models.OpenApiContact
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
             Name = "OptiLifts Team",
         },

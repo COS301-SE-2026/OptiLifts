@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
 
-function createDemoToken(email: string) {
-  const encode = (value: string) => globalThis.btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+function createToken(email: string) {
+  //placeholder for now till backend is setup
+  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll(/=+$/g, '')
 
   const header = encode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
   const payload = encode(JSON.stringify({ email, demo: true, iat: Math.floor(Date.now() / 1000) }))
@@ -71,10 +72,17 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder,
   )
 }
 
+const generateNewUser = (username: string, email: string): AuthUser => {
+  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
+  const name = username.trim() || email.split('@')[0] || 'Member'
+  return { id, name, email: email.trim() }
+}
+
 export function RegisterPage() {
   const { login, isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -92,22 +100,24 @@ export function RegisterPage() {
   const doPasswordsMatch = confirmPassword.length > 0 && password === confirmPassword
   const isFormValid = isUsernameValid && isEmailValid && isPasswordValid && doPasswordsMatch
 
+  const showUsernameError = !isUsernameValid && username.length > 0
+  const showEmailError = !isEmailValid && email.length > 0
+  const showPasswordError = !isPasswordValid && password.length > 0
+  const showConfirmError = !doPasswordsMatch && confirmPassword.length > 0
+
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    //stops DOM manipulation 
+    
     if (!isFormValid) {
       return
     }
-    const nextUser: AuthUser = {
-      id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`,
-      name: username.trim() || email.split('@')[0] || 'Member',
-      email: email.trim(),
-    }
+
+    const nextUser = generateNewUser(username, email)
 
     const nextSession: AuthSession = {
-      token: createDemoToken(nextUser.email),
+      token: createToken(nextUser.email), 
       user: nextUser,
     }
 
@@ -142,9 +152,10 @@ export function RegisterPage() {
                   placeholder="your username"
                 />
                 <span className="text-sm text-muted-foreground">Maximum {USERNAME_MAX} characters.</span>
-                {!isUsernameValid && username.length > 0 ? (
+                
+                {showUsernameError && (
                   <span className="text-sm text-destructive -mt-2">Username must be 1-{USERNAME_MAX} characters.</span>
-                ) : null}
+                )}
               </label>
 
               <label className="grid gap-1">
@@ -157,9 +168,9 @@ export function RegisterPage() {
                   autoComplete="email"
                   placeholder="you@example.com"
                 />
-                {!isEmailValid && email.length > 0 ? (
+                {showEmailError && (
                   <span className="text-sm text-destructive -mt-2">Please enter a valid email address.</span>
-                ) : null}
+                )}
               </label>
 
               <PasswordRow
@@ -169,8 +180,8 @@ export function RegisterPage() {
                 showValue={showPassword}
                 onToggle={() => setShowPassword((current) => !current)}
                 placeholder="Enter password"
-                disclaimer={<div className="text-sm text-muted-foreground">Must be 8+ characters with a mix of letters (A/a), numbers (1), and symbols (#).</div>}
-                error={!isPasswordValid && password.length > 0 ? <div className="text-sm text-destructive">Password does not meet complexity requirements.</div> : null}
+                disclaimer={<div className="text-sm text-muted-foreground">Min. 8 characters combining uppercase, lowercase, numbers, and symbols.</div>}
+                error={showPasswordError && <div className="text-sm text-destructive">Password does not meet complexity requirements.</div>}
               />
 
               <PasswordRow
@@ -180,14 +191,14 @@ export function RegisterPage() {
                 showValue={showConfirmPassword}
                 onToggle={() => setShowConfirmPassword((current) => !current)}
                 placeholder="Confirm password"
-                error={!doPasswordsMatch && confirmPassword.length > 0 ? <div className="text-sm text-destructive">Passwords do not match.</div> : null}
+                error={showConfirmError && <div className="text-sm text-destructive">Passwords do not match.</div>}
               />
 
               <Button
                 type="submit"
                 variant="default"
                 disabled={!isFormValid}
-                className={`w-40 justify-center justify-self-center ${!isFormValid ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-40 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
               >
                 REGISTER
               </Button>

@@ -26,11 +26,12 @@ const STORAGE_KEY = 'optilifts.auth.session'
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
 function readStoredSession(): AuthSession | null {
-    if (typeof window === 'undefined') 
+    //the second condition checks if window exists as it's only in browswer enviroments and not in SSR or during build time
+    if (typeof globalThis === 'undefined' || !('window' in globalThis)) 
         return null
 
     try {
-        const raw = window.localStorage.getItem(STORAGE_KEY)
+        const raw = globalThis.localStorage.getItem(STORAGE_KEY)
         return raw ? (JSON.parse(raw) as AuthSession) : null
     } catch {
         return null
@@ -38,28 +39,29 @@ function readStoredSession(): AuthSession | null {
 }
 
 function saveSession(session: AuthSession) {
-    if (typeof window === 'undefined') 
+    if (typeof globalThis === 'undefined' || !('window' in globalThis)) 
         return
     try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+        globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     } catch {
         return
     }
 }
 
 function clearSession() {
-    if (typeof window === 'undefined') 
+    if (typeof globalThis === 'undefined' || !('window' in globalThis)) 
         return
     try {
-        window.localStorage.removeItem(STORAGE_KEY)
+        globalThis.localStorage.removeItem(STORAGE_KEY)
     } catch {
         return
     }
 }
 
-export function AuthProvider({ children }: React.PropsWithChildren) {
+export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) {
+    const { children } = props
     const [session, setSession] = React.useState<AuthSession | null>(() => readStoredSession())
-    const [isHydrated] = React.useState(() => typeof window !== 'undefined')
+    const [isHydrated] = React.useState(() => typeof globalThis !== 'undefined' && 'window' in globalThis)
 
     const login = React.useCallback((nextSession: AuthSession) => {
         setSession(nextSession)

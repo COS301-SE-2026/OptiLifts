@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { DefaultTextBox, Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/input'
 import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
 
 function createDemoToken(email: string) {
@@ -36,11 +36,16 @@ type PasswordRowProps = Readonly<{
 }>
 
 function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder, error, disclaimer }: PasswordRowProps) {
+  const inputId = `password-row-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+
   return (
-    <label className="grid gap-2">
-      <span className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">{label}</span>
-      <div className="relative w-full max-w-sm">
+    <div className="grid gap-1">
+      <label htmlFor={inputId} className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
+        {label}
+      </label>
+      <div className="relative w-full">
         <Input
+          id={inputId}
           required
           type={showValue ? 'text' : 'password'}
           value={value}
@@ -62,7 +67,7 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder,
       </div>
       {disclaimer}
       {error}
-    </label>
+    </div>
   )
 }
 
@@ -126,9 +131,9 @@ export function RegisterPage() {
         <Card className="mt-6 w-full max-w-md">
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-4">
-              <label className="grid gap-2">
+              <label className="grid gap-1">
                 <span className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Username</span>
-                <DefaultTextBox
+                <Input
                   required
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
@@ -142,9 +147,9 @@ export function RegisterPage() {
                 ) : null}
               </label>
 
-              <label className="grid gap-2">
+              <label className="grid gap-1">
                 <span className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Email Address</span>
-                <DefaultTextBox
+                <Input
                   required
                   type="email"
                   value={email}

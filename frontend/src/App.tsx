@@ -1,4 +1,4 @@
-import { CreateWorkoutPage } from '@/pages/workouts/CreateWorkoutPage'
+import CreateWorkoutPage from '@/pages/create-workout'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'

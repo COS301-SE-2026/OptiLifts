@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-export type ExerciseTypeOption = Readonly<{
+export type ExerciseTypeDefinition = Readonly<{
   value: string
   label: string
   example: string
@@ -32,7 +32,7 @@ export type CreateExerciseProps = Readonly<{
   onSave: (values: CreateExerciseFormData) => void
   initialValues?: CreateExerciseInitialValues
   exerciseTypes?: readonly string[]
-  exerciseTypeOptions?: readonly ExerciseTypeOption[]
+  exerciseTypeOptions?: readonly ExerciseTypeDefinition[]
   equipmentOptions?: readonly string[]
 }>
 

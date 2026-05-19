@@ -4,40 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
-
-async function createToken(email: string, name: string, id: string) {
-  const secret = (import.meta as any).env?.VITE_JWT_SECRET ?? null
-
-  const base64Url = (input: string) => {
-    return globalThis.btoa(input).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
-  }
-
-  if (!secret) {
-    const header = base64Url(JSON.stringify({ alg: 'none', typ: 'JWT' }))
-    const payload = base64Url(JSON.stringify({ sub: id, email, name, demo: true, iat: Math.floor(Date.now() / 1000) }))
-    const signature = base64Url(`${email}-${Date.now()}`)
-    return `${header}.${payload}.${signature}`
-  }
-
-  const encoder = new TextEncoder()
-  const keyData = encoder.encode(secret)
-  const cryptoKey = await globalThis.crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-
-  const header = { alg: 'HS256', typ: 'JWT' }
-  const now = Math.floor(Date.now() / 1000)
-  const payload = { sub: id, email, name, iat: now, exp: now + 60 * 60 * 24 }
-
-  const headerB64 = base64Url(JSON.stringify(header))
-  const payloadB64 = base64Url(JSON.stringify(payload))
-  const data = `${headerB64}.${payloadB64}`
-
-  const sig = await globalThis.crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(data))
-  const sigBytes = Array.from(new Uint8Array(sig)).map((b) => String.fromCharCode(b)).join('')
-  const signature = base64Url(sigBytes)
-
-  return `${data}.${signature}`
-}
+import { useAuth } from '@/context/auth-context'
+import { submitAuthRequest } from './auth-request'
 
 function RegisterHeading() {
   return (
@@ -94,12 +62,6 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder,
   )
 }
 
-const generateNewUser = (username: string, email: string): AuthUser => {
-  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
-  const name = username.trim() || email.split('@')[0] || 'Member'
-  return { id, name, email: email.trim() }
-}
-
 export function RegisterPage() {
   const { login, isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
@@ -129,6 +91,9 @@ export function RegisterPage() {
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/workouts'
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -136,22 +101,17 @@ export function RegisterPage() {
       return
     }
 
-    const nextUser = generateNewUser(username, email)
-
-    try {
-      const token = await createToken(nextUser.email, nextUser.name, nextUser.id)
-
-      const nextSession: AuthSession = {
-        token,
-        user: nextUser,
-      }
-
-      login(nextSession)
-      navigate(fromPath, { replace: true })
-    } catch (err) {
-      console.error('Failed to create token', err)
-      alert('Registration failed (token generation). Check console for details.')
-    }
+    await submitAuthRequest({
+      endpoint: '/api/auth/register',
+      body: { displayName: username.trim(), email: email.trim(), password },
+      login,
+      navigate,
+      fromPath,
+      setErrorMessage,
+      setIsSubmitting,
+      fallbackErrorMessage: 'Unable to register. Please try again.',
+      conflictErrorMessage: 'That email is already in use.',
+    })
   }
 
   if (!isHydrated) {
@@ -224,11 +184,13 @@ export function RegisterPage() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={!isFormValid}
-                className={`w-80 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
+                disabled={!isFormValid || isSubmitting}
+                className={`w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
               >
-                REGISTER
+                {isSubmitting ? 'REGISTERING...' : 'REGISTER'}
               </Button>
+
+              {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{' '}

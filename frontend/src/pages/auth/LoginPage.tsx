@@ -4,42 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
-
-async function createToken(email: string, name: string, id: string) {
-  const secret = (import.meta as any).env?.VITE_JWT_SECRET ?? null
-
-  const base64Url = (input: string) => {
-    return globalThis.btoa(input).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
-  }
-
-  if (!secret) {
-    // fallback to unsigned demo token
-    const header = base64Url(JSON.stringify({ alg: 'none', typ: 'JWT' }))
-    const payload = base64Url(JSON.stringify({ sub: id, email, name, demo: true, iat: Math.floor(Date.now() / 1000) }))
-    const signature = base64Url(`${email}-${Date.now()}`)
-    return `${header}.${payload}.${signature}`
-  }
-
-  // create HS256 signed token using Web Crypto
-  const encoder = new TextEncoder()
-  const keyData = encoder.encode(secret)
-  const cryptoKey = await globalThis.crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-
-  const header = { alg: 'HS256', typ: 'JWT' }
-  const now = Math.floor(Date.now() / 1000)
-  const payload = { sub: id, email, name, iat: now, exp: now + 60 * 60 * 24 }
-
-  const headerB64 = base64Url(JSON.stringify(header))
-  const payloadB64 = base64Url(JSON.stringify(payload))
-  const data = `${headerB64}.${payloadB64}`
-
-  const sig = await globalThis.crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(data))
-  const sigBytes = Array.from(new Uint8Array(sig)).map((b) => String.fromCharCode(b)).join('')
-  const signature = base64Url(sigBytes)
-
-  return `${data}.${signature}`
-}
+import { useAuth } from '@/context/auth-context'
+import { submitAuthRequest } from './auth-request'
 
 function LoginHeading() {
   return (
@@ -92,12 +58,6 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder 
   )
 }
 
-const generateUser = (email: string): AuthUser => {
-  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
-  const name = email.split('@')[0] || 'Member'
-  return { id, name, email: email.trim() }
-}
-
 export function LoginPage() {
   const { login, isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
@@ -115,29 +75,25 @@ export function LoginPage() {
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/workouts'
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!isFormValid) {
-      return
-    }
+    if (!isFormValid) return
 
-    const nextUser = generateUser(email)
-
-    try {
-      const token = await createToken(nextUser.email, nextUser.name, nextUser.id)
-
-      const nextSession: AuthSession = {
-        token,
-        user: nextUser,
-      }
-
-      login(nextSession)
-      navigate(fromPath, { replace: true })
-    } catch (err) {
-      console.error('Failed to create token', err)
-      alert('Login failed (token generation). Check console for details.')
-    }
+    await submitAuthRequest({
+      endpoint: '/api/auth/login',
+      body: { email: email.trim(), password },
+      login,
+      navigate,
+      fromPath,
+      setErrorMessage,
+      setIsSubmitting,
+      fallbackErrorMessage: 'Unable to log in. Please try again.',
+      unauthorizedErrorMessage: 'Invalid email or password.',
+    })
   }
 
   if (!isHydrated) {
@@ -184,11 +140,13 @@ export function LoginPage() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={!isFormValid}
-                className={`w-80 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
+                disabled={!isFormValid || isSubmitting}
+                className={`w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
               >
-                LOGIN
+                {isSubmitting ? 'LOGGING IN...' : 'LOGIN'}
               </Button>
+
+              {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
 
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}

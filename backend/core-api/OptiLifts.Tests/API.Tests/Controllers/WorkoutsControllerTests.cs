@@ -38,4 +38,18 @@ public class WorkoutsControllerTests
         sender.VerifyAll();
     }
 
+    [Fact]
+    public async Task AddExerciseToWorkout_ShouldReturnUnauthorized_WhenSubClaimIsMissing()
+    {
+        var sender = new Mock<ISender>();
+        var controller = CreateController(sender.Object, null);
+
+        var result = await controller.AddExerciseToWorkout(
+            Guid.NewGuid(),
+            new WorkoutsController.AddExerciseToWorkoutRequest(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.Should().BeOfType<UnauthorizedResult>();
+        sender.VerifyNoOtherCalls();
+    }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
@@ -11,55 +11,84 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
+import { useAuth } from '@/context/auth-context'
 import type { Workout, WorkoutSummary } from '@/types/workout'
-import { Plus} from 'lucide-react'
-
-const STUB_WORKOUTS: Workout[] = [
-  {
-    id: 'w1', name: 'Pull',
-    primaryMuscleGroups: ['Lats', 'Biceps'],
-    exerciseCount: 5,
-    exercisePreview: ['Lat Pulldown', 'High Row', 'Seated Row'],
-    createdAt: '2026-05-01'
-  },
-  {
-    id: 'w2',
-    name: 'Push',
-    primaryMuscleGroups: ['Chest', 'Triceps'],
-    exerciseCount: 4,
-    exercisePreview: ['Bench Press', 'Incline DB'],
-    createdAt: '2026-05-02'
-  },
-  {
-    id: 'w3',
-    name: 'Legs',
-    primaryMuscleGroups: ['Quadriceps', 'Hamstrings', 'Glutes'],
-    exerciseCount: 6,
-    exercisePreview: ['Squat', 'Leg Press', 'Romanian Deadlift'],
-    createdAt: '2026-05-03'
-  },
-]
+import { Plus } from 'lucide-react'
 
 export default function WorkoutsPage() {
+  const { token, isHydrated } = useAuth()
   const navigate = useNavigate()
-  const [workouts] = useState<Workout[]>(STUB_WORKOUTS)
+  const [workouts, setWorkouts] = useState<Workout[]>([])
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(workouts[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [isFetching, setIsFetching] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const authError = isHydrated && !token ? 'Please log in to view your workouts.' : null
+
+  useEffect(() => {
+    if (!isHydrated || !token) {
+      return
+    }
+
+    let isActive = true
+    async function loadWorkouts() {
+      setIsFetching(true)
+      setError(null)
+
+      try {
+        const response = await fetch('/api/workouts', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to load workouts (${response.status})`)
+        }
+
+        const data = (await response.json()) as Workout[]
+
+        if (isActive) {
+          setWorkouts(data)
+          setSelectedId((currentId) => currentId ?? data[0]?.id ?? null)
+        }
+      } catch (loadError) {
+        if (isActive) {
+          setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
+        }
+      } finally {
+        if (isActive) {
+          setIsFetching(false)
+        }
+      }
+    }
+
+    void loadWorkouts()
+
+    return () => {
+      isActive = false
+    }
+  }, [isHydrated, token])
+
+  const visibleWorkouts = useMemo(() => (token ? workouts : []), [token, workouts])
+  const isLoading = !isHydrated || isFetching
+  const displayError = authError ?? error
 
   const filtered = useMemo(() => {
     if (!query.trim()) return workouts
     const q = query.toLowerCase()
-    return workouts.filter((w) => w.name.toLowerCase().includes(q) || w.primaryMuscleGroups.some((m) => m.toLowerCase().includes(q)))
-  }, [workouts, query])
+    return visibleWorkouts.filter((w) => w.name.toLowerCase().includes(q) || w.primaryMuscleGroups.some((m) => m.toLowerCase().includes(q)))
+  }, [visibleWorkouts, workouts, query])
 
-  const selectedWorkout = workouts.find((w) => w.id === selectedId) ?? null
+  const selectedWorkout = visibleWorkouts.find((w) => w.id === selectedId) ?? null
 
   const summary: WorkoutSummary | null = selectedWorkout
     ? {
-      workoutName: selectedWorkout.name,
-      totalExercises: selectedWorkout.exerciseCount,
-      primaryMuscleGroups: selectedWorkout.primaryMuscleGroups,
-    }
+        workoutName: selectedWorkout.name,
+        totalExercises: selectedWorkout.exerciseCount,
+        primaryMuscleGroups: selectedWorkout.primaryMuscleGroups,
+      }
     : null
 
   return (
@@ -78,11 +107,22 @@ export default function WorkoutsPage() {
               <Plus size={20} />
             </Button>
           </div>
-            {filtered.length === 0 && (
-              <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
-                No workouts found
-              </div>
-            )}
+
+          {isLoading && (
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
+              Loading workouts...
+            </div>
+          )}
+          {displayError && (
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-red-500">
+              {displayError}
+            </div>
+          )}
+          {!isLoading && !error && filtered.length === 0 && (
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
+              No workouts found
+            </div>
+          )}
 
           <div className="space-y-4">
             {filtered.map((w) => (

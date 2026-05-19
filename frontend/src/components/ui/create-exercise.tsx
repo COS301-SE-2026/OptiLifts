@@ -3,6 +3,7 @@ import { ArrowLeft, Check, ImagePlus, Search, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MUSCLE_GROUPS } from "@/constants/muscles"
 
 import {
   DropdownMenu,
@@ -80,25 +81,6 @@ const DEFAULT_EQUIPMENT_OPTIONS = [
   "Resistance Band",
   "Suspension Band",
   "Other",
-] as const
-
-const MUSCLE_GROUPS = [
-  "Abdominals",
-  "Abductors",
-  "Adductors",
-  "Biceps",
-  "Calves",
-  "Chest",
-  "Forearms",
-  "Glutes",
-  "Hamstrings",
-  "Lats",
-  "Lower Back",
-  "Middle Back",
-  "Quadriceps",
-  "Shoulders",
-  "Traps",
-  "Triceps",
 ] as const
 
 const ensureOption = (options: readonly string[], value: string): string[] => {

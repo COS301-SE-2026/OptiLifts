@@ -6,17 +6,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
 
-function createToken(email: string) {
-  //placeholder for now till backend is setup
-  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
-
-  const header = encode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
-  const payload = encode(JSON.stringify({ email, demo: true, iat: Math.floor(Date.now() / 1000) }))
-  const signature = encode(`${email}-${Date.now()}`)
-
-  return `${header}.${payload}.${signature}`
-}
-
 function RegisterHeading() {
   return (
     <h1 className="font-display text-[42px] leading-none tracking-[2px] text-foreground select-none border-b-4 border-brand pb-2 px-2 w-fit">
@@ -72,10 +61,13 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder,
   )
 }
 
-const generateNewUser = (username: string, email: string): AuthUser => {
-  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
-  const name = username.trim() || email.split('@')[0] || 'Member'
-  return { id, name, email: email.trim() }
+//map backend user DTO to frontend AuthUser
+function mapBackendUserToAuthUser(dto: { id: string; displayName: string; email: string }) {
+  return {
+    id: dto.id,
+    name: dto.displayName,
+    email: dto.email,
+  } as AuthUser
 }
 
 export function RegisterPage() {
@@ -107,22 +99,47 @@ export function RegisterPage() {
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/workouts'
 
-  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
     
     if (!isFormValid) {
       return
     }
 
-    const nextUser = generateNewUser(username, email)
+    setIsSubmitting(true)
+    setErrorMessage(null)
 
-    const nextSession: AuthSession = {
-      token: createToken(nextUser.email), 
-      user: nextUser,
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: username.trim(), email: email.trim(), password }),
+      })
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null)
+        if (res.status === 409) setErrorMessage('That email is already in use.')
+        else setErrorMessage(payload?.title ?? 'Unable to register. Please try again.')
+        return
+      }
+
+      const data = await res.json()
+
+      const session: AuthSession = {
+        token: data.token,
+        user: mapBackendUserToAuthUser(data.user),
+      }
+
+      login(session)
+      navigate(fromPath, { replace: true })
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Network error - please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    login(nextSession)
-    navigate(fromPath, { replace: true })
   }
 
   if (!isHydrated) {
@@ -195,11 +212,13 @@ export function RegisterPage() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={!isFormValid}
-                className={`w-80 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
+                disabled={!isFormValid || isSubmitting}
+                className={`w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
               >
-                REGISTER
+                {isSubmitting ? 'REGISTERING...' : 'REGISTER'}
               </Button>
+
+              {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{' '}

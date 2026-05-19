@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
@@ -41,6 +41,7 @@ const STUB_WORKOUTS: Workout[] = [
 ]
 
 export default function WorkoutsPage() {
+  const navigate = useNavigate()
   const [workouts] = useState<Workout[]>(STUB_WORKOUTS)
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(workouts[0]?.id ?? null)
@@ -73,10 +74,8 @@ export default function WorkoutsPage() {
             <div className="min-w-0 flex-1">
               <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search workouts" />
             </div>
-            <Button asChild variant="icon" size="icon" aria-label="Add">
-              <Link to="/workouts/create" aria-label="Create workout">
-                <Plus size={20} />
-              </Link>
+            <Button variant="icon" size="icon" aria-label="Add" onClick={() => navigate('/workouts/create')}>
+              <Plus size={20} />
             </Button>
           </div>
             {filtered.length === 0 && (

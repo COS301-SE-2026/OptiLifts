@@ -49,18 +49,20 @@ public class GetWorkoutsHandlerTests
 
         using var db = new OptiLiftsDbContext(options);
         db.Database.EnsureCreated();
-        
-        var user = new OptiLifts.Domain.Users.User { 
-            Id = userId, 
-            Email = "u@example.com", 
-            PasswordHash = "x", 
-            DisplayName = "u" 
+
+        var user = new OptiLifts.Domain.Users.User
+        {
+            Id = userId,
+            Email = "u@example.com",
+            PasswordHash = "x",
+            DisplayName = "u"
         };
         db.Users.Add(user);
 
-        var folder = new Folder { 
-            Name = "Default", 
-            UserId = userId 
+        var folder = new Folder
+        {
+            Name = "Default",
+            UserId = userId
         };
         db.Folders.Add(folder);
         await db.SaveChangesAsync();
@@ -68,15 +70,17 @@ public class GetWorkoutsHandlerTests
         //check persistence
         folder = await db.Folders.FirstAsync(f => f.UserId == userId && f.Name == "Default");
 
-        var workout = new Workout { 
-            Name = "A", 
-            CreatedBy = userId, 
-            FolderId = folder.Id 
+        var workout = new Workout
+        {
+            Name = "A",
+            CreatedBy = userId,
+            FolderId = folder.Id
         };
-        var exercise = new Exercise { 
-            Name = "Bench", 
-            PrimaryMuscles = new List<string> { "Chest" }, 
-            Category = "Strength" 
+        var exercise = new Exercise
+        {
+            Name = "Bench",
+            PrimaryMuscles = new List<string> { "Chest" },
+            Category = "Strength"
         };
 
         db.Workouts.Add(workout);
@@ -86,13 +90,14 @@ public class GetWorkoutsHandlerTests
         workout = await db.Workouts.FirstAsync(w => w.CreatedBy == userId && w.Name == "A");
         exercise = await db.Exercises.FirstAsync(e => e.Name == "Bench");
 
-        var set = new WorkoutSet { 
-            WorkoutId = workout.Id, 
-            ExerciseId = exercise.Id, 
-            OrderIndex = 0, 
-            Reps = 1, 
-            Weight = 10, 
-            RestTime = 60 
+        var set = new WorkoutSet
+        {
+            WorkoutId = workout.Id,
+            ExerciseId = exercise.Id,
+            OrderIndex = 0,
+            Reps = 1,
+            Weight = 10,
+            RestTime = 60
         };
 
         db.Sets.Add(set);

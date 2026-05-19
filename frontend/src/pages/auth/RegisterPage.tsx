@@ -178,7 +178,7 @@ export function RegisterPage() {
                 showValue={showPassword}
                 onToggle={() => setShowPassword((current) => !current)}
                 placeholder="Enter password"
-                disclaimer={<div className="text-sm text-muted-foreground">Min. 8 characters combining uppercase, lowercase, numbers, and symbols.</div>}
+                disclaimer={<div className="text-sm text-muted-foreground"> 8 or more characters containing uppercase, lowercase, numbers, and special characters</div>}
                 error={showPasswordError && <div className="text-sm text-destructive">Password does not meet complexity requirements.</div>}
               />
 
@@ -196,7 +196,7 @@ export function RegisterPage() {
                 type="submit"
                 variant="default"
                 disabled={!isFormValid}
-                className={`w-40 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
+                className={`w-80 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
               >
                 REGISTER
               </Button>

@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Check, ImagePlus, Search, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MUSCLE_GROUPS } from "@/constants/muscles"
+import { DEFAULT_EXERCISE_TYPE_OPTIONS } from "@/constants/exercise-type-definitions"
+import { DEFAULT_EQUIPMENT_OPTIONS } from "@/constants/equipment"
+import type { 
+  ExerciseTypeDefinition, 
+  CreateExerciseProps,
+  CreateExerciseBackdropProps
+} from "@/types/exercise"
 
 import {
   DropdownMenu,
@@ -10,96 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-export type CreateExerciseFormData = Readonly<{
-  name: string
-  exerciseType: string
-  equipment: string
-  imageFile: File | null
-  imageUrl: string | null
-  primaryMuscle: string | null
-  secondaryMuscles: string[]
-}>
-
-type CreateExerciseInitialValues = Readonly<{
-  name?: string
-  exerciseType?: string
-  equipment?: string
-  imageUrl?: string | null
-  primaryMuscle?: string | null
-  secondaryMuscles?: string[]
-}>
-
-export type ExerciseTypeOption = Readonly<{
-  value: string
-  label: string
-  example: string
-  metrics: readonly string[]
-}>
-
-type CreateExerciseProps = Readonly<{
-  isOpen: boolean
-  onCancel: () => void
-  onSave: (values: CreateExerciseFormData) => void
-  initialValues?: CreateExerciseInitialValues
-  exerciseTypes?: readonly string[]
-  exerciseTypeOptions?: readonly ExerciseTypeOption[]
-  equipmentOptions?: readonly string[]
-}>
-
-type CreateExerciseBackdropProps = Readonly<{
-  zIndexClassName: string
-  backdropClassName: string
-  onDismiss: () => void
-  children: ReactNode
-}>
-
-const DEFAULT_EXERCISE_TYPE_OPTIONS: readonly ExerciseTypeOption[] = [
-  ["weight-reps", "Weight & Reps", "Bench Press, Dumbbell Curls", ["REPS", "KG"]],
-  ["bodyweight-reps", "Bodyweight Reps", "Pullups, Sit ups, Burpees", ["REPS"]],
-  ["weighted-bodyweight", "Weighted Bodyweight", "Weighted Pull Ups, Weighted Dips", ["REPS", "+KG"]],
-  ["assisted-bodyweight", "Assisted Bodyweight", "Assisted Pullups, Assisted Dips", ["REPS", "-KG"]],
-  ["duration", "Duration", "Planks, Yoga, Stretching", ["TIME"]],
-  ["duration-weight", "Duration & Weight", "Weighted Plank, Wall Sit", ["KG", "TIME"]],
-  ["distance-duration", "Distance & Duration", "Running, Cycling, Rowing", ["TIME", "KM"]],
-  ["weight-distance", "Weight & Distance", "Farmers walk, Suitcase Carry", ["KG", "KM"]],
-].map(([value, label, example, metrics]) => ({
-  value: value as string,
-  label: label as string,
-  example: example as string,
-  metrics: metrics as readonly string[],
-})) as readonly ExerciseTypeOption[]
-
-const DEFAULT_EQUIPMENT_OPTIONS = [
-  "None",
-  "Dumbbell",
-  "Barbell",
-  "Kettlebell",
-  "Machine",
-  "Plate",
-  "Resistance Band",
-  "Suspension Band",
-  "Other",
-] as const
-
-const MUSCLE_GROUPS = [
-  "Abdominals",
-  "Abductors",
-  "Adductors",
-  "Biceps",
-  "Calves",
-  "Chest",
-  "Forearms",
-  "Glutes",
-  "Hamstrings",
-  "Lats",
-  "Lower Back",
-  "Middle Back",
-  "Quadriceps",
-  "Shoulders",
-  "Traps",
-  "Triceps",
-] as const
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -109,7 +27,7 @@ const ensureOption = (options: readonly string[], value: string): string[] => {
   return [value, ...options]
 }
 
-const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeOption[] =>
+const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeDefinition[] =>
   exerciseTypes.map((type) => ({ value: type, label: type, example: "Custom exercise type", metrics: ["REPS"] }))
 
 function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children }: CreateExerciseBackdropProps) {

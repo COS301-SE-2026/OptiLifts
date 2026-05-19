@@ -55,30 +55,30 @@ public sealed class WorkoutsController : ControllerBase
         var result = await _sender.Send(command, cancellationToken);
 
         return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);
-        
-    [HttpPost("{workoutId:guid}/exercises")]
-    public async Task<IActionResult> AddExerciseToWorkout(
-        [FromRoute] Guid workoutId,
-        [FromBody] AddExerciseToWorkoutRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (!TryGetUserId(out var userId))
+
+        [HttpPost("{workoutId:guid}/exercises")]
+        public async Task<IActionResult> AddExerciseToWorkout(
+            [FromRoute] Guid workoutId,
+            [FromBody] AddExerciseToWorkoutRequest request,
+            CancellationToken cancellationToken)
         {
-            return Unauthorized();
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var added = await _sender.Send(
+                new AddExerciseToWorkoutCommand(workoutId, userId, request.ExerciseId),
+                cancellationToken);
+
+            return added ? NoContent() : NotFound();
         }
 
-        var added = await _sender.Send(
-            new AddExerciseToWorkoutCommand(workoutId, userId, request.ExerciseId),
-            cancellationToken);
+        private bool TryGetUserId(out Guid userId)
+        {
+            var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        return added ? NoContent() : NotFound();
+            return Guid.TryParse(userIdValue, out userId);
+        }
     }
-
-    private bool TryGetUserId(out Guid userId)
-    {
-        var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        return Guid.TryParse(userIdValue, out userId);
-    }
-}

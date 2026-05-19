@@ -70,4 +70,35 @@ public class WorkoutsControllerTests
 
         result.Should().BeOfType<NotFoundResult>();
     }
+
+    private static WorkoutsController CreateController(ISender sender, Guid? userId)
+    {
+        var controller = new WorkoutsController(sender);
+
+        if (userId is null)
+        {
+            controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity())
+                }
+            };
+
+            return controller;
+        }
+
+        controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, userId.Value.ToString())
+                }, authenticationType: "Bearer"))
+            }
+        };
+
+        return controller;
+    }
 }

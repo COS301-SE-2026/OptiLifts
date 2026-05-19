@@ -1,3 +1,4 @@
+import CreateWorkoutPage from '@/pages/create-workout'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
@@ -16,7 +17,6 @@ import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import WorkoutsPage from '@/pages/workouts'
-import CreateWorkoutPage from '@/pages/create-workout'
 
 function AppLayout() {
   return (

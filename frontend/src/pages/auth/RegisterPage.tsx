@@ -4,7 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
+import { useAuth } from '@/context/auth-context'
+import { submitAuthRequest } from './auth-request'
 
 function RegisterHeading() {
   return (
@@ -61,15 +62,6 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder,
   )
 }
 
-//map backend user DTO to frontend AuthUser
-function mapBackendUserToAuthUser(dto: { id: string; displayName: string; email: string }) {
-  return {
-    id: dto.id,
-    name: dto.displayName,
-    email: dto.email,
-  } as AuthUser
-}
-
 export function RegisterPage() {
   const { login, isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
@@ -109,37 +101,17 @@ export function RegisterPage() {
       return
     }
 
-    setIsSubmitting(true)
-    setErrorMessage(null)
-
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: username.trim(), email: email.trim(), password }),
-      })
-
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null)
-        if (res.status === 409) setErrorMessage('That email is already in use.')
-        else setErrorMessage(payload?.title ?? 'Unable to register. Please try again.')
-        return
-      }
-
-      const data = await res.json()
-
-      const session: AuthSession = {
-        token: data.token,
-        user: mapBackendUserToAuthUser(data.user),
-      }
-
-      login(session)
-      navigate(fromPath, { replace: true })
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Network error - please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+    await submitAuthRequest({
+      endpoint: '/api/auth/register',
+      body: { displayName: username.trim(), email: email.trim(), password },
+      login,
+      navigate,
+      fromPath,
+      setErrorMessage,
+      setIsSubmitting,
+      fallbackErrorMessage: 'Unable to register. Please try again.',
+      conflictErrorMessage: 'That email is already in use.',
+    })
   }
 
   if (!isHydrated) {

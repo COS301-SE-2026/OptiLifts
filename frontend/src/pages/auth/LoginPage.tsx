@@ -4,15 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
-
-function mapBackendUserToAuthUser(dto: { id: string; displayName: string; email: string }) {
-  return {
-    id: dto.id,
-    name: dto.displayName,
-    email: dto.email,
-  } as AuthUser
-}
+import { useAuth } from '@/context/auth-context'
+import { submitAuthRequest } from './auth-request'
 
 function LoginHeading() {
   return (
@@ -90,40 +83,17 @@ export function LoginPage() {
 
     if (!isFormValid) return
 
-    setIsSubmitting(true)
-    setErrorMessage(null)
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
-      })
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          setErrorMessage('Invalid email or password.')
-        } else {
-          const payload = await res.json().catch(() => null)
-          setErrorMessage(payload?.title ?? 'Unable to log in. Please try again.')
-        }
-        return
-      }
-
-      const data = await res.json()
-
-      const session: AuthSession = {
-        token: data.token,
-        user: mapBackendUserToAuthUser(data.user),
-      }
-
-      login(session)
-      navigate(fromPath, { replace: true })
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Network error - please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+    await submitAuthRequest({
+      endpoint: '/api/auth/login',
+      body: { email: email.trim(), password },
+      login,
+      navigate,
+      fromPath,
+      setErrorMessage,
+      setIsSubmitting,
+      fallbackErrorMessage: 'Unable to log in. Please try again.',
+      unauthorizedErrorMessage: 'Invalid email or password.',
+    })
   }
 
   if (!isHydrated) {

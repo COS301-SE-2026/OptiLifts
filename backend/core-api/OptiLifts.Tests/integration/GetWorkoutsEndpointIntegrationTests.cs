@@ -46,6 +46,40 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
         workout.PrimaryMuscleGroups.Should().Equal("Chest", "Shoulders", "Triceps");
         workout.CreatedAt.Should().BeCloseTo(new DateTime(2026, 05, 19, 10, 0, 0, DateTimeKind.Utc), TimeSpan.FromSeconds(1));
     }
+
+    [Fact]
+    public async Task GetWorkouts_ReturnsOnlyAuthenticatedUsersWorkoutsOrderedNewestFirst()
+    {
+        var userOne = await _fixture.SeedUserAsync("integration-user-2@optilifts.com", "Integration User Two");
+        var otherUser = await _fixture.SeedUserAsync("integration-user-3@optilifts.com", "Integration User Three");
+
+        await _fixture.SeedWorkoutAsync(
+            userOne.Id,
+            new DateTime(2026, 05, 19, 9, 0, 0, DateTimeKind.Utc),
+            "Old Workout",
+            ("Row", new[] { "Back" }));
+        await _fixture.SeedWorkoutAsync(
+            userOne.Id,
+            new DateTime(2026, 05, 19, 11, 0, 0, DateTimeKind.Utc),
+            "New Workout",
+            ("Squat", new[] { "Quadriceps", "Glutes" }));
+        await _fixture.SeedWorkoutAsync(
+            otherUser.Id,
+            new DateTime(2026, 05, 19, 12, 0, 0, DateTimeKind.Utc),
+            "Other User Workout",
+            ("Bench Press", new[] { "Chest" }));
+
+        var response = await _fixture.GetAuthenticatedClient(userOne).GetAsync("/api/workouts");
+
+        response.EnsureSuccessStatusCode();
+
+        var workouts = await response.Content.ReadFromJsonAsync<WorkoutCardDto[]>();
+        workouts.Should().NotBeNull();
+        workouts.Should().HaveCount(2);
+        workouts![0].Name.Should().Be("New Workout");
+        workouts[1].Name.Should().Be("Old Workout");
+        workouts.Select(workout => workout.Name).Should().NotContain("Other User Workout");
+    }
 }
 
 public sealed class GetWorkoutsApiFixture : IAsyncLifetime

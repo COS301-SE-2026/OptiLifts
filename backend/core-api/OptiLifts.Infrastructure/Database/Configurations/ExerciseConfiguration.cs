@@ -14,8 +14,6 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
         builder.Property(e => e.Id).HasColumnName("exercise_id");
 
         builder.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(200);
-        builder.Property(e => e.Force).HasColumnName("force");
-        builder.Property(e => e.Level).HasColumnName("level").IsRequired();
         builder.Property(e => e.Mechanic).HasColumnName("mechanic");
         builder.Property(e => e.Equipment).HasColumnName("equipment");
         builder.Property(e => e.Category).HasColumnName("category").IsRequired();

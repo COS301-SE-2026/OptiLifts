@@ -23,15 +23,16 @@ import type { WorkoutExercise } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 
 const RECOMMENDED_EXERCISES = [
-  { name: 'Bicep curl',     muscleGroup: 'Biceps'   as MuscleName },
+  { name: 'Bicep curl', muscleGroup: 'Biceps'   as MuscleName },
   { name: 'Tricep pushdown', muscleGroup: 'Triceps' as MuscleName },
-  { name: 'Lat pulldown',   muscleGroup: 'Lats'     as MuscleName },
+  { name: 'Lat pulldown', muscleGroup: 'Lats'     as MuscleName },
 ] as const
 
 const MUSCLE_OPTIONS    = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
 const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
 
-function MuscleDiagramPlaceholder() {
+function MuscleDiagramPlaceholder() 
+{
   return (
     <div className="flex h-28 w-48 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted-foreground text-xs text-center leading-tight select-none">
       Muscle<br />Diagram
@@ -43,11 +44,11 @@ let nextExerciseId = 0
 
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
-  const [workoutName, setWorkoutName]       = useState('')
-  const [exercises, setExercises]           = useState<WorkoutExercise[]>([])
+  const [workoutName, setWorkoutName] = useState('')
+  const [exercises, setExercises] = useState<WorkoutExercise[]>([])
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
-  const [searchQuery, setSearchQuery]       = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))

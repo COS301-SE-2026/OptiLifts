@@ -9,5 +9,5 @@ def test_health_check():
     assert response.status_code == 200
     assert response.json() == {
         "status": "alive",
-        "message": "AI Engine skeleton is ready for future development",
+        "message": "AI Engine is ready.",
     }

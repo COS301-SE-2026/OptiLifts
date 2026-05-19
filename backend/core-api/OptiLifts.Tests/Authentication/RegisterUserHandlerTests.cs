@@ -25,7 +25,7 @@ public class RegisterUserHandlerTests
 
     //normal user registration
     [Fact]
-    public async Task Handle_ShouldCreateUserAndReturnToken_WhenEmailIsUnique()
+    public async Task HandleShouldCreateUserAndReturnTokenWhenEmailIsUnique()
     {
         //spins up unit test in memory sqlite db
         using var connection = new SqliteConnection("DataSource=:memory:");
@@ -57,7 +57,7 @@ public class RegisterUserHandlerTests
 
     //email alrady exists, should throw exception
     [Fact]
-    public async Task Handle_ShouldThrowDuplicateEmailException_WhenEmailExists()
+    public async Task HandleShouldThrowDuplicateEmailExceptionWhenEmailExists()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();

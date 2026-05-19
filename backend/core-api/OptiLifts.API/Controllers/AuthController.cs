@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using OptiLifts.Application.Auth.Register;
+using OptiLifts.Application.Auth.Login;
 using OptiLifts.Infrastructure.Authentication;
 
 namespace OptiLifts.API.Controllers;
@@ -18,6 +19,7 @@ public sealed class AuthController : ControllerBase
     }
 
     public sealed record RegisterRequest(string DisplayName, string Email, string Password);
+    public sealed record LoginRequest(string Email, string Password);
 
     [AllowAnonymous]
     [HttpPost("register")]
@@ -36,6 +38,26 @@ public sealed class AuthController : ControllerBase
         catch (DuplicateEmailException)
         {
             return Conflict(new { title = "Email already in use", status = 409 });
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponseDto>> Login(LoginRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest();
+        }
+
+        try
+        {
+            var result = await _sender.Send(new LoginUserCommand(request.Email, request.Password), cancellationToken);
+            return Ok(result);
+        }
+        catch (InvalidCredentialsException)
+        {
+            return Unauthorized(new { title = "Unauthorized", status = 401 });
         }
     }
 }

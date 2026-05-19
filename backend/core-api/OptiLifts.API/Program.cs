@@ -34,8 +34,21 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(xmlPath);
 });
 
-var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
-var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "5432";
+//CORS configuration to allow requests from frontend
+var frontendOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "localhost:5173";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(frontendOrigin)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
+var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
 var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
 var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
 var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
@@ -100,6 +113,7 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 app.UseAuthentication(); //authentication middleware 
 app.UseAuthorization(); //authorization middleware
 app.MapControllers();

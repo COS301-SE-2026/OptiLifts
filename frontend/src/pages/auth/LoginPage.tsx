@@ -4,18 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
-
-function createToken(email: string) {
-  //placeholder for now till backend is setup
-  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
-
-  const header = encode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
-  const payload = encode(JSON.stringify({ email, demo: true, iat: Math.floor(Date.now() / 1000) }))
-  const signature = encode(`${email}-${Date.now()}`)
-
-  return `${header}.${payload}.${signature}`
-}
+import { useAuth } from '@/context/auth-context'
+import { submitAuthRequest } from './auth-request'
 
 function LoginHeading() {
   return (
@@ -68,12 +58,6 @@ function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder 
   )
 }
 
-const generateUser = (email: string): AuthUser => {
-  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
-  const name = email.split('@')[0] || 'Member'
-  return { id, name, email: email.trim() }
-}
-
 export function LoginPage() {
   const { login, isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
@@ -91,23 +75,25 @@ export function LoginPage() {
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/workouts'
 
-  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    
-    if (!isFormValid) {
-      return
-    }
 
-    //just create a user, will change when backend is implemented
-    const nextUser = generateUser(email)
+    if (!isFormValid) return
 
-    const nextSession: AuthSession = {
-      token: createToken(nextUser.email), 
-      user: nextUser,
-    }
-
-    login(nextSession)
-    navigate(fromPath, { replace: true })
+    await submitAuthRequest({
+      endpoint: '/api/auth/login',
+      body: { email: email.trim(), password },
+      login,
+      navigate,
+      fromPath,
+      setErrorMessage,
+      setIsSubmitting,
+      fallbackErrorMessage: 'Unable to log in. Please try again.',
+      unauthorizedErrorMessage: 'Invalid email or password.',
+    })
   }
 
   if (!isHydrated) {
@@ -154,11 +140,13 @@ export function LoginPage() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={!isFormValid}
-                className={`w-80 justify-center justify-self-center ${isFormValid ? '': 'opacity-60 cursor-not-allowed'}`}
+                disabled={!isFormValid || isSubmitting}
+                className={`w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
               >
-                LOGIN
+                {isSubmitting ? 'LOGGING IN...' : 'LOGIN'}
               </Button>
+
+              {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
 
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}

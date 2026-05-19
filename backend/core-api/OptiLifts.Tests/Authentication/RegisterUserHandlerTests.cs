@@ -29,7 +29,7 @@ public class RegisterUserHandlerTests
     {
         //spins up unit test in memory sqlite db
         using var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
+        await connection.OpenAsync();
 
         await using var context = CreateContext(connection);
 
@@ -60,7 +60,7 @@ public class RegisterUserHandlerTests
     public async Task HandleShouldThrowDuplicateEmailExceptionWhenEmailExists()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
+        await connection.OpenAsync();
 
         await using var context = CreateContext(connection);
 

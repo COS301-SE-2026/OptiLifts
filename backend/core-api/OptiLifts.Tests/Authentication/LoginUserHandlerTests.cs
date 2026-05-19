@@ -28,7 +28,7 @@ public class LoginUserHandlerTests
     public async Task HandleShouldReturnTokenAndUserWhenCredentialsAreValid()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
+        await connection.OpenAsync();
 
         await using var context = CreateContext(connection);
 
@@ -66,7 +66,7 @@ public class LoginUserHandlerTests
     public async Task HandleShouldThrowInvalidCredentialsExceptionWhenUserDoesNotExist()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
+        await connection.OpenAsync();
 
         await using var context = CreateContext(connection);
 
@@ -86,7 +86,7 @@ public class LoginUserHandlerTests
     public async Task HandleShouldThrowInvalidCredentialsExceptionWhenPasswordIsInvalid()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
+        await connection.OpenAsync();
 
         await using var context = CreateContext(connection);
 

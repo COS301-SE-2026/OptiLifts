@@ -23,12 +23,12 @@ import type { WorkoutExercise } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 
 const RECOMMENDED_EXERCISES = [
-  { name: 'Bicep curl', muscleGroup: 'Biceps'   as MuscleName },
+  { name: 'Bicep curl', muscleGroup: 'Biceps' as MuscleName },
   { name: 'Tricep pushdown', muscleGroup: 'Triceps' as MuscleName },
-  { name: 'Lat pulldown', muscleGroup: 'Lats'     as MuscleName },
+  { name: 'Lat pulldown', muscleGroup: 'Lats' as MuscleName },
 ] as const
 
-const MUSCLE_OPTIONS    = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
+const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
 const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
 
 function MuscleDiagramPlaceholder() 

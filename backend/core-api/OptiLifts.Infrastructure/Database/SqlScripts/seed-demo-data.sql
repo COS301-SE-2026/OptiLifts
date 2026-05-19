@@ -27,7 +27,19 @@ CREATE TEMP TABLE seed_constants (
     set_calf_id uuid NOT NULL,
     test_user_email text NOT NULL,
     demo_user_email text NOT NULL,
-    set_type text NOT NULL
+    set_type text NOT NULL,
+    mechanic_compound text NOT NULL,
+    equipment_barbell text NOT NULL,
+    muscle_chest text NOT NULL,
+    muscle_back text NOT NULL,
+    muscle_biceps text NOT NULL,
+    muscle_rear_delts text NOT NULL,
+    muscle_quadriceps text NOT NULL,
+    muscle_calves text NOT NULL,
+    muscle_shoulders text NOT NULL,
+    muscle_triceps text NOT NULL,
+    muscle_hamstrings text NOT NULL,
+    muscle_glutes text NOT NULL
 ) ON COMMIT DROP;
 
 INSERT INTO seed_constants (
@@ -57,7 +69,19 @@ INSERT INTO seed_constants (
     set_calf_id,
     test_user_email,
     demo_user_email,
-    set_type
+    set_type,
+    mechanic_compound,
+    equipment_barbell,
+    muscle_chest,
+    muscle_back,
+    muscle_biceps,
+    muscle_rear_delts,
+    muscle_quadriceps,
+    muscle_calves,
+    muscle_shoulders,
+    muscle_triceps,
+    muscle_hamstrings,
+    muscle_glutes
 )
 VALUES (
     '11111111-1111-1111-1111-111111111111',
@@ -86,7 +110,19 @@ VALUES (
     '44444444-4444-4444-4444-444444444452',
     'test@optilifts.com',
     'demo2@optilifts.com',
-    'Normal'
+    'Normal',
+    'compound',
+    'barbell',
+    'Chest',
+    'Back',
+    'Biceps',
+    'Rear Delts',
+    'Quadriceps',
+    'Calves',
+    'Shoulders',
+    'Triceps',
+    'Hamstrings',
+    'Glutes'
 );
 
 INSERT INTO exercises (
@@ -101,11 +137,11 @@ INSERT INTO exercises (
 SELECT
     c.exercise_bench_id,
     'Barbell Bench Press',
-    'compound',
-    'barbell',
+    c.mechanic_compound,
+    c.equipment_barbell,
     '',
-    ARRAY['Chest']::text[],
-    ARRAY['Triceps', 'Shoulders']::text[]
+    ARRAY[c.muscle_chest]::text[],
+    ARRAY[c.muscle_triceps, c.muscle_shoulders]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -122,11 +158,11 @@ INSERT INTO exercises (
 SELECT
     c.exercise_incline_id,
     'Incline Dumbbell Press',
-    'compound',
+    c.mechanic_compound,
     'dumbbell',
     '',
-    ARRAY['Chest']::text[],
-    ARRAY['Shoulders', 'Triceps']::text[]
+    ARRAY[c.muscle_chest]::text[],
+    ARRAY[c.muscle_shoulders, c.muscle_triceps]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -143,11 +179,11 @@ INSERT INTO exercises (
 SELECT
     c.exercise_row_id,
     'Seated Cable Row',
-    'compound',
+    c.mechanic_compound,
     'cable',
     '',
-    ARRAY['Back']::text[],
-    ARRAY['Biceps', 'Rear Delts']::text[]
+    ARRAY[c.muscle_back]::text[],
+    ARRAY[c.muscle_biceps, c.muscle_rear_delts]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -164,11 +200,11 @@ INSERT INTO exercises (
 SELECT
     c.exercise_rdl_id,
     'Romanian Deadlift',
-    'compound',
-    'barbell',
+    c.mechanic_compound,
+    c.equipment_barbell,
     '',
-    ARRAY['Hamstrings', 'Glutes']::text[],
-    ARRAY['Back']::text[]
+    ARRAY[c.muscle_hamstrings, c.muscle_glutes]::text[],
+    ARRAY[c.muscle_back]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -188,8 +224,8 @@ SELECT
     'complex',
     'dumbbell',
     '',
-    ARRAY['Quadriceps', 'Glutes']::text[],
-    ARRAY['Hamstrings', 'Calves']::text[]
+    ARRAY[c.muscle_quadriceps, c.muscle_glutes]::text[],
+    ARRAY[c.muscle_hamstrings, c.muscle_calves]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -206,11 +242,11 @@ INSERT INTO exercises (
 SELECT
     c.exercise_ohp_id,
     'Overhead Press',
-    'compound',
-    'barbell',
+    c.mechanic_compound,
+    c.equipment_barbell,
     '',
-    ARRAY['Shoulders']::text[],
-    ARRAY['Triceps', 'Upper Chest']::text[]
+    ARRAY[c.muscle_shoulders]::text[],
+    ARRAY[c.muscle_triceps, 'Upper Chest']::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -230,7 +266,7 @@ SELECT
     'isolated',
     'machine',
     '',
-    ARRAY['Calves']::text[],
+    ARRAY[c.muscle_calves]::text[],
     ARRAY[]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
@@ -249,10 +285,10 @@ SELECT
     c.exercise_squat_id,
     'Back Squat',
     'complex',
-    'barbell',
+    c.equipment_barbell,
     '',
-    ARRAY['Quadriceps', 'Glutes']::text[],
-    ARRAY['Hamstrings']::text[]
+    ARRAY[c.muscle_quadriceps, c.muscle_glutes]::text[],
+    ARRAY[c.muscle_hamstrings]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;
@@ -273,7 +309,7 @@ SELECT
     'machine',
     '',
     ARRAY['Lats']::text[],
-    ARRAY['Biceps']::text[]
+    ARRAY[c.muscle_biceps]::text[]
 FROM seed_constants c
 JOIN users u ON u.email = c.test_user_email
 ON CONFLICT (exercise_id) DO NOTHING;

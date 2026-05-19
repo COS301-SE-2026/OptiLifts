@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
+using OptiLifts.Application;
 using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +23,8 @@ var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username=
 builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies()));
+//register mediatR handlers from application assembly so they are discovered even when the assembly isn't yet fully loaded into the AppDomain
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly));
 
 var app = builder.Build();
 

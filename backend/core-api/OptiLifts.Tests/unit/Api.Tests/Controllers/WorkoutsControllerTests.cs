@@ -14,7 +14,7 @@ using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Workouts;
 
-namespace OptiLifts.Tests.API.Tests.Controllers;
+namespace OptiLifts.Tests.Api.Tests.Controllers;
 
 public class WorkoutsControllerTests
 {

@@ -9,7 +9,8 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
 {
     private readonly OptiLiftsDbContext _dbContext;
 
-    public GetWorkoutsHandler(OptiLiftsDbContext dbContext) {
+    public GetWorkoutsHandler(OptiLiftsDbContext dbContext)
+    {
         _dbContext = dbContext;
     }
 
@@ -19,7 +20,8 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
             .AsNoTracking()
             .Where(workout => workout.CreatedBy == request.UserId)
             .OrderByDescending(workout => workout.CreatedAt)
-            .Select(workout => new {
+            .Select(workout => new
+            {
                 workout.Id,
                 workout.Name,
                 workout.CreatedAt
@@ -37,7 +39,8 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
                 from set in _dbContext.Sets.AsNoTracking()
                 join exercise in _dbContext.Exercises.AsNoTracking() on set.ExerciseId equals exercise.Id
                 where workoutIds.Contains(set.WorkoutId)
-                select new {
+                select new
+                {
                     set.WorkoutId,
                     set.OrderIndex,
                     exercise.Id,

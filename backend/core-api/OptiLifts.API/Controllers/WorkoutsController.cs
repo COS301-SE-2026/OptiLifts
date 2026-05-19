@@ -11,19 +11,23 @@ namespace OptiLifts.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public sealed class WorkoutsController : ControllerBase {
+public sealed class WorkoutsController : ControllerBase
+{
     private readonly ISender _sender;
 
-    public WorkoutsController(ISender sender) {
+    public WorkoutsController(ISender sender)
+    {
         _sender = sender;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<WorkoutCardDto>>> GetWorkouts(CancellationToken cancellationToken){
+    public async Task<ActionResult<IReadOnlyList<WorkoutCardDto>>> GetWorkouts(CancellationToken cancellationToken)
+    {
         var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (!Guid.TryParse(userIdValue, out var userId)) {
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
             return Unauthorized();
         }
 

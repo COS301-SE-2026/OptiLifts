@@ -46,7 +46,8 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 //register MediatR handlers from Application assembly
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly));
+//register MediatR handlers from Application and Infrastructure assemblies
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
 //register auth implementations
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -70,6 +71,7 @@ builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecr
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,

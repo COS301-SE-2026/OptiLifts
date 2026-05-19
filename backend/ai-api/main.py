@@ -69,7 +69,7 @@ def get_recommendations(request: RecommendRequest):
     - **primary_muscles**: muscle groups to target (e.g. Biceps, Chest)
     - **available_equipment**: equipment available (e.g. Dumbbell, Barbell)
     """
-    #plug in real ML/LLM logic
+    # plug in real ML/LLM logic
     if not request.primary_muscles:
         raise HTTPException(status_code=400, detail="primary_muscles cannot be empty.")
 

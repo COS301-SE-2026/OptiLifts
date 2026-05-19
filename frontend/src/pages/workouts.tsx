@@ -21,24 +21,19 @@ export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const authError = isHydrated && !token ? 'Please log in to view your workouts.' : null
+
   useEffect(() => {
-    if (!isHydrated) {
-      return
-    }
-    if (!token) {
-      setWorkouts([])
-      setSelectedId(null)
-      setError('Please log in to view your workouts.')
-      setIsLoading(false)
+    if (!isHydrated || !token) {
       return
     }
 
     let isActive = true
     async function loadWorkouts() {
-      setIsLoading(true)
+      setIsFetching(true)
       setError(null)
 
       try {
@@ -64,7 +59,7 @@ export default function WorkoutsPage() {
         }
       } finally {
         if (isActive) {
-          setIsLoading(false)
+          setIsFetching(false)
         }
       }
     }
@@ -76,13 +71,17 @@ export default function WorkoutsPage() {
     }
   }, [isHydrated, token])
 
+  const visibleWorkouts = useMemo(() => (token ? workouts : []), [token, workouts])
+  const isLoading = !isHydrated || isFetching
+  const displayError = authError ?? error
+
   const filtered = useMemo(() => {
     if (!query.trim()) return workouts
     const q = query.toLowerCase()
-    return workouts.filter((w) => w.name.toLowerCase().includes(q) || w.primaryMuscleGroups.some((m) => m.toLowerCase().includes(q)))
-  }, [workouts, query])
+    return visibleWorkouts.filter((w) => w.name.toLowerCase().includes(q) || w.primaryMuscleGroups.some((m) => m.toLowerCase().includes(q)))
+  }, [visibleWorkouts, workouts, query])
 
-  const selectedWorkout = workouts.find((w) => w.id === selectedId) ?? null
+  const selectedWorkout = visibleWorkouts.find((w) => w.id === selectedId) ?? null
 
   const summary: WorkoutSummary | null = selectedWorkout
     ? {
@@ -114,9 +113,9 @@ export default function WorkoutsPage() {
               Loading workouts...
             </div>
           )}
-          {error && (
+          {displayError && (
             <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-red-500">
-              {error}
+              {displayError}
             </div>
           )}
           {!isLoading && !error && filtered.length === 0 && (

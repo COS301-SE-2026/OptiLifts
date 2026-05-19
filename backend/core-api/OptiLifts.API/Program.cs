@@ -1,7 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Application;
+using OptiLifts.Application.Auth.Abstractions;
+using OptiLifts.Infrastructure.Authentication;
 using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,8 +28,37 @@ var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username=
 builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-//register mediatR handlers from application assembly so they are discovered even when the assembly isn't yet fully loaded into the AppDomain
+//register MediatR handlers from Application assembly
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly));
+
+//register auth implementations
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+//configure JWT authentication
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
+byte[] keyBytes;
+try
+{
+    keyBytes = Convert.FromBase64String(jwtSecret);
+}
+catch (FormatException)
+{
+    keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+        };
+    });
 
 var app = builder.Build();
 
@@ -42,7 +76,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
+app.UseAuthentication(); //authentication middleware 
+app.UseAuthorization(); //authorization middleware
 app.MapControllers();
 
 await app.RunAsync();

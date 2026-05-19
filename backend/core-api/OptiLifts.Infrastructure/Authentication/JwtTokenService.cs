@@ -10,7 +10,6 @@ namespace OptiLifts.Infrastructure.Authentication;
 public class JwtTokenService : IJwtTokenService
 {
     private const int DefaultExpiryMinutes = 1440; //24 hours
-
     private readonly string _secret;
     private readonly int _expiryMinutes;
 

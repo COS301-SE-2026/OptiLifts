@@ -58,8 +58,8 @@ public class ExercisesControllerTests
             "Isolation",
             "Dumbbell",
             "Accessory",
-            new List<string>{"Biceps"},
-            new List<string>{"Forearms"}
+            new List<string> { "Biceps" },
+            new List<string> { "Forearms" }
         );
 
         var result = await controller.CreateCustomExercise(request, CancellationToken.None);

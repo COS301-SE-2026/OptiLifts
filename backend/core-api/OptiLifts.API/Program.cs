@@ -55,6 +55,7 @@ builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecr
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,

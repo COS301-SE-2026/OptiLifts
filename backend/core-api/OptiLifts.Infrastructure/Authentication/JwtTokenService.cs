@@ -9,22 +9,19 @@ namespace OptiLifts.Infrastructure.Authentication;
 
 public class JwtTokenService : IJwtTokenService
 {
-    private const int DefaultExpiryMinutes = 1440; //24 hours
     private readonly string _secret;
     private readonly int _expiryMinutes;
 
-    public JwtTokenService()
+    public JwtTokenService(string secret, int expiryMinutes)
     {
-        _secret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
-        _expiryMinutes = int.TryParse(Environment.GetEnvironmentVariable("JWT_EXP_MINUTES"), out var minutes)
-            ? minutes
-            : DefaultExpiryMinutes;
+        _secret = secret;
+        _expiryMinutes = expiryMinutes;
     }
 
     public string CreateToken(User user)
     {
-        var key= new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
-        var credentials= new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {

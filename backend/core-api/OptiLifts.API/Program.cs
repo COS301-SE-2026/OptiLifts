@@ -33,10 +33,11 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAs
 
 //register auth implementations
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-
-//configure JWT authentication
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
+var jwtExpiryMinutes = int.TryParse(Environment.GetEnvironmentVariable("JWT_EXP_MINUTES"), out var expiryMinutes)
+    ? expiryMinutes
+    : 1440;
+
 byte[] keyBytes;
 try
 {
@@ -46,6 +47,8 @@ catch (FormatException)
 {
     keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
 }
+
+builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

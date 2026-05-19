@@ -52,4 +52,22 @@ public class WorkoutsControllerTests
         result.Should().BeOfType<UnauthorizedResult>();
         sender.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public async Task AddExerciseToWorkout_ShouldReturnNotFound_WhenSenderRejectsRequest()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(It.IsAny<AddExerciseToWorkoutCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var controller = CreateController(sender.Object, userId);
+
+        var result = await controller.AddExerciseToWorkout(
+            Guid.NewGuid(),
+            new WorkoutsController.AddExerciseToWorkoutRequest(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundResult>();
+    }
 }

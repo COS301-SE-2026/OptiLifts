@@ -13,7 +13,30 @@ var builder = WebApplication.CreateBuilder(args);
 
 Env.TraversePath().Load();
 
+
+const string CorsPolicyName = "FrontendCors";
+
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // During local development allow the Vite dev server to call the API
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            policy
+                .WithOrigins("http://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -101,6 +124,7 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseHttpsRedirection();
+app.UseCors(CorsPolicyName);
 app.UseAuthentication(); //authentication middleware 
 app.UseAuthorization(); //authorization middleware
 app.MapControllers();

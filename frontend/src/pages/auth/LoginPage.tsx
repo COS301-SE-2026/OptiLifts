@@ -6,15 +6,39 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth, type AuthSession, type AuthUser } from '@/context/auth-context'
 
-function createToken(email: string) {
-  //placeholder for now till backend is setup
-  const encode = (value: string) => globalThis.btoa(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+async function createToken(email: string, name: string, id: string) {
+  const secret = (import.meta as any).env?.VITE_JWT_SECRET ?? null
 
-  const header = encode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
-  const payload = encode(JSON.stringify({ email, demo: true, iat: Math.floor(Date.now() / 1000) }))
-  const signature = encode(`${email}-${Date.now()}`)
+  const base64Url = (input: string) => {
+    return globalThis.btoa(input).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+  }
 
-  return `${header}.${payload}.${signature}`
+  if (!secret) {
+    // fallback to unsigned demo token
+    const header = base64Url(JSON.stringify({ alg: 'none', typ: 'JWT' }))
+    const payload = base64Url(JSON.stringify({ sub: id, email, name, demo: true, iat: Math.floor(Date.now() / 1000) }))
+    const signature = base64Url(`${email}-${Date.now()}`)
+    return `${header}.${payload}.${signature}`
+  }
+
+  // create HS256 signed token using Web Crypto
+  const encoder = new TextEncoder()
+  const keyData = encoder.encode(secret)
+  const cryptoKey = await globalThis.crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+
+  const header = { alg: 'HS256', typ: 'JWT' }
+  const now = Math.floor(Date.now() / 1000)
+  const payload = { sub: id, email, name, iat: now, exp: now + 60 * 60 * 24 }
+
+  const headerB64 = base64Url(JSON.stringify(header))
+  const payloadB64 = base64Url(JSON.stringify(payload))
+  const data = `${headerB64}.${payloadB64}`
+
+  const sig = await globalThis.crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(data))
+  const sigBytes = Array.from(new Uint8Array(sig)).map((b) => String.fromCharCode(b)).join('')
+  const signature = base64Url(sigBytes)
+
+  return `${data}.${signature}`
 }
 
 function LoginHeading() {
@@ -91,23 +115,29 @@ export function LoginPage() {
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/workouts'
 
-  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    
+
     if (!isFormValid) {
       return
     }
 
-    //just create a user, will change when backend is implemented
     const nextUser = generateUser(email)
 
-    const nextSession: AuthSession = {
-      token: createToken(nextUser.email), 
-      user: nextUser,
-    }
+    try {
+      const token = await createToken(nextUser.email, nextUser.name, nextUser.id)
 
-    login(nextSession)
-    navigate(fromPath, { replace: true })
+      const nextSession: AuthSession = {
+        token,
+        user: nextUser,
+      }
+
+      login(nextSession)
+      navigate(fromPath, { replace: true })
+    } catch (err) {
+      console.error('Failed to create token', err)
+      alert('Login failed (token generation). Check console for details.')
+    }
   }
 
   if (!isHydrated) {

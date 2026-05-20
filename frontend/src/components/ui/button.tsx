@@ -22,7 +22,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "h-12 px-7 py-4 bg-brand text-white border-brand hover:bg-brand-2 hover:border-brand-2",
+        default: "h-12 px-7 py-4 bg-brand text-white border-brand hover:bg-brand-2 hover:border-brand-2 focus-visible:bg-brand-2 focus-visible:border-brand-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         secondary: "h-12 px-7 py-4 bg-surface-2 text-foreground border-surface-2 hover:bg-border hover:border-border",
         outline: "h-8 px-6 py-4 bg-transparent text-foreground border-2 border-dashed border-border hover:bg-surface-2",
         ghost: "h-auto px-3 py-3 bg-transparent text-foreground border-0 hover:bg-surface-2",

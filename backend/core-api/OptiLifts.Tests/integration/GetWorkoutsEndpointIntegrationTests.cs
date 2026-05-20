@@ -85,8 +85,7 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
 public sealed class GetWorkoutsApiFixture : IAsyncLifetime
 {
     private const string JwtSecret = "integration-test-secret-integration-test-secret";
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine")
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
         .WithDatabase("optilifts_integration_tests")
         .WithUsername("postgres")
         .WithPassword("postgres")

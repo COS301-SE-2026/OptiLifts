@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/context/auth-context'
 import { Plus, Dumbbell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,7 +62,6 @@ export default function CreateWorkoutPage() {
   const [allExercises, setAllExercises] = useState<Array<{ name: string; muscleGroup: MuscleName; equipment?: string }>>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
-  const { token } = useAuth()
 
   useEffect(() => {
     let mounted = true
@@ -97,7 +95,7 @@ export default function CreateWorkoutPage() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [token])
 
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))

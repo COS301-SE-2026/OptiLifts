@@ -159,7 +159,7 @@ public class WorkoutsPageIntegrationTests
         var (userId, _) = await SeedUserAndFolder(db, "c@example.com");
 
         var createHandler = new CreateWorkoutHandler(db);
-        var getHandler    = new GetWorkoutsHandler(db);
+        var getHandler = new GetWorkoutsHandler(db);
 
         var createSender = new Mock<ISender>();
         createSender
@@ -172,15 +172,15 @@ public class WorkoutsPageIntegrationTests
             .Returns<GetWorkoutsQuery, CancellationToken>((q, ct) => getHandler.Handle(q, ct));
 
         var createController = BuildController(createSender.Object, userId);
-        var getController    = BuildController(getSender.Object, userId);
+        var getController = BuildController(getSender.Object, userId);
 
         await createController.CreateWorkout(
             new CreateWorkoutRequest(null, "Leg Day", 3, []),
             CancellationToken.None);
 
         var getResult = await getController.GetWorkouts(CancellationToken.None);
-        var ok        = getResult.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var workouts  = ok.Value.Should().BeAssignableTo<IReadOnlyList<WorkoutCardDto>>().Subject;
+        var ok = getResult.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var workouts = ok.Value.Should().BeAssignableTo<IReadOnlyList<WorkoutCardDto>>().Subject;
 
         workouts.Should().HaveCount(1);
         workouts[0].Name.Should().Be("Leg Day");

@@ -90,7 +90,7 @@ export default function CreateWorkoutPage() {
   return (
     <section className="w-full px-6 py-6">
       <div className="grid grid-cols-12 gap-6 items-start">
-        <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
+        <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6">
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2">
@@ -127,10 +127,10 @@ export default function CreateWorkoutPage() {
 
         </div>
 
-        <div className="col-span-12 lg:col-span-5">
-          <div className="flex flex-col gap-4 lg:fixed lg:top-[6.5rem] lg:right-6 lg:w-[calc((100vw-4.5rem)*5/12)] lg:z-10">
+        <div className="col-span-12 lg:col-span-5 min-w-0">
+          <div className="flex w-full flex-col gap-4 lg:fixed lg:top-[6.5rem] lg:right-6 lg:z-10 lg:w-[min(28rem,calc(100vw-3rem))] lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto">
 
-            <Card className="overflow-hidden border-border bg-card">
+            <Card className="w-full overflow-hidden border-border bg-card">
             <CardHeader className="px-4 py-1">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base font-bold text-foreground">Recommended</CardTitle>
@@ -165,7 +165,7 @@ export default function CreateWorkoutPage() {
             </CardContent>
           </Card>
 
-            <Card className="overflow-hidden border-border bg-card">
+            <Card className="w-full overflow-hidden border-border bg-card">
             <CardHeader className="px-4 py-1">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base font-bold text-foreground">Exercises</CardTitle>

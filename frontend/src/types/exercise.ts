@@ -29,7 +29,7 @@ export type CreateExerciseInitialValues = Readonly<{
 export type CreateExerciseProps = Readonly<{
   isOpen: boolean
   onCancel: () => void
-  onSave: (values: CreateExerciseFormData) => void
+  onSave?: (values: CreateExerciseFormData) => void | Promise<void>
   initialValues?: CreateExerciseInitialValues
   exerciseTypes?: readonly string[]
   exerciseTypeOptions?: readonly ExerciseTypeDefinition[]

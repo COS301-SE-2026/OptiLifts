@@ -9,7 +9,6 @@ import { DefaultTextBox, NumericalUnderscoreInput } from '@/components/ui/input'
 import { SearchInput as SimpleSearchInput } from '@/components/ui/search-input'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { CreateExercise } from '@/components/ui/create-exercise'
-import { type CreateExerciseFormData } from '@/types/exercise'
 import { MoreHorizontal, Plus, X } from 'lucide-react'
 import edwinImg from '../../docs/images/Edwin_circle.svg'
 import { useState } from 'react'
@@ -50,11 +49,6 @@ function RequireAuth() {
 
 function HomePage() {
   const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
-
-  const handleSaveExercise = (values: CreateExerciseFormData) => {
-    console.log('Create exercise payload:', values)
-    setIsCreateExerciseOpen(false)
-  }
 
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
@@ -100,7 +94,6 @@ function HomePage() {
       <CreateExercise
         isOpen={isCreateExerciseOpen}
         onCancel={() => setIsCreateExerciseOpen(false)}
-        onSave={handleSaveExercise}
       />
     </section>
   )

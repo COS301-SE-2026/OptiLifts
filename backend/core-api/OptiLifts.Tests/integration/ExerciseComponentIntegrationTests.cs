@@ -8,6 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using OptiLifts.Application.Exercises.GetExercises;
 using OptiLifts.Domain.Users;
@@ -121,6 +124,12 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
     {
         await _postgres.StartAsync();
 
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
+        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
+        Environment.SetEnvironmentVariable("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString());
+        Environment.SetEnvironmentVariable("JWT_SECRET", JwtSecret);
+        Environment.SetEnvironmentVariable("JWT_EXP_MINUTES", "60");
+
         // Apply migrations and seed the fixture database directly to avoid concurrent migrations
         var dbOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<OptiLifts.Infrastructure.Database.OptiLiftsDbContext>()
             .UseNpgsql(_postgres.GetConnectionString())
@@ -135,6 +144,14 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+            builder.ConfigureServices(services =>
+            {
+                services.PostConfigureAll<JwtBearerOptions>(options =>
+                {
+                    options.TokenValidationParameters.IssuerSigningKey =
+                        new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(JwtSecret));
+                });
+            });
             builder.ConfigureAppConfiguration((context, config) =>
             {
                 var dict = new Dictionary<string, string?>

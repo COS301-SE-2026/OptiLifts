@@ -68,17 +68,18 @@ let nextExerciseId = 0
 
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
-  const { token } = useAuth()
   const [workoutName, setWorkoutName] = useState('')
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([])
+  const [exercises, setExercises] = useState<SelectedWorkoutExercise[]>([])
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const [allExercises, setAllExercises] = useState<Array<{ name: string; muscleGroup: MuscleName; equipment?: string }>>([])
+  const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
+  const { token } = useAuth()
 
   useEffect(() => {
     let mounted = true
@@ -94,7 +95,7 @@ export default function CreateWorkoutPage() {
           if (res.status === 404) throw new Error('Endpoint not found (404) - is the API running?')
           throw new Error(`HTTP ${res.status}`)
         }
-        return (await res.json()) as Array<{ name: string; muscleGroup: MuscleName; equipment?: string }>
+        return (await res.json()) as CatalogExercise[]
       })
       .then((data) => {
         if (!mounted) return
@@ -112,7 +113,7 @@ export default function CreateWorkoutPage() {
     return () => {
       mounted = false
     }
-  }, [token])
+  }, [])
 
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))
@@ -120,8 +121,36 @@ export default function CreateWorkoutPage() {
   const updateSets = (id: string, sets: WorkoutExercise['sets']) =>
     setExercises(prev => prev.map(e => e.id === id ? { ...e, sets } : e))
 
-  const addExercise = (name: string, muscle: MuscleName) =>
-    setExercises(prev => [...prev, { id: `ex-${nextExerciseId++}`, name, muscle, sets: [] }])
+  const addExercise = (exercise: CatalogExercise) =>
+    setExercises(prev => [
+      ...prev,
+      {
+        id: `ex-${nextExerciseId++}`,
+        name: exercise.name,
+        muscle: exercise.muscleGroup,
+        sets: [],
+        exerciseCatalogId: exercise.id,
+      },
+    ])
+
+  const addExerciseByName = (name: string, muscle: MuscleName) => {
+    const match = allExercises.find(exercise => exercise.name === name)
+
+    if (match) {
+      addExercise(match)
+      return
+    }
+
+    setExercises(prev => [
+      ...prev,
+      {
+        id: `ex-${nextExerciseId++}`,
+        name,
+        muscle,
+        sets: [],
+      },
+    ])
+  }
 
   const saveWorkout = async () => {
     if (!workoutName.trim() || !token) return

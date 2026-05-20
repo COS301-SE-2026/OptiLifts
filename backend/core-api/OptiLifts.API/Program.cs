@@ -13,30 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 Env.TraversePath().Load();
 
-
-const string CorsPolicyName = "FrontendCors";
-
 builder.Services.AddControllers();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(CorsPolicyName, policy =>
-    {
-        if (builder.Environment.IsDevelopment())
-        {
-            // During local development allow the Vite dev server to call the API
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            policy
-                .WithOrigins("http://localhost:5173")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        }
-    });
-});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -82,9 +59,8 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 //register MediatR handlers from Application assembly
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
-    typeof(IAssemblyMarker).Assembly,
-    typeof(OptiLiftsDbContext).Assembly));
+//register MediatR handlers from Application and Infrastructure assemblies
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
 //register auth implementations
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -137,7 +113,6 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseHttpsRedirection();
-app.UseCors(CorsPolicyName);
 app.UseCors("AllowFrontend");
 app.UseAuthentication(); //authentication middleware 
 app.UseAuthorization(); //authorization middleware

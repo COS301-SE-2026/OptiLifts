@@ -13,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 if (!builder.Environment.IsEnvironment("Testing"))
 {
-    Env.TraversePath().Load();
+    var envFile = Path.Combine(AppContext.BaseDirectory, "../../../../.env");
+    if (File.Exists(envFile)) Env.Load(envFile);
 }
 
 builder.Services.AddControllers();

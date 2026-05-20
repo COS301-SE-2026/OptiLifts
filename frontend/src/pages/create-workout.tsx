@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Dumbbell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -32,16 +33,7 @@ const RECOMMENDED_EXERCISES = [
   { name: 'Leg Press', muscleGroup: 'Hamstrings' as MuscleName },
 ] as const
 
-const ALL_EXERCISES = [
-  { name: 'Barbell Bench Press', muscleGroup: 'Chest' as MuscleName, equipment: 'Barbell' },
-  { name: 'Back Squat', muscleGroup: 'Hamstrings' as MuscleName, equipment: 'Barbell' },
-  { name: 'Dumbbell Shoulder Press', muscleGroup: 'Shoulders' as MuscleName, equipment: 'Dumbbell' },
-  { name: 'Lat Pulldown', muscleGroup: 'Lats' as MuscleName, equipment: 'Machine' },
-  { name: 'Bicep Curl', muscleGroup: 'Biceps' as MuscleName, equipment: 'Dumbbell' },
-  { name: 'Tricep Pushdown', muscleGroup: 'Triceps' as MuscleName, equipment: 'Cable' },
-  { name: 'Pull Up', muscleGroup: 'Lats' as MuscleName, equipment: 'Bodyweight' },
-  { name: 'Leg Press', muscleGroup: 'Hamstrings' as MuscleName, equipment: 'Machine' },
-] as const
+// Exercises are fetched from the API; initial local fallback removed.
 
 const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
 const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
@@ -65,6 +57,45 @@ export default function CreateWorkoutPage() {
   const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const [allExercises, setAllExercises] = useState<Array<{ name: string; muscleGroup: MuscleName; equipment?: string }>>([])
+  const [loadingExercises, setLoadingExercises] = useState(true)
+  const [exercisesError, setExercisesError] = useState<string | null>(null)
+  const { token } = useAuth()
+
+  useEffect(() => {
+    let mounted = true
+    setLoadingExercises(true)
+    setExercisesError(null)
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    fetch('/api/exercises', { headers })
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
+          if (res.status === 404) throw new Error('Endpoint not found (404) - is the API running?')
+          throw new Error(`HTTP ${res.status}`)
+        }
+        return (await res.json()) as Array<{ name: string; muscleGroup: MuscleName; equipment?: string }>
+      })
+      .then((data) => {
+        if (!mounted) return
+        setAllExercises(data || [])
+      })
+      .catch((err) => {
+        if (!mounted) return
+        setExercisesError(err?.message ?? 'Failed to load exercises')
+      })
+      .finally(() => {
+        if (!mounted) return
+        setLoadingExercises(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))
 
@@ -82,13 +113,44 @@ export default function CreateWorkoutPage() {
     return true
   })
 
-  const filteredExercises = ALL_EXERCISES.filter((ex) => {
+  const filteredExercises = allExercises.filter((ex) => {
     const q = searchQuery.trim().toLowerCase()
     if (q && !ex.name.toLowerCase().includes(q) && !ex.muscleGroup.toLowerCase().includes(q)) return false
     if (selectedMuscle !== 'All Muscles' && ex.muscleGroup !== selectedMuscle) return false
     if (selectedEquipment !== 'All Equipment' && ex.equipment !== selectedEquipment) return false
     return true
   })
+
+  const exercisesListContent = (() => {
+    if (loadingExercises) {
+      return <p className="px-2 py-3 text-sm text-muted-foreground">Loading exercises...</p>
+    }
+
+    if (exercisesError) {
+      return <p className="px-2 py-3 text-sm text-destructive">{exercisesError}</p>
+    }
+
+    if (filteredExercises.length === 0) {
+      return <p className="px-2 py-3 text-sm text-muted-foreground">No exercises match your filters.</p>
+    }
+
+    return filteredExercises.map((ex) => (
+      <div key={ex.name} className="flex items-center gap-3 px-2 py-2.5">
+        <Avatar className="size-9 shrink-0 border border-border">
+          <AvatarFallback className="bg-surface-2">
+            <Dumbbell className="size-4 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+          <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
+        </div>
+        <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+          <Plus size={12} />
+        </Button>
+      </div>
+    ))
+  })()
 
   return (
     <section className="w-full px-6 py-6">
@@ -212,24 +274,7 @@ export default function CreateWorkoutPage() {
 
               <div className="divide-y divide-border/70 mt-2">
                 <div className="max-h-44 overflow-y-auto">
-                {filteredExercises.length > 0 ? filteredExercises.map((ex) => (
-                  <div key={ex.name} className="flex items-center gap-3 px-2 py-2.5">
-                    <Avatar className="size-9 shrink-0 border border-border">
-                      <AvatarFallback className="bg-surface-2">
-                        <Dumbbell className="size-4 text-muted-foreground" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
-                      <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
-                    </div>
-                    <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
-                      <Plus size={12} />
-                    </Button>
-                  </div>
-                )) : (
-                  <p className="px-2 py-3 text-sm text-muted-foreground">No exercises match your filters.</p>
-                )}
+                {exercisesListContent}
                 </div>
               </div>
             </CardContent>

@@ -1,6 +1,6 @@
 ## Introduction
 
-(Intro stub)
+Traditional fitness applications act as passive digital notebooks, leaving the complex calculations of progressive overload and recovery entirely up to the user. Without systematic management and athletic science knowledge, users frequently encounter frustrating training plateaus or inefficient workouts disrupted by busy schedules. OptiLifts bridges the gap between raw data collection and actionable athletic intelligence, OptiLifts utilises historical performance data and real-time Rate of Perceived Exertion(RPE) to guide users through optimised training cycles. The system is highly context-aware; dynamically reprioritising exercises to accommodate time constraints in order to promote continuous progress.
 
 ## Index
 
@@ -80,7 +80,7 @@
 * TUCEW the exercise is successfully removed from the workout draft.
 
 **Save workout**
-* TUCBW the user clicks the save button after finalizing their workout routine.
+* TUCBW the user clicks the save button after finalising their workout routine.
 * TUCEW the system successfully stores the new workout to the user's profile.
 
 ### Workout Editor
@@ -106,7 +106,7 @@
 * TUCEW the new parameters for that specific exercise are updated in the editor.
 
 **Save changes**
-* TUCBW the user clicks the save button to finalize their edits.
+* TUCBW the user clicks the save button to finalise their edits.
 * TUCEW the system overwrites the old workout data with the updated information.
 
 **Delete workout**
@@ -166,7 +166,7 @@
 ### Workout View (Active Session)
 
 **Add exercise**
-* TUCBW the user realizes they want to perform an extra exercise during an active workout and selects "Add."
+* TUCBW the user realises they want to perform an extra exercise during an active workout and selects "Add."
 * TUCEW the new exercise is dynamically added to the current active session.
 
 **Remove exercise**
@@ -225,7 +225,79 @@
 
 ## Functional Requirements
 
-(FRs stub)
+### FR1: Workout Management
+
+#### FR1.1: Exercise discovery and filtering
+1. FR1.1.1: The system will allow the user to view all available exercises, including template and custom exercises.
+2. FR1.1.2: The system will allow the user to view a list of recommended exercises.
+3. FR1.1.3: The system will provide search functionality for the user to find a specific exercise by name.
+4. FR1.1.4: The system will allow the user to filter exercises by the equipment required.
+5. FR1.1.5: The system will allow the user to filter exercises by the specific muscles trained.
+
+#### FR1.2: Workout construction and editing
+1. FR1.2.1: The system will allow the user to create or edit a workout routine.
+2. FR1.2.2: The system will allow the user to add an exercise to their workout routine.
+3. FR1.2.3: The system will allow the user to remove an exercise from their workout routine.
+4. FR1.2.4: The system will allow the user to change the set type for an exercise.
+5. FR1.2.5: The system will allow the user to add rest time to a specific exercise.
+6. FR1.2.6: The system will provide "Undo" functionality to revert changes made during the creation or editing process.
+7. FR1.2.7: The system will allow the user to save the workout to the database.
+8. FR1.2.8: The system will allow the user to delete a saved workout routine from the database.
+
+### FR2: Custom Exercise Creation
+
+#### FR2.1: Exercise details
+1. FR2.1.1: The system will allow the user to add or edit a name for a custom exercise.
+2. FR2.1.2: The system will allow the user to add or change an image for the custom exercise.
+3. FR2.1.3: The system will allow the user to select or change the exercise type.
+4. FR2.1.4: The system will allow the user to select or change the required equipment.
+5. FR2.1.5: The system will allow the user to cancel the creation process without saving.
+
+#### FR2.2: Muscle group assignment
+1. FR2.2.1: The system will allow the user to select or change the primary muscle group targeted.
+2. FR2.2.2: The system will allow the user to select or change secondary muscle groups.
+3. FR2.2.3: The system will allow the user to save the completed exercise profile to the database.
+4. FR2.2.4: The system will allow the user to delete a custom exercise from the library.
+
+### FR3: Workout and Exercise Information
+
+#### FR3.1: Workout summary display
+1. FR3.1.1: The system will display the name and detailed information of the selected workout.
+2. FR3.1.2: The system will display a summary of targeted muscles for the entire workout.
+3. FR3.1.3: The system will allow the user to filter workouts by folders or targeted muscles.
+
+#### FR3.2: Exercise information display
+1. FR3.2.1: The system will display detailed exercise information, including images and assigned muscle groups.
+2. FR3.2.2: The system will allow the user to set or edit the weight (kg) and reps for an exercise set.
+
+### FR4: User Management and Profile
+
+#### FR4.1: Authentication
+1. FR4.1.1: The system will allow the user to register a new account.
+2. FR4.1.2: The system will allow the user to log in to an existing account.
+3. FR4.1.3: The system will allow the user to delete their account.
+4. FR4.1.4: The system will allow the user to log out of their active session.
+
+#### FR4.2: Profile customisation
+1. FR4.2.1: The system will display the user's personal information.
+2. FR4.2.2: The system will allow the user to add or edit their weight.
+3. FR4.2.3: The system will allow the user to specify their gender.
+4. FR4.2.4: The system will allow the user to add or edit their age.
+5. FR4.2.5: The system will allow the user to save profile changes.
+
+### FR5: Scheduling and Session Tracking
+
+#### FR5.1: Schedule management
+1. FR5.1.1: The system will display the user's workout schedule.
+2. FR5.1.2: The system will allow the user to set, change, or remove a workout for a specific session.
+3. FR5.1.3: The system will allow the user to save the updated schedule.
+
+#### FR5.2: Active workout tracking
+1. FR5.2.1: The system will allow the user to start an active workout session.
+2. FR5.2.2: The system will allow the user to log weight (kg) and reps for each set in real-time.
+3. FR5.2.3: The system will allow the user to mark a set as complete or uncomplete.
+4. FR5.2.4: The system will allow the user to add or remove exercises during an active session.
+5. FR5.2.5: The system will allow the user to end and save the workout or cancel the session.
 
 ## API Service Contracts
 
@@ -239,7 +311,34 @@
 
 ### Quality Requirements
 
-(Performance, scalability, security, maintainability requirements go here.)
+Quality requirments dictate the holistic quality of OptiLifts by specifying the performance, reliability, scalability, security, and maintainability expectations.
+#### 1. Performance
+
+* API Response Time: Standard CRUD operations in the ASP.NET Core API, such as fetching user profiles, loading a saved workout, and updating session data, must return a response within 200 milliseconds under normal server load.
+* Algorithmic Efficiency: Core AI and scheduling tasks, specifically progressive overload recommendations and dynamic scheduling calculations, must execute and return results to the client within 2 seconds.
+* Client-Side Rendering: The React SPA must achieve a Time to Interactive (TTI) of under 1.5 seconds on broadband connections to preserve a responsive, app-like experience.
+
+#### 2. Reliability
+
+* System Uptime: The Azure-hosted core backend services must be designed for 95% availability, using built-in redundancy and failover features where applicable.
+* Offline Resilience: The SPA's PWA layer must cache active session state locally using browser storage and service-worker-backed caching. If the user loses connectivity during a workout, the system must allow the current workout to continue without data loss and synchronise the session payload within 1 minute of connection restoration.
+
+#### 3. Scalability
+
+* Elasticity: The backend must support auto-scaling or equivalent horizontal scaling controls to handle peak usage periods and support at least 500 concurrent active workout sessions without degrading the 200 millisecond API response baseline.
+* Data Volume: The database must remain performant as historical workout logs, scheduling data, and analytics records grow, using efficient indexing, pagination, and query design.
+
+#### 4. Security
+
+* Data Encryption: Sensitive user data at rest, including passwords, email addresses, and personal health metrics, must be protected using industry-standard encryption and hashing approaches.
+* Authentication: The system must use secure token-based authentication, such as JWT, with token expiry and refresh handling to prevent unauthorised access.
+* Anonymisation: In line with POPIA, personally identifiable information must be isolated from aggregate analytics data. Any data used for model improvements or reporting must be anonymised before use.
+
+#### 5. Maintainability
+
+* Architecture Standard: The backend must follow clean code and Domain-Driven Design principles so that workout-building, scheduling, and AI-assisted logic remain modular and testable.
+* Test Coverage: Core algorithmic modules, including plateau detection and scheduling, must maintain at least 80% unit test coverage.
+* Automated Deployment: Infrastructure must be defined using Infrastructure as Code, and all production deployments must pass through automated CI/CD checks, including successful test execution, before release.
 
 ### Architectural Patterns
 

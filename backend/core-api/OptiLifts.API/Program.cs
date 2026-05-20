@@ -11,7 +11,10 @@ using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Env.TraversePath().Load();
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    Env.TraversePath().Load();
+}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -47,13 +50,18 @@ builder.Services.AddCors(options =>
     });
 });
 
-var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
-var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
-var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
-var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
-var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
 
-var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
+    var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
+    var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
+    var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
+    var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
+}
 
 builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -119,3 +127,8 @@ app.UseAuthorization(); //authorization middleware
 app.MapControllers();
 
 await app.RunAsync();
+
+public partial class Program
+{
+    protected Program() { }
+}

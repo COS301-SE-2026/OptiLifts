@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExerciseCard } from '@/components/ui/exercise-card'
 import { PageTitle } from '@/components/ui/page-title'
+import { CreateExercise } from '@/components/ui/create-exercise'
 import { SearchInput } from '@/components/ui/search-input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -72,6 +73,8 @@ export default function CreateWorkoutPage() {
 
   const addExercise = (name: string, muscle: MuscleName) =>
     setExercises(prev => [...prev, { id: `ex-${nextExerciseId++}`, name, muscle, sets: [] }])
+
+  const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
 
   const filteredRecommended = RECOMMENDED_EXERCISES.filter((ex) => {
     const q = searchQuery.trim().toLowerCase()
@@ -169,7 +172,7 @@ export default function CreateWorkoutPage() {
             <CardHeader className="px-4 py-1">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base font-bold text-foreground">Exercises</CardTitle>
-                <Button type="button" variant="text" className="h-auto p-0 text-xs font-semibold normal-case tracking-normal text-brand hover:text-brand-2">
+                <Button type="button" variant="text" className="h-auto p-0 text-xs font-semibold normal-case tracking-normal text-brand hover:text-brand-2" onClick={() => setIsCreateExerciseOpen(true)}>
                   + Create Exercise
                 </Button>
               </div>
@@ -235,6 +238,7 @@ export default function CreateWorkoutPage() {
         </div>
         </div>
       </div>
+      <CreateExercise isOpen={isCreateExerciseOpen} onCancel={() => setIsCreateExerciseOpen(false)} />
     </section>
   )
 }

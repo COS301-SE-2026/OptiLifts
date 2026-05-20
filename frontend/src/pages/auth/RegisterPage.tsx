@@ -96,7 +96,7 @@ export function RegisterPage() {
 
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    
+
     if (!isFormValid) {
       return
     }

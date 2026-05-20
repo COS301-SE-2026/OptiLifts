@@ -1,12 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource/bebas-neue";
-@import "@fontsource/barlow/300.css";
-@import "@fontsource/barlow/400.css";
-@import "@fontsource/barlow/500.css";
-@import "@fontsource/barlow/600.css";
-
 @custom-variant dark (&:is(.dark *));
 
 

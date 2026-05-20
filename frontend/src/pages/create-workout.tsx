@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/auth-context'
 import { Plus, Dumbbell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,8 +52,10 @@ let nextExerciseId = 0
 
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
+  const { token } = useAuth()
   const [workoutName, setWorkoutName] = useState('')
   const [exercises, setExercises] = useState<WorkoutExercise[]>([])
+  const [saving, setSaving] = useState(false)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
@@ -105,6 +108,21 @@ export default function CreateWorkoutPage() {
   const addExercise = (name: string, muscle: MuscleName) =>
     setExercises(prev => [...prev, { id: `ex-${nextExerciseId++}`, name, muscle, sets: [] }])
 
+  const saveWorkout = async () => {
+    if (!workoutName.trim() || !token) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/workouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ folderId: null, name: workoutName.trim(), dayIndex: null, sets: [] }),
+      })
+      if (res.ok) navigate('/workouts')
+    } finally {
+      setSaving(false)
+    }
+  }
+  
   const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
 
   const filteredRecommended = RECOMMENDED_EXERCISES.filter((ex) => {
@@ -173,8 +191,8 @@ export default function CreateWorkoutPage() {
                     onChange={e => setWorkoutName(e.target.value)}
                   />
                 </div>
-                <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim()} onClick={() => navigate('/workouts')}>
-                  Save Workout
+                <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim() || saving} onClick={saveWorkout}>
+                  {saving ? 'Saving…' : 'Save Workout'}
                 </Button>
               </div>
             </div>

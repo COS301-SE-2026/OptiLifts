@@ -11,7 +11,7 @@ public sealed record CreateWorkoutSetRequest(
 );
 
 public sealed record CreateWorkoutRequest(
-    Guid FolderId,
+    Guid? FolderId,
     string Name,
     int? DayIndex,
     IReadOnlyList<CreateWorkoutSetRequest> Sets

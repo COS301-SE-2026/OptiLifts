@@ -75,15 +75,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("equipment");
 
-                    b.Property<string>("Force")
-                        .HasColumnType("text")
-                        .HasColumnName("force");
-
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("level");
-
                     b.Property<string>("Mechanic")
                         .HasColumnType("text")
                         .HasColumnName("mechanic");
@@ -103,6 +94,10 @@ namespace OptiLifts.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("secondary_muscles");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 

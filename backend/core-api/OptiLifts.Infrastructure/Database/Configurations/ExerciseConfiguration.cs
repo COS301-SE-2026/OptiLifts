@@ -21,5 +21,6 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
         //arrays for now, we need to discuss if we should keep them vs make a new table
         builder.Property(e => e.PrimaryMuscles).HasColumnName("primary_muscles");
         builder.Property(e => e.SecondaryMuscles).HasColumnName("secondary_muscles");
+        builder.Property(e => e.UserId).HasColumnName("user_id");
     }
 }

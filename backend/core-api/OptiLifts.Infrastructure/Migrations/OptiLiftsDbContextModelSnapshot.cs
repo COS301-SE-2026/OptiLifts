@@ -95,6 +95,10 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("secondary_muscles");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id");
 
                     b.ToTable("exercises", (string)null);

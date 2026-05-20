@@ -67,6 +67,7 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
             var primaryMuscleGroups = entries
                 .SelectMany(entry => entry.PrimaryMuscles)
                 .Distinct()
+                .Take(3)
                 .ToArray();
 
             return new WorkoutCardDto(

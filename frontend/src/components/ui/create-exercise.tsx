@@ -102,6 +102,15 @@ export function CreateExercise({
     return MUSCLE_GROUPS.filter((m) => m.toLowerCase().includes(query))
   }, [muscleSearchQuery])
 
+  const resolveExercisesEndpoint = () => {
+    const apiBase = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "/api" : "http://localhost:5036")
+    const normalizedBase = apiBase.replace(/\/$/, "")
+
+    return normalizedBase.endsWith("/api")
+      ? `${normalizedBase}/Exercises/custom`
+      : `${normalizedBase}/api/Exercises/custom`
+  }
+
   useEffect(() => {
     if (!isOpen) return
 
@@ -184,7 +193,7 @@ export function CreateExercise({
     )
   }
 
-  const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     const values = {
@@ -207,7 +216,6 @@ export function CreateExercise({
         setIsSaving(true)
         setSaveError(null)
 
-        const apiBase = import.meta.env.VITE_API_BASE ?? "http://localhost:5036"
         const payload = {
           Name: values.name,
           Mechanic: null,
@@ -217,10 +225,11 @@ export function CreateExercise({
           SecondaryMuscles: values.secondaryMuscles ?? [],
         }
 
-        const response = await fetch(`${apiBase}/api/Exercises/custom`, {
+        const response = await fetch(resolveExercisesEndpoint(), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Accept: "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(payload),

@@ -7,8 +7,8 @@ export default defineConfig(({ mode }) => {
   const rootDir = fileURLToPath(new URL('..', import.meta.url))
   const env = loadEnv(mode, rootDir, '')
 
-  const apiBaseUrl = env.API_BASE_URL
-  const frontendPort = Number(env.FRONTEND_PORT)
+  const apiBaseUrl = env.API_BASE_URL ?? 'http://localhost:5036'
+  const frontendPort = Number(env.FRONTEND_PORT ?? '5173')
 
   return {
     plugins: [

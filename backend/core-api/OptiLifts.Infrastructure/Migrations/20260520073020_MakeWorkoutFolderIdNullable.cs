@@ -11,14 +11,6 @@ namespace OptiLifts.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "force",
-                table: "exercises");
-
-            migrationBuilder.DropColumn(
-                name: "level",
-                table: "exercises");
-
             migrationBuilder.AlterColumn<Guid>(
                 name: "folder_id",
                 table: "workouts",

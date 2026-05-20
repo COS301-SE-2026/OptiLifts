@@ -1,8 +1,13 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using FluentAssertions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
@@ -102,7 +107,30 @@ public sealed class GetWorkoutsApiFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("JWT_SECRET", JwtSecret);
         Environment.SetEnvironmentVariable("JWT_EXP_MINUTES", "60");
 
-        _factory = new WebApplicationFactory<Program>();
+        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Test");
+            builder.ConfigureServices(services =>
+            {
+                var descriptor = services.SingleOrDefault(d =>
+                    d.ServiceType == typeof(DbContextOptions<OptiLiftsDbContext>));
+                if (descriptor != null)
+                    services.Remove(descriptor);
+
+                services.AddDbContext<OptiLiftsDbContext>(options =>
+                    options.UseNpgsql(_postgres.GetConnectionString()));
+
+                services.PostConfigureAll<JwtBearerOptions>(options =>
+                {
+                    options.TokenValidationParameters.IssuerSigningKey =
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecret));
+                });
+            });
+        });
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        await db.Database.MigrateAsync();
     }
 
     public async Task DisposeAsync()

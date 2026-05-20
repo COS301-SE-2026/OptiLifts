@@ -13,7 +13,7 @@ public sealed record CreateWorkoutSetDto(
 );
 
 public sealed record CreateWorkoutCommand(
-    Guid FolderId,
+    Guid? FolderId,
     string Name,
     int? DayIndex,
     Guid CreatedBy,

@@ -105,7 +105,115 @@ export default function BrandStylePage() {
                     </Card>
                 </div>
             </div>
+            <div className="section-row">
+                <div>
+                    <h2 className="section-heading">Colour Palette</h2>
+                    <h3 className="type-section-title">Light Mode Palette</h3>
+                    <ul className="palette-grid" aria-label="Colour palette">
+                        <li className="swatch swatch--background">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#FAF8F8</div>
+                            <div className="swatch__role">Background</div>
+                        </li>
+                        <li className="swatch swatch--border">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#E8DEDE</div>
+                            <div className="swatch__role">Secondary</div>
+                        </li>
+                        <li className="swatch swatch--brand">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#CC0022</div>
+                            <div className="swatch__role">Primary</div>
+                        </li>
+                        <li className="swatch swatch--brand-2">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#AA0018</div>
+                            <div className="swatch__role">Secondary</div>
+                        </li>
+                        <li className="swatch swatch--foreground">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#1A1A1A</div>
+                            <div className="swatch__role">Accent</div>
+                        </li>
+                        <li className="swatch swatch--muted-text">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#666666</div>
+                            <div className="swatch__role">Secondary</div>
+                        </li>
+                        <li className="swatch swatch--success">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#1B6E1F</div>
+                            <div className="swatch__role">Accent</div>
+                        </li>
+                        <li className="swatch swatch--warning">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#B35C00</div>
+                            <div className="swatch__role">Accent</div>
+                        </li>
+                    </ul>
 
+                    <h3 className="type-section-title">Dark Mode Palette</h3>
+                    <ul className="palette-grid palette-grid--dark" aria-label="Colour palette dark">
+                        <li className="swatch swatch--background">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#1C1C1F</div>
+                            <div className="swatch__role">Background</div>
+                        </li>
+                        <li className="swatch swatch--border">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#3A3A42</div>
+                            <div className="swatch__role">Secondary</div>
+                        </li>
+                        <li className="swatch swatch--brand">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#CC0022</div>
+                            <div className="swatch__role">Primary</div>
+                        </li>
+                        <li className="swatch swatch--brand-2">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#D94060</div>
+                            <div className="swatch__role">Secondary</div>
+                        </li>
+                        <li className="swatch swatch--foreground">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#E8E8EC</div>
+                            <div className="swatch__role">Accent</div>
+                        </li>
+                        <li className="swatch swatch--muted-text">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#9A9AA8</div>
+                            <div className="swatch__role">Secondary</div>
+                        </li>
+                        <li className="swatch swatch--success">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#4CAF50</div>
+                            <div className="swatch__role">Accent</div>
+                        </li>
+                        <li className="swatch swatch--warning">
+                            <div className="swatch__color" />
+                            <div className="swatch__hex">#FF9800</div>
+                            <div className="swatch__role">Accent</div>
+                        </li>
+                    </ul>
+
+                    <div className="palette-description">
+                        <p>
+                            OptiLifts's colour palette is inspired by the principle of <strong>progressive overloading</strong>, the core concept of the application. <strong>Bold Crimson</strong> was chosen to inspire action and energy, reminiscent of the drive behind every rep.
+                        </p>
+                        <p>
+                            Neutral surfaces create stark contrast and clarity, with <strong>accent colours</strong> guiding focus without introducing visual clutter. Each hue promotes accessibility, and the layered surface neutrals establish an intuitive visual depth.
+                        </p>
+                        <p>
+                            The dual-theme palette accommodates varied lighting environments. The <strong className="text-brand-2">Dark Mode</strong> variant is tailored for low-light gym settings, while the <strong className="text-brand">Light Mode</strong> variant delivers high-contrast visibility for outdoor training.
+                        </p>
+                        <p>
+                            <strong>Semantic colours</strong> are used intentionally and sparingly. <strong className="text-success">Forest Green</strong> celebrates wins like PRs and completed workouts, while <strong className="text-warning">Amber</strong> serves as a clear, non-intrusive indicator for fatigue or warnings.
+                        </p>
+                    </div>
+                </div>
+
+
+            </div>
 
         </section>
     )

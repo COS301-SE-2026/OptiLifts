@@ -41,13 +41,13 @@
 
 ## <img src="docs/images/telescope.svg" width="24" height="24" style="vertical-align: middle;"> The Problem
 
-Traditional fitness applications act as digital notebooks — they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
+Traditional fitness applications act as digital notebooks - they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
 
 <table width="100%">
   <tr>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Plateau Effect</h3>
-      <p align="center">Without a systematic approach to progressive overload, athletes stagnate — going weeks or months without measurable improvement.</p>
+      <p align="center">Without a systematic approach to progressive overload, athletes stagnate - going weeks or months without measurable improvement.</p>
     </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/calendar-x.svg" width="20" height="20" style="vertical-align: middle;"> Rigid Plans</h3>
@@ -55,7 +55,7 @@ Traditional fitness applications act as digital notebooks — they record data w
     </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> No Context-Awareness</h3>
-      <p align="center">Apps ignore fatigue, schedule constraints, and recovery needs — forcing users to make complex athletic science decisions themselves.</p>
+      <p align="center">Apps ignore fatigue, schedule constraints, and recovery needs - forcing users to make complex athletic science decisions themselves.</p>
     </td>
   </tr>
 </table>
@@ -106,8 +106,8 @@ graph LR
 | **Core API** | <img src="https://skillicons.dev/icons?i=dotnet" valign="middle" /> | ASP.NET Core with EF Core and MediatR for clean CQRS-style command/query handling. |
 | **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service using LiteLLM as a unified LLM gateway, with Langfuse for observability. |
 | **Machine Learning** | ![XGBoost](https://img.shields.io/badge/XGBoost-Plateau%20Detection-EC6C2D?style=flat-square) | XGBoost gradient-boosted model for plateau detection and progression recommendation. |
-| **LLM** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Azure OpenAI — GPT-4o mini for natural language coaching and intelligent suggestions. |
-| **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure — App Service, Container Registry, and managed PostgreSQL. |
+| **LLM** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Azure OpenAI - GPT-4o mini for natural language coaching and intelligent suggestions. |
+| **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure - App Service, Container Registry, and managed PostgreSQL. |
 | **IaC** | <img src="https://cdn.simpleicons.org/pulumi/8A3391" width="40" valign="middle" /> | Pulumi for defining and provisioning all Azure infrastructure as code. |
 | **CI/CD** | <img src="https://skillicons.dev/icons?i=githubactions" valign="middle" /> | GitHub Actions pipelines for automated testing, linting, and deployment. |
 | **Containerisation** | <img src="https://skillicons.dev/icons?i=docker" valign="middle" /> | Docker Compose for local development orchestration of all services. |
@@ -116,7 +116,7 @@ graph LR
 
 ## <img src="docs/images/boxes.svg" width="24" height="24" style="vertical-align: middle;"> The Team
 
-<p align="center">Team Hatrock — five athletes, one codebase.</p>
+<p align="center">Team Hatrock - five athletes, one codebase.</p>
 
 <br>
 
@@ -225,19 +225,25 @@ sudo npm install -g pnpm
 </details>
 
 <details>
-<summary><strong>2. Environment Variables</strong></summary>
+<summary><strong>2. Create your .env file</strong></summary>
 <br>
 
-```bash
-cp .env.example .env
-```
+Create a `.env` file in the root of the repo with the following values:
 
-Fill in your values in `.env`.
+```env
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=optilifts
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password_here
+JWT_SECRET=your_jwt_secret_here
+JWT_EXP_MINUTES=1440
+```
 
 </details>
 
 <details>
-<summary><strong>3. Setup the Repo</strong></summary>
+<summary><strong>3. Install Dependencies</strong></summary>
 <br>
 
 Installs all Node modules, restores C# packages, installs the EF Core CLI, and builds the Python virtual environment:
@@ -252,23 +258,31 @@ pnpm run setup
 <summary><strong>4. Start the Database</strong></summary>
 <br>
 
+Starts the PostgreSQL and Redis Docker containers:
+
 ```bash
 pnpm db
-pnpm db:sync
 ```
 
 </details>
 
 <details>
-<summary><strong>5. Seed the Database</strong></summary>
+<summary><strong>5. Seed Demo Data</strong></summary>
 <br>
 
-The API seeds the demo user automatically on startup. Start the backend once, then load the rest of the demo data:
+Start the backend - it will run migrations and seed the demo user automatically on first startup:
 
 ```bash
 pnpm dev:backend
+```
+
+Once it is running and you see the API ready, open a second terminal and load the demo workout data:
+
+```bash
 pnpm db:seed:sql
 ```
+
+Then stop the backend with `Ctrl+C`.
 
 </details>
 
@@ -304,7 +318,7 @@ Starts the frontend, .NET Core API, and Python AI API all at once.
 
 ## <img src="docs/images/heart-handshake.svg" width="24" height="24" style="vertical-align: middle;"> Acknowledgements
 
-- **EPI-USE** — our industry client, for the vision behind OptiLifts
+- **EPI-USE** - our industry client, for the vision behind OptiLifts
 - The open-source community for the incredible tools and libraries that make this possible
 - Microsoft Azure for Students sponsorship
 

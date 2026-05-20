@@ -13,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 if (!builder.Environment.IsEnvironment("Testing"))
 {
-    Env.TraversePath().Load();
+    var envFile = Path.Combine(AppContext.BaseDirectory, "../../../../.env");
+    if (File.Exists(envFile)) Env.Load(envFile);
 }
 
 builder.Services.AddControllers();
@@ -38,7 +39,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 //CORS configuration to allow requests from frontend
-var frontendOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "localhost:5173";
+var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "localhost:5173";
 
 builder.Services.AddCors(options =>
 {
@@ -50,15 +51,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
+var connectionString = builder.Configuration["POSTGRES_CONNECTION_STRING"];
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
-    var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
-    var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
-    var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
-    var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+    var dbHost = builder.Configuration["POSTGRES_HOST"];
+    var dbPort = builder.Configuration["POSTGRES_PORT"];
+    var dbName = builder.Configuration["POSTGRES_DB"];
+    var dbUser = builder.Configuration["POSTGRES_USER"];
+    var dbPass = builder.Configuration["POSTGRES_PASSWORD"];
 
     connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
 }
@@ -72,8 +73,8 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAs
 
 //register auth implementations
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
-var jwtExpiryMinutes = int.TryParse(Environment.GetEnvironmentVariable("JWT_EXP_MINUTES"), out var expiryMinutes)
+var jwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not set.");
+var jwtExpiryMinutes = int.TryParse(builder.Configuration["JWT_EXP_MINUTES"], out var expiryMinutes)
     ? expiryMinutes
     : 1440;
 
@@ -105,8 +106,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
+if (runMigrations)
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
     await dbContext.Database.MigrateAsync();
     await DatabaseSeeder.SeedAsync(dbContext);

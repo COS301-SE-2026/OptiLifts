@@ -214,6 +214,136 @@ export default function BrandStylePage() {
 
 
             </div>
+            <div className="section-row">
+                <div>
+                    <h2 className="section-heading">Typography</h2>
+                    <div className="typography-section">
+                        <p className="type-body">OptiLifts uses a two-font system: a display font for headings and a high-legibility UI font for body and interface text. Below is a concise, scannable reference of roles and canonical values.</p>
+
+                        <div className="typography-grid">
+                            <Card className="typography-item">
+                                <CardContent>
+                                    <div className="type-page-title">Page Title - OPTILIFTS</div>
+                                    <div className="type-meta">Bebas Neue · 42px · 400 · +2px · Page titles, wordmarks</div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="typography-item">
+                                <CardContent>
+                                    <div className="type-section-title">Section Title</div>
+                                    <div className="type-meta">Bebas Neue · 18px · 400 · +1.5px</div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="typography-item">
+                                <CardContent>
+                                    <div className="type-card-value">Card Value</div>
+                                    <div className="type-meta">Bebas Neue · 40px · 400 · +1px</div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="typography-item">
+                                <CardContent>
+                                    <div className="type-button">BUTTON</div>
+                                    <div className="type-meta">Barlow · 13px · 700 · Uppercase</div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="typography-item">
+                                <CardContent>
+                                    <div className="type-body">Body text sample</div>
+                                    <div className="type-meta">Barlow · 14px · 400</div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="typography-item">
+                                <CardContent>
+                                    <div className="type-label">LABEL / META</div>
+                                    <div className="type-meta">Barlow · 10–12px · 600–700 · Uppercase</div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <div style={{ marginTop: '1rem' }}>
+                            <h3 className="type-section-title">Typeface connotations</h3>
+                            <p className="type-body">The 'Bebas Neue' font is condensed and bold, conveying athleticism and impact. An excellent font for headlines, it portrays our brands character. 'Barlow' is a highly legible font, chosen for its contribution to a clear UI hierarchy, and comfortable reading. Together, these two fonts create a balance of boldness and usability.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div className="section-row">
+                <div>
+                    <h2 className="section-heading">Logo and Iconography</h2>
+                    <div className="logo-guidelines">
+                        <p><strong>Overview</strong>: The OptiLifts logo system comprises an <strong>icon mark</strong> (dumbbell + hexagon) and a <strong>wordmark</strong>. Each is provided in light and dark static SVGs (logo-light.svg, logo-dark.svg). Animated icon variants are available for motion contexts.</p>
+
+                        <h3 className="type-section-title">Colour & variants</h3>
+                        <p>Use the CSS tokens defined in <code>src/index.css</code> for all logo colouring: <code>--foreground</code> (structural) and <code>--brand</code>/<code>--brand-2</code> (accent).</p>
+
+                        <h3 className="type-section-title">Sizing & clearspace</h3>
+                        <ul>
+                            <li><strong>Icon mark minimum:</strong> 20×20px (UI/icon contexts). Prefer vector SVGs so they scale cleanly.</li>
+                            <li><strong>Wordmark minimum height:</strong> 32px. Use larger sizes for hero/header contexts.</li>
+                            <li><strong>Clearspace:</strong> Maintain at least 50% of the mark height as clearspace around the logo.</li>
+                        </ul>
+
+                        <h3 className="type-section-title">Iconography rules</h3>
+                        <ul>
+                            <li>Source icons from <strong>Lucide Icons</strong> for consistency (the repo uses <code>lucide-react</code>).</li>
+                            <li>Render icons at <strong>18×18px</strong> in sidebars/navigation; buttons may use 20px for balance.</li>
+                            <li>Use <code>currentColor</code> so icons inherit parent colour tokens.</li>
+                            <li>Ensure minimum touch target of <strong>44×44px</strong> on mobile.</li>
+                        </ul>
+
+                        <div className="logo-visuals">
+                            <div className="logo-sample">
+                                <img src="/logo-light.svg" alt="OptiLifts logo light" className="logo-sample__img" />
+                                <div className="logo-caption">Light variant - logo-light.svg</div>
+                                <div className="clearspace" />
+                            </div>
+
+                            <div className="logo-sample dark">
+                                <img src="/logo-dark.svg" alt="OptiLifts logo dark" className="logo-sample__img" />
+                                <div className="logo-caption">Dark variant - logo-dark.svg</div>
+                                <div className="clearspace" />
+                            </div>
+
+                            <div className="logo-sample">
+                                <img src="/logo-light.svg" alt="Icon mark light" className="logo-sample__img small" />
+                                <div className="logo-caption">Icon mark - 48×48 preview</div>
+                            </div>
+
+                            <div className="logo-sample dark">
+                                <img src="/logo-dark.svg" alt="Icon mark dark" className="logo-sample__img small" />
+                                <div className="logo-caption">Icon mark - 48×48 preview (dark)</div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '0.75rem' }}>
+                            <p style={{ marginBottom: '.25rem' }}><strong>Iconography library</strong></p>
+                            <div className="icon-library">
+                                <div className="icon-sample"><div className="icon-box"><Plus size={18} /></div><div className="icon-caption">Plus -Add action (Workouts, Create)</div></div>
+                                <div className="icon-sample"><div className="icon-box"><MoreHorizontal size={18} /></div><div className="icon-caption">More - overflow menu / contextual actions</div></div>
+                                <div className="icon-sample"><div className="icon-box"><X size={18} /></div><div className="icon-caption">X - Close / dismiss</div></div>
+                                <div className="icon-sample"><div className="icon-box"><Eye size={18} /></div><div className="icon-caption">Eye - Toggle visibility</div></div>
+                                <div className="icon-sample"><div className="icon-box"><LogOut size={18} /></div><div className="icon-caption">LogOut - Sign out</div></div>
+                                <div className="icon-sample"><div className="icon-box"><ChevronDown size={18} /></div><div className="icon-caption">ChevronDown - Expand / collapse</div></div>
+                                <div className="icon-sample"><div className="icon-box"><User size={18} /></div><div className="icon-caption">User - Profile / avatar placeholder</div></div>
+                                <div className="icon-sample"><div className="icon-box"><Dumbbell size={18} /></div><div className="icon-caption">Dumbbell - Exercise / workout concept</div></div>
+                                <div className="icon-sample"><div className="icon-box"><Info size={18} /></div><div className="icon-caption">Info - System messages</div></div>
+                                <div className="icon-sample"><div className="icon-box"><Sun size={18} /></div><div className="icon-caption">Sun - Theme toggle</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
 
         </section>
     )

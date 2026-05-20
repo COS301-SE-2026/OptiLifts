@@ -50,7 +50,6 @@ const RECOMMENDED_EXERCISES = [
   { name: 'Leg Press', muscleGroup: 'Hamstrings' as MuscleName },
 ] as const
 
-// Exercises are fetched from the API; initial local fallback removed.
 
 const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
 const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
@@ -155,13 +154,49 @@ export default function CreateWorkoutPage() {
   const saveWorkout = async () => {
     if (!workoutName.trim() || !token) return
     setSaving(true)
+    setSaveError(null)
     try {
       const res = await fetch('/api/workouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ folderId: null, name: workoutName.trim(), dayIndex: null, sets: [] }),
       })
-      if (res.ok) navigate('/workouts')
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || `Failed to create workout (${res.status})`)
+      }
+
+      const createdWorkout = (await res.json()) as WorkoutCreationResponse
+      const workoutId = createdWorkout.workoutId ?? createdWorkout.WorkoutId ?? createdWorkout.id
+
+      const exerciseIds = exercises
+        .map(exercise => exercise.exerciseCatalogId)
+        .filter((id): id is string => Boolean(id))
+
+      if (workoutId && exerciseIds.length > 0) {
+        await Promise.all(
+          exerciseIds.map(async (exerciseId) => {
+            const addResponse = await fetch(`/api/workouts/${workoutId}/exercises`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ exerciseId }),
+            })
+
+            if (!addResponse.ok) {
+              const text = await addResponse.text()
+              throw new Error(text || `Failed to add exercise ${exerciseId} to workout (${addResponse.status})`)
+            }
+          })
+        )
+      }
+
+      navigate('/workouts')
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save workout')
     } finally {
       setSaving(false)
     }
@@ -207,7 +242,7 @@ export default function CreateWorkoutPage() {
           <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
           <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
         </div>
-        <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+        <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
           <Plus size={12} />
         </Button>
       </div>
@@ -239,6 +274,7 @@ export default function CreateWorkoutPage() {
                   {saving ? 'Saving…' : 'Save Workout'}
                 </Button>
               </div>
+              {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             </div>
             <MuscleDiagramPlaceholder />
           </div>
@@ -280,7 +316,7 @@ export default function CreateWorkoutPage() {
                       <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
                       <div className="text-xs text-muted-foreground">{ex.muscleGroup}</div>
                     </div>
-                    <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+                    <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExerciseByName(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
                       <Plus size={12} />
                     </Button>
                   </div>
@@ -301,7 +337,7 @@ export default function CreateWorkoutPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2 px-4 pb-4">
+            <CardContent className="flex min-h-0 flex-col gap-2 px-4 pb-4">
               <DropdownMenu>
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
@@ -334,8 +370,8 @@ export default function CreateWorkoutPage() {
                 />
               </div>
 
-              <div className="divide-y divide-border/70 mt-2">
-                <div className="max-h-44 overflow-y-auto">
+              <div className="mt-2 min-h-0 overflow-y-auto pr-1">
+                <div className="divide-y divide-border/70">
                 {exercisesListContent}
                 </div>
               </div>

@@ -4,7 +4,7 @@ namespace OptiLifts.Application.Workouts.CreateWorkout;
 public sealed record CreateWorkoutResult(
     Guid WorkoutId,
     string Name,
-    Guid FolderId,
+    Guid? FolderId,
     int? DayIndex,
     DateTime CreatedAt
 );

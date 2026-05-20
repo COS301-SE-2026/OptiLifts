@@ -200,8 +200,9 @@ graph LR
 
 <div align="center">
 
-[![Functional Requirements](https://img.shields.io/badge/Functional_Requirements-View_SRS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](#)
-[![Design Specification](https://img.shields.io/badge/Design_Specification-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](#)
+[![Functional Requirements](https://img.shields.io/badge/Functional_Requirements-View_SRS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/SRS.md)
+[![Design Specification](https://img.shields.io/badge/Design_Specification-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/DESIGN.md)
+[![Repo Guidelines](https://img.shields.io/badge/Repo_Guidelines-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/REPO.md)
 [![Project Board](https://img.shields.io/badge/Project_Board-GitHub-B01030?style=for-the-badge&logo=github&logoColor=white)](https://github.com/orgs/COS301-SE-2026/projects)
 
 </div>

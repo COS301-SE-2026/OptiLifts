@@ -24,6 +24,23 @@ import {
 import type { WorkoutExercise } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 
+type WorkoutCreationResponse = {
+  workoutId?: string
+  WorkoutId?: string
+  id?: string
+}
+
+type CatalogExercise = {
+  id: string
+  name: string
+  muscleGroup: MuscleName
+  equipment?: string
+}
+
+type SelectedWorkoutExercise = WorkoutExercise & {
+  exerciseCatalogId?: string
+}
+
 const RECOMMENDED_EXERCISES = [
   { name: 'Bicep curl', muscleGroup: 'Biceps' as MuscleName },
   { name: 'Tricep pushdown', muscleGroup: 'Triceps' as MuscleName },

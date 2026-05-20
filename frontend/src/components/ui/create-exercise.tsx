@@ -3,6 +3,7 @@ import { ArrowLeft, Check, ImagePlus, Search, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/context/auth-context"
 import { MUSCLE_GROUPS } from "@/constants/muscles"
 import { DEFAULT_EXERCISE_TYPE_OPTIONS } from "@/constants/exercise-type-definitions"
 import { DEFAULT_EQUIPMENT_OPTIONS } from "@/constants/equipment"
@@ -62,12 +63,16 @@ export function CreateExercise({
     return [...DEFAULT_EXERCISE_TYPE_OPTIONS]
   }, [exerciseTypeOptions, exerciseTypes])
 
+  const { token } = useAuth()
+
   const [name, setName] = useState("")
   const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "weight-reps")
   const [equipment, setEquipment] = useState<string>(equipmentOptions[0] ?? "None")
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   
   const [primaryMuscle, setPrimaryMuscle] = useState<string | null>(null)
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([])
@@ -97,6 +102,15 @@ export function CreateExercise({
     return MUSCLE_GROUPS.filter((m) => m.toLowerCase().includes(query))
   }, [muscleSearchQuery])
 
+  const resolveExercisesEndpoint = () => {
+    const apiBase = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "/api" : "http://localhost:5036")
+    const normalizedBase = apiBase.replace(/\/$/, "")
+
+    return normalizedBase.endsWith("/api")
+      ? `${normalizedBase}/Exercises/custom`
+      : `${normalizedBase}/api/Exercises/custom`
+  }
+
   useEffect(() => {
     if (!isOpen) return
 
@@ -111,6 +125,8 @@ export function CreateExercise({
       setIsTypePickerOpen(false)
       setActiveMusclePicker(null)
       setMuscleSearchQuery("")
+      setIsSaving(false)
+      setSaveError(null)
     }, 0)
 
     return () => clearTimeout(t)
@@ -177,9 +193,61 @@ export function CreateExercise({
     )
   }
 
-  const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onSave({ name: name.trim(), exerciseType, equipment, imageFile: selectedImageFile, imageUrl: selectedImageUrl, primaryMuscle, secondaryMuscles })
+
+    const values = {
+      name: name.trim(),
+      exerciseType,
+      equipment,
+      imageFile: selectedImageFile,
+      imageUrl: selectedImageUrl,
+      primaryMuscle,
+      secondaryMuscles,
+    }
+
+    if (onSave) {
+      void Promise.resolve(onSave(values))
+      return
+    }
+
+    void (async () => {
+      try {
+        setIsSaving(true)
+        setSaveError(null)
+
+        const payload = {
+          Name: values.name,
+          Mechanic: null,
+          Equipment: values.equipment || null,
+          Category: values.exerciseType || "Custom",
+          PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
+          SecondaryMuscles: values.secondaryMuscles ?? [],
+        }
+
+        const response = await fetch(resolveExercisesEndpoint(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(text || `Request failed with status ${response.status}`)
+        }
+
+        onCancel()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to create exercise"
+        setSaveError(message)
+      } finally {
+        setIsSaving(false)
+      }
+    })()
   }
 
   return (
@@ -267,8 +335,13 @@ export function CreateExercise({
 
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-              <Button type="submit" disabled={!name.trim() || !primaryMuscle}>Save Exercise</Button>
+              <Button type="submit" disabled={!name.trim() || !primaryMuscle || isSaving}>Save Exercise</Button>
             </div>
+            {saveError ? (
+              <p className="mt-3 text-sm text-destructive" role="alert">
+                {saveError}
+              </p>
+            ) : null}
           </form>
         </CreateExerciseBackdrop>
       )}

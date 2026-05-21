@@ -32,7 +32,6 @@
 [![Coverage](https://img.shields.io/badge/Coverage-Pending-D94060?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1C1C1F)](https://github.com/COS301-SE-2026/OptiLifts)
 [![Issues](https://img.shields.io/github/issues/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=github&logoColor=white&label=Issues&labelColor=1C1C1F&color=D94060)](https://github.com/COS301-SE-2026/OptiLifts/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=git&logoColor=white&label=Last%20Commit&labelColor=1C1C1F&color=B01030)](https://github.com/COS301-SE-2026/OptiLifts/commits/main)
-[![License](https://img.shields.io/badge/License-MIT-B01030?style=for-the-badge&labelColor=1C1C1F)](LICENSE)
 [![Uptime](https://img.shields.io/badge/Uptime-Pending-D94060?style=for-the-badge&logo=uptimerobot&logoColor=white&labelColor=1C1C1F)](https://github.com/COS301-SE-2026/OptiLifts)
 
 </div>
@@ -82,19 +81,6 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
     </td>
   </tr>
 </table>
-
-<p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
-
-## <img src="docs/images/layers.svg" width="24" height="24" style="vertical-align: middle;"> Architecture
-
-```mermaid
-graph LR
-  A[React SPA<br/>Vite · Tailwind] -->|REST| B[ASP.NET Core API<br/>MediatR · EF Core]
-  A -->|REST| C[FastAPI AI Engine<br/>XGBoost · LiteLLM]
-  B -->|ORM| D[(PostgreSQL)]
-  C -->|LLM Gateway| E[Azure OpenAI<br/>GPT-4o mini]
-  B -->|Cache| F[(Redis)]
-```
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -202,6 +188,7 @@ graph LR
 
 [![Functional Requirements](https://img.shields.io/badge/Functional_Requirements-View_SRS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/SRS.md)
 [![Design Specification](https://img.shields.io/badge/Design_Specification-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/DESIGN.md)
+[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/brand-style-webpage.pdf)
 [![Repo Guidelines](https://img.shields.io/badge/Repo_Guidelines-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/REPO.md)
 [![Project Board](https://img.shields.io/badge/Project_Board-GitHub-B01030?style=for-the-badge&logo=github&logoColor=white)](https://github.com/orgs/COS301-SE-2026/projects)
 

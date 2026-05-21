@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, Check, ImagePlus, Search, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -31,9 +31,22 @@ const ensureOption = (options: readonly string[], value: string): string[] => {
 const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeDefinition[] =>
   exerciseTypes.map((type) => ({ value: type, label: type, example: "Custom exercise type", metrics: ["REPS"] }))
 
-function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children }: CreateExerciseBackdropProps) {
+function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children, focusRed }: CreateExerciseBackdropProps) {
   return (
-    <div className={`fixed inset-0 ${zIndexClassName} flex items-start justify-center p-4 pt-[11vh]`}>
+    <div data-focus-red={focusRed ? 'true' : undefined} className={`fixed inset-0 ${zIndexClassName} flex items-start justify-center p-4 pt-[11vh]`}>
+      {focusRed ? (
+        <style>{`
+          /* default: red outline for focused controls inside modal */
+          [data-focus-red] :focus-visible { outline: 3px solid #dc2626 !important; outline-offset: 2px !important; box-shadow: none !important; }
+          /* make select and ghost buttons black only when focused via keyboard, and remove their outline */
+          [data-focus-red] [data-slot="dropdown-menu-trigger"]:focus-visible,
+          [data-focus-red] button[data-variant="ghost"]:focus-visible {
+            outline: none !important;
+            box-shadow: none !important;
+            color: #000000 !important;
+          }
+        `}</style>
+      ) : null}
       <button
         type="button"
         className={`absolute inset-0 block w-full outline-none cursor-default ${backdropClassName}`}
@@ -52,6 +65,7 @@ export function CreateExercise({
   isOpen,
   onCancel,
   onSave,
+  onSaved,
   initialValues,
   exerciseTypes,
   exerciseTypeOptions,
@@ -111,6 +125,9 @@ export function CreateExercise({
       : `${normalizedBase}/api/Exercises/custom`
   }
 
+  const formRef = useRef<HTMLFormElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
   useEffect(() => {
     if (!isOpen) return
 
@@ -135,11 +152,44 @@ export function CreateExercise({
   useEffect(() => {
     if (!isOpen) return
 
+    const prevActive = document.activeElement as HTMLElement | null
+
+    const t = setTimeout(() => {
+      const first = formRef.current?.querySelector<HTMLInputElement>('input[data-slot="input"]')
+      if (first) first.focus()
+    }, 0)
+
+    return () => {
+      clearTimeout(t)
+      if (prevActive && typeof prevActive.focus === 'function') prevActive.focus()
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (isTypePickerOpen) setIsTypePickerOpen(false)
         else if (activeMusclePicker) setActiveMusclePicker(null)
         else onCancel()
+        return
+      }
+
+      if (event.key === 'Tab') {
+        const container = formRef.current
+        if (!container) return
+        const focusable = Array.from(container.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null)
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable.at(-1) as HTMLElement
+        const active = document.activeElement as HTMLElement
+        if (event.shiftKey && active === first) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault()
+          first.focus()
+        }
       }
     }
 
@@ -193,7 +243,7 @@ export function CreateExercise({
     )
   }
 
-  const handleSave = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSave = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     const values = {
@@ -206,58 +256,70 @@ export function CreateExercise({
       secondaryMuscles,
     }
 
-    if (onSave) {
-      void Promise.resolve(onSave(values))
-      return
-    }
+    try {
+      setIsSaving(true)
+      setSaveError(null)
 
-    void (async () => {
-      try {
-        setIsSaving(true)
-        setSaveError(null)
-
-        const payload = {
-          Name: values.name,
-          Mechanic: null,
-          Equipment: values.equipment || null,
-          Category: values.exerciseType || "Custom",
-          PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
-          SecondaryMuscles: values.secondaryMuscles ?? [],
+      if (onSave) {
+        await onSave(values)
+        if (onSaved) {
+          await onSaved()
         }
-
-        const response = await fetch(resolveExercisesEndpoint(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        })
-
-        if (!response.ok) {
-          const text = await response.text()
-          throw new Error(text || `Request failed with status ${response.status}`)
-        }
-
         onCancel()
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to create exercise"
-        setSaveError(message)
-      } finally {
-        setIsSaving(false)
+        return
       }
-    })()
+
+      const payload = {
+        Name: values.name,
+        Mechanic: null,
+        Equipment: values.equipment || null,
+        Category: values.exerciseType || "Custom",
+        PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
+        SecondaryMuscles: values.secondaryMuscles ?? [],
+      }
+
+      const response = await fetch(resolveExercisesEndpoint(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const text = await response.text()
+        throw new Error(text || `Request failed with status ${response.status}`)
+      }
+
+      if (onSaved) {
+        await onSaved()
+      }
+
+      onCancel()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create exercise"
+      setSaveError(message)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
     <>
       {!isTypePickerOpen && !activeMusclePicker && (
-        <CreateExerciseBackdrop zIndexClassName="z-40" backdropClassName="bg-foreground/50" onDismiss={onCancel}>
-          <form className="w-full max-w-xl rounded-xl border border-border bg-surface p-5 shadow-xl" onSubmit={handleSave} aria-label="Create custom exercise">
+        <CreateExerciseBackdrop zIndexClassName="z-40" backdropClassName="bg-foreground/50" onDismiss={onCancel} focusRed>
+          <form
+            ref={formRef}
+            aria-labelledby="create-exercise-title"
+            className="w-full max-w-xl rounded-xl border border-border bg-surface p-5 shadow-xl"
+            onSubmit={handleSave}
+            aria-label="Create custom exercise"
+          >
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-2xl leading-none">Create Custom Exercise</h2>
+                <h2 id="create-exercise-title" className="text-2xl leading-none">Create Custom Exercise</h2>
               </div>
               <Button type="button" variant="icon" size="icon" aria-label="Close" onClick={onCancel}>
                 <X size={16} />
@@ -267,21 +329,23 @@ export function CreateExercise({
             <div className="grid gap-4">
               <label className="grid gap-1.5">
                 <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise name</span>
-                <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Seated Cable Row" required maxLength={80} />
+                <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Seated Cable Row" required maxLength={80} data-slot="input" autoFocus />
               </label>
 
               <div className="grid gap-1.5">
                 <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise image</span>
                 <div className="rounded-lg border border-dashed border-border p-3">
                   <div className="flex items-center gap-4">
-                    <label className="relative flex h-20 w-20 cursor-pointer overflow-hidden rounded-lg border border-border bg-surface-2 transition-colors hover:bg-border items-center justify-center">
-                      <input type="file" accept="image/*" className="sr-only" onChange={onImageChange} />
-                      {selectedImageUrl ? (
-                        <img src={selectedImageUrl} alt="Selected exercise" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="text-muted-foreground"><ImagePlus size={20} /></div>
-                      )}
-                    </label>
+                    <div className="relative">
+                      <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" onChange={onImageChange} />
+                      <button type="button" aria-label="Select exercise image" onClick={() => fileInputRef.current?.click()} className="relative flex h-20 w-20 cursor-pointer overflow-hidden rounded-lg border border-border bg-surface-2 transition-colors hover:bg-border items-center justify-center">
+                        {selectedImageUrl ? (
+                          <img src={selectedImageUrl} alt="Selected exercise" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="text-muted-foreground"><ImagePlus size={20} /></div>
+                        )}
+                      </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {selectedImageUrl ? <Button type="button" variant="ghost" onClick={clearImage}>Remove</Button> : null}
                     </div>
@@ -347,7 +411,7 @@ export function CreateExercise({
       )}
 
       {isTypePickerOpen ? (
-        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/50" onDismiss={() => setIsTypePickerOpen(false)}>
+        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/50" onDismiss={() => setIsTypePickerOpen(false)} focusRed>
           <div className="flex max-h-[78dvh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
             <div className="relative flex h-14 items-center border-b border-border bg-surface px-4">
               <button type="button" onClick={() => setIsTypePickerOpen(false)} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Back">
@@ -395,7 +459,7 @@ export function CreateExercise({
       ) : null}
 
       {activeMusclePicker ? (
-        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/50" onDismiss={() => setActiveMusclePicker(null)}>
+        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/50" onDismiss={() => setActiveMusclePicker(null)} focusRed>
           <div className="flex max-h-[85dvh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
             <div className="relative flex h-14 items-center border-b border-border bg-surface px-4">
               <button type="button" onClick={() => setActiveMusclePicker(null)} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Back">

@@ -126,7 +126,21 @@ export default function WorkoutsPage() {
 
           <div className="space-y-4">
             {filtered.map((w) => (
-              <Card key={w.id} className={`cursor-pointer ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`} onClick={() => setSelectedId(w.id)}>
+              <Card
+                key={w.id}
+                role="button"
+                tabIndex={0}
+                aria-pressed={w.id === selectedId}
+                className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}
+                onClick={() => setSelectedId(w.id)}
+                onFocus={() => setSelectedId(w.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setSelectedId(w.id)
+                  }
+                }}
+              >
                 <CardHeader>
                   <CardTitle className="font-bold">{w.name}</CardTitle>
                   <CardAction>

@@ -41,6 +41,7 @@ export type CreateExerciseBackdropProps = Readonly<{
   zIndexClassName: string
   backdropClassName: string
   onDismiss: () => void
+  focusRed?: boolean
   children: ReactNode
 }>
 

@@ -37,10 +37,12 @@ export function Navbar() {
     </div>
   ) : null
 
+  const homeLink = isAuthenticated ? '/workouts' : '/register'
+
   return (
     <header className="sticky top-0 z-[100] w-full h-20 bg-background border-b-2 border-brand flex items-center px-8 box-border">
 
-      <Link to="/" aria-label="Home" className="flex items-center gap-[14px] mr-auto no-underline flex-shrink-0">
+      <Link to={homeLink} aria-label="Home" className="flex items-center gap-[14px] mr-auto no-underline flex-shrink-0">
         <img src="/logo-light.svg" className="h-12 w-auto dark:hidden" alt="OptiLifts" />
         <img src="/logo-dark.svg"  className="h-12 w-auto hidden dark:block" alt="OptiLifts" />
         <span className="font-display text-[36px] leading-none tracking-[2px] select-none">

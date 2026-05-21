@@ -305,7 +305,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## Domain Model
 
-(Domain model diagrams and entity descriptions go here.)
+![Domain Model](images/DomainModel.png)
 
 ## Architectural Requirements
 

@@ -89,37 +89,44 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
 
 public sealed class GetWorkoutsApiFixture : IAsyncLifetime
 {
+    private readonly string _dbName = $"optilifts_integration_tests_{Guid.NewGuid():N}";
     private const string JwtSecret = "integration-test-secret-integration-test-secret";
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
-        .WithDatabase("optilifts_integration_tests")
-        .WithUsername("postgres")
-        .WithPassword("postgres")
-        .Build();
+    private readonly PostgreSqlContainer _postgres;
 
     private WebApplicationFactory<Program> _factory = null!;
+
+    public GetWorkoutsApiFixture()
+    {
+        _postgres = new PostgreSqlBuilder("postgres:16-alpine")
+            .WithDatabase(_dbName)
+            .WithUsername("postgres")
+            .WithPassword("postgres")
+            .Build();
+    }
 
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString());
-        Environment.SetEnvironmentVariable("JWT_SECRET", JwtSecret);
-        Environment.SetEnvironmentVariable("JWT_EXP_MINUTES", "60");
+
+        var dbOptions = new DbContextOptionsBuilder<OptiLiftsDbContext>()
+            .UseNpgsql(_postgres.GetConnectionString())
+            .Options;
+
+        await using (var db = new OptiLiftsDbContext(dbOptions))
+        {
+            await db.Database.MigrateAsync();
+        }
 
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.UseEnvironment("Test");
+            builder.UseEnvironment("Testing");
+            builder.UseSetting("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString() + ";Pooling=false");
+            builder.UseSetting("JWT_SECRET", JwtSecret);
+            builder.UseSetting("JWT_EXP_MINUTES", "60");
+            builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
+            builder.UseSetting("RUN_MIGRATIONS", "false");
             builder.ConfigureServices(services =>
             {
-                var descriptor = services.SingleOrDefault(d =>
-                    d.ServiceType == typeof(DbContextOptions<OptiLiftsDbContext>));
-                if (descriptor != null)
-                    services.Remove(descriptor);
-
-                services.AddDbContext<OptiLiftsDbContext>(options =>
-                    options.UseNpgsql(_postgres.GetConnectionString()));
-
                 services.PostConfigureAll<JwtBearerOptions>(options =>
                 {
                     options.TokenValidationParameters.IssuerSigningKey =
@@ -127,10 +134,6 @@ public sealed class GetWorkoutsApiFixture : IAsyncLifetime
                 });
             });
         });
-
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-        await db.Database.MigrateAsync();
     }
 
     public async Task DisposeAsync()

@@ -61,6 +61,20 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ### Use Cases
 
+### Workouts Management
+
+**View workouts**
+* TUCBW the user navigates to the Workouts management screen.
+* TUCEW the system displays the authenticated user's saved workouts.
+
+**View muscle heatmap**
+* TUCBW the user requests a muscle heatmap for a selected workout or for their workout history.
+* TUCEW the system displays a visual heatmap highlighting targeted muscle groups and their relative emphasis based on exercises, sets, and assigned loads.
+
+**View workout summary**
+* TUCBW the user selects a specific workout from the list to view its summary.
+* TUCEW the system displays the workout's high-level details, estimated time, targeted muscle groups, and the full exercise list with counts.
+
 ### Workout Creator
 
 **Search for exercise**

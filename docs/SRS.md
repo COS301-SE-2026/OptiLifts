@@ -16,6 +16,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 	- [Design Patterns](#design-patterns)
 	- [Constraints](#constraints)
 - [Technology Requirements](#technology-requirements)
+- [Testing Methodology](#Testing-Methodology)
 
 ## User Stories / User Characteristics
 
@@ -846,3 +847,22 @@ The technologie were chosen to fulfill specific architectural and quality requir
 | **Python AI API** | pytest (unit tests), httpx (simulating web requests). |
 | **End-to-End (E2E)** | Playwright (browser simulation) integrated with Docker Compose. |
 | **Code Coverage** | Coveralls. |
+
+# Testing Methodology
+
+OptiLifts uses an multi-tiered testing strategy integrated into the CI/CD pipeline via GitHub Actions.
+
+## Types of Testing
+
+*   **Unit Testing**
+*   **Integration Testing** 
+*   **End-to-End (E2E) Testing** 
+*   **User Acceptance Testing (UAT)** doen through iterative sprint reviews and scheduled demos with the industry client and mentors.
+
+#### 4.3.2 Integration Strategy
+
+We are using a**Bottom-Up Integration Strategy**. 
+
+Testing begins at the low level modules of the architecture. specifically starting at the data access layers—before moving progressively upward. By first writing integration tests for the core logic that reads, writes and persists relational workout data we ensure the foundation is solid. 
+
+Once the persistence and data access layers are fully validated, integration testing moves up to the business logic handlers, followed by the API controllers, and ultimately concludes at the frontend presentation layer. This method allows us to catch fundamental data-handling defects early and allows the commonly used shared modules to be thoroughly tested befor they are used in higher-level logic.

@@ -123,12 +123,6 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
     {
         await _postgres.StartAsync();
 
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString());
-        Environment.SetEnvironmentVariable("JWT_SECRET", JwtSecret);
-        Environment.SetEnvironmentVariable("JWT_EXP_MINUTES", "60");
-
         // Apply migrations and seed the fixture database directly to avoid concurrent migrations
         var dbOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<OptiLifts.Infrastructure.Database.OptiLiftsDbContext>()
             .UseNpgsql(_postgres.GetConnectionString())
@@ -143,6 +137,11 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+            builder.UseSetting("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString() + ";Pooling=false");
+            builder.UseSetting("JWT_SECRET", JwtSecret);
+            builder.UseSetting("JWT_EXP_MINUTES", "60");
+            builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
+            builder.UseSetting("RUN_MIGRATIONS", "false");
             builder.ConfigureServices(services =>
             {
                 services.PostConfigureAll<JwtBearerOptions>(options =>
@@ -150,18 +149,6 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
                     options.TokenValidationParameters.IssuerSigningKey =
                         new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(JwtSecret));
                 });
-            });
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                var dict = new Dictionary<string, string?>
-                {
-                    ["POSTGRES_CONNECTION_STRING"] = _postgres.GetConnectionString(),
-                    ["JWT_SECRET"] = JwtSecret,
-                    ["JWT_EXP_MINUTES"] = "60",
-                    ["FRONTEND_ORIGIN"] = "localhost:5173",
-                    ["RUN_MIGRATIONS"] = "false"
-                };
-                config.AddInMemoryCollection(dict!);
             });
         });
     }

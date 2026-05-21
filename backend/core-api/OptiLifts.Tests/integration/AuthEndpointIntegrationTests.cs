@@ -102,13 +102,18 @@ public sealed class AuthEndpointIntegrationTests : IClassFixture<AuthApiFixture>
 public sealed class AuthApiFixture : IAsyncLifetime
 {
     private const string JwtSecret = "integration-test-secret-integration-test-secret";
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
-        .WithDatabase("optilifts_integration_tests")
+    private readonly string _dbName = $"optilifts_integration_tests_{Guid.NewGuid():N}";
+    private readonly PostgreSqlContainer _postgres;
+    private WebApplicationFactory<Program> _factory = null!;
+
+    public AuthApiFixture()
+    {
+        _postgres = new PostgreSqlBuilder("postgres:16-alpine")
+            .WithDatabase(_dbName)
         .WithUsername("postgres")
         .WithPassword("postgres")
-        .Build();
-
-    private WebApplicationFactory<Program> _factory = null!;
+            .Build();
+    }
 
     public async Task InitializeAsync()
     {
@@ -125,17 +130,14 @@ public sealed class AuthApiFixture : IAsyncLifetime
             await OptiLifts.Infrastructure.Database.Seeders.DatabaseSeeder.SeedAsync(db);
         }
 
-        //env setup
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("JWT_SECRET", JwtSecret);
-        Environment.SetEnvironmentVariable("JWT_EXP_MINUTES", "60");
-        Environment.SetEnvironmentVariable("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString());
-
-        //factory specific setup
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+            builder.UseSetting("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString() + ";Pooling=false");
+            builder.UseSetting("JWT_SECRET", JwtSecret);
+            builder.UseSetting("JWT_EXP_MINUTES", "60");
+            builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
+            builder.UseSetting("RUN_MIGRATIONS", "false");
             builder.ConfigureServices(services =>
             {
                 services.PostConfigureAll<JwtBearerOptions>(options =>
@@ -143,18 +145,6 @@ public sealed class AuthApiFixture : IAsyncLifetime
                     options.TokenValidationParameters.IssuerSigningKey =
                         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecret));
                 });
-            });
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                var dict = new Dictionary<string, string?>
-                {
-                    ["POSTGRES_CONNECTION_STRING"] = _postgres.GetConnectionString(),
-                    ["JWT_SECRET"] = JwtSecret,
-                    ["JWT_EXP_MINUTES"] = "60",
-                    ["FRONTEND_ORIGIN"] = "localhost:5173",
-                    ["RUN_MIGRATIONS"] = "false"
-                };
-                config.AddInMemoryCollection(dict!);
             });
         });
     }

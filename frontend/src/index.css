@@ -50,7 +50,7 @@
   --surface: #26262B;
   --surface-2: #2E2E34;
   --border: #3A3A42;
-  --brand: #B01030;
+  --brand: #CC0022;
   --brand-2: #D94060;
   --foreground: #E8E8EC;
   --muted-text: #9A9AA8;
@@ -111,6 +111,19 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
+
+  --type-page-title: 42px;
+  --type-card-value: 40px;
+  --type-section-title: 18px;
+  --type-button: 13px;
+  --type-body: 14px;
+  --type-label: 11px;
+
+  --tracking-page-title: 2px;
+  --tracking-section-title: 1.5px;
+  --tracking-card-value: 1px;
+  --tracking-button: 1px;
+  --tracking-label: 1.5px;
 }
 
 @layer base {

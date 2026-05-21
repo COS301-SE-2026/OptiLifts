@@ -3,15 +3,6 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
 import { PageTitle } from '@/components/ui/page-title'
-import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { DefaultTextBox, NumericalUnderscoreInput } from '@/components/ui/input'
-import { SearchInput as SimpleSearchInput } from '@/components/ui/search-input'
-import { CircularProfileImage } from '@/components/ui/circular-image'
-import { CreateExercise } from '@/components/ui/create-exercise'
-import { MoreHorizontal, Plus, X } from 'lucide-react'
-import edwinImg from '../../docs/images/edwin-profile.png'
-import { useState } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -48,58 +39,6 @@ function RequireAuth() {
   return <Outlet />
 }
 
-function HomePage() {
-  const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
-
-  return (
-    <section className="mx-auto max-w-5xl px-6 py-16">
-      <PageTitle title="Welcome to OptiLifts" />
-      <p className="mt-4 text-muted-foreground">This is a minimal demo shell. Add your pages under the routes.</p>
-
-      <div className="mt-6">
-        <Button variant="default" onClick={() => setIsCreateExerciseOpen(true)}>
-          Create custom exercise
-        </Button>
-      </div>
-
-      <section style={{ padding: '2rem', display: 'grid', gap: '1rem' }}>
-        <h2>Buttons</h2>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Button variant="default">Start Session</Button>
-          <Button variant="secondary">Save Workout</Button>
-          <Button variant="outline">+ Add Set</Button>
-          <Button variant="text">+ Create Exercise</Button>
-          <ThemeToggle />
-          <Button variant="icon" size="icon" aria-label="Add">
-            <Plus size={16} />
-          </Button>
-          <Button variant="icon" size="icon" aria-label="Options">
-            <MoreHorizontal size={16} />
-          </Button>
-          <Button variant="icon" size="icon" aria-label="Close">
-            <X size={16} />
-          </Button>
-        </div>
-
-        <div style={{ padding: '1rem', display: 'grid', gap: '1rem' }}>
-          <h3>Edwin's components</h3>
-          <SimpleSearchInput />
-          <DefaultTextBox />
-          <div style={{ justifySelf: 'start' }}>
-            <NumericalUnderscoreInput className="mx-0" />
-          </div>
-          <CircularProfileImage src={edwinImg} alt="Edwin" />
-        </div>
-      </section>
-
-      <CreateExercise
-        isOpen={isCreateExerciseOpen}
-        onCancel={() => setIsCreateExerciseOpen(false)}
-      />
-    </section>
-  )
-}
-
 type PlaceholderPageProps = Readonly<{
   title: string
   description: string
@@ -119,7 +58,7 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<Navigate to="/register" replace />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>

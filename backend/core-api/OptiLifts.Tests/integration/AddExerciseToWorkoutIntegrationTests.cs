@@ -120,5 +120,22 @@ public sealed class AddExerciseToWorkoutFixture : IAsyncLifetime
 
 public class AddExerciseToWorkoutIntegrationTests : IClassFixture<AddExerciseToWorkoutFixture>
 {
+    private readonly AddExerciseToWorkoutFixture _fixture;
+
+    public AddExerciseToWorkoutIntegrationTests(AddExerciseToWorkoutFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    private string GenerateToken(Guid userId)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AddExerciseToWorkoutFixture.JwtSecret));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, userId.ToString())],
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: creds);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 
 }

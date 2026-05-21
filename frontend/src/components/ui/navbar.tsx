@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useAuth } from '@/context/auth-context'
 
 const PUBLIC_LINKS = [
@@ -48,6 +49,7 @@ export function Navbar() {
       </Link>
 
       <nav className="flex items-center gap-2">
+
         {navigationLinks.map(({ to, label }) => (
           <Link
             key={to}
@@ -62,7 +64,7 @@ export function Navbar() {
             {label}
           </Link>
         ))}
-        
+        <ThemeToggle />
         
         {authControls} {/* shows logout if they're logged in and state is hydrated */}
       </nav>

@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://readme-typing-svg.demolab.com">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=16&duration=5000&pause=1000&color=B01030&center=true&vCenter=true&width=600&lines=Built+for+lifters%2C+by+lifters;Your+next+PR+is+already+planned" alt="Typing SVG" />
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=16&duration=5000&pause=1000&color=B01030&center=true&vCenter=true&width=600&lines=Intelligence+behind+every+lift.;Your+next+PR+is+already+planned" alt="Typing SVG" />
   </a>
 </p>
 
@@ -127,7 +127,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/cailin-profile.png" width="130" alt="Cailin Smith" />
       <br><br>
       <strong>Cailin Smith</strong><br>
-      <img src="https://img.shields.io/badge/Frontend%20Developer-B01030?style=flat-square&logoColor=white" /><br><br>
+      <img src="https://img.shields.io/badge/Frontend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
       <sub>Final-year BSc Computer Science student coordinating frontend development and design for OptiLifts. Best 1RM: 160kg calf raise.</sub>
       <br><br><br>
       <a href="https://github.com/CailinSmith"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -146,7 +146,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/alex-profile.png" width="130" alt="Alex Lange" />
       <br><br>
       <strong>Alex Lange</strong><br>
-      <img src="https://img.shields.io/badge/Backend%20Developer-B01030?style=flat-square&logoColor=white" /><br><br>
+      <img src="https://img.shields.io/badge/Backend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
       <sub>A 3rd year BSc Computer Science student with a focus on backend development for OptiLifts, and a lack of backend development in the gym.</sub>
       <br><br><br>
       <a href="https://github.com/AlexLange1st"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -158,7 +158,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/edwin-profile.png" width="130" alt="Edwin Küsel" />
       <br><br>
       <strong>Edwin Küsel</strong><br>
-      <img src="https://img.shields.io/badge/Backend%20·%20AI%20Engineer-B01030?style=flat-square&logoColor=white" /><br><br>
+      <img src="https://img.shields.io/badge/Backend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
       <sub>Final-year Computer Science student, focused on backend, with a passion for problem solving and hitting PRs.</sub>
       <br><br><br><br>
       <a href="https://github.com/EdwinKusel1"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -170,7 +170,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/ale-profile.png" width="130" alt="Alessandro Paravano" />
       <br><br>
       <strong>Alessandro Paravano</strong><br>
-      <img src="https://img.shields.io/badge/Frontend%20Developer-B01030?style=flat-square&logoColor=white" /><br><br>
+      <img src="https://img.shields.io/badge/Frontend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
       <sub>Final-year BSc Computer Science student handling frontend development for OptiLifts. Skips leg day in the gym, never skips a sprint.</sub>
       <br><br><br>
       <a href="https://github.com/AlessandroParavano"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;

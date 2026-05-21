@@ -365,7 +365,7 @@ export function CreateExercise({
                 <div className="grid gap-1">
                   <div className="flex items-center justify-between gap-4 overflow-hidden">
                     <span className="text-base font-medium whitespace-nowrap shrink-0">Primary Muscle Group</span>
-                    <Button type="button" variant="ghost" className="h-auto p-0 pl-2 text-brand hover:bg-transparent min-w-0 flex-1 justify-end overflow-hidden" onClick={() => { setActiveMusclePicker("primary"); setMuscleSearchQuery(""); }}>
+                    <Button type="button" variant="ghost" className="h-auto p-0 pl-2 text-brand hover:bg-transparent focus-visible:text-black dark:focus-visible:!text-white min-w-0 flex-1 justify-end overflow-hidden transition-colors" onClick={() => { setActiveMusclePicker("primary"); setMuscleSearchQuery(""); }}>
                       <span className="truncate uppercase block w-full text-right">{primaryMuscle ?? "Select"}</span>
                     </Button>
                   </div>
@@ -373,7 +373,7 @@ export function CreateExercise({
                 <div className="grid gap-1 mt-1">
                   <div className="flex items-center justify-between gap-4 overflow-hidden">
                     <span className="text-base font-medium whitespace-nowrap shrink-0">Other Muscles</span>
-                    <Button type="button" variant="ghost" className="h-auto p-0 pl-2 text-brand hover:bg-transparent min-w-0 flex-1 justify-end overflow-hidden" onClick={() => { setActiveMusclePicker("secondary"); setMuscleSearchQuery(""); }}>
+                    <Button type="button" variant="ghost" className="h-auto p-0 pl-2 text-brand hover:bg-transparent focus-visible:text-black dark:focus-visible:!text-white min-w-0 flex-1 justify-end overflow-hidden transition-colors" onClick={() => { setActiveMusclePicker("secondary"); setMuscleSearchQuery(""); }}>
                       <span className="truncate uppercase block w-full text-right">{secondaryMuscles.length > 0 ? secondaryMuscles.join(", ") : "Select (optional)"}</span>
                     </Button>
                   </div>

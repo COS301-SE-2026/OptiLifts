@@ -1,0 +1,110 @@
+name: Create Release Version
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ["main"]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  create-release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create release tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const mergedText = `${pr.title || ''}\n${pr.body || ''}`.toLowerCase();
+
+            const mainReleasePattern = /\b(main release|major release|release\s*type:\s*main|release\s*type:\s*major|type:\s*main|type:\s*major|breaking change|breaking)\b/i;
+            const minorReleasePattern = /\b(minor release|release\s*type:\s*minor|type\s*:\s*minor)\b/i;
+
+            const releaseType = mainReleasePattern.test(mergedText)
+              ? 'main'
+              : minorReleasePattern.test(mergedText)
+                ? 'minor'
+                : 'minor';
+
+            let major = 1;
+            let minor = 0;
+
+            try {
+              const latestRelease = await github.rest.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+
+              const latestTag = latestRelease.data.tag_name || latestRelease.data.name || '';
+              const versionMatch = latestTag.match(/(\d+)\.(\d+)/);
+
+              if (versionMatch) {
+                major = Number(versionMatch[1]);
+                minor = Number(versionMatch[2]);
+              }
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            if (releaseType === 'main') {
+              major += 1;
+              minor = 0;
+            } else {
+              minor += 1;
+            }
+
+            const version = `${major}.${minor}`;
+            const tagName = `v${version}`;
+            const releaseTitle = `Release ${tagName}`;
+            const releaseBody = [
+              `Automated release created from PR #${pr.number}.`,
+              `Branch: ${pr.head.ref}`,
+              `Release type: ${releaseType}`,
+              '',
+              pr.title ? `PR title: ${pr.title}` : null,
+              pr.html_url ? `PR: ${pr.html_url}` : null,
+            ].filter(Boolean).join('\n');
+
+            let existingRelease = null;
+            try {
+              existingRelease = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tagName,
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            if (existingRelease) {
+              core.info(`Release ${tagName} already exists. Skipping.`);
+              core.setOutput('version', version);
+              core.setOutput('tag_name', tagName);
+              core.setOutput('release_type', releaseType);
+              return;
+            }
+
+            const createdRelease = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              target_commitish: pr.base.ref,
+              name: releaseTitle,
+              body: releaseBody,
+              draft: false,
+              prerelease: false,
+            });
+
+            core.info(`Created ${createdRelease.data.html_url}`);
+            core.setOutput('version', version);
+            core.setOutput('tag_name', tagName);
+            core.setOutput('release_type', releaseType);

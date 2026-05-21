@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Dumbbell } from 'lucide-react'
@@ -80,7 +80,7 @@ export default function CreateWorkoutPage() {
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { token } = useAuth()
 
-  const fetchExercises = async () => {
+  const fetchExercises = useCallback(async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['Authorization'] = `Bearer ${token}`
 
@@ -93,7 +93,7 @@ export default function CreateWorkoutPage() {
     }
 
     return (await res.json()) as CatalogExercise[]
-  }
+  }, [token])
 
   useEffect(() => {
     let mounted = true
@@ -109,8 +109,7 @@ export default function CreateWorkoutPage() {
         if (!mounted) return
         setExercisesError(err instanceof Error ? err.message : 'Failed to load exercises')
       } finally {
-        if (!mounted) return
-        setLoadingExercises(false)
+        if (mounted) setLoadingExercises(false)
       }
     }
 
@@ -119,7 +118,7 @@ export default function CreateWorkoutPage() {
     return () => {
       mounted = false
     }
-  }, [token])
+  }, [fetchExercises])
 
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))

@@ -301,7 +301,278 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## API Service Contracts
 
-(All the contracts for the API services)
+
+### GET /api/exercises
+**Service Name:** Exercise Catalog Service
+
+**Description:**
+Returns the authenticated user's exercise catalog, including built-in and custom exercises.
+
+**Inputs:**
+
+- None in the request body.
+
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `exercises`: array of `ExerciseDto` - The list of exercises available to the user.
+
+ExerciseDto fields:
+
+- `id`: Guid - Unique exercise identifier.
+- `name`: string - Exercise name.
+- `mechanic`: string | null - Exercise mechanic, if defined.
+- `equipment`: string | null - Equipment required, if defined.
+- `category`: string - Exercise category.
+- `primaryMuscles`: array of string - Primary muscles trained.
+- `secondaryMuscles`: array of string - Secondary muscles assisted.
+- `isCustom`: boolean - Indicates whether the exercise was created by the user.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/exercises` with a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The response is a JSON object containing an `exercises` array of exercise objects.
+
+**Example Response:**
+
+```json
+{
+	"exercises": [
+		{
+			"id": "string",
+			"name": "string",
+			"description": "string",
+			"equipment": ["string"],
+			"muscles": ["string"],
+			"isCustom": false
+		}
+	],
+	"total": 0,
+	"page": 1,
+	"limit": 25
+}
+```
+
+---
+
+### POST /api/exercises/custom
+**Service Name:** Custom Exercise Creation Service
+
+**Description:**
+Creates a user-defined exercise and assigns it to the authenticated user.
+
+**Inputs:**
+
+- `name`: string - The exercise name.
+- `mechanic`: string | null - Optional exercise mechanic.
+- `equipment`: string | null - Optional equipment name.
+- `category`: string - The exercise category.
+- `primaryMuscles`: array of string - Primary muscles targeted.
+- `secondaryMuscles`: array of string - Secondary muscles assisted.
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `id`: Guid - The newly created exercise identifier.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/exercises/custom` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must include the exercise `name`, `category`, `primaryMuscles`, and `secondaryMuscles`.
+
+**Example Response:**
+
+```json
+{
+	"id": "string",
+	"name": "string",
+	"description": "string",
+	"equipment": ["string"],
+	"muscles": ["string"],
+	"instructions": "string",
+	"createdBy": "userId"
+}
+```
+
+---
+
+### GET /api/workouts
+**Service Name:** Workout List Service
+
+**Description:**
+Returns the authenticated user's workouts as summary cards.
+
+**Inputs:**
+
+- None in the request body.
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `workouts`: array of `WorkoutCardDto` - The list of workout summaries.
+
+WorkoutCardDto fields:
+
+- `id`: Guid - Unique workout identifier.
+- `name`: string - Workout name.
+- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
+- `exerciseCount`: integer - Number of exercises in the workout.
+- `exercisePreview`: array of string - Short preview of exercise names.
+- `createdAt`: datetime - When the workout was created.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The response is a JSON object containing a `workouts` array of workout summary objects.
+
+**Example Response:**
+
+```json
+{
+	"workouts": [
+		{
+			"id": "string",
+			"name": "string",
+			"folder": "string",
+			"estimatedTimeMinutes": 30,
+			"exercises": [
+				{ "id": "string", "name": "string", "sets": 3, "reps": 8 }
+			]
+		}
+	],
+	"total": 0,
+	"page": 1,
+	"limit": 25
+}
+```
+
+---
+
+### POST /api/workouts/{workoutId}/exercises
+**Service Name:** Workout Exercise Assignment Service
+
+**Description:**
+Adds an existing exercise to a specific workout owned by the authenticated user.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to update (path parameter).
+- `exerciseId`: Guid - The exercise to add to the workout (request body).
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout or exercise cannot be added.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must contain a valid `exerciseId` value.
+- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+
+**Example Response:**
+
+```json
+{
+	"id": "string",
+	"name": "string",
+	"exercises": [ /* updated exercises array */ ]
+}
+```
+
+---
+
+### POST /api/auth/register
+**Service Name:** User Registration Service
+
+**Description:**
+Creates a new user account and returns an authentication token plus user profile details.
+
+**Inputs:**
+
+- `displayName`: string - The user's display name.
+- `email`: string - The user's email address.
+- `password`: string - The user's chosen password.
+
+**Outputs:**
+
+- `token`: string - Bearer token for authenticated requests.
+- `user`: `AuthUserDto` - The created user profile.
+
+AuthUserDto fields:
+
+- `id`: Guid - Unique user identifier.
+- `displayName`: string - User display name.
+- `email`: string - User email address.
+- `createdAt`: datetime - Account creation timestamp.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/auth/register` with JSON data.
+- This endpoint is anonymous and does not require an existing token.
+- `email` and `password` are required; empty values return `400 Bad Request`.
+- If the email already exists, the service returns `409 Conflict`.
+
+**Example Response:**
+
+JSON with required fields:
+
+```json
+{
+  "displayName": "Alice Example",
+  "email": "alice@example.com",
+  "password": "P@ssw0rd!"
+}
+```
+
+---
+
+### POST /api/auth/login
+**Service Name:** User Login Service
+
+**Description:**
+Authenticates an existing user and returns an access token plus user profile details.
+
+**Inputs:**
+
+- `email`: string - The user's email address.
+- `password`: string - The user's password.
+
+**Outputs:**
+
+- `token`: string - Bearer token for authenticated requests.
+- `user`: `AuthUserDto` - The authenticated user profile.
+
+AuthUserDto fields:
+
+- `id`: Guid - Unique user identifier.
+- `displayName`: string - User display name.
+- `email`: string - User email address.
+- `createdAt`: datetime - Account creation timestamp.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/auth/login` with JSON data.
+- This endpoint is anonymous and does not require an existing token.
+- `email` and `password` are required; empty values return `400 Bad Request`.
+- Invalid credentials return `401 Unauthorized`.
+
+**Example Response:**
+
+```json
+{
+	"token": "eyJhbGciOi...",
+	"refreshToken": "optional-refresh-token",
+	"user": { "id": "string", "email": "user@example.com", "displayName": "Optional Name" }
+}
+```
+
 
 ## Domain Model
 

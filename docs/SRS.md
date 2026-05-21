@@ -377,7 +377,20 @@ This diagram shows how requests flow from the client (frontend) through the API 
 
 ### Constraints
 
-(Deployment, regulatory, platform constraints, etc.)
+**1. Financial and Budget Constraints**
+* **Zero-Cost Implementation:** The project must be designed and implemented without incurring any costs. 
+* **Infrastructure Limitations:** The system architecture should consist of open-source technologies and free-tier cloud services, such as our Azure for Students sponsorship.
+
+**2. LLM Cost Constraints**
+* **Cost Management:** API calls to any used LLM must be carefully managed and must make use of cost-saving strategies such as caching and rate limiting.
+* **Bot Behavior:** The application must account for the ethical implications of AI-generated content. We must ensure the AI operates within safe boundaries and that bot content does not negatively affect the accuracy of the models or the user's physical training.
+
+**3. Availability Constraints**
+* **System Uptime:** The OptiLifts platform must ensure an uptime of approximately 90%.
+
+**4. Security & Regulatory Constraints**
+* **Data Privacy (POPIA):** User health and fitness data must be handled responsibly and in strict compliance with privacy best practices and the POPI Act.
+* **Anonymity & Encryption:** The system must implement encrypted authentication and data storage. User anonymity must be prioritized, and data obfuscation must be enforced.
 
 ## Technology Requirements
 

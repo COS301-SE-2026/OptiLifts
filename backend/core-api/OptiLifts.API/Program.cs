@@ -9,13 +9,23 @@ using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Authentication;
 using DotNetEnv;
 
-var builder = WebApplication.CreateBuilder(args);
-
-if (!builder.Environment.IsEnvironment("Testing"))
+if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
 {
-    var envFile = Path.Combine(AppContext.BaseDirectory, "../../../../.env");
-    if (File.Exists(envFile)) Env.Load(envFile);
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory is not null)
+    {
+        var envFile = Path.Combine(directory.FullName, ".env");
+        if (File.Exists(envFile))
+        {
+            Env.Load(envFile);
+            break;
+        }
+
+        directory = directory.Parent;
+    }
 }
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

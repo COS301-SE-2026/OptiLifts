@@ -16,7 +16,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 	- [Design Patterns](#design-patterns)
 	- [Constraints](#constraints)
 - [Technology Requirements](#technology-requirements)
-- [Testing Methodology](#Testing-Methodology)
+- [Testing Methodology](#testing-methodology)
 
 ## User Stories / User Characteristics
 

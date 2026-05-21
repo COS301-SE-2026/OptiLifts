@@ -221,7 +221,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## High-level Use Case Diagrams
 
-![Initial Use Cases](use-cases/InitialUseCases.png)
+![Initial Use Cases](UseCases.png)
 
 ## Functional Requirements
 

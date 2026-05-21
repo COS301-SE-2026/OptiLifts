@@ -80,39 +80,46 @@ export default function CreateWorkoutPage() {
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { token } = useAuth()
 
-  useEffect(() => {
-    let mounted = true
-    setLoadingExercises(true)
-    setExercisesError(null)
+  const fetchExercises = async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['Authorization'] = `Bearer ${token}`
 
-    fetch('/api/exercises', { headers })
-      .then(async (res) => {
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
-          if (res.status === 404) throw new Error('Endpoint not found (404) - is the API running?')
-          throw new Error(`HTTP ${res.status}`)
-        }
-        return (await res.json()) as CatalogExercise[]
-      })
-      .then((data) => {
+    const res = await fetch('/api/exercises', { headers })
+
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
+      if (res.status === 404) throw new Error('Endpoint not found (404) - is the API running?')
+      throw new Error(`HTTP ${res.status}`)
+    }
+
+    return (await res.json()) as CatalogExercise[]
+  }
+
+  useEffect(() => {
+    let mounted = true
+    const loadExercises = async () => {
+      setLoadingExercises(true)
+      setExercisesError(null)
+
+      try {
+        const data = await fetchExercises()
         if (!mounted) return
         setAllExercises(data || [])
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!mounted) return
-        setExercisesError(err?.message ?? 'Failed to load exercises')
-      })
-      .finally(() => {
+        setExercisesError(err instanceof Error ? err.message : 'Failed to load exercises')
+      } finally {
         if (!mounted) return
         setLoadingExercises(false)
-      })
+      }
+    }
+
+    void loadExercises()
 
     return () => {
       mounted = false
     }
-  }, [])
+  }, [token])
 
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))
@@ -149,6 +156,11 @@ export default function CreateWorkoutPage() {
         sets: [],
       },
     ])
+  }
+
+  const handleExerciseSaved = async () => {
+    const refreshedExercises = await fetchExercises()
+    setAllExercises(refreshedExercises || [])
   }
 
   const saveWorkout = async () => {
@@ -381,7 +393,11 @@ export default function CreateWorkoutPage() {
         </div>
         </div>
       </div>
-      <CreateExercise isOpen={isCreateExerciseOpen} onCancel={() => setIsCreateExerciseOpen(false)} />
+      <CreateExercise
+        isOpen={isCreateExerciseOpen}
+        onCancel={() => setIsCreateExerciseOpen(false)}
+        onSaved={handleExerciseSaved}
+      />
     </section>
   )
 }

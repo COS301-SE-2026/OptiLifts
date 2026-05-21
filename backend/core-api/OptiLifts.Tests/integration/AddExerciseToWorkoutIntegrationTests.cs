@@ -161,4 +161,23 @@ public class AddExerciseToWorkoutIntegrationTests : IClassFixture<AddExerciseToW
         var exists = await _fixture.HasSetAsync(workoutId, exerciseId);
         exists.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task AddExerciseToWorkout_ReturnsNotFound_WhenExerciseMissing()
+    {
+        var userId = await _fixture.SeedUserAsync("addex2@example.com");
+        var client = _fixture.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateToken(userId));
+
+        var createBody = new CreateWorkoutRequest(null, "Back Day", 1, []);
+        var createResp = await client.PostAsJsonAsync("/api/workouts", createBody);
+        createResp.EnsureSuccessStatusCode();
+        var created = await createResp.Content.ReadFromJsonAsync<CreateWorkoutResult>();
+        created.Should().NotBeNull();
+        var workoutId = created!.WorkoutId;
+
+        var addResp = await client.PostAsJsonAsync($"/api/workouts/{workoutId}/exercises", new { ExerciseId = Guid.NewGuid() });
+        addResp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

@@ -394,4 +394,50 @@ This diagram shows how requests flow from the client (frontend) through the API 
 
 ## Technology Requirements
 
-(List of required technologies, minimum versions, and rationale.)
+The technologie were chosen to fulfill specific architectural and quality requirements, with a strong focus on performance, zero-budget cost constraints, and maintainability.
+
+#### Frontend & Presentation Layer
+| Component | Technology | Justification |
+| :--- | :--- | :--- |
+| **Framework** | React + React Router | Component-based structure ensures a highly responsive Single Page Application (SPA). |
+| **Build Tool & PWA** | Vite + vite-plugin-pwa | Fast hot-module replacement for ease of development and built-in support for offline Progressive Web App capabilities. |
+| **Design System** | Shadcn/ui + Tailwind CSS | Provides an easily customizable, and responsive UI whilst still keeping the application lightweight. |
+
+#### Core API & Application Layer
+| Component | Technology | Justification |
+| :--- | :--- | :--- |
+| **Core Framework** | .NET ASP.NET Core | High-performance framework utilizing strong typing and robust built-in authorization mechanisms to ensure secure endpoints. It naturally supports Domain-Driven Design (DDD) principles, allowing for clear domain models to handle complex hierarchical workout data. |
+| **Data Access** | Entity Framework (EF) Core | Object-Relational Mapper (ORM) that makes database interactions and migrations easier to manage accross the team. |
+| **Architecture Pattern** | MediatR | Implements logical CQRS to decouple services, separating read queries from write commands allowing for easier backend decoupling and maintainability. |
+| **Caching** | Redis | Caching ensures high-speed retrieval of session data and minimizes database hits . |
+
+#### AI & Machine Learning Layer
+| Component | Technology | Justification |
+| :--- | :--- | :--- |
+| **API Framework** | Python + FastAPI | Lightweight and highly performant with extensive libararies, ideal for serving machine learning models and AI endpoints. |
+| **Machine Learning** | XGBoost | Efficienct gradient boosting library for structured, tabular data. Chosen to analyze training history, predict performance thresholds, and back the plateau detection sub-system. |
+| **LLM Provider** | Azure OpenAI (GPT-4o mini) | Azure LLM to translate structured engine analytics into human-readable text summaries and conversational feedback. |
+| **LLM Gateway & Observability** | LiteLLM & Langfuse | Used to  manage key access, track prompt latency, and monitor token costs to adhere to zero-budget. |
+
+#### Persistence Layer
+| Component | Technology | Justification |
+| :--- | :--- | :--- |
+| **Relational Database** | PostgreSQL | Open-source relational database perfectly suited for the complex, hierarchical structures of workout plans and historical logs. |
+
+#### Infrastructure, DevOps & CI/CD
+| Component | Technology | Justification |
+| :--- | :--- | :--- |
+| **Cloud Hosting** | Microsoft Azure | Centralizes services under the Azure for Students tier, targeting 90%+ availability. |
+| **Infrastructure as Code** | Pulumi | Automates the provisioning and tear-down of Azure resources, ensuring a reproducible deployment environment. |
+| **CI/CD Pipeline** | GitHub Actions | Automates the testing and deployment pipelines directly from the repository. |
+| **Containerization** | Docker Compose | Ensures environment parity between local development and end-to-end testing environments. |
+| **Package Manager** | pnpm | Efficient dependency management with strong monorepo workspace support. |
+
+#### Quality Assurance & Testing
+| Testing Scope | Technologies Used |
+| :--- | :--- |
+| **.NET Backend** | xUnit (unit tests), Moq (interface mocking), TestContainers (shortlived PostgreSQL test containers), FluentAssertions. |
+| **React Frontend** | Vitest (unit testing), React Testing Library (component interactions). |
+| **Python AI API** | pytest (unit tests), httpx (simulating web requests). |
+| **End-to-End (E2E)** | Playwright (browser simulation) integrated with Docker Compose. |
+| **Code Coverage** | Coveralls. |

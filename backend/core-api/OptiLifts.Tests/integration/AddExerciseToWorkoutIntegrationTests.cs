@@ -138,4 +138,27 @@ public class AddExerciseToWorkoutIntegrationTests : IClassFixture<AddExerciseToW
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    [Fact]
+    public async Task AddExerciseToWorkout_ReturnsNoContent_AndCreatesSet()
+    {
+        var userId = await _fixture.SeedUserAsync("addex@example.com");
+        var client = _fixture.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateToken(userId));
+
+        var createBody = new CreateWorkoutRequest(null, "Chest Day", 1, []);
+        var createResp = await client.PostAsJsonAsync("/api/workouts", createBody);
+        createResp.EnsureSuccessStatusCode();
+        var created = await createResp.Content.ReadFromJsonAsync<CreateWorkoutResult>();
+        created.Should().NotBeNull();
+        var workoutId = created!.WorkoutId;
+
+        var exerciseId = await _fixture.SeedExerciseAsync("Integration Press");
+
+        var addResp = await client.PostAsJsonAsync($"/api/workouts/{workoutId}/exercises", new { ExerciseId = exerciseId });
+        addResp.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var exists = await _fixture.HasSetAsync(workoutId, exerciseId);
+        exists.Should().BeTrue();
+    }
 }

@@ -1,20 +1,22 @@
 # Design Specification: OptiLifts
 
+> For the full brand style guide see [docs/brand-style/brand-style-webpage.pdf](brand-style/brand-style-webpage.pdf)
+
 ---
 
-## 11. Theme Toggle
+## Theme Toggle
 
 Theme state is managed via a `ThemeProvider` wrapping the app. shadcn's built-in dark mode support uses the `dark:` Tailwind variant. Theme tokens are defined as CSS custom properties in `globals.css` under `:root` (light) and `.dark` (dark), mapped to `tailwind.config.ts` via `theme.extend.colors`. The toggle uses shadcn's Switch or DropdownMenu component.
 
 ---
 
-## 12. Wireframes
+## Wireframes
 
 The following wireframes represent the key screens for Demo 1. All screens are mid-fidelity - layout and component placement are finalised; final visual polish is applied in the live implementation.
 
 ---
 
-### 12.1 Navigation Flow
+### Navigation Flow
 
 The navigation flow below reflects the actual routes defined in `App.tsx` and the nav links in `navbar.tsx`.
 
@@ -64,7 +66,7 @@ flowchart TD
 
 ---
 
-### 12.2 Screen Layouts
+### Screen Layouts
 
 #### Screen 1 - Register
 

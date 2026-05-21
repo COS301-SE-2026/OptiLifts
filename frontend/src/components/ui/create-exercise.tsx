@@ -52,6 +52,7 @@ export function CreateExercise({
   isOpen,
   onCancel,
   onSave,
+  onSaved,
   initialValues,
   exerciseTypes,
   exerciseTypeOptions,
@@ -193,7 +194,7 @@ export function CreateExercise({
     )
   }
 
-  const handleSave = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSave = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     const values = {
@@ -206,48 +207,54 @@ export function CreateExercise({
       secondaryMuscles,
     }
 
-    if (onSave) {
-      void Promise.resolve(onSave(values))
-      return
-    }
+    try {
+      setIsSaving(true)
+      setSaveError(null)
 
-    void (async () => {
-      try {
-        setIsSaving(true)
-        setSaveError(null)
-
-        const payload = {
-          Name: values.name,
-          Mechanic: null,
-          Equipment: values.equipment || null,
-          Category: values.exerciseType || "Custom",
-          PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
-          SecondaryMuscles: values.secondaryMuscles ?? [],
+      if (onSave) {
+        await onSave(values)
+        if (onSaved) {
+          await onSaved()
         }
-
-        const response = await fetch(resolveExercisesEndpoint(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        })
-
-        if (!response.ok) {
-          const text = await response.text()
-          throw new Error(text || `Request failed with status ${response.status}`)
-        }
-
         onCancel()
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to create exercise"
-        setSaveError(message)
-      } finally {
-        setIsSaving(false)
+        return
       }
-    })()
+
+      const payload = {
+        Name: values.name,
+        Mechanic: null,
+        Equipment: values.equipment || null,
+        Category: values.exerciseType || "Custom",
+        PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
+        SecondaryMuscles: values.secondaryMuscles ?? [],
+      }
+
+      const response = await fetch(resolveExercisesEndpoint(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const text = await response.text()
+        throw new Error(text || `Request failed with status ${response.status}`)
+      }
+
+      if (onSaved) {
+        await onSaved()
+      }
+
+      onCancel()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create exercise"
+      setSaveError(message)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (

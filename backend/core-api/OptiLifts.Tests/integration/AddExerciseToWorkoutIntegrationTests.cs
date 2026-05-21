@@ -70,7 +70,52 @@ public sealed class AddExerciseToWorkoutFixture : IAsyncLifetime
         BaseAddress = new Uri("https://localhost"),
         AllowAutoRedirect = false
     });
- 
+
+    public async Task<Guid> SeedUserAsync(string email)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+
+        var userId = Guid.NewGuid();
+        db.Users.Add(new User
+        {
+            Id = userId,
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
+            DisplayName = "Test User"
+        });
+
+        db.Folders.Add(new Folder { Name = "Default", UserId = userId });
+        await db.SaveChangesAsync();
+        return userId;
+    }
+
+    public async Task<Guid> SeedExerciseAsync(string name)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+
+        var exercise = new Exercise
+        {
+            Name = name,
+            Category = "Strength",
+            Mechanic = "compound",
+            Equipment = "barbell",
+            PrimaryMuscles = new List<string> { "Chest" },
+            SecondaryMuscles = new List<string>()
+        };
+
+        db.Exercises.Add(exercise);
+        await db.SaveChangesAsync();
+        return exercise.Id;
+    }
+
+    public async Task<bool> HasSetAsync(Guid workoutId, Guid exerciseId)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        return await db.Sets.AnyAsync(s => s.WorkoutId == workoutId && s.ExerciseId == exerciseId);
+    }
 }
 
 public class AddExerciseToWorkoutIntegrationTests : IClassFixture<AddExerciseToWorkoutFixture>

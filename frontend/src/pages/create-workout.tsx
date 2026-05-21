@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/auth-context'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Dumbbell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,11 +24,32 @@ import {
 import type { WorkoutExercise } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 
+type WorkoutCreationResponse = {
+  workoutId?: string
+  WorkoutId?: string
+  id?: string
+}
+
+type CatalogExercise = {
+  id: string
+  name: string
+  muscleGroup: MuscleName
+  equipment?: string
+}
+
+type SelectedWorkoutExercise = WorkoutExercise & {
+  exerciseCatalogId?: string
+}
+
 const RECOMMENDED_EXERCISES = [
   { name: 'Bicep curl', muscleGroup: 'Biceps' as MuscleName },
   { name: 'Tricep pushdown', muscleGroup: 'Triceps' as MuscleName },
   { name: 'Lat pulldown', muscleGroup: 'Lats' as MuscleName },
+  { name: 'Pull Up', muscleGroup: 'Lats' as MuscleName },
+  { name: 'Overhead Press', muscleGroup: 'Shoulders' as MuscleName },
+  { name: 'Leg Press', muscleGroup: 'Hamstrings' as MuscleName },
 ] as const
+
 
 const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
 const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
@@ -46,13 +67,58 @@ let nextExerciseId = 0
 
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
-  const { token } = useAuth()
   const [workoutName, setWorkoutName] = useState('')
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([])
+  const [exercises, setExercises] = useState<SelectedWorkoutExercise[]>([])
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
+  const [loadingExercises, setLoadingExercises] = useState(true)
+  const [exercisesError, setExercisesError] = useState<string | null>(null)
+  const { token } = useAuth()
+
+  const fetchExercises = useCallback(async () => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    const res = await fetch('/api/exercises', { headers })
+
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
+      if (res.status === 404) throw new Error('Endpoint not found (404) - is the API running?')
+      throw new Error(`HTTP ${res.status}`)
+    }
+
+    return (await res.json()) as CatalogExercise[]
+  }, [token])
+
+  useEffect(() => {
+    let mounted = true
+    const loadExercises = async () => {
+      setLoadingExercises(true)
+      setExercisesError(null)
+
+      try {
+        const data = await fetchExercises()
+        if (!mounted) return
+        setAllExercises(data || [])
+      } catch (err) {
+        if (!mounted) return
+        setExercisesError(err instanceof Error ? err.message : 'Failed to load exercises')
+      } finally {
+        if (mounted) setLoadingExercises(false)
+      }
+    }
+
+    void loadExercises()
+
+    return () => {
+      mounted = false
+    }
+  }, [fetchExercises])
 
   const removeExercise = (id: string) =>
     setExercises(prev => prev.filter(e => e.id !== id))
@@ -60,19 +126,88 @@ export default function CreateWorkoutPage() {
   const updateSets = (id: string, sets: WorkoutExercise['sets']) =>
     setExercises(prev => prev.map(e => e.id === id ? { ...e, sets } : e))
 
-  const addExercise = (name: string, muscle: MuscleName) =>
-    setExercises(prev => [...prev, { id: `ex-${nextExerciseId++}`, name, muscle, sets: [] }])
+  const addExercise = (exercise: CatalogExercise) =>
+    setExercises(prev => [
+      ...prev,
+      {
+        id: `ex-${nextExerciseId++}`,
+        name: exercise.name,
+        muscle: exercise.muscleGroup,
+        sets: [],
+        exerciseCatalogId: exercise.id,
+      },
+    ])
+
+  const addExerciseByName = (name: string, muscle: MuscleName) => {
+    const match = allExercises.find(exercise => exercise.name === name)
+
+    if (match) {
+      addExercise(match)
+      return
+    }
+
+    setExercises(prev => [
+      ...prev,
+      {
+        id: `ex-${nextExerciseId++}`,
+        name,
+        muscle,
+        sets: [],
+      },
+    ])
+  }
+
+  const handleExerciseSaved = async () => {
+    const refreshedExercises = await fetchExercises()
+    setAllExercises(refreshedExercises || [])
+  }
 
   const saveWorkout = async () => {
     if (!workoutName.trim() || !token) return
     setSaving(true)
+    setSaveError(null)
     try {
       const res = await fetch('/api/workouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ folderId: null, name: workoutName.trim(), dayIndex: null, sets: [] }),
       })
-      if (res.ok) navigate('/workouts')
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || `Failed to create workout (${res.status})`)
+      }
+
+      const createdWorkout = (await res.json()) as WorkoutCreationResponse
+      const workoutId = createdWorkout.workoutId ?? createdWorkout.WorkoutId ?? createdWorkout.id
+
+      const exerciseIds = exercises
+        .map(exercise => exercise.exerciseCatalogId)
+        .filter((id): id is string => Boolean(id))
+
+      if (workoutId && exerciseIds.length > 0) {
+        await Promise.all(
+          exerciseIds.map(async (exerciseId) => {
+            const addResponse = await fetch(`/api/workouts/${workoutId}/exercises`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ exerciseId }),
+            })
+
+            if (!addResponse.ok) {
+              const text = await addResponse.text()
+              throw new Error(text || `Failed to add exercise ${exerciseId} to workout (${addResponse.status})`)
+            }
+          })
+        )
+      }
+
+      navigate('/workouts')
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save workout')
     } finally {
       setSaving(false)
     }
@@ -83,14 +218,52 @@ export default function CreateWorkoutPage() {
   const filteredRecommended = RECOMMENDED_EXERCISES.filter((ex) => {
     const q = searchQuery.trim().toLowerCase()
     if (q && !ex.name.toLowerCase().includes(q) && !ex.muscleGroup.toLowerCase().includes(q)) return false
-    if (selectedMuscle !== 'All Muscles' && ex.muscleGroup !== selectedMuscle) return false
     return true
   })
 
+  const filteredExercises = allExercises.filter((ex) => {
+    const q = searchQuery.trim().toLowerCase()
+    if (q && !ex.name.toLowerCase().includes(q) && !ex.muscleGroup.toLowerCase().includes(q)) return false
+    if (selectedMuscle !== 'All Muscles' && ex.muscleGroup !== selectedMuscle) return false
+    if (selectedEquipment !== 'All Equipment' && ex.equipment !== selectedEquipment) return false
+    return true
+  })
+
+  const exercisesListContent = (() => {
+    if (loadingExercises) {
+      return <p className="px-2 py-3 text-sm text-muted-foreground">Loading exercises...</p>
+    }
+
+    if (exercisesError) {
+      return <p className="px-2 py-3 text-sm text-destructive">{exercisesError}</p>
+    }
+
+    if (filteredExercises.length === 0) {
+      return <p className="px-2 py-3 text-sm text-muted-foreground">No exercises match your filters.</p>
+    }
+
+    return filteredExercises.map((ex) => (
+      <div key={ex.name} className="flex items-center gap-3 px-2 py-2.5">
+        <Avatar className="size-9 shrink-0 border border-border">
+          <AvatarFallback className="bg-surface-2">
+            <Dumbbell className="size-4 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+          <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
+        </div>
+        <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+          <Plus size={12} />
+        </Button>
+      </div>
+    ))
+  })()
+
   return (
     <section className="w-full px-6 py-6">
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
+      <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6">
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2">
@@ -112,6 +285,7 @@ export default function CreateWorkoutPage() {
                   {saving ? 'Saving…' : 'Save Workout'}
                 </Button>
               </div>
+              {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             </div>
             <MuscleDiagramPlaceholder />
           </div>
@@ -127,10 +301,11 @@ export default function CreateWorkoutPage() {
 
         </div>
 
-        <div className="col-span-12 lg:col-span-5 flex flex-col gap-4">
+        <div className="col-span-12 lg:col-span-5 min-w-0">
+          <div className="flex w-full flex-col gap-4 lg:fixed lg:top-[6.5rem] lg:right-6 lg:z-10 lg:w-[min(28rem,calc(100vw-3rem))] lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto">
 
-          <Card className="overflow-hidden border-border bg-card">
-            <CardHeader className="px-4 py-3">
+            <Card className="w-full overflow-hidden border-border bg-card">
+            <CardHeader className="px-4 py-1">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base font-bold text-foreground">Recommended</CardTitle>
                 <Button type="button" variant="text" className="h-auto p-0 text-xs font-semibold normal-case tracking-normal text-brand hover:text-brand-2">
@@ -140,6 +315,7 @@ export default function CreateWorkoutPage() {
             </CardHeader>
             <CardContent className="px-0 pb-0">
               <div className="divide-y divide-border/70">
+                <div className="max-h-44 overflow-y-auto">
                 {filteredRecommended.length > 0 ? filteredRecommended.map((ex) => (
                   <div key={ex.name} className="flex items-center gap-3 px-4 py-2.5">
                     <Avatar className="size-9 shrink-0 border border-border">
@@ -151,19 +327,20 @@ export default function CreateWorkoutPage() {
                       <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
                       <div className="text-xs text-muted-foreground">{ex.muscleGroup}</div>
                     </div>
-                    <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+                    <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExerciseByName(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
                       <Plus size={12} />
                     </Button>
                   </div>
                 )) : (
                   <p className="px-4 py-3 text-sm text-muted-foreground">No recommended exercises match your search.</p>
                 )}
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden border-border bg-card">
-            <CardHeader className="px-4 py-3">
+            <Card className="w-full overflow-hidden border-border bg-card">
+            <CardHeader className="px-4 py-1">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base font-bold text-foreground">Exercises</CardTitle>
                 <Button type="button" variant="text" className="h-auto p-0 text-xs font-semibold normal-case tracking-normal text-brand hover:text-brand-2" onClick={() => setIsCreateExerciseOpen(true)}>
@@ -171,7 +348,7 @@ export default function CreateWorkoutPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2 px-4 pb-4">
+            <CardContent className="flex min-h-0 flex-col gap-2 px-4 pb-4">
               <DropdownMenu>
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
@@ -194,19 +371,32 @@ export default function CreateWorkoutPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <SearchInput
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                aria-label="Search exercises"
-                className="h-8"
-              />
+              <div className="[&>div]:max-w-none [&>div]:w-full">
+                <SearchInput
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search"
+                  aria-label="Search exercises"
+                  className="h-8 w-full"
+                />
+              </div>
+
+              <div className="mt-2 min-h-0 overflow-y-auto pr-1">
+                <div className="divide-y divide-border/70">
+                {exercisesListContent}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
         </div>
+        </div>
       </div>
-      <CreateExercise isOpen={isCreateExerciseOpen} onCancel={() => setIsCreateExerciseOpen(false)} />
+      <CreateExercise
+        isOpen={isCreateExerciseOpen}
+        onCancel={() => setIsCreateExerciseOpen(false)}
+        onSaved={handleExerciseSaved}
+      />
     </section>
   )
 }

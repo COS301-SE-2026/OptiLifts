@@ -15,7 +15,15 @@ public class AzureBlobStorageService : IBlobStorageService
 
     public AzureBlobStorageService(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("AzureStorage") ?? string.Empty;
+        _connectionString = configuration.GetConnectionString("AzureStorage");
+
+        if (string.IsNullOrWhiteSpace(_connectionString))
+        {
+            // Support alternative env var names that users may set in .env
+            _connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__AzureStorage")
+                                ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING")
+                                ?? string.Empty;
+        }
     }
 
     public async Task<string> UploadFileAsync(Stream stream, string fileName, string contentType, string containerName, CancellationToken cancellationToken = default)

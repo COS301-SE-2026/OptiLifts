@@ -16,5 +16,13 @@ services:
     ports:
       - "6379:6379"
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: ["azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0", "--skipApiVersionCheck"]
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+
 volumes:
   postgres_data:

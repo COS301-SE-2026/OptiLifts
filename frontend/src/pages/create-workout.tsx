@@ -39,6 +39,14 @@ type CatalogExercise = {
   imageUrl?: string
 }
 
+type ExerciseApiResponse = {
+  id: string
+  name: string
+  primaryMuscles?: string[]
+  equipment?: string
+  imageUrl?: string
+}
+
 type SelectedWorkoutExercise = WorkoutExercise & {
   exerciseCatalogId?: string
 }
@@ -94,8 +102,8 @@ export default function CreateWorkoutPage() {
       throw new Error(`HTTP ${res.status}`)
     }
 
-    const json = await res.json()
-    return json.map((ex: any) => ({
+    const json = (await res.json()) as ExerciseApiResponse[]
+    return json.map((ex) => ({
       id: ex.id,
       name: ex.name,
       muscleGroup: (ex.primaryMuscles?.[0] || 'Other') as MuscleName,

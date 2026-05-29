@@ -19,7 +19,7 @@ public class ExercisesControllerTests
         var userId = Guid.NewGuid();
         var exercises = new List<ExerciseDto>
         {
-            new ExerciseDto(Guid.NewGuid(), "Bench Press", "Compound", "Barbell", "Strength", new List<string>{"Chest"}, new List<string>{"Triceps"}, false)
+            new ExerciseDto(Guid.NewGuid(), "Bench Press", "Compound", "Barbell", "Strength", new List<string>{"Chest"}, new List<string>{"Triceps"}, false, null)
         };
 
         var mediatorMock = new Mock<IMediator>();
@@ -53,14 +53,15 @@ public class ExercisesControllerTests
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) }));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } };
 
-        var request = new CreateCustomExerciseRequest(
-            "Custom Move",
-            "Isolation",
-            "Dumbbell",
-            "Accessory",
-            new List<string> { "Biceps" },
-            new List<string> { "Forearms" }
-        );
+        var request = new CreateCustomExerciseRequest
+        {
+            Name = "Custom Move",
+            Mechanic = "Isolation",
+            Equipment = "Dumbbell",
+            Category = "Accessory",
+            PrimaryMuscles = new List<string> { "Biceps" },
+            SecondaryMuscles = new List<string> { "Forearms" }
+        };
 
         var result = await controller.CreateCustomExercise(request, CancellationToken.None);
 

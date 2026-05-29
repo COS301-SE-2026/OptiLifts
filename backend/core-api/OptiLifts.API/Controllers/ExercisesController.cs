@@ -33,11 +33,22 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpPost("custom")]
-    public async Task<IActionResult> CreateCustomExercise([FromBody] CreateCustomExerciseRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateCustomExercise([FromForm] CreateCustomExerciseRequest request, CancellationToken cancellationToken)
     {
         var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
             return Unauthorized();
+
+        Stream? imageStream = null;
+        string? imageFileName = null;
+        string? imageContentType = null;
+
+        if (request.Image != null)
+        {
+            imageStream = request.Image.OpenReadStream();
+            imageFileName = request.Image.FileName;
+            imageContentType = request.Image.ContentType;
+        }
 
         var command = new CreateCustomExerciseCommand(
             userId,
@@ -46,17 +57,23 @@ public class ExercisesController : ControllerBase
             request.Equipment,
             request.Category,
             request.PrimaryMuscles,
-            request.SecondaryMuscles);
+            request.SecondaryMuscles,
+            imageStream,
+            imageFileName,
+            imageContentType);
 
         var exerciseId = await _mediator.Send(command, cancellationToken);
         return Ok(new { Id = exerciseId });
     }
 }
 
-public record CreateCustomExerciseRequest(
-    string Name,
-    string? Mechanic,
-    string? Equipment,
-    string Category,
-    List<string> PrimaryMuscles,
-    List<string> SecondaryMuscles);
+public class CreateCustomExerciseRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Mechanic { get; set; }
+    public string? Equipment { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public List<string> PrimaryMuscles { get; set; } = new();
+    public List<string> SecondaryMuscles { get; set; } = new();
+    public IFormFile? Image { get; set; }
+}

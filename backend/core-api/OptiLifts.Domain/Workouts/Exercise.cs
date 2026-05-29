@@ -10,4 +10,5 @@ public class Exercise
     public List<string> PrimaryMuscles { get; set; } = new();
     public List<string> SecondaryMuscles { get; set; } = new();
     public Guid? UserId { get; set; } // Null for public, populated for custom exercises
+    public string? ImageUrl { get; set; }
 }

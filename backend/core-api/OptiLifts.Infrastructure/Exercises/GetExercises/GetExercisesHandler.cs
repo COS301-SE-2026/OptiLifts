@@ -28,7 +28,8 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
             e.Category,
             e.PrimaryMuscles,
             e.SecondaryMuscles,
-            e.UserId != null
+            e.UserId != null,
+            e.ImageUrl
         )).ToList();
     }
 }

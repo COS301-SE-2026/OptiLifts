@@ -8,5 +8,6 @@ public record ExerciseDto(
     string Category,
     List<string> PrimaryMuscles,
     List<string> SecondaryMuscles,
-    bool IsCustom
+    bool IsCustom,
+    string? ImageUrl
 );

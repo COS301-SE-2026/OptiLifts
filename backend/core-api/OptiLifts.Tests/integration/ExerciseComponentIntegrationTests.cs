@@ -11,12 +11,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
+using OptiLifts.API.Controllers;
 using OptiLifts.Application.Exercises.GetExercises;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using Testcontainers.PostgreSql;
 using Xunit;
+using System.Net.Http;
+using System.Text;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -36,15 +39,15 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
 
         var client = _fixture.GetAuthenticatedClient(user);
 
-        var createResponse = await client.PostAsJsonAsync("/api/exercises/custom", new
-        {
-            Name = "Custom Curl",
-            Mechanic = "isolation",
-            Equipment = "dumbbell",
-            Category = "Strength",
-            PrimaryMuscles = new[] { "Biceps" },
-            SecondaryMuscles = new string[] { }
-        });
+        using var createContent = BuildCustomExerciseContent(
+            name: "Custom Curl",
+            mechanic: "isolation",
+            equipment: "dumbbell",
+            category: "Strength",
+            primaryMuscles: ["Biceps"],
+            secondaryMuscles: []);
+
+        var createResponse = await client.PostAsync("/api/exercises/custom", createContent);
 
         createResponse.EnsureSuccessStatusCode();
 
@@ -69,26 +72,26 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
         var clientOne = _fixture.GetAuthenticatedClient(userOne);
         var clientTwo = _fixture.GetAuthenticatedClient(userTwo);
 
-        var resp1 = await clientOne.PostAsJsonAsync("/api/exercises/custom", new
-        {
-            Name = "UserOne Exercise",
-            Mechanic = "compound",
-            Equipment = "barbell",
-            Category = "Strength",
-            PrimaryMuscles = new[] { "Back" },
-            SecondaryMuscles = new string[] { }
-        });
+        using var userOneContent = BuildCustomExerciseContent(
+            name: "UserOne Exercise",
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Back"],
+            secondaryMuscles: []);
+
+        var resp1 = await clientOne.PostAsync("/api/exercises/custom", userOneContent);
         resp1.EnsureSuccessStatusCode();
 
-        var resp2 = await clientTwo.PostAsJsonAsync("/api/exercises/custom", new
-        {
-            Name = "UserTwo Exercise",
-            Mechanic = "compound",
-            Equipment = "barbell",
-            Category = "Strength",
-            PrimaryMuscles = new[] { "Chest" },
-            SecondaryMuscles = new string[] { }
-        });
+        using var userTwoContent = BuildCustomExerciseContent(
+            name: "UserTwo Exercise",
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Chest"],
+            secondaryMuscles: []);
+
+        var resp2 = await clientTwo.PostAsync("/api/exercises/custom", userTwoContent);
         resp2.EnsureSuccessStatusCode();
 
         var getOne = await clientOne.GetAsync("/api/exercises");
@@ -101,6 +104,35 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
     }
 
     private record CreateResult(Guid Id);
+
+    private static MultipartFormDataContent BuildCustomExerciseContent(
+        string name,
+        string mechanic,
+        string equipment,
+        string category,
+        IEnumerable<string> primaryMuscles,
+        IEnumerable<string> secondaryMuscles)
+    {
+        var content = new MultipartFormDataContent
+        {
+            { new StringContent(name, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Name) },
+            { new StringContent(mechanic, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Mechanic) },
+            { new StringContent(equipment, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Equipment) },
+            { new StringContent(category, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Category) },
+        };
+
+        foreach (var muscle in primaryMuscles)
+        {
+            content.Add(new StringContent(muscle, Encoding.UTF8), nameof(CreateCustomExerciseRequest.PrimaryMuscles));
+        }
+
+        foreach (var muscle in secondaryMuscles)
+        {
+            content.Add(new StringContent(muscle, Encoding.UTF8), nameof(CreateCustomExerciseRequest.SecondaryMuscles));
+        }
+
+        return content;
+    }
 }
 
 public sealed class ExercisesApiFixture : IAsyncLifetime

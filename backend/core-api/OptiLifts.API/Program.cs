@@ -81,6 +81,8 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 //register MediatR handlers from Application and Infrastructure assemblies
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
+builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+
 //register auth implementations
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 var jwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not set.");

@@ -269,23 +269,21 @@ export function CreateExercise({
         return
       }
 
-      const payload = {
-        Name: values.name,
-        Mechanic: null,
-        Equipment: values.equipment || null,
-        Category: values.exerciseType || "Custom",
-        PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
-        SecondaryMuscles: values.secondaryMuscles ?? [],
-      }
+      const formData = new FormData()
+      formData.append("Name", values.name)
+      if (values.equipment) formData.append("Equipment", values.equipment)
+      formData.append("Category", values.exerciseType || "Custom")
+      if (values.primaryMuscle) formData.append("PrimaryMuscles", values.primaryMuscle)
+      values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
+      if (values.imageFile) formData.append("Image", values.imageFile)
 
       const response = await fetch(resolveExercisesEndpoint(), {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Accept: "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: formData,
       })
 
       if (!response.ok) {

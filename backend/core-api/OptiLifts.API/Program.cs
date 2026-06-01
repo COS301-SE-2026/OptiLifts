@@ -1,38 +1,149 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Database.Seeders;
+using OptiLifts.Application;
+using OptiLifts.Application.Auth.Abstractions;
+using OptiLifts.Infrastructure.Authentication;
 using DotNetEnv;
+
+if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
+{
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory is not null)
+    {
+        var envFile = Path.Combine(directory.FullName, ".env");
+        if (File.Exists(envFile))
+        {
+            Env.Load(envFile);
+            break;
+        }
+
+        directory = directory.Parent;
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
-Env.TraversePath().Load();
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "OptiLifts Core API",
+        Version = "v1",
+        Description = "REST API for workout management, exercise tracking, and user data.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "OptiLifts Team",
+        },
+    });
 
-var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
-var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "5432";
-var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
-var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
-var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        options.IncludeXmlComments(xmlPath);
+});
 
-var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
+//CORS configuration to allow requests from frontend
+var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"] ?? "localhost:5173";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(frontendOrigin)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var connectionString = builder.Configuration["POSTGRES_CONNECTION_STRING"];
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    var dbHost = builder.Configuration["POSTGRES_HOST"];
+    var dbPort = builder.Configuration["POSTGRES_PORT"];
+    var dbName = builder.Configuration["POSTGRES_DB"];
+    var dbUser = builder.Configuration["POSTGRES_USER"];
+    var dbPass = builder.Configuration["POSTGRES_PASSWORD"];
+
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
+}
 
 builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies()));
+//register MediatR handlers from Application assembly
+//register MediatR handlers from Application and Infrastructure assemblies
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
+
+builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+
+//register auth implementations
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+var jwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not set.");
+var jwtExpiryMinutes = int.TryParse(builder.Configuration["JWT_EXP_MINUTES"], out var expiryMinutes)
+    ? expiryMinutes
+    : 1440;
+
+byte[] keyBytes;
+try
+{
+    keyBytes = Convert.FromBase64String(jwtSecret);
+}
+catch (FormatException)
+{
+    keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
+}
+
+builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+        };
+    });
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
+if (runMigrations)
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await DatabaseSeeder.SeedAsync(dbContext);
 }
 
+// Swagger UI available at http://localhost:<port>/swagger
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "OptiLifts Core API v1");
+    options.RoutePrefix = "swagger";
+});
+
 app.UseHttpsRedirection();
-app.UseAuthorization();
+app.UseCors("AllowFrontend");
+app.UseAuthentication(); //authentication middleware 
+app.UseAuthorization(); //authorization middleware
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
+
+public partial class Program
+{
+    protected Program() { }
+}

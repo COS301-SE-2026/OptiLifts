@@ -143,7 +143,7 @@ SELECT
     ARRAY[c.muscle_chest]::text[],
     ARRAY[c.muscle_triceps, c.muscle_shoulders]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -164,7 +164,7 @@ SELECT
     ARRAY[c.muscle_chest]::text[],
     ARRAY[c.muscle_shoulders, c.muscle_triceps]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -185,7 +185,7 @@ SELECT
     ARRAY[c.muscle_back]::text[],
     ARRAY[c.muscle_biceps, c.muscle_rear_delts]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -206,7 +206,7 @@ SELECT
     ARRAY[c.muscle_hamstrings, c.muscle_glutes]::text[],
     ARRAY[c.muscle_back]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -227,7 +227,7 @@ SELECT
     ARRAY[c.muscle_quadriceps, c.muscle_glutes]::text[],
     ARRAY[c.muscle_hamstrings, c.muscle_calves]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -248,7 +248,7 @@ SELECT
     ARRAY[c.muscle_shoulders]::text[],
     ARRAY[c.muscle_triceps, 'Upper Chest']::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -269,7 +269,7 @@ SELECT
     ARRAY[c.muscle_calves]::text[],
     ARRAY[]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -290,7 +290,7 @@ SELECT
     ARRAY[c.muscle_quadriceps, c.muscle_glutes]::text[],
     ARRAY[c.muscle_hamstrings]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO exercises (
@@ -311,7 +311,7 @@ SELECT
     ARRAY['Lats']::text[],
     ARRAY[c.muscle_biceps]::text[]
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (exercise_id) DO NOTHING;
 
 INSERT INTO folders (
@@ -328,7 +328,7 @@ SELECT
     'Demo folder for local testing',
     NOW()
 FROM seed_constants c
-JOIN users u ON u.email = c.test_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (folder_id) DO NOTHING;
 
 INSERT INTO folders (
@@ -345,7 +345,7 @@ SELECT
     'Demo folder for user two',
     NOW()
 FROM seed_constants c
-JOIN users u ON u.email = c.demo_user_email
+JOIN users u ON u.email_hash = encode(sha256(c.demo_user_email::bytea), 'hex')
 ON CONFLICT (folder_id) DO NOTHING;
 
 INSERT INTO workouts (
@@ -366,7 +366,7 @@ SELECT
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email = c.test_user_email
+WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (
@@ -387,7 +387,7 @@ SELECT
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email = c.demo_user_email
+WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), 'hex')
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (
@@ -408,7 +408,7 @@ SELECT
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email = c.test_user_email
+WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (
@@ -429,7 +429,7 @@ SELECT
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email = c.demo_user_email
+WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), 'hex')
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO sets (

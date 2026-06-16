@@ -34,7 +34,7 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
 
         var user = await _dbContext.Users
             .AsNoTracking()
-            .SingleOrDefaultAsync(u => u.Email == emailHash, cancellationToken);
+            .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (user == null)
         {

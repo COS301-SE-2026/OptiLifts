@@ -44,19 +44,19 @@ public class OptiLiftsDbContext : DbContext
             cipherT => _encryptionProvider.Decrypt(cipherT)
         );
 
-        for (int i=0; i<modelBuilder.Model.GetEntityTypes().Count(); i++)
+        for (int i = 0; i < modelBuilder.Model.GetEntityTypes().Count(); i++)
         {
             var entity = modelBuilder.Model.GetEntityTypes().ElementAt(i);
             var properties = entity.ClrType.GetProperties()
             .Where(p => Attribute.IsDefined(p, typeof(EncryptedAttribute)));
 
-            for (int j=0; j<properties.Count(); j++)
+            for (int j = 0; j < properties.Count(); j++)
             {
                 var prop = properties.ElementAt(j);
                 modelBuilder.Entity(entity.Name).Property(prop.Name).HasConversion(encrypter);
             }
         }
-        
+
         base.OnModelCreating(modelBuilder);
     }
 }

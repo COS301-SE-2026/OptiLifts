@@ -13,7 +13,7 @@ public class AesEncryptionProvider : IEncryptionProvider
     private readonly byte[] _key;
 
     public AesEncryptionProvider(string keyB64)
-    {    
+    {
         _key = Convert.FromBase64String(keyB64);
         if (_key.Length != 32)
         {
@@ -44,7 +44,7 @@ public class AesEncryptionProvider : IEncryptionProvider
     public string Decrypt(string encryText)
     {
         var cipher = Convert.FromBase64String(encryText);
-        
+
         using var aes = Aes.Create();
         aes.Key = _key;
 

@@ -1,13 +1,11 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Configuration;
+using OptiLifts.Domain.Common;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
-
 using OptiLifts.Infrastructure.Security;
-using Microsoft.Extensions.Configuration;
-
-using System.Reflection;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using OptiLifts.Domain.Common;
 
 
 

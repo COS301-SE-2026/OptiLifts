@@ -13,8 +13,8 @@ using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
-using Testcontainers.PostgreSql;
 using OptiLifts.Infrastructure.Security;
+using Testcontainers.PostgreSql;
 
 namespace OptiLifts.Tests.Integration;
 

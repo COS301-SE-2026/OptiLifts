@@ -1,10 +1,10 @@
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using FluentAssertions;
-using OptiLifts.Infrastructure.Database;
-using OptiLifts.Domain.Workouts;
-using OptiLifts.Infrastructure.Workouts;
 using OptiLifts.Application.Workouts.CreateWorkout;
+using OptiLifts.Domain.Workouts;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Workouts;
 
 namespace OptiLifts.Tests.Api.Tests;
 

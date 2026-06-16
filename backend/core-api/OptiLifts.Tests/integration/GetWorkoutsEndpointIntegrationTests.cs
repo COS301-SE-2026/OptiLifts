@@ -13,9 +13,9 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 using Testcontainers.PostgreSql;
 using Xunit;
-using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Integration;
 

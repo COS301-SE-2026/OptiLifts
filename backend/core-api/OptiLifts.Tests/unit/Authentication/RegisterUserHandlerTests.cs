@@ -7,8 +7,8 @@ using OptiLifts.Application.Auth.Register;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
-using Xunit;
 using OptiLifts.Infrastructure.Security;
+using Xunit;
 
 namespace OptiLifts.Tests.Authentication;
 

@@ -1,10 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Auth.Login;
 using OptiLifts.Application.Auth.Register;
-using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Database;
-
 using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Infrastructure.Authentication;

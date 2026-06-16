@@ -1,11 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MediatR;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
-using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.CreateWorkout;
+using OptiLifts.Application.Workouts.GetWorkouts;
 
 namespace OptiLifts.API.Controllers;
 

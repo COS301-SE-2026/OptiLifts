@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using OptiLifts.API.Controllers;
-using OptiLifts.Application.Exercises.GetExercises;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Exercises.GetExercises;
 using Xunit;
 
 namespace OptiLifts.Tests.Application.Tests;

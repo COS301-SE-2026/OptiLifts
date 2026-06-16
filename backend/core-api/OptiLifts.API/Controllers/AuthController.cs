@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using OptiLifts.Application.Auth.Register;
+using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Auth.Login;
+using OptiLifts.Application.Auth.Register;
 using OptiLifts.Infrastructure.Authentication;
 
 namespace OptiLifts.API.Controllers;

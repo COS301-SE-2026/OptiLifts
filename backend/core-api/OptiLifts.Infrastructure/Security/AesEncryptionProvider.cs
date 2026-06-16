@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace OptiLifts.Infrastructure.Security;
+
 public interface IEncryptionProvider
 {
     string Encrypt(string rawText);

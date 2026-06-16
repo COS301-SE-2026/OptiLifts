@@ -1,5 +1,5 @@
-namespace OptiLifts.Domain.Users;
 using OptiLifts.Domain.Common;
+namespace OptiLifts.Domain.Users;
 
 public class User
 {

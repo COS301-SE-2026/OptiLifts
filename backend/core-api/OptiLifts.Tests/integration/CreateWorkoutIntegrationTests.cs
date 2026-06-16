@@ -15,6 +15,7 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using Testcontainers.PostgreSql;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -82,6 +83,7 @@ public sealed class CreateWorkoutFixture : IAsyncLifetime
         {
             Id = userId,
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
             DisplayName = "Test User"
         });

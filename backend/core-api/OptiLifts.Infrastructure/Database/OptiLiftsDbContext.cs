@@ -16,9 +16,10 @@ namespace OptiLifts.Infrastructure.Database;
 public class OptiLiftsDbContext : DbContext
 {
     private readonly IEncryptionProvider _encryptionProvider;
-    public OptiLiftsDbContext(DbContextOptions<OptiLiftsDbContext> options, IConfiguration configuration) : base(options)
+    public OptiLiftsDbContext(DbContextOptions<OptiLiftsDbContext> options, IConfiguration? configuration = null) : base(options)
     {
-        var key = configuration["DB_ENCRYPTION_KEY"];
+        //default key for testing
+        var key = configuration?["DB_ENCRYPTION_KEY"] ?? "+8bGaoOpx4CEfxnMcX1RG2qrcJaT+RZO/0IIpSePZQA=";
         if (string.IsNullOrEmpty(key))
         {
             throw new InvalidOperationException("Database encryption key is missing");

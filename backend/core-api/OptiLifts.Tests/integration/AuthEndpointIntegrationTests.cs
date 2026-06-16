@@ -12,6 +12,7 @@ using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Domain.Users;
 using Testcontainers.PostgreSql;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -174,6 +175,7 @@ public sealed class AuthApiFixture : IAsyncLifetime
         var user = new User
         {
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             DisplayName = displayName,
             PasswordHash = hasher.Hash(password)
         };

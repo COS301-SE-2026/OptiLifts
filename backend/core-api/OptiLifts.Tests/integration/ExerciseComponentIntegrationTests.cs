@@ -20,6 +20,7 @@ using Testcontainers.PostgreSql;
 using Xunit;
 using System.Net.Http;
 using System.Text;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -213,6 +214,7 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
         var user = new Domain.Users.User
         {
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             DisplayName = displayName,
             PasswordHash = "integration-hash"
         };

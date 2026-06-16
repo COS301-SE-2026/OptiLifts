@@ -8,6 +8,7 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using Xunit;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Authentication;
 
@@ -51,7 +52,7 @@ public class RegisterUserHandlerTests
         result.User.Email.Should().Be("jdawg@gmail.com");
         result.User.DisplayName.Should().Be("Goat Jordan");
 
-        var userInDb = await context.Users.FirstOrDefaultAsync(u => u.Email == "jdawg@gmail.com");
+        var userInDb = await context.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail("jdawg@gmail.com"));
         userInDb.Should().NotBeNull();
         userInDb.PasswordHash.Should().StartWith("HASHED_");
     }
@@ -66,7 +67,7 @@ public class RegisterUserHandlerTests
         await using var context = CreateContext(connection);
 
         //add user with the email to the db
-        context.Users.Add(new User { Email = "jordan@gmail.com", PasswordHash = "Passw0rd!", DisplayName = "Jordan" });
+        context.Users.Add(new User { Email = "jordan@gmail.com", EmailHash = EmailHasher.HashEmail("jordan@gmail.com"), PasswordHash = "Passw0rd!", DisplayName = "Jordan" });
         await context.SaveChangesAsync();
 
         var hasherMock = new Mock<IPasswordHasher>();

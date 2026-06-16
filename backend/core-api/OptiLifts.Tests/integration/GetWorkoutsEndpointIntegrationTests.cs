@@ -15,6 +15,7 @@ using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using Testcontainers.PostgreSql;
 using Xunit;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -163,6 +164,7 @@ public sealed class GetWorkoutsApiFixture : IAsyncLifetime
         var user = new User
         {
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             DisplayName = displayName,
             PasswordHash = "integration-hash"
         };

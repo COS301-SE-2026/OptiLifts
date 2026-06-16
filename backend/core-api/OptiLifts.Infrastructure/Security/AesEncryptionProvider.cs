@@ -4,8 +4,8 @@ using System.Text;
 namespace OptiLifts.Infrastructure.Security;
 public interface IEncryptionProvider
 {
-    string Encrypt(string plainText);
-    string Decrypt(string cipherText);
+    string Encrypt(string rawText);
+    string Decrypt(string encryText);
 }
 
 public class AesEncryptionProvider : IEncryptionProvider
@@ -26,7 +26,7 @@ public class AesEncryptionProvider : IEncryptionProvider
     {
         using var aes = Aes.Create();
         aes.Key = _key;
-        aes.IV = aes.IV; //aes generates random 16bit IV
+        aes.GenerateIV(); //aes generates random 16bit IV
 
         using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
         using var memStream = new MemoryStream();

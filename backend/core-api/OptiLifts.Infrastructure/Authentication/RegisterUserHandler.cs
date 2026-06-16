@@ -5,6 +5,8 @@ using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Domain.Users;
 
+using OptiLifts.Infrastructure.Security;
+
 namespace OptiLifts.Infrastructure.Authentication;
 
 public sealed class DuplicateEmailException : Exception
@@ -28,10 +30,11 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
     public async Task<AuthResponseDto> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
         var trimmedEmail = request.Email.Trim();
+        var emailHash = EmailHasher.HashEmail(trimmedEmail);
 
         var exists = await _dbContext.Users
             .AsNoTracking()
-            .AnyAsync(u => u.Email == trimmedEmail, cancellationToken);
+            .AnyAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (exists)
         {
@@ -43,6 +46,7 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
         var user = new User
         {
             Email = trimmedEmail,
+            EmailHash = emailHash,
             PasswordHash = hash,
             DisplayName = request.DisplayName?.Trim() ?? string.Empty,
             CreatedAt = DateTime.UtcNow

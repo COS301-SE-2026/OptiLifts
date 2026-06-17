@@ -37,7 +37,6 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         var emailHash = EmailHasher.HashEmail(email);
 
         var user = await _dbContext.Users
-            .AsNoTracking()
             .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (user == null)
@@ -58,7 +57,6 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         user.RefreshTokenHash = TokenHelper.HashToken(refreshToken);
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
-        _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt));

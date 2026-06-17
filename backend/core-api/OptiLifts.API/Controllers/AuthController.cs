@@ -106,7 +106,7 @@ public sealed class AuthController : ControllerBase
         {
             return Unauthorized();
         }
-        
+
         try
         {
             var user = await _sender.Send(new GetCurrentUserQuery(Guid.Parse(userId)), cancellationToken);

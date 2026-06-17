@@ -32,7 +32,7 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         {
             throw new InvalidCredentialsException();
         }
-        
+
         var email = request.Email.Trim();
         var emailHash = EmailHasher.HashEmail(email);
 

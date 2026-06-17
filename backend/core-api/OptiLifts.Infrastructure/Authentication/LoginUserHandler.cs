@@ -28,7 +28,12 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
 
     public async Task<AuthResponseDto> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        var email = request.Email?.Trim();
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new InvalidCredentialsException();
+        }
+
+        var email = request.Email.Trim();
         var emailHash = EmailHasher.HashEmail(email);
 
         var user = await _dbContext.Users

@@ -28,6 +28,16 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
 
     public async Task<AuthResponseDto> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            throw new ArgumentException("Email and password must be provided");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ArgumentException("Password must be provided");
+        }
+
         var trimmedEmail = request.Email.Trim();
         var emailHash = EmailHasher.HashEmail(trimmedEmail);
 

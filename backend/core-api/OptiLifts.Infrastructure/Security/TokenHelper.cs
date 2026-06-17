@@ -9,8 +9,8 @@ public static class TokenHelper
     public static string GenerateRefreshToken()
     {
         var randomB = new byte[64];
-        using var rand = RandomNumberGenerator.Create(); 
-        rand.GetBytes(randomB);  
+        using var rand = RandomNumberGenerator.Create();
+        rand.GetBytes(randomB);
         return Convert.ToBase64String(randomB);
     }
     public static string HashToken(string token)

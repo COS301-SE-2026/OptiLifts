@@ -53,11 +53,11 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         }
 
         var token = _jwtTokenService.CreateToken(user);
-        var refreshToken= TokenHelper.GenerateRefreshToken();
-    
+        var refreshToken = TokenHelper.GenerateRefreshToken();
+
         user.RefreshTokenHash = TokenHelper.HashToken(refreshToken);
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-    
+
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
 

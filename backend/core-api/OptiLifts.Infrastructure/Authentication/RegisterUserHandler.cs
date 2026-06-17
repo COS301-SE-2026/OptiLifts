@@ -55,9 +55,17 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var token = _jwtTokenService.CreateToken(user);
+        var refreshToken= TokenHelper.GenerateRefreshToken();
+
+        user.RefreshTokenHash = TokenHelper.HashToken(refreshToken);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new AuthResponseDto(
             token,
+            refreshToken,
             new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt)
         );
 

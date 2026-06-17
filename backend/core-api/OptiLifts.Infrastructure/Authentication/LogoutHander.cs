@@ -1,7 +1,7 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Auth.Logout;
 using OptiLifts.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
 
 namespace OptiLifts.Infrastructure.Authentication;
 

@@ -71,7 +71,7 @@ export async function customFetch( inputURL: RequestInfo | URL, init?: RequestIn
         processQueue(typedError);
         
         //auth context listens for this and will log them out
-        globalThis.dispatchEvent(new CustomEvent('auth:logout'));
+        globalThis.dispatchEvent(new CustomEvent('logoutUser'));
         throw typedError;
 
     }

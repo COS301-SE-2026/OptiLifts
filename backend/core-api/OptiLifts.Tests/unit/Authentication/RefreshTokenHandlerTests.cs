@@ -9,7 +9,7 @@ using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
 
-namespace OptiLifts.Tests.Authentication;
+namespace OptiLifts.Tests.Unit.Authentication;
 
 public class RefreshTokenHandlerTests
 {

@@ -6,7 +6,8 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 
-namespace OptiLifts.Tests.Authentication;
+namespace OptiLifts.Tests.Unit.Authentication;
+
 public class GetCurrentUserHandlerTests
 {
     private static OptiLiftsDbContext CreateContext(SqliteConnection connection)

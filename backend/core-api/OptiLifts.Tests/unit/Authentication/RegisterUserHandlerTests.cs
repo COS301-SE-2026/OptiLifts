@@ -10,7 +10,7 @@ using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
 using Xunit;
 
-namespace OptiLifts.Tests.Authentication;
+namespace OptiLifts.Tests.Unit.Authentication;
 
 public class RegisterUserHandlerTests
 {

@@ -1,13 +1,13 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using OptiLifts.Infrastructure.Database;
-using OptiLifts.Infrastructure.Database.Seeders;
+using DotNetEnv;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Authentication;
-using DotNetEnv;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Database.Seeders;
 
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
 {

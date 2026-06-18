@@ -1,16 +1,17 @@
 using System.Net.Http.Json;
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
 using System.Text;
+using FluentAssertions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application.Auth.Abstractions;
-using OptiLifts.Infrastructure.Database;
 using OptiLifts.Domain.Users;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 using Testcontainers.PostgreSql;
 
 namespace OptiLifts.Tests.Integration;
@@ -174,6 +175,7 @@ public sealed class AuthApiFixture : IAsyncLifetime
         var user = new User
         {
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             DisplayName = displayName,
             PasswordHash = hasher.Hash(password)
         };

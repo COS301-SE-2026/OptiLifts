@@ -1,9 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Auth.Login;
 using OptiLifts.Application.Auth.Register;
-using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Infrastructure.Authentication;
 
@@ -27,11 +28,17 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
 
     public async Task<AuthResponseDto> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        var email = request.Email?.Trim();
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new InvalidCredentialsException();
+        }
+
+        var email = request.Email.Trim();
+        var emailHash = EmailHasher.HashEmail(email);
 
         var user = await _dbContext.Users
             .AsNoTracking()
-            .SingleOrDefaultAsync(u => u.Email == email, cancellationToken);
+            .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (user == null)
         {

@@ -1,9 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using OptiLifts.Application.Auth.Register;
 using OptiLifts.Application.Auth.Abstractions;
-using OptiLifts.Infrastructure.Database;
+using OptiLifts.Application.Auth.Register;
 using OptiLifts.Domain.Users;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Infrastructure.Authentication;
 
@@ -27,11 +28,22 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
 
     public async Task<AuthResponseDto> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            throw new ArgumentException("Email and password must be provided");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ArgumentException("Password must be provided");
+        }
+
         var trimmedEmail = request.Email.Trim();
+        var emailHash = EmailHasher.HashEmail(trimmedEmail);
 
         var exists = await _dbContext.Users
             .AsNoTracking()
-            .AnyAsync(u => u.Email == trimmedEmail, cancellationToken);
+            .AnyAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (exists)
         {
@@ -43,6 +55,7 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
         var user = new User
         {
             Email = trimmedEmail,
+            EmailHash = emailHash,
             PasswordHash = hash,
             DisplayName = request.DisplayName?.Trim() ?? string.Empty,
             CreatedAt = DateTime.UtcNow

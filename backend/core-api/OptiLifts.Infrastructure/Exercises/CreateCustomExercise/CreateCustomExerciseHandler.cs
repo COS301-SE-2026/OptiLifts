@@ -1,11 +1,11 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
 using OptiLifts.Application.Storage;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
-using System.Threading;
-using System.Threading.Tasks;
-using System;
 
 namespace OptiLifts.Infrastructure.Exercises.CreateCustomExercise;
 

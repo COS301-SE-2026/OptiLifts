@@ -1,14 +1,16 @@
-using Microsoft.AspNetCore.Hosting;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
+using FluentAssertions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using OptiLifts.API.Controllers;
@@ -16,10 +18,9 @@ using OptiLifts.Application.Exercises.GetExercises;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 using Testcontainers.PostgreSql;
 using Xunit;
-using System.Net.Http;
-using System.Text;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -213,6 +214,7 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
         var user = new Domain.Users.User
         {
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             DisplayName = displayName,
             PasswordHash = "integration-hash"
         };

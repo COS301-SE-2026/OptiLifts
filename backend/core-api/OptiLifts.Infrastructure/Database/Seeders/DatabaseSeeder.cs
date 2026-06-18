@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Infrastructure.Database.Seeders;
 
@@ -16,11 +17,13 @@ public static class DatabaseSeeder
 
         foreach (var u in usersToEnsure)
         {
-            if (!await dbContext.Users.AnyAsync(x => x.Email == u.Email, cancellationToken))
+            var emailHash = EmailHasher.HashEmail(u.Email);
+            if (!await dbContext.Users.AnyAsync(x => x.EmailHash == emailHash, cancellationToken))
             {
                 dbContext.Users.Add(new User
                 {
                     Email = u.Email,
+                    EmailHash = emailHash,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(u.Password),
                     DisplayName = u.DisplayName
                 });

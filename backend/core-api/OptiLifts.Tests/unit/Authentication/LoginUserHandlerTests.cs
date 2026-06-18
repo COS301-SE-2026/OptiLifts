@@ -7,6 +7,7 @@ using OptiLifts.Application.Auth.Login;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Tests.Authentication;
 
@@ -35,6 +36,7 @@ public class LoginUserHandlerTests
         context.Users.Add(new User
         {
             Email = "jordan@gmail.com",
+            EmailHash = EmailHasher.HashEmail("jordan@gmail.com"),
             PasswordHash = "HASHED_Passw0rd!",
             DisplayName = "Jordan",
             CreatedAt = new DateTime(2026, 01, 01, 12, 0, 0, DateTimeKind.Utc)
@@ -93,6 +95,7 @@ public class LoginUserHandlerTests
         context.Users.Add(new User
         {
             Email = "jordan@gmail.com",
+            EmailHash = EmailHasher.HashEmail("jordan@gmail.com"),
             PasswordHash = "HASHED_Passw0rd!",
             DisplayName = "Jordan"
         });

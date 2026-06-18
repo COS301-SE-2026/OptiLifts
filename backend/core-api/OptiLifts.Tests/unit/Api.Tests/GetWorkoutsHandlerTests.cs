@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using FluentAssertions;
-using OptiLifts.Infrastructure.Database;
-using OptiLifts.Domain.Workouts;
-using OptiLifts.Infrastructure.Workouts;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Domain.Workouts;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Workouts;
 
 namespace OptiLifts.Tests.Api.Tests;
 

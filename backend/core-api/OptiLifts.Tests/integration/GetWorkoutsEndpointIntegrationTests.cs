@@ -13,6 +13,7 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -163,6 +164,7 @@ public sealed class GetWorkoutsApiFixture : IAsyncLifetime
         var user = new User
         {
             Email = email,
+            EmailHash = EmailHasher.HashEmail(email),
             DisplayName = displayName,
             PasswordHash = "integration-hash"
         };

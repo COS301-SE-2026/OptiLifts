@@ -29,8 +29,14 @@ export async function customFetch( inputURL: RequestInfo | URL, init?: RequestIn
             requrl = (inputURL as Request).url;
         } 
 
-        if (requrl.endsWith('/refresh')){
-            throw new Error('Session expired');
+        if (
+            requrl.includes('/auth/login') ||
+            requrl.includes('/auth/register') ||
+            requrl.includes('/auth/logout') ||
+            requrl.includes('/auth/refresh') ||
+            requrl.endsWith('/refresh')
+        ) {
+            return response;
         }
 
         if (expiredRefToken){
@@ -43,38 +49,30 @@ export async function customFetch( inputURL: RequestInfo | URL, init?: RequestIn
         }
 
         expiredRefToken = true;
+        try {
+            const refreshRes = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                credentials: 'include',
+            });
+    
+            if (!refreshRes.ok){
+                throw new Error('Session expired');
+            }
+    
+            expiredRefToken = false;
+            processQueue(null); //pass null to show no error, will resolve all requests
+            return customFetch(inputURL, input); //retry the original request
+        } catch (error) {
+            expiredRefToken = false;
+    
+            const typedError = (error instanceof Error) ? error : new Error('Session expired');
+            processQueue(typedError);
+            
+            //auth context listens for this and will log them out
+            globalThis.dispatchEvent(new CustomEvent('logoutUser'));
+            throw typedError;
+        }
     }
 
-    try {
-        const refreshRes = await fetch('/refresh', {
-            method: 'POST',
-            credentials: 'include',
-        });
-
-        if (!refreshRes.ok){
-            throw new Error('Session expired');
-        }
-
-        expiredRefToken = false;
-        processQueue(null); //pass null to show no error, will resolve all requests
-        return customFetch(inputURL, input); //retry the original request
-    } catch (error) {
-        expiredRefToken = false;
-
-        let typedError: Error;
-        if (error instanceof Error){
-            typedError = error;
-        }else{
-            typedError = new Error('Session expired');
-        }
-
-        processQueue(typedError);
-        
-        //auth context listens for this and will log them out
-        globalThis.dispatchEvent(new CustomEvent('logoutUser'));
-        throw typedError;
-
-    }
-
-
+    return response;
 }

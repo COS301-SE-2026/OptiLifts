@@ -30,6 +30,7 @@ public sealed class AuthController : ControllerBase
             HttpOnly = true,
             Secure = env.IsProduction(),
             SameSite = SameSiteMode.Lax, //should send cookies with cross site requests for top navigation
+            Path = "/",
             Expires = DateTime.UtcNow.AddHours(2)
         };
 
@@ -45,6 +46,7 @@ public sealed class AuthController : ControllerBase
             HttpOnly = true,
             Secure = env.IsProduction(),
             SameSite = SameSiteMode.Lax,
+            Path = "/",
             Expires = DateTime.UtcNow.AddDays(-1) //setting expiration date to yesterdya deletes cookie
         };
 
@@ -101,7 +103,7 @@ public sealed class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized();
@@ -118,7 +120,7 @@ public sealed class AuthController : ControllerBase
         }
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
     {
@@ -140,14 +142,15 @@ public sealed class AuthController : ControllerBase
         }
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
-            return Unauthorized();
+            ClearTokenCookies();
+            return Ok();
         }
 
         await _sender.Send(new LogoutCommand(Guid.Parse(userId)), cancellationToken);

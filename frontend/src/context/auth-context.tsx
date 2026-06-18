@@ -70,7 +70,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
     const logout = React.useCallback(() => {
         setSession(null)
         clearSession()
-        customFetch('api/auth/logout', {method: 'POST'}).catch((err) => {
+        customFetch('/api/auth/logout', {method: 'POST'}).catch(() => {
         //error handled in backend    
         })
     }, [])

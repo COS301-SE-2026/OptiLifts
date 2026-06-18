@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { customFetch } from '@/lib/custom-fetch'
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -77,7 +78,7 @@ export function CreateExercise({
     return [...DEFAULT_EXERCISE_TYPE_OPTIONS]
   }, [exerciseTypeOptions, exerciseTypes])
 
-  const { token } = useAuth()
+  useAuth()
 
   const [name, setName] = useState("")
   const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "weight-reps")
@@ -277,11 +278,10 @@ export function CreateExercise({
       values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
       if (values.imageFile) formData.append("Image", values.imageFile)
 
-      const response = await fetch(resolveExercisesEndpoint(), {
+      const response = await customFetch(resolveExercisesEndpoint(), {
         method: "POST",
         headers: {
           Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: formData,
       })

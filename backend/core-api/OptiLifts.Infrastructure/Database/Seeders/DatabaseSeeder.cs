@@ -19,8 +19,34 @@ public static class DatabaseSeeder
     {
         var usersToEnsure = new[]
         {
-            new { Email = "test@optilifts.com", Password = "TestPassword123!", DisplayName = "Test Athlete" },
-            new { Email = "demo2@optilifts.com", Password = "DemoPass456$", DisplayName = "Demo Two" }
+            new
+            {
+                Email = "test@optilifts.com",
+                Password = "TestPassword123!",
+                DisplayName = "Test Athlete",
+                Level = 5,
+                Weight = "82.5",
+                Height = "180",
+                Sex = "Male",
+                DateOfBirth = "1998-04-23",
+                Bio = "Powerlifting enthusiast and OptiLifts demo account.",
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "demo2@optilifts.com",
+                Password = "DemoPass456$",
+                DisplayName = "Demo Two",
+                Level = 3,
+                Weight = "68.0",
+                Height = "170",
+                Sex = "Female",
+                DateOfBirth = "2000-09-12",
+                Bio = "Hypertrophy-focused lifter trying out the app.",
+                Metric = true,
+                LightTheme = true
+            }
         };
 
         foreach (var u in usersToEnsure)
@@ -28,12 +54,22 @@ public static class DatabaseSeeder
             var emailHash = EmailHasher.HashEmail(u.Email);
             if (!await dbContext.Users.AnyAsync(x => x.EmailHash == emailHash, cancellationToken))
             {
+                // Encrypted fields (Email, DisplayName, Weight, Height, Sex, DateOfBirth)
+                // are encrypted automatically by the EF value converter on save.
                 dbContext.Users.Add(new User
                 {
                     Email = u.Email,
                     EmailHash = emailHash,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(u.Password),
-                    DisplayName = u.DisplayName
+                    DisplayName = u.DisplayName,
+                    Level = u.Level,
+                    Weight = u.Weight,
+                    Height = u.Height,
+                    Sex = u.Sex,
+                    DateOfBirth = u.DateOfBirth,
+                    Bio = u.Bio,
+                    Metric = u.Metric,
+                    LightTheme = u.LightTheme
                 });
             }
         }

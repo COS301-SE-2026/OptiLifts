@@ -52,7 +52,7 @@ public sealed class AddExerciseToWorkoutHandler : IRequestHandler<AddExerciseToW
 
         var workoutSet = new WorkoutSet
         {
-            WorkoutExercise = workoutExercise,
+            WorkoutExerciseId = workoutExercise.Id,
             Type = SetType.Normal,
             Reps = 0,
             Weight = 0,

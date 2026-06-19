@@ -38,7 +38,7 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
         var workoutExercises = await (
             from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
             where workoutIds.Contains(workoutExercise.WorkoutId)
-            join exercise in _dbContext.Exercises.AsNoTracking() 
+            join exercise in _dbContext.Exercises.AsNoTracking()
                 on workoutExercise.ExerciseId equals exercise.Id
             select new
             {
@@ -50,54 +50,54 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
             })
             .ToListAsync(cancellationToken);
 
-            var allPrimaryMuscleIds = workoutExercises
-                .Select(e => e.PrimaryMuscleId)
-                .Where(id => id != Guid.Empty)
+        var allPrimaryMuscleIds = workoutExercises
+            .Select(e => e.PrimaryMuscleId)
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToArray();
+
+        var muscleMap = new Dictionary<Guid, string>();
+        if (allPrimaryMuscleIds.Length > 0)
+        {
+            muscleMap = await _dbContext.Muscles
+                .AsNoTracking()
+                .Where(m => allPrimaryMuscleIds.Contains(m.Id))
+                .ToDictionaryAsync(m => m.Id, m => m.Name, cancellationToken);
+        }
+
+        return workouts.Select(workout =>
+        {
+            var entries = workoutExercises
+                .Where(entry => entry.WorkoutId == workout.Id)
+                .OrderBy(entry => entry.OrderIndex)
+                .ToList();
+
+            var exerciseCount = entries
+                .Select(entry => entry.Id)
                 .Distinct()
-                .ToArray();
-
-            var muscleMap = new Dictionary<Guid, string>();
-            if (allPrimaryMuscleIds.Length > 0)
-            {
-                muscleMap = await _dbContext.Muscles
-                    .AsNoTracking()
-                    .Where(m => allPrimaryMuscleIds.Contains(m.Id))
-                    .ToDictionaryAsync(m => m.Id, m => m.Name, cancellationToken);
-            }
-
-            return workouts.Select(workout =>
-            {
-                var entries = workoutExercises
-                    .Where(entry => entry.WorkoutId == workout.Id)
-                    .OrderBy(entry => entry.OrderIndex)
-                    .ToList();
-
-                var exerciseCount = entries
-                    .Select(entry => entry.Id)
-                    .Distinct()
-                    .Count();
-                var exercisePreview = entries
-                    .Select(entry => entry.ExerciseName)
-                    .Distinct()
-                    .Take(3)
-                    .ToArray();
-
-            var primaryMuscleGroups = entries
-                .Select(entry => entry.PrimaryMuscleId)
+                .Count();
+            var exercisePreview = entries
+                .Select(entry => entry.ExerciseName)
                 .Distinct()
                 .Take(3)
-                .Select(id => muscleMap.TryGetValue(id, out var name) ? name : null)
-                .Where(name => !string.IsNullOrEmpty(name))
                 .ToArray();
 
+            var primaryMuscleGroups = entries
+                    .Select(entry => entry.PrimaryMuscleId)
+                    .Distinct()
+                    .Take(3)
+                    .Select(id => muscleMap.TryGetValue(id, out var name) ? name : null)
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .ToArray();
+
             return new WorkoutCardDto(
-                workout.Id,
-                workout.Name,
-                primaryMuscleGroups,
-                exerciseCount,
-                exercisePreview,
-                workout.CreatedAt);
-            }).ToList();
-        
+                    workout.Id,
+                    workout.Name,
+                    primaryMuscleGroups,
+                    exerciseCount,
+                    exercisePreview,
+                    workout.CreatedAt);
+        }).ToList();
+
     }
 }

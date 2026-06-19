@@ -76,7 +76,7 @@ public class CreateWorkoutHandlerTests
 
         var (userId, folderId) = await SeedUserAndFolder(db, "b@example.com");
 
-        var muscle = new Muscle { Name = "Chest"};
+        var muscle = new Muscle { Name = "Chest" };
         db.Muscles.Add(muscle);
         await db.SaveChangesAsync();
 

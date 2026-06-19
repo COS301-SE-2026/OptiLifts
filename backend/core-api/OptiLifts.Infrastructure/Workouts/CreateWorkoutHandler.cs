@@ -36,7 +36,7 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
                 OrderIndex = exercise.OrderIndex
             };
             _dbContext.WorkoutExercises.Add(workoutExercise);
-        
+
 
             var sets = exercise.Sets.Select(s => new WorkoutSet
             {

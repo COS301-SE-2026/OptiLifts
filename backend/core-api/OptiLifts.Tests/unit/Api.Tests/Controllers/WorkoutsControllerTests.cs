@@ -113,9 +113,9 @@ public class WorkoutsControllerTests
             Name = "Push Day"
         });
 
-        var muscle = new Muscle { Name = "Chest"};
+        var muscle = new Muscle { Name = "Chest" };
         context.Muscles.Add(muscle);
-        
+
         context.Exercises.Add(new Exercise
         {
             Id = exerciseId,

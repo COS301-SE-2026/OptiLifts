@@ -46,7 +46,7 @@ public sealed class WorkoutsController : ControllerBase
 
         var exercises = request.Exercises
             .Select(e => new CreateWorkoutExerciseDto(
-                e.ExerciseId, 
+                e.ExerciseId,
                 e.OrderIndex,
                 e.Sets.Select(s => new CreateWorkoutSetDto(
                     s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.OrderIndex, s.RestTime)).ToList()))

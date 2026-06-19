@@ -24,7 +24,9 @@ public enum ExerciseType
     WeightReps,
     BodyweightReps,
     AssistedWeightReps,
+    WeightedBodyweight,
     Duration,
+    DurationWeight,
     DistanceDuration,
     WeightDistance
 }

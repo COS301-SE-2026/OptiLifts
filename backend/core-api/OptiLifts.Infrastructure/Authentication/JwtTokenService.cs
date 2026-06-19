@@ -20,7 +20,16 @@ public class JwtTokenService : IJwtTokenService
 
     public string CreateToken(User user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
+        byte[] keyBytes;
+        try
+        {
+            keyBytes = Convert.FromBase64String(_secret);
+        }
+        catch (FormatException)
+        {
+            keyBytes = Encoding.UTF8.GetBytes(_secret); //so we don't need to have base64 encoding for testing 
+        }
+        var key = new SymmetricSecurityKey(keyBytes);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>

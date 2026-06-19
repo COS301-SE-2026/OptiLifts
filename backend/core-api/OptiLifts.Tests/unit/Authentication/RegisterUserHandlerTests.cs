@@ -10,7 +10,7 @@ using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
 using Xunit;
 
-namespace OptiLifts.Tests.Authentication;
+namespace OptiLifts.Tests.Unit.Authentication;
 
 public class RegisterUserHandlerTests
 {
@@ -48,7 +48,8 @@ public class RegisterUserHandlerTests
         var result = await handler.Handle(cmd, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.Token.Should().Be("FAKE_TOKEN");
+        result.AccessToken.Should().Be("FAKE_TOKEN");
+        result.RefreshToken.Should().NotBeNullOrWhiteSpace();
         result.User.Email.Should().Be("jdawg@gmail.com");
         result.User.DisplayName.Should().Be("Goat Jordan");
 

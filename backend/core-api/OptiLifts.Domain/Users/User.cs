@@ -14,7 +14,7 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public string? RefreshTokenHash { get; set; }
-    public DateTime? RefreshTokenExpiry { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
     public int Level { get; set; }
     [Encrypted]
     public string? Weight { get; set; }

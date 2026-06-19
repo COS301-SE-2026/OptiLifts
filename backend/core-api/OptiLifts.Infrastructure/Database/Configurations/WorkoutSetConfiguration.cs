@@ -12,27 +12,21 @@ public class WorkoutSetConfiguration : IEntityTypeConfiguration<WorkoutSet>
 
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).HasColumnName("set_id");
-        builder.Property(s => s.WorkoutId).HasColumnName("workout_id").IsRequired();
-        builder.Property(s => s.ExerciseId).HasColumnName("exercise_id").IsRequired();
+        builder.Property(s => s.WorkoutExerciseId).HasColumnName("workout_exercise_id").IsRequired();
 
         //EF core converts to an integer if left as an enum so rather make it a string 
         builder.Property(s => s.Type).HasColumnName("set_type").HasConversion<string>().IsRequired();
-
-        builder.Property(s => s.Reps).HasColumnName("reps").IsRequired();
-        builder.Property(s => s.Weight).HasColumnName("weight").IsRequired();
+        builder.Property(s => s.Reps).HasColumnName("reps");
+        builder.Property(s => s.Weight).HasColumnName("weight");
+        builder.Property(s => s.Duration).HasColumnName("duration");
+        builder.Property(s => s.Distance).HasColumnName("distance");
         builder.Property(s => s.OrderIndex).HasColumnName("order_index").IsRequired();
         builder.Property(s => s.RestTime).HasColumnName("rest_time").IsRequired();
 
-        //FK relationship between workout set and workout
-        builder.HasOne<Workout>()
+        //FK relationship between workout set and workout exercise (N : 1)
+        builder.HasOne<WorkoutExercise>()
                .WithMany()
-               .HasForeignKey(s => s.WorkoutId)
+               .HasForeignKey(s => s.WorkoutExerciseId)
                .OnDelete(DeleteBehavior.Cascade);
-
-        //FK relationship between workout set and exercise
-        builder.HasOne<Exercise>()
-               .WithMany()
-               .HasForeignKey(s => s.ExerciseId)
-               .OnDelete(DeleteBehavior.Restrict); //restrict prevents the exercises from being deleted
     }
 }

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OptiLifts.Domain.Workouts;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.Infrastructure.Database.Configurations;
 

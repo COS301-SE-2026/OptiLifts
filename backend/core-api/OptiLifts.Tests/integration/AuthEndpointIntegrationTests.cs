@@ -27,7 +27,6 @@ public sealed class AuthEndpointIntegrationTests : IClassFixture<AuthApiFixture>
     private record RegisterRequest(string DisplayName, string Email, string Password);
     private record LoginRequest(string Email, string Password);
     private record AuthUserDto(Guid Id, string DisplayName, string Email, DateTime CreatedAt);
-    private record AuthResponseDto(string Token, AuthUserDto User);
 
     [Fact]
     public async Task Register_Succeeds_ReturnsTokenAndUser()
@@ -38,11 +37,16 @@ public sealed class AuthEndpointIntegrationTests : IClassFixture<AuthApiFixture>
         var response = await client.PostAsJsonAsync("/api/auth/register", request);
 
         response.EnsureSuccessStatusCode();
-        var dto = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
-        dto.Should().NotBeNull();
-        dto.Token.Should().NotBeNullOrWhiteSpace();
-        dto.User.Email.Should().Be(request.Email);
-        dto.User.DisplayName.Should().Be(request.DisplayName);
+
+        response.Headers.Contains("Set-Cookie").Should().BeTrue();
+        var cookies = response.Headers.GetValues("Set-Cookie").ToList();
+        cookies.Should().Contain(c => c.Contains("access_token="));
+        cookies.Should().Contain(c => c.Contains("refresh_token="));
+
+        var userDto = await response.Content.ReadFromJsonAsync<AuthUserDto>();
+        userDto.Should().NotBeNull();
+        userDto.Email.Should().Be(request.Email);
+        userDto.DisplayName.Should().Be(request.DisplayName);
     }
 
     [Fact]
@@ -72,10 +76,15 @@ public sealed class AuthEndpointIntegrationTests : IClassFixture<AuthApiFixture>
         var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
 
         response.EnsureSuccessStatusCode();
-        var dto = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
-        dto.Should().NotBeNull();
-        dto.Token.Should().NotBeNullOrWhiteSpace();
-        dto.User.Email.Should().Be(email);
+
+        response.Headers.Contains("Set-Cookie").Should().BeTrue();
+        var cookies = response.Headers.GetValues("Set-Cookie").ToList();
+        cookies.Should().Contain(c => c.Contains("access_token="));
+        cookies.Should().Contain(c => c.Contains("refresh_token="));
+
+        var userDto = await response.Content.ReadFromJsonAsync<AuthUserDto>();
+        userDto.Should().NotBeNull();
+        userDto.Email.Should().Be(email);
     }
 
     [Fact]

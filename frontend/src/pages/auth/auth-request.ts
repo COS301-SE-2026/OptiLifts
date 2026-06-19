@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import type { AuthSession, AuthUser } from '@/context/auth-context'
+import { customFetch } from '@/lib/custom-fetch'
 
 type BackendUserDto = Readonly<{
   id: string
@@ -41,7 +42,7 @@ export async function submitAuthRequest({
   setErrorMessage(null)
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await customFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -60,11 +61,10 @@ export async function submitAuthRequest({
       return
     }
 
-    const data = await res.json()
+    const data = await res.json() as BackendUserDto
 
     login({
-      token: data.token,
-      user: mapBackendUserToAuthUser(data.user),
+      user: mapBackendUserToAuthUser(data),
     })
 
     navigate(fromPath, { replace: true })

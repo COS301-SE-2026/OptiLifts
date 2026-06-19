@@ -37,7 +37,6 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         var emailHash = EmailHasher.HashEmail(email);
 
         var user = await _dbContext.Users
-            .AsNoTracking()
             .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (user == null)
@@ -53,7 +52,13 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         }
 
         var token = _jwtTokenService.CreateToken(user);
+        var refreshToken = TokenHelper.GenerateRefreshToken();
 
-        return new AuthResponseDto(token, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt));
+        user.RefreshTokenHash = TokenHelper.HashToken(refreshToken);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt));
     }
 }

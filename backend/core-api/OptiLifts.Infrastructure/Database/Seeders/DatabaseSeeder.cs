@@ -81,9 +81,22 @@ public static class DatabaseSeeder
     {
         var muscleNames = new[]
         {
-            "Chest", "Back", "Shoulders", "Biceps", "Triceps",
-            "Quadriceps", "Hamstrings", "Glutes", "Calves",
-            "Abdominals", "Forearms", "Trapezius"
+            "Abductors",
+            "Adductors",
+            "Abdominals",
+            "Biceps",
+            "Chest",
+            "Calves",
+            "Forearms",
+            "Glutes",
+            "Hamstrings",
+            "Lats",
+            "Lower Back",
+            "Middle Back",
+            "Quadriceps",
+            "Shoulders",
+            "Trapezius",
+            "Triceps"
         };
 
         foreach (var name in muscleNames)

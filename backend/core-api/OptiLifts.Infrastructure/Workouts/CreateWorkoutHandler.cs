@@ -27,18 +27,30 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
 
         _dbContext.Workouts.Add(workout);
 
-        var sets = request.Sets.Select(s => new WorkoutSet
+        foreach (var exercise in request.Exercises)
         {
-            WorkoutId = workout.Id,
-            ExerciseId = s.ExerciseId,
-            Type = Enum.Parse<SetType>(s.Type, ignoreCase: true),
-            Reps = s.Reps,
-            Weight = s.Weight,
-            OrderIndex = s.OrderIndex,
-            RestTime = s.RestTime
-        });
+            var workoutExercise = new WorkoutExercise
+            {
+                WorkoutId = workout.Id,
+                ExerciseId = exercise.ExerciseId,
+                OrderIndex = exercise.OrderIndex
+            };
+            _dbContext.WorkoutExercises.Add(workoutExercise);
+        
 
-        _dbContext.Sets.AddRange(sets);
+            var sets = exercise.Sets.Select(s => new WorkoutSet
+            {
+                WorkoutExerciseId = workoutExercise.Id,
+                Type = Enum.Parse<SetType>(s.Type, ignoreCase: true),
+                Reps = s.Reps,
+                Weight = s.Weight,
+                Duration = s.Duration,
+                Distance = s.Distance,
+                OrderIndex = s.OrderIndex,
+                RestTime = s.RestTime
+            });
+            _dbContext.Sets.AddRange(sets);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

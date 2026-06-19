@@ -62,8 +62,19 @@ public class ExercisesController : ControllerBase
             imageFileName,
             imageContentType);
 
-        var exerciseId = await _mediator.Send(command, cancellationToken);
-        return Ok(new { Id = exerciseId });
+        try
+        {
+            var exerciseId = await _mediator.Send(command, cancellationToken);
+            return Ok(new { Id = exerciseId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "An unexpected error occurred while creating the exercise.", details = ex.Message });
+        }
     }
 }
 

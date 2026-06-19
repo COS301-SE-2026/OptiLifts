@@ -482,7 +482,7 @@ Adds an existing exercise to a specific workout owned by the authenticated user.
 **Service Name:** User Registration Service
 
 **Description:**
-Creates a new user account and returns an authentication token plus user profile details.
+Creates a new user account, establishes a secure session via HttpOnly cookies and returns the new user profile details.
 
 **Inputs:**
 
@@ -492,8 +492,11 @@ Creates a new user account and returns an authentication token plus user profile
 
 **Outputs:**
 
-- `token`: string - Bearer token for authenticated requests.
-- `user`: `AuthUserDto` - The created user profile.
+- Headers:
+	- Set-cookie: `access_token`
+	- Set-cookie: `refresh_token`
+- Body: 
+	- `user`: `AuthUserDto` - The authenticated user profile.
 
 AuthUserDto fields:
 
@@ -511,23 +514,28 @@ AuthUserDto fields:
 
 **Example Response:**
 
-JSON with required fields:
-
-```json
-{
-  "displayName": "Alice Example",
-  "email": "alice@example.com",
-  "password": "P@ssw0rd!"
-}
+Headers:
+```
+HTTP/1.1 200 OK
+Set-Cookie: access_token=eyJhbG...; HttpOnly; Path=/; SameSite=Strict
+Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Strict
 ```
 
----
+Body
+```json
+{
+	"id": "string", 
+	"email": "user@example.com", 
+	"displayName": "Optional Name",
+	"createdAt": "2026-06-19T10:00:00Z"
+}
+```
 
 ### POST /api/auth/login
 **Service Name:** User Login Service
 
 **Description:**
-Authenticates an existing user and returns an access token plus user profile details.
+Authenticates an existing user, establishes a secure session via HttpOnly cookies, and returns the user's profile details.
 
 **Inputs:**
 
@@ -536,8 +544,11 @@ Authenticates an existing user and returns an access token plus user profile det
 
 **Outputs:**
 
-- `token`: string - Bearer token for authenticated requests.
-- `user`: `AuthUserDto` - The authenticated user profile.
+- Headers:
+	- Set-cookie: `access_token`
+	- Set-cookie: `refresh_token`
+- Body: 
+	- `user`: `AuthUserDto` - The authenticated user profile.
 
 AuthUserDto fields:
 
@@ -555,12 +566,109 @@ AuthUserDto fields:
 
 **Example Response:**
 
+Headers:
+```
+HTTP/1.1 200 OK
+Set-Cookie: access_token=eyJhbG...; HttpOnly; Path=/; SameSite=Strict
+Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Strict
+```
+
+Body
 ```json
 {
-	"token": "eyJhbGciOi...",
-	"refreshToken": "optional-refresh-token",
-	"user": { "id": "string", "email": "user@example.com", "displayName": "Optional Name" }
+	"id": "string", 
+	"email": "user@example.com", 
+	"displayName": "Optional Name",
+	"createdAt": "2026-06-19T10:00:00Z"
 }
 ```
+
+### GET /api/auth/me
+**Service Name:** Current user service.
+
+**Description:**
+Gets the details of the currently logged in, authenticated user to hydrate the auth context.
+
+**Inputs:**
+- access_token cookie - passed by the browser.
+
+**Outputs:**
+
+- `user`: `AuthUserDto` - The authenticated user profile.
+
+AuthUserDto fields:
+
+- `id`: Guid - Unique user identifier.
+- `displayName`: string - User display name.
+- `email`: string - User email address.
+- `createdAt`: datetime - Account creation timestamp.
+
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/auth/me`.
+- The user must have a valid access token.
+- If the cookie is missing or invalid the endpoint retunrs a `401 unauthorized` error.
+- A user account no longer existing returns a `404 Not Found` error. 
+
+**Example Response:**
+
+```json
+{
+    "id": "string", 
+	"email": "user@example.com", 
+	"displayName": "Optional Name",
+	"createdAt": "2026-06-19T10:00:00Z"
+}
+```
+
+### POST /api/auth/refresh
+**Service Name:** Refresh token service. 
+
+**Description:**
+Exchanges a valid HTTP-Only refresh cookie for a new access and refresh cookie.
+
+**Inputs:**
+- refresh_token cookie - passed by the browser.
+
+**Outputs:**
+
+- Headers: 
+	- Set-Cookie: `access_token`
+	- Set-Coolie: `refresh_token`
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/auth/refresh`.
+- A missing/invalid refresh token will result in a `401 Unauthorized` response.
+- If the cookie is missing or invalid the endpoint retunrs a `401 unauthorized` error.
+- Should be called automatically by the frontend when normal requests encounter a `401 unauthorized`. 
+
+**Example Response:**
+
+Headers:
+```
+HTTP/1.1 200 OK
+Set-Cookie: access_token=eyJhbG...; HttpOnly; Path=/; SameSite=Strict
+Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Strict
+```
+
+### POST /api/auth/logout
+**Service Name:** User logout service
+
+**Description:**
+Logs out the user and ends their session. 
+
+**Inputs:**
+
+- Set-Cookie: access_token
+
+**Outputs:**
+- 200 OK
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/auth/logout`
+
 
 ## Deployment

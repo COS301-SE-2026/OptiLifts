@@ -1,23 +1,11 @@
 import badgeIcon from '../../../../docs/images/badge.png'
+import type { WorkoutOverviewProps } from '@/types/workout'
 
-type WorkoutOverviewProps = Readonly<{
-  name: string
-  exercises: string
-  prs: string
-  duration: string
-  volume: string
-  sets: string
-  className?: string
-}>
+const MAX_VISIBLE_EXERCISES = 10
 
 export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, className }: WorkoutOverviewProps) {
-  const exerciseItems = exercises
-    .split(',')
-    .map((exercise) => exercise.trim())
-    .filter(Boolean)
-
-  const visibleExerciseItems = exerciseItems.slice(0, 3)
-  const hasMoreExercises = exerciseItems.length > visibleExerciseItems.length
+  const visibleExercises = exercises.slice(0, MAX_VISIBLE_EXERCISES)
+  const hasMoreExercises = exercises.length > visibleExercises.length
 
   return (
     <article
@@ -28,15 +16,15 @@ export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, 
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-1 items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h3 className="text-2xl font-bold leading-none text-foreground">{name}</h3>
           <div className="mt-3">
             <p className="text-sm font-semibold text-foreground/90">Exercises:</p>
             <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm leading-snug text-foreground/80">
-              {visibleExerciseItems.map((exercise) => (
-                <li key={exercise} className="truncate">
-                  {exercise}
+              {visibleExercises.map((exercise, index) => (
+                <li key={index}>
+                  <span className="block max-w-[200px] truncate">{exercise}</span>
                 </li>
               ))}
               {hasMoreExercises && <li className="list-none pl-1 text-muted-foreground">...</li>}
@@ -71,7 +59,7 @@ export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, 
         </div>
       </div>
 
-      <div className="mt-auto grid grid-cols-3 gap-4 pt-8 text-center sm:gap-6">
+      <div className="grid grid-cols-3 gap-4 pt-2 text-center sm:gap-6">
         <div>
           <p className="text-sm text-foreground/80">Duration</p>
           <p className="mt-1 text-base font-bold text-foreground">{duration}</p>

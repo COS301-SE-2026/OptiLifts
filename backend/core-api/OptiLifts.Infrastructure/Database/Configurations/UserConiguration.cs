@@ -18,13 +18,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash).HasColumnName("password_hash").IsRequired();
         builder.Property(u => u.RefreshTokenHash).HasColumnName("refresh_token_hash").HasMaxLength(256).IsRequired(false);
         builder.Property(u => u.RefreshTokenExpiryTime).HasColumnName("refresh_token_expiry_time").IsRequired(false);
-        builder.Property(u => u.DisplayName).HasColumnName("display_name").IsRequired().HasMaxLength(100);
+        builder.Property(u => u.DisplayName).HasColumnName("display_name").IsRequired();
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(u => u.Level).HasColumnName("level").IsRequired();
         builder.Property(u => u.Weight).HasColumnName("weight");
         builder.Property(u => u.Height).HasColumnName("height");
+        builder.Property(u => u.Sex).HasColumnName("sex");
+        builder.Property(u => u.DateOfBirth).HasColumnName("date_of_birth");
         builder.Property(u => u.Metric).HasColumnName("metric").IsRequired();
         builder.Property(u => u.LightTheme).HasColumnName("light_theme").IsRequired();
+        builder.Property(u => u.Bio).HasColumnName("bio").HasMaxLength(255);
+
 
         //creates a unique index on the email hash as it's deterministic
         builder.HasIndex(u => u.EmailHash).IsUnique();

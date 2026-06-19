@@ -12,8 +12,8 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    [Migration("20260619064009_RedesignSchema")]
-    partial class RedesignSchema
+    [Migration("20260619085210_AddUserBio")]
+    partial class AddUserBio
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,13 +65,19 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<string>("Bio")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("bio");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("display_name");
 
                     b.Property<string>("Email")
@@ -106,12 +112,13 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
 
-                    b.Property<DateTime?>("RefreshTokenExpiry")
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("refresh_token_expiry");
+                        .HasColumnName("refresh_token_expiry_time");
 
                     b.Property<string>("RefreshTokenHash")
-                        .HasColumnType("text")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("refresh_token_hash");
 
                     b.Property<string>("Weight")
@@ -122,6 +129,8 @@ namespace OptiLifts.Infrastructure.Migrations
 
                     b.HasIndex("EmailHash")
                         .IsUnique();
+
+                    b.HasIndex("RefreshTokenHash");
 
                     b.ToTable("users", (string)null);
                 });

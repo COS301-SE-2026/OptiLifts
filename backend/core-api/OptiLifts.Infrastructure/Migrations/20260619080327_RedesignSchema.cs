@@ -111,15 +111,6 @@ namespace OptiLifts.Infrastructure.Migrations
                 table: "exercise_dictionary",
                 newName: "exercise_type");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "display_name",
-                table: "users",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(100)",
-                oldMaxLength: 100);
-
             migrationBuilder.AddColumn<string>(
                 name: "height",
                 table: "users",
@@ -146,18 +137,6 @@ namespace OptiLifts.Infrastructure.Migrations
                 type: "boolean",
                 nullable: false,
                 defaultValue: false);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "refresh_token_expiry",
-                table: "users",
-                type: "timestamp with time zone",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "refresh_token_hash",
-                table: "users",
-                type: "text",
-                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "weight",
@@ -530,14 +509,6 @@ namespace OptiLifts.Infrastructure.Migrations
                 table: "users");
 
             migrationBuilder.DropColumn(
-                name: "refresh_token_expiry",
-                table: "users");
-
-            migrationBuilder.DropColumn(
-                name: "refresh_token_hash",
-                table: "users");
-
-            migrationBuilder.DropColumn(
                 name: "weight",
                 table: "users");
 
@@ -604,15 +575,6 @@ namespace OptiLifts.Infrastructure.Migrations
                 table: "workout_logs",
                 type: "uuid",
                 nullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "display_name",
-                table: "users",
-                type: "character varying(100)",
-                maxLength: 100,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
 
             migrationBuilder.AlterColumn<float>(
                 name: "weight",

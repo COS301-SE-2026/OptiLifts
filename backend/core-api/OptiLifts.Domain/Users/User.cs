@@ -20,7 +20,13 @@ public class User
     public string? Weight { get; set; }
     [Encrypted]
     public string? Height { get; set; }
-
+    [Encrypted]
+    public string? Sex { get; set; } 
+    //a string converted on the API layer e.g 
+    //public enum Sex { Male, Female, Other, PreferNotToSay }
+    [Encrypted]
+    public string? DateOfBirth { get; set; }
+    public string? Bio { get; set; }
     public bool Metric { get; set; }
     public bool LightTheme { get; set; }
 }

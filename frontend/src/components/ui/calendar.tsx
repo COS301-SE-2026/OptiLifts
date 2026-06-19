@@ -2,13 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-
-type CalendarProps = Readonly<{
-  className?: string
-  highlightedDates?: readonly string[]
-  month?: Date
-  onMonthChange?: (month: Date) => void
-}>
+import type { CalendarProps } from "@/types/calendar"
 
 const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const
 
@@ -77,7 +71,7 @@ export function Calendar(props: Readonly<CalendarProps>) {
           <button
             type="button"
             aria-label="Previous month"
-            className="inline-flex size-7 items-center justify-center rounded-full border border-brand bg-background text-brand transition-colors hover:bg-surface-2 sm:size-8"
+            className="inline-flex size-7 items-center justify-center rounded-full border border-brand-2 bg-background text-brand-2 transition-colors hover:bg-surface-2 sm:size-8"
             onClick={() => moveMonth(-1)}
           >
             <ChevronLeft size={14} />
@@ -90,7 +84,7 @@ export function Calendar(props: Readonly<CalendarProps>) {
           <button
             type="button"
             aria-label="Next month"
-            className="inline-flex size-7 items-center justify-center rounded-full border border-brand bg-background text-brand transition-colors hover:bg-surface-2 sm:size-8"
+            className="inline-flex size-7 items-center justify-center rounded-full border border-brand-2 bg-background text-brand-2 transition-colors hover:bg-surface-2 sm:size-8"
             onClick={() => moveMonth(1)}
           >
             <ChevronRight size={14} />

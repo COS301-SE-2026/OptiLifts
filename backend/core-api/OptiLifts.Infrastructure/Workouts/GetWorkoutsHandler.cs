@@ -36,18 +36,34 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
         var workoutIds = workouts.Select(workout => workout.Id).ToArray();
 
         var workoutExercises = await (
-                from set in _dbContext.Sets.AsNoTracking()
-                join exercise in _dbContext.Exercises.AsNoTracking() on set.ExerciseId equals exercise.Id
-                where workoutIds.Contains(set.WorkoutId)
-                select new
-                {
-                    set.WorkoutId,
-                    set.OrderIndex,
-                    exercise.Id,
-                    ExerciseName = exercise.Name,
-                    exercise.PrimaryMuscles
-                })
+            from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
+            where workoutIds.Contains(workoutExercise.WorkoutId)
+            join exercise in _dbContext.Exercises.AsNoTracking()
+                on workoutExercise.ExerciseId equals exercise.Id
+            select new
+            {
+                workoutExercise.WorkoutId,
+                workoutExercise.OrderIndex,
+                exercise.Id,
+                ExerciseName = exercise.Name,
+                exercise.PrimaryMuscleId
+            })
             .ToListAsync(cancellationToken);
+
+        var allPrimaryMuscleIds = workoutExercises
+            .Select(e => e.PrimaryMuscleId)
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToArray();
+
+        var muscleMap = new Dictionary<Guid, string>();
+        if (allPrimaryMuscleIds.Length > 0)
+        {
+            muscleMap = await _dbContext.Muscles
+                .AsNoTracking()
+                .Where(m => allPrimaryMuscleIds.Contains(m.Id))
+                .ToDictionaryAsync(m => m.Id, m => m.Name, cancellationToken);
+        }
 
         return workouts.Select(workout =>
         {
@@ -55,6 +71,7 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
                 .Where(entry => entry.WorkoutId == workout.Id)
                 .OrderBy(entry => entry.OrderIndex)
                 .ToList();
+
             var exerciseCount = entries
                 .Select(entry => entry.Id)
                 .Distinct()
@@ -64,19 +81,23 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
                 .Distinct()
                 .Take(3)
                 .ToArray();
+
             var primaryMuscleGroups = entries
-                .SelectMany(entry => entry.PrimaryMuscles)
-                .Distinct()
-                .Take(3)
-                .ToArray();
+                    .Select(entry => entry.PrimaryMuscleId)
+                    .Distinct()
+                    .Take(3)
+                    .Select(id => muscleMap.TryGetValue(id, out var name) ? name : null)
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .ToArray();
 
             return new WorkoutCardDto(
-                workout.Id,
-                workout.Name,
-                primaryMuscleGroups,
-                exerciseCount,
-                exercisePreview,
-                workout.CreatedAt);
+                    workout.Id,
+                    workout.Name,
+                    primaryMuscleGroups,
+                    exerciseCount,
+                    exercisePreview,
+                    workout.CreatedAt);
         }).ToList();
+
     }
 }

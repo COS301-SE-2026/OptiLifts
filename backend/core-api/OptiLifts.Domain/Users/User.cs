@@ -21,7 +21,7 @@ public class User
     [Encrypted]
     public string? Height { get; set; }
     [Encrypted]
-    public string? Sex { get; set; } 
+    public string? Sex { get; set; }
     //a string converted on the API layer e.g 
     //public enum Sex { Male, Female, Other, PreferNotToSay }
     [Encrypted]

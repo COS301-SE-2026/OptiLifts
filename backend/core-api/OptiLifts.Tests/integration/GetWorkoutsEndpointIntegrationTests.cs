@@ -214,14 +214,23 @@ public sealed class GetWorkoutsApiFixture : IAsyncLifetime
                 SecondaryMuscles = new List<string>()
             };
             db.Exercises.Add(exercise);
-            db.Sets.Add(new WorkoutSet
+
+            var workoutExercise = new WorkoutExercise
             {
                 WorkoutId = workout.Id,
                 ExerciseId = exercise.Id,
+                OrderIndex = index
+            };
+            db.WorkoutExercises.Add(workoutExercise);
+            await db.SaveChangesAsync();
+
+            db.Sets.Add(new WorkoutSet
+            {
+                WorkoutExerciseId = workoutExercise.Id,
                 Type = SetType.Normal,
                 Reps = 8,
                 Weight = 100,
-                OrderIndex = index,
+                OrderIndex = 1,
                 RestTime = 90
             });
         }

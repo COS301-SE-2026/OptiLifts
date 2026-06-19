@@ -1,13 +1,4 @@
-type BarChartDatum = Readonly<{
-  label: string
-  value: number
-}>
-
-type BarChartProps = Readonly<{
-  title?: string
-  data?: readonly BarChartDatum[]
-  className?: string
-}>
+import type { BarChartDatum, BarChartProps } from '@/types/barchart'
 
 const formatShortDate = (date: Date) =>
   new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date)

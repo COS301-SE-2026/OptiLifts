@@ -33,6 +33,9 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<WorkoutSet> Sets { get; set; }
     public DbSet<WorkoutLog> WorkoutLogs { get; set; }
     public DbSet<WorkoutSetLog> WorkoutLogSets { get; set; }
+    public DbSet<Muscle> Muscles { get; set; }
+    public DbSet<SecMuscle> SecMuscles { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

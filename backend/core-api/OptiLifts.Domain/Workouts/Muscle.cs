@@ -1,4 +1,4 @@
-namespace OptiLifts.Domain.Workouts
+namespace OptiLifts.Domain.Workouts;
 
 public class Muscle
 {

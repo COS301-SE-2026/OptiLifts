@@ -28,6 +28,16 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
 
     public async Task<AuthResponseDto> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            throw new ArgumentException("Email and password must be provided");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ArgumentException("Password must be provided");
+        }
+
         var trimmedEmail = request.Email.Trim();
         var emailHash = EmailHasher.HashEmail(trimmedEmail);
 
@@ -55,9 +65,17 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var token = _jwtTokenService.CreateToken(user);
+        var refreshToken = TokenHelper.GenerateRefreshToken();
+
+        user.RefreshTokenHash = TokenHelper.HashToken(refreshToken);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new AuthResponseDto(
             token,
+            refreshToken,
             new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt)
         );
 

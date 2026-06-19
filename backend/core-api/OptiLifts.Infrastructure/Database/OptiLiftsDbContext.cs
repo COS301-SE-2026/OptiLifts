@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using OptiLifts.Domain.Common;
+using OptiLifts.Domain.Messaging;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
@@ -33,6 +34,13 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<WorkoutSet> Sets { get; set; }
     public DbSet<WorkoutLog> WorkoutLogs { get; set; }
     public DbSet<WorkoutSetLog> WorkoutLogSets { get; set; }
+    public DbSet<Muscle> Muscles { get; set; }
+    public DbSet<SecMuscle> SecMuscles { get; set; }
+    public DbSet<WorkoutExercise> WorkoutExercises { get; set; }
+    public DbSet<ScheduledEntry> ScheduledEntries { get; set; }
+    public DbSet<Message> Messages { get; set; }
+    public DbSet<UserModel> UserModels { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

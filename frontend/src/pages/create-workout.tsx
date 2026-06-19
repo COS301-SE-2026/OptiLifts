@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { WorkoutExercise } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
+import { customFetch } from '@/lib/custom-fetch'
 
 type WorkoutCreationResponse = {
   workoutId?: string
@@ -88,13 +89,11 @@ export default function CreateWorkoutPage() {
   const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
-  const { token } = useAuth()
+  const { isAuthenticated } = useAuth()
 
   const fetchExercises = useCallback(async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (token) headers['Authorization'] = `Bearer ${token}`
-
-    const res = await fetch('/api/exercises', { headers })
+    const res = await customFetch('/api/exercises', { headers })
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
@@ -110,7 +109,7 @@ export default function CreateWorkoutPage() {
       equipment: ex.equipment,
       imageUrl: ex.imageUrl
     })) as CatalogExercise[]
-  }, [token])
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -180,13 +179,13 @@ export default function CreateWorkoutPage() {
   }
 
   const saveWorkout = async () => {
-    if (!workoutName.trim() || !token) return
+    if (!workoutName.trim() || !isAuthenticated) return
     setSaving(true)
     setSaveError(null)
     try {
-      const res = await fetch('/api/workouts', {
+      const res = await customFetch('/api/workouts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify({ folderId: null, name: workoutName.trim(), dayIndex: null, sets: [] }),
       })
 
@@ -205,12 +204,10 @@ export default function CreateWorkoutPage() {
       if (workoutId && exerciseIds.length > 0) {
         await Promise.all(
           exerciseIds.map(async (exerciseId) => {
-            const addResponse = await fetch(`/api/workouts/${workoutId}/exercises`, {
+            const addResponse = await customFetch(`/api/workouts/${workoutId}/exercises`, {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
+                'Content-Type': 'application/json'              },
               body: JSON.stringify({ exerciseId }),
             })
 

@@ -15,7 +15,7 @@ public class AzureBlobStorageService : IBlobStorageService
 
     public AzureBlobStorageService(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("AzureStorage");
+        _connectionString = configuration.GetConnectionString("AzureStorage")!;
 
         if (string.IsNullOrWhiteSpace(_connectionString))
         {

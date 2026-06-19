@@ -14,9 +14,10 @@ import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { useAuth } from '@/context/auth-context'
 import type { Workout, WorkoutSummary } from '@/types/workout'
 import { Plus } from 'lucide-react'
+import { customFetch } from '@/lib/custom-fetch'
 
 export default function WorkoutsPage() {
-  const { token, isHydrated } = useAuth()
+  const { isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [query, setQuery] = useState('')
@@ -24,10 +25,10 @@ export default function WorkoutsPage() {
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const authError = isHydrated && !token ? 'Please log in to view your workouts.' : null
+  const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
 
   useEffect(() => {
-    if (!isHydrated || !token) {
+    if (!isHydrated || !isAuthenticated) {
       return
     }
 
@@ -37,9 +38,8 @@ export default function WorkoutsPage() {
       setError(null)
 
       try {
-        const response = await fetch('/api/workouts', {
+        const response = await customFetch('/api/workouts', {
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: 'application/json',
           },
         })
@@ -69,9 +69,9 @@ export default function WorkoutsPage() {
     return () => {
       isActive = false
     }
-  }, [isHydrated, token])
+  }, [isHydrated, isAuthenticated])
 
-  const visibleWorkouts = useMemo(() => (token ? workouts : []), [token, workouts])
+  const visibleWorkouts = useMemo(() => (isAuthenticated ? workouts : []), [isAuthenticated, workouts])
   const isLoading = !isHydrated || isFetching
   const displayError = authError ?? error
 

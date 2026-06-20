@@ -156,7 +156,6 @@ export default function ProfilePage() {
                 category={badge.category}
                 earnedAt={badge.earnedAt}
                 iconUrl={badge.iconUrl}
-                className="h-full"
               />
             ))
           ) : (

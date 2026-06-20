@@ -28,7 +28,7 @@ public class DuplicateWorkoutsHandlerTests
         var handler = new DuplicateWorkoutHandler(db);
 
         var result = await handler.Handle(
-            new DuplicateWorkoutCommand(Guid.NewGuid(), Guid.NewGuid()), 
+            new DuplicateWorkoutCommand(Guid.NewGuid(), Guid.NewGuid()),
             CancellationToken.None);
 
         result.Should().BeNull();

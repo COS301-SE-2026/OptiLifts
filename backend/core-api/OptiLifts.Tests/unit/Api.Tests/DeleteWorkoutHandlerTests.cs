@@ -28,7 +28,7 @@ public class DeleteWorkoutHandlertests
         var result = await handler.Handle(
             new DeleteWorkoutCommand(Guid.NewGuid(), Guid.NewGuid()),
             CancellationToken.None);
-        
+
         result.Should().BeFalse();
     }
 

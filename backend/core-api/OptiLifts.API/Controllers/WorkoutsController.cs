@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
-using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.GetWorkouts;
 
 namespace OptiLifts.API.Controllers;
 
@@ -105,7 +105,7 @@ public sealed class WorkoutsController : ControllerBase
                 title = "Not Found",
                 message = "Workout was not found for this user."
             });
-            
+
         }
         return Ok(new { message = "Workout deleted successfully." });
 
@@ -120,7 +120,7 @@ public sealed class WorkoutsController : ControllerBase
         {
             return Unauthorized();
         }
-        var result = await _sender.Send(new DuplicateWorkoutCommand (workoutId, userId), cancellationToken);
+        var result = await _sender.Send(new DuplicateWorkoutCommand(workoutId, userId), cancellationToken);
 
         if (result == null)
         {
@@ -131,9 +131,9 @@ public sealed class WorkoutsController : ControllerBase
                 message = "Source workout was not found for this user."
             });
         }
-        return CreatedAtAction(nameof(GetWorkouts), new {id = result.WorkoutId }, result);
+        return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);
 
     }
-    
-    
+
+
 }

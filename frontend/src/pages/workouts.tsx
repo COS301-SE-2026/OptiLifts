@@ -28,6 +28,8 @@ export default function WorkoutsPage() {
   const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
 
   const loadWorkouts = useCallback(async (selectIdAfterLoad?: string) => {
+    
+    await Promise.resolve()
     setIsFetching(true)
     setError(null)
 
@@ -65,7 +67,10 @@ export default function WorkoutsPage() {
     if (!isHydrated || !isAuthenticated) {
       return
     }
-    void loadWorkouts()
+    const triggerInitial = async () => {
+      await loadWorkouts()
+    }
+    void triggerInitial()
   }, [isHydrated, isAuthenticated, loadWorkouts])
 
   //duplication

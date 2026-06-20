@@ -9,7 +9,7 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
     (maxValue * 2) / 3,
     (maxValue * 1) / 3,
     0,
-  ].map((val) => (Number.isInteger(val) ? val : parseFloat(val.toFixed(1))))
+  ].map((val) => (Number.isInteger(val) ? val : Number.parseFloat(val.toFixed(1))))
 
   return (
     <section className={className}>
@@ -18,8 +18,8 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
       <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:px-5 sm:py-5">
         <div className="flex gap-3">
           <div className="flex h-[140px] flex-col justify-between pt-1 text-[0.65rem] text-muted-foreground">
-            {yAxisLabels.map((label, index) => (
-              <span key={`label-${index}`}>{label} hr</span>
+            {yAxisLabels.map((label) => (
+              <span key={`label-${label}`}>{label} hr</span>
             ))}
           </div>
 
@@ -34,11 +34,11 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
               ))}
 
               <div className="relative z-10 grid h-full grid-cols-12 items-end gap-x-0.5 gap-y-2 sm:gap-x-1">
-                {data.map((bar, index) => {
+                {data.map((bar) => {
                   const height = Math.max((bar.value / maxValue) * 100, bar.value === 0 ? 0 : 12)
 
                   return (
-                    <div key={`${bar.label || 'bar'}-${index}`} className="flex h-full flex-col items-center justify-end gap-1.5">
+                    <div key={`${bar.label || 'bar'}-${bar.value}`} className="flex h-full flex-col items-center justify-end gap-1.5">
                       <div
                         className="w-full max-w-[18px] rounded-[2px] bg-brand-2"
                         style={{ height: `${height}%` }}

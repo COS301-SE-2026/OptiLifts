@@ -6,6 +6,7 @@ const MAX_VISIBLE_EXERCISES = 10
 export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, className }: WorkoutOverviewProps) {
   const visibleExercises = exercises.slice(0, MAX_VISIBLE_EXERCISES)
   const hasMoreExercises = exercises.length > visibleExercises.length
+  const exerciseKeyCounts = new Map<string, number>()
 
   return (
     <article
@@ -22,11 +23,16 @@ export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, 
           <div className="mt-3">
             <p className="text-sm font-semibold text-foreground/90">Exercises:</p>
             <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm leading-snug text-foreground/80">
-              {visibleExercises.map((exercise, index) => (
-                <li key={index}>
-                  <span className="block max-w-[200px] truncate">{exercise}</span>
-                </li>
-              ))}
+              {visibleExercises.map((exercise) => {
+                const seenCount = exerciseKeyCounts.get(exercise) ?? 0
+                exerciseKeyCounts.set(exercise, seenCount + 1)
+
+                return (
+                  <li key={`${exercise}-${seenCount}`}>
+                    <span className="block max-w-[200px] truncate">{exercise}</span>
+                  </li>
+                )
+              })}
               {hasMoreExercises && <li className="list-none pl-1 text-muted-foreground">...</li>}
             </ul>
           </div>

@@ -23,13 +23,13 @@ public class GetWorkoutsHandlerTests
     public async Task Handle_ReturnsEmpty_WhenNoWorkouts()
     {
         using var conn = new SqliteConnection("DataSource=:memory:");
-        conn.Open();
+        await conn.OpenAsync();
         var options = new DbContextOptionsBuilder<OptiLiftsDbContext>()
             .UseSqlite(conn)
             .Options;
 
         using var db = new OptiLiftsDbContext(options);
-        db.Database.EnsureCreated();
+        await db.Database.EnsureCreatedAsync();
 
         var handler = new GetWorkoutsHandler(db);
         var result = await handler.Handle(new GetWorkoutsQuery(Guid.NewGuid()), CancellationToken.None);
@@ -43,13 +43,13 @@ public class GetWorkoutsHandlerTests
         var userId = Guid.NewGuid();
 
         using var conn = new SqliteConnection("DataSource=:memory:");
-        conn.Open();
+        await conn.OpenAsync();
         var options = new DbContextOptionsBuilder<OptiLiftsDbContext>()
             .UseSqlite(conn)
             .Options;
 
         using var db = new OptiLiftsDbContext(options);
-        db.Database.EnsureCreated();
+        await db.Database.EnsureCreatedAsync();
 
         var user = new OptiLifts.Domain.Users.User
         {
@@ -137,13 +137,13 @@ public class GetWorkoutsHandlerTests
         var userId = Guid.NewGuid();
 
         using var conn = new SqliteConnection("DataSource=:memory:");
-        conn.Open();
+        await conn.OpenAsync();
         var options = new DbContextOptionsBuilder<OptiLiftsDbContext>()
             .UseSqlite(conn)
             .Options;
 
         using var db = new OptiLiftsDbContext(options);
-        db.Database.EnsureCreated();
+        await db.Database.EnsureCreatedAsync();
 
         var user = new OptiLifts.Domain.Users.User
         {

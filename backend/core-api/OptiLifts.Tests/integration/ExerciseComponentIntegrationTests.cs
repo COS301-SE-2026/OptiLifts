@@ -78,7 +78,7 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
             mechanic: "compound",
             equipment: "barbell",
             category: "Strength",
-            primaryMuscles: ["Back"],
+            primaryMuscles: ["Lats"],
             secondaryMuscles: []);
 
         var resp1 = await clientOne.PostAsync("/api/exercises/custom", userOneContent);

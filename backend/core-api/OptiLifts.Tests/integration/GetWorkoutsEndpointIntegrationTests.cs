@@ -36,7 +36,7 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
             new DateTime(2026, 05, 19, 10, 0, 0, DateTimeKind.Utc),
             "Push Day A",
             ("Bench Press", new[] { "Chest" }),
-            ("Overhead Press", new[] { "Shoulders", "Triceps" }));
+            ("Overhead Press", new[] { "Shoulders" }));
 
         var response = await _fixture.GetAuthenticatedClient(user).GetAsync("/api/workouts");
         response.EnsureSuccessStatusCode();
@@ -49,7 +49,7 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
         workout.Name.Should().Be("Push Day A");
         workout.ExerciseCount.Should().Be(2);
         workout.ExercisePreview.Should().Equal("Bench Press", "Overhead Press");
-        workout.PrimaryMuscleGroups.Should().Equal("Chest", "Shoulders", "Triceps");
+        workout.PrimaryMuscleGroups.Should().Equal("Chest", "Shoulders");
         workout.CreatedAt.Should().BeCloseTo(new DateTime(2026, 05, 19, 10, 0, 0, DateTimeKind.Utc), TimeSpan.FromSeconds(1));
     }
 
@@ -204,16 +204,30 @@ public sealed class GetWorkoutsApiFixture : IAsyncLifetime
         for (var index = 0; index < exercises.Length; index++)
         {
             var (exerciseName, primaryMuscles) = exercises[index];
+
+            var primaryMuscleName = primaryMuscles[0];
+            var primaryMuscle = await db.Muscles.FirstOrDefaultAsync(m => m.Name == primaryMuscleName);
+            if (primaryMuscle is null)
+            {
+                primaryMuscle = new Muscle
+                {
+                    Name = primaryMuscleName
+                };
+                db.Muscles.Add(primaryMuscle);
+                await db.SaveChangesAsync();
+            }
             var exercise = new Exercise
             {
                 Name = exerciseName,
-                Category = "Strength",
                 Mechanic = "compound",
                 Equipment = "barbell",
-                PrimaryMuscles = primaryMuscles.ToList(),
-                SecondaryMuscles = new List<string>()
+                ExerciseType = ExerciseType.WeightReps,
+                PrimaryMuscleId = primaryMuscle.Id,
+                UserId = null,
+                ImageUrl = null
             };
             db.Exercises.Add(exercise);
+            await db.SaveChangesAsync();
 
             var workoutExercise = new WorkoutExercise
             {

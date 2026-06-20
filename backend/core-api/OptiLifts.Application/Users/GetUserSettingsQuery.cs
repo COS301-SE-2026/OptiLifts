@@ -1,5 +1,5 @@
-using MediatR;
 using System;
+using MediatR;
 
 namespace OptiLifts.Application.Users;
 

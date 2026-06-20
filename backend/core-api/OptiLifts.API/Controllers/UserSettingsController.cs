@@ -1,9 +1,11 @@
+using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Users;
-using System.Security.Claims;
+
 namespace OptiLifts.API.Controllers;
+
 
 [ApiController]
 [Authorize]
@@ -75,4 +77,51 @@ public sealed class UserSettingsController : ControllerBase
             return NotFound();
         }
     }
+
+    public sealed record UserDetailsRequest(
+        string DisplayName,
+        string? Bio,
+        string? Sex,
+        string? DateOfBirth,
+        double? Weight,
+        double? Height
+    );
+
+    [HttpPatch("profileDetails")]
+    public async Task<IActionResult> UpdateProfileDetails([FromBody] UserDetailsRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            return BadRequest("Display name is required.");
+        }
+
+        try
+        {
+            var command = new UpdateProfileDetailsCommand(
+                userId,
+                request.DisplayName,
+                request.Bio,
+                request.Sex,
+                request.DateOfBirth,
+                request.Weight,
+                request.Height
+            );
+
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
 }

@@ -161,7 +161,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     }, [isOpen, user]);
 
     const saveProfileDetails = async () => {
-        const res = await customFetch("/api/users/me/personalDetails", {
+        const res = await customFetch("/api/users/me/profileDetails", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

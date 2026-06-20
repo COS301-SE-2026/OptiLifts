@@ -1,8 +1,8 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Users;
 using OptiLifts.Infrastructure.Database;
-using System.Globalization;
 
 namespace OptiLifts.Infrastructure.Users;
 
@@ -36,13 +36,13 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
         {
             height = h;
         }
-        
+
         DateTime? dateOfBirth = null;
         if (DateTime.TryParse(user.DateOfBirth, CultureInfo.InvariantCulture, out var dob))
         {
             dateOfBirth = dob;
         }
-        
+
         return new UserSettingsDto
         {
             Profile = new ProfileDto(

@@ -5,4 +5,4 @@ public sealed record UploadProfilePictureCommand(
     Stream FileStream,
     string FileName,
     string ContentType
-):IRequest<string>;
+) : IRequest<string>;

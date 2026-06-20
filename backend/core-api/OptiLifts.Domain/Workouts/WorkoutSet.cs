@@ -21,7 +21,4 @@ public class WorkoutSet
     public float? Distance { get; set; }
     public int OrderIndex { get; set; }
     public int RestTime { get; set; }
-
-    [NotMapped] public Guid WorkoutId { get; set; }
-    [NotMapped] public Guid ExerciseId { get; set; }
 }

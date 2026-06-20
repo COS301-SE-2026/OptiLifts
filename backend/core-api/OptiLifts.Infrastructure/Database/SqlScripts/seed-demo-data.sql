@@ -1,8 +1,9 @@
 BEGIN;
 
 -- ---------------------------------------------------------------------------
--- Muscles (idempotent). No unique constraint exists on muscles.name, so we
--- guard each insert with NOT EXISTS. gen_random_uuid() is built into PG13+.
+-- Muscles (idempotent). No unique constraint exists on muscles.name, so the
+-- insert is guarded with an anti-join (LEFT JOIN ... IS NULL).
+-- gen_random_uuid() is built into PG13+.
 -- ---------------------------------------------------------------------------
 INSERT INTO muscles (muscle_id, name)
 SELECT gen_random_uuid(), v.name
@@ -24,10 +25,12 @@ FROM (VALUES
     ('Traps'),
     ('Triceps')
 ) AS v(name)
-WHERE NOT EXISTS (SELECT 1 FROM muscles m WHERE m.name = v.name);
+LEFT JOIN muscles m ON m.name = v.name
+WHERE m.muscle_id IS NULL;
 
 -- ---------------------------------------------------------------------------
--- Stable demo ids + literals.
+-- Stable demo ids + repeated literals, defined once (avoids duplicated
+-- literals across the script). Referenced as c.<name> everywhere below.
 -- ---------------------------------------------------------------------------
 CREATE TEMP TABLE seed_constants (
     exercise_bench_id uuid NOT NULL,
@@ -65,10 +68,31 @@ CREATE TEMP TABLE seed_constants (
     set_calf_id uuid NOT NULL,
     test_user_email text NOT NULL,
     demo_user_email text NOT NULL,
+    hex_enc text NOT NULL,
     set_type text NOT NULL,
     exercise_type text NOT NULL,
     mechanic_compound text NOT NULL,
-    equipment_barbell text NOT NULL
+    mechanic_isolated text NOT NULL,
+    mechanic_complex text NOT NULL,
+    equipment_barbell text NOT NULL,
+    equipment_dumbbell text NOT NULL,
+    equipment_cable text NOT NULL,
+    equipment_machine text NOT NULL,
+    equipment_bodyweight text NOT NULL,
+    muscle_chest text NOT NULL,
+    muscle_biceps text NOT NULL,
+    muscle_triceps text NOT NULL,
+    muscle_shoulders text NOT NULL,
+    muscle_hamstrings text NOT NULL,
+    muscle_glutes text NOT NULL,
+    muscle_quadriceps text NOT NULL,
+    muscle_lats text NOT NULL,
+    muscle_calves text NOT NULL,
+    muscle_middle_back text NOT NULL,
+    muscle_lower_back text NOT NULL,
+    muscle_abdominals text NOT NULL,
+    badge_code_count text NOT NULL,
+    badge_cat_milestone text NOT NULL
 ) ON COMMIT DROP;
 
 INSERT INTO seed_constants
@@ -108,10 +132,31 @@ VALUES (
     '44444444-4444-4444-4444-444444444452',
     'test@optilifts.com',
     'demo2@optilifts.com',
+    'hex',
     'Normal',
     'WeightReps',
     'compound',
-    'barbell'
+    'isolated',
+    'complex',
+    'barbell',
+    'dumbbell',
+    'cable',
+    'machine',
+    'bodyweight',
+    'Chest',
+    'Biceps',
+    'Triceps',
+    'Shoulders',
+    'Hamstrings',
+    'Glutes',
+    'Quadriceps',
+    'Lats',
+    'Calves',
+    'Middle Back',
+    'Lower Back',
+    'Abdominals',
+    'workout_count',
+    'Milestone'
 );
 
 -- ---------------------------------------------------------------------------
@@ -120,76 +165,96 @@ VALUES (
 -- ---------------------------------------------------------------------------
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
 SELECT c.exercise_bench_id, 'Barbell Bench Press', c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Chest'
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_chest
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_incline_id, 'Incline Dumbbell Press', c.mechanic_compound, 'dumbbell', c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Chest'
+SELECT c.exercise_incline_id, 'Incline Dumbbell Press', c.mechanic_compound, c.equipment_dumbbell, c.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_chest
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_row_id, 'Seated Cable Row', c.mechanic_compound, 'cable', c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Middle Back'
+SELECT c.exercise_row_id, 'Seated Cable Row', c.mechanic_compound, c.equipment_cable, c.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_middle_back
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
 SELECT c.exercise_rdl_id, 'Romanian Deadlift', c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Hamstrings'
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_hamstrings
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_lunge_id, 'Walking Lunge', 'complex', 'dumbbell', c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Quadriceps'
+SELECT c.exercise_lunge_id, 'Walking Lunge', c.mechanic_complex, c.equipment_dumbbell, c.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_quadriceps
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
 SELECT c.exercise_ohp_id, 'Overhead Press', c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Shoulders'
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_shoulders
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_calf_id, 'Standing Calf Raise', 'isolated', 'machine', c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Calves'
+SELECT c.exercise_calf_id, 'Standing Calf Raise', c.mechanic_isolated, c.equipment_machine, c.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_calves
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_squat_id, 'Back Squat', 'complex', c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Quadriceps'
+SELECT c.exercise_squat_id, 'Back Squat', c.mechanic_complex, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_quadriceps
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_pulldown_id, 'Lat Pulldown', 'isolated', 'machine', c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = 'Lats'
+SELECT c.exercise_pulldown_id, 'Lat Pulldown', c.mechanic_isolated, c.equipment_machine, c.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c JOIN muscles m ON m.name = c.muscle_lats
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
--- Secondary muscles (sec_muscles join). Guarded by NOT EXISTS per pair.
+-- Additional global library exercises (not referenced by the demo workouts).
+-- Idempotent via an anti-join on (name, user_id IS NULL).
+-- ---------------------------------------------------------------------------
+INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
+SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.muscle_id, NULL, NULL
+FROM seed_constants c
+CROSS JOIN LATERAL (VALUES
+    ('Pull Up',             c.mechanic_compound, c.equipment_bodyweight, 'BodyweightReps',   c.muscle_lats),
+    ('Deadlift',            c.mechanic_compound, c.equipment_barbell,    c.exercise_type,    c.muscle_hamstrings),
+    ('Dumbbell Bicep Curl', c.mechanic_isolated, c.equipment_dumbbell,   c.exercise_type,    c.muscle_biceps),
+    ('Tricep Pushdown',     c.mechanic_isolated, c.equipment_cable,      c.exercise_type,    c.muscle_triceps),
+    ('Plank',               c.mechanic_isolated, c.equipment_bodyweight, 'Duration',         c.muscle_abdominals),
+    ('Running',             c.mechanic_compound, c.equipment_bodyweight, 'DistanceDuration', c.muscle_quadriceps)
+) AS v(name, mechanic, equipment, exercise_type, muscle_name)
+JOIN muscles m ON m.name = v.muscle_name
+LEFT JOIN exercise_dictionary e ON e.name = v.name AND e.user_id IS NULL
+WHERE e.exercise_dict_id IS NULL;
+
+-- ---------------------------------------------------------------------------
+-- Secondary muscles (sec_muscles join). Exercise ids come from seed_constants
+-- (no raw UUID literals); guarded by an anti-join per pair.
 -- ---------------------------------------------------------------------------
 INSERT INTO sec_muscles (sec_muscle_id, muscle_id, exercise_id)
 SELECT gen_random_uuid(), m.muscle_id, e.exercise_id
-FROM (VALUES
-    ('11111111-1111-1111-1111-111111111111'::uuid, 'Triceps'),
-    ('11111111-1111-1111-1111-111111111111'::uuid, 'Shoulders'),
-    ('11111111-1111-1111-1111-111111111114'::uuid, 'Shoulders'),
-    ('11111111-1111-1111-1111-111111111114'::uuid, 'Triceps'),
-    ('11111111-1111-1111-1111-111111111115'::uuid, 'Biceps'),
-    ('11111111-1111-1111-1111-111111111115'::uuid, 'Shoulders'),
-    ('11111111-1111-1111-1111-111111111116'::uuid, 'Glutes'),
-    ('11111111-1111-1111-1111-111111111116'::uuid, 'Lower Back'),
-    ('11111111-1111-1111-1111-111111111117'::uuid, 'Glutes'),
-    ('11111111-1111-1111-1111-111111111117'::uuid, 'Hamstrings'),
-    ('11111111-1111-1111-1111-111111111117'::uuid, 'Calves'),
-    ('11111111-1111-1111-1111-111111111118'::uuid, 'Triceps'),
-    ('11111111-1111-1111-1111-111111111118'::uuid, 'Chest'),
-    ('11111111-1111-1111-1111-111111111112'::uuid, 'Glutes'),
-    ('11111111-1111-1111-1111-111111111112'::uuid, 'Hamstrings'),
-    ('11111111-1111-1111-1111-111111111113'::uuid, 'Biceps')
+FROM seed_constants c
+CROSS JOIN LATERAL (VALUES
+    (c.exercise_bench_id,    c.muscle_triceps),
+    (c.exercise_bench_id,    c.muscle_shoulders),
+    (c.exercise_incline_id,  c.muscle_shoulders),
+    (c.exercise_incline_id,  c.muscle_triceps),
+    (c.exercise_row_id,      c.muscle_biceps),
+    (c.exercise_row_id,      c.muscle_shoulders),
+    (c.exercise_rdl_id,      c.muscle_glutes),
+    (c.exercise_rdl_id,      c.muscle_lower_back),
+    (c.exercise_lunge_id,    c.muscle_glutes),
+    (c.exercise_lunge_id,    c.muscle_hamstrings),
+    (c.exercise_lunge_id,    c.muscle_calves),
+    (c.exercise_ohp_id,      c.muscle_triceps),
+    (c.exercise_ohp_id,      c.muscle_chest),
+    (c.exercise_squat_id,    c.muscle_glutes),
+    (c.exercise_squat_id,    c.muscle_hamstrings),
+    (c.exercise_pulldown_id, c.muscle_biceps)
 ) AS e(exercise_id, muscle_name)
 JOIN muscles m ON m.name = e.muscle_name
-WHERE NOT EXISTS (
-    SELECT 1 FROM sec_muscles s WHERE s.exercise_id = e.exercise_id AND s.muscle_id = m.muscle_id
-);
+LEFT JOIN sec_muscles s ON s.exercise_id = e.exercise_id AND s.muscle_id = m.muscle_id
+WHERE s.sec_muscle_id IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- Folders.
@@ -197,13 +262,13 @@ WHERE NOT EXISTS (
 INSERT INTO folders (folder_id, user_id, name, description, created_at)
 SELECT c.folder_push_id, u.user_id, 'Starter Push', 'Demo folder for local testing', NOW()
 FROM seed_constants c
-JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
+JOIN users u ON u.email_hash = encode(sha256(c.test_user_email::bytea), c.hex_enc)
 ON CONFLICT (folder_id) DO NOTHING;
 
 INSERT INTO folders (folder_id, user_id, name, description, created_at)
 SELECT c.folder_pull_id, u.user_id, 'Starter Pull', 'Demo folder for user two', NOW()
 FROM seed_constants c
-JOIN users u ON u.email_hash = encode(sha256(c.demo_user_email::bytea), 'hex')
+JOIN users u ON u.email_hash = encode(sha256(c.demo_user_email::bytea), c.hex_enc)
 ON CONFLICT (folder_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
@@ -214,7 +279,7 @@ SELECT c.workout_push_id, f.folder_id, 'Push Day A', 1, u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
+WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
@@ -222,7 +287,7 @@ SELECT c.workout_pull_id, f.folder_id, 'Pull Day A', 1, u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), 'hex')
+WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
@@ -230,7 +295,7 @@ SELECT c.workout_upper_b_id, f.folder_id, 'Upper B', 2, u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), 'hex')
+WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
 INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
@@ -238,7 +303,7 @@ SELECT c.workout_lower_b_id, f.folder_id, 'Lower B', 2, u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
-WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), 'hex')
+WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
@@ -280,5 +345,122 @@ CROSS JOIN LATERAL (VALUES
     (c.set_calf_id,     c.we_calf_id,     12, 60::real,   60)
 ) AS v(set_id, we_id, reps, weight, rest_time)
 ON CONFLICT (set_id) DO NOTHING;
+
+-- ===========================================================================
+-- Profile-page demo data for "Alex" (gymgoer@gmail.com).
+-- The user itself is created by the C# seeder (encrypted), so run `dotnet run`
+-- before this script. Logs attach to the user via scheduled_entries; the
+-- encrypted workout_logs.notes column is left NULL (raw SQL can't encrypt).
+-- ===========================================================================
+DO $$
+DECLARE
+    alex_email constant text := 'gymgoer@gmail.com';
+    hex_enc constant text := 'hex';
+    alex_id uuid;
+    v_folder uuid;
+    v_pull uuid;
+    v_push uuid;
+    v_we uuid;
+    v_ex uuid;
+    v_entry uuid;
+    v_day timestamp;
+    i int;
+    rec record;
+BEGIN
+    SELECT user_id INTO alex_id FROM users
+    WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
+
+    IF alex_id IS NULL THEN
+        RAISE NOTICE 'Alex (%) not found - run the C# seeder (dotnet run) before this script.', alex_email;
+        RETURN;
+    END IF;
+
+    -- idempotent: skip if the demo block is already present
+    PERFORM 1 FROM workouts WHERE user_id = alex_id AND name IN ('Pull', 'Push');
+    IF FOUND THEN
+        RAISE NOTICE 'Alex demo data already seeded - skipping.';
+        RETURN;
+    END IF;
+
+    INSERT INTO folders (folder_id, user_id, name, description, created_at)
+    VALUES (gen_random_uuid(), alex_id, 'My Split', 'Demo training split', NOW())
+    RETURNING folder_id INTO v_folder;
+
+    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+    VALUES (gen_random_uuid(), v_folder, 'Pull', 1, alex_id, NOW())
+    RETURNING workout_id INTO v_pull;
+
+    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+    VALUES (gen_random_uuid(), v_folder, 'Push', 2, alex_id, NOW())
+    RETURNING workout_id INTO v_push;
+
+    -- exercises + sets for each recent-workout card (volume = weight*reps, count = #sets)
+    FOR rec IN
+        SELECT * FROM (VALUES
+            (v_pull, 'Lat Pulldown',        1, 5, 12, 45::real),
+            (v_pull, 'Seated Cable Row',    2, 5, 10, 50::real),
+            (v_pull, 'Pull Up',             3, 4, 8,  0::real),
+            (v_pull, 'Dumbbell Bicep Curl', 4, 4, 12, 14::real),
+            (v_push, 'Barbell Bench Press', 1, 4, 8,  60::real),
+            (v_push, 'Overhead Press',      2, 4, 8,  40::real),
+            (v_push, 'Incline Dumbbell Press', 3, 4, 10, 30::real),
+            (v_push, 'Tricep Pushdown',     4, 4, 12, 25::real)
+        ) AS t(workout_id, ex_name, ord, n_sets, reps, weight)
+    LOOP
+        SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
+        WHERE name = rec.ex_name AND user_id IS NULL
+        LIMIT 1;
+        CONTINUE WHEN v_ex IS NULL;
+
+        INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index)
+        VALUES (gen_random_uuid(), rec.workout_id, v_ex, rec.ord)
+        RETURNING workout_exercise_id INTO v_we;
+
+        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, order_index, rest_time)
+        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, gs, 90
+        FROM generate_series(1, rec.n_sets) AS gs;
+    END LOOP;
+
+    -- ~51 logged sessions spread across 2026-03-23 .. mid-June (calendar / hours / streak / count)
+    FOR i IN 0..50 LOOP
+        v_day := TIMESTAMP '2026-03-23 17:00:00' + (i * INTERVAL '41 hours');
+
+        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+        VALUES (gen_random_uuid(), alex_id, CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END, v_day, 'Completed')
+        RETURNING entry_id INTO v_entry;
+
+        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+        VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '65 minutes', false, NULL);
+    END LOOP;
+END $$;
+
+-- ===========================================================================
+-- Badge definitions. `code` maps to an IBadgeRule (only "workout_count" has a
+-- rule today); "streak_weeks" has no rule yet but can still be awarded manually.
+-- Idempotent via the unique index on badges.name.
+-- ===========================================================================
+INSERT INTO badges (badge_id, code, name, description, category, threshold, created_at)
+SELECT gen_random_uuid(), v.code, v.name, v.description, v.category, v.threshold, NOW()
+FROM seed_constants c
+CROSS JOIN LATERAL (VALUES
+    (c.badge_code_count, 'First Workout', 'Complete your first workout', c.badge_cat_milestone, 1),
+    (c.badge_code_count, '10 Workouts',   'Complete 10 workouts',        c.badge_cat_milestone, 10),
+    (c.badge_code_count, '50 Workouts',   'Complete 50 workouts',        c.badge_cat_milestone, 50),
+    (c.badge_code_count, 'Century Club',  'Complete 100 workouts',       c.badge_cat_milestone, 100),
+    ('streak_weeks',     'Consistent',    'Train 5 weeks in a row',      'Streak',              5)
+) AS v(code, name, description, category, threshold)
+ON CONFLICT (name) DO NOTHING;
+
+-- ===========================================================================
+-- Award earned badges to Alex (gymgoer@gmail.com). He has 51 workouts, so he
+-- earns the three workout-count milestones + the streak badge; "Century Club"
+-- (100) is intentionally left unearned. Idempotent via unique (user_id, badge_id).
+-- ===========================================================================
+INSERT INTO user_badges (user_badge_id, user_id, badge_id, earned_at)
+SELECT gen_random_uuid(), u.user_id, b.badge_id, NOW()
+FROM seed_constants c
+JOIN users u ON u.email_hash = encode(sha256('gymgoer@gmail.com'::bytea), c.hex_enc)
+JOIN badges b ON b.name IN ('First Workout', '10 Workouts', '50 Workouts', 'Consistent')
+ON CONFLICT (user_id, badge_id) DO NOTHING;
 
 COMMIT;

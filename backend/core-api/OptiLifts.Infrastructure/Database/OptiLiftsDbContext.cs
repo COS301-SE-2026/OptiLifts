@@ -3,12 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using OptiLifts.Domain.Common;
+using OptiLifts.Domain.Gamification;
 using OptiLifts.Domain.Messaging;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
-
-
 
 namespace OptiLifts.Infrastructure.Database;
 
@@ -40,6 +39,8 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<ScheduledEntry> ScheduledEntries { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<UserModel> UserModels { get; set; }
+    public DbSet<Badge> Badges { get; set; }
+    public DbSet<UserBadge> UserBadges { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -29,4 +29,5 @@ public class User
     public string? Bio { get; set; }
     public bool Metric { get; set; }
     public bool LightTheme { get; set; }
+    public string? ProfileImageUrl { get; set; }
 }

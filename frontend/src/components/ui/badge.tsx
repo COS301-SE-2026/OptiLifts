@@ -12,13 +12,13 @@ type BadgeProps = Readonly<{
 const formatEarnedAt = (value: string) =>
   new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value))
 
-export function Badge({ name, description, category, earnedAt, iconUrl, className }: BadgeProps) {
+export function Badge({ name, category, earnedAt, iconUrl, className }: BadgeProps) {
   const resolvedIcon = iconUrl ?? badgeIcon
 
   return (
     <article
       className={[
-        'relative flex h-full min-h-[180px] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-surface-2 p-4 pr-12 shadow-sm sm:min-h-[180px] sm:p-4 sm:pr-14',
+        'relative flex h-[180px] min-h-[180px] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-surface-2 p-4 pr-12 shadow-sm sm:h-[180px] sm:p-4 sm:pr-14',
         className,
       ]
         .filter(Boolean)
@@ -49,7 +49,6 @@ export function Badge({ name, description, category, earnedAt, iconUrl, classNam
       <div className="min-w-0 space-y-1.5 pr-5">
         <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{category}</p>
         <h3 className="max-w-[10ch] text-base font-bold leading-tight text-foreground sm:text-[1.05rem]">{name}</h3>
-        <p className="max-w-[18ch] text-sm leading-snug text-muted-foreground">{description}</p>
       </div>
 
       <p className="max-w-[12ch] text-[0.7rem] font-medium uppercase leading-tight tracking-[0.14em] text-muted-foreground">

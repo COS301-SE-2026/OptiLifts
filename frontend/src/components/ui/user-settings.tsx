@@ -70,7 +70,6 @@ interface UserSettingsDto {
 
 
 
-
 function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const { user } = useAuth();
 
@@ -308,7 +307,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
 
     return (
         <div className="space-y-4">
-            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-sm">Profile Details</h3>
+            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Profile Details</h3>
 
             <div className="flex flex-col items-center justify-center pb-2">
                 <span className="text-xs font-bold uppercase tracking-[1.5px] text-muted-foreground mb-3">Profile Picture</span>
@@ -366,7 +365,10 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Sex</span>
                     <DropdownMenu>
-                        <DropdownMenuTrigger variant="filter">
+                        <DropdownMenuTrigger 
+                            variant="filter" 
+                            className="w-full bg-transparent dark:bg-input/30 rounded-lg border-input h-8 py-1 px-2.5"
+                        >
                             {profile.sex === "PreferNotToSay" ? "Prefer not to say" : profile.sex}
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
@@ -401,11 +403,14 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
 function PreferencesSection({ preferences, updatePreferences }: PreferencesParams) {
     return (
         <div className="space-y-4">
-            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-sm">App Preferences</h3>
+            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">App Preferences</h3>
             <div className="flex items-center justify-between">
                 <span className="text-sm">Theme</span>
                 <DropdownMenu>
-                    <DropdownMenuTrigger variant="filter">
+                    <DropdownMenuTrigger 
+                        variant="filter" 
+                        className="w-48 bg-transparent dark:bg-input/30 rounded-lg border-input h-8 py-1 px-2.5"
+                    >
                         {preferences.theme === "light" ? "Light Mode" : "Dark Mode"}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
@@ -417,7 +422,10 @@ function PreferencesSection({ preferences, updatePreferences }: PreferencesParam
             <div className="flex items-center justify-between">
                 <span className="text-sm">Units</span>
                 <DropdownMenu>
-                    <DropdownMenuTrigger variant="filter">
+                    <DropdownMenuTrigger 
+                        variant="filter" 
+                        className="w-48 bg-transparent dark:bg-input/30 rounded-lg border-input h-8 py-1 px-2.5"
+                    >
                         {preferences.units === "metric" ? "Metric (kg / cm)" : "Imperial (lbs / in)"}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
@@ -437,7 +445,7 @@ function SecuritySection({ security, updateSecurity }: SecurityParams) {
 
     return (
         <div className="space-y-4">
-            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-sm">Change Password</h3>
+            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Change Password</h3>
 
             <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-muted-foreground">Current Password</span>

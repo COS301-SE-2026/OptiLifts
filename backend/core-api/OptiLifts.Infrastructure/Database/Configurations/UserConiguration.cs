@@ -28,6 +28,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Metric).HasColumnName("metric").IsRequired();
         builder.Property(u => u.LightTheme).HasColumnName("light_theme").IsRequired();
         builder.Property(u => u.Bio).HasColumnName("bio").HasMaxLength(255);
+        builder.Property(u => u.ProfileImageUrl).HasColumnName("profile_image_url");
 
 
         //creates a unique index on the email hash as it's deterministic

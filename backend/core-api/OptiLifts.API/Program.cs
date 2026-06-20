@@ -5,9 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application;
 using OptiLifts.Application.Auth.Abstractions;
+using OptiLifts.Application.Gamification.Abstraction;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
+using OptiLifts.Infrastructure.Gamification;
+using OptiLifts.Infrastructure.Gamification.Rules;
+
 
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
 {
@@ -83,6 +87,10 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
 builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+
+//badges
+builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();
+builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 
 //register auth implementations
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

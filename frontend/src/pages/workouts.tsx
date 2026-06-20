@@ -15,6 +15,7 @@ import { useAuth } from '@/context/auth-context'
 import type { Workout, WorkoutSummary } from '@/types/workout'
 import { Plus } from 'lucide-react'
 import { customFetch } from '@/lib/custom-fetch'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 export default function WorkoutsPage() {
   const { isAuthenticated, isHydrated } = useAuth()
@@ -24,6 +25,7 @@ export default function WorkoutsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
 
@@ -97,9 +99,6 @@ export default function WorkoutsPage() {
 
   //deletions
   const handleDelete = async (workoutId: string) => {
-    if (!confirm('Are you certain you want to delete this workout. This action is permament.')) {
-      return
-    }
     setIsFetching(true)
     setError(null)
     try {
@@ -207,7 +206,7 @@ export default function WorkoutsPage() {
                       <DropdownMenuEllipsisContent>
                         <DropdownMenuItem onSelect={() => { }}>Edit</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleDelete(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setDeleteTargetId(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
                       </DropdownMenuEllipsisContent>
                     </DropdownMenu>
                   </CardAction>
@@ -242,6 +241,23 @@ export default function WorkoutsPage() {
           </Card>
         </aside>
       </div>
+      <ConfirmDialog
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        isLoading={isFetching}
+        variant="danger"
+        title="Delete Workout"
+        description="Are you certain you want to delete this workout?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          if (deleteTargetId) {
+            const id = deleteTargetId
+            setDeleteTargetId(null)
+            await handleDelete(id)
+          }
+        }}
+        />
     </section>
   )
 }

@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using OptiLifts.Domain.Workouts;
 using OptiLifts.Application.Workouts.UpdateWorkout;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Workouts;
@@ -30,7 +30,7 @@ public sealed class UpdateWorkoutHandler : IRequestHandler<UpdateWorkoutCommand,
         var existing = await _dbContext.WorkoutExercises
             .Where(we => we.WorkoutId == workout.Id)
             .ToListAsync(cancellationToken);
-        if(existing.Any()) 
+        if (existing.Any())
         {
             _dbContext.WorkoutExercises.RemoveRange(existing);
         }
@@ -57,7 +57,7 @@ public sealed class UpdateWorkoutHandler : IRequestHandler<UpdateWorkoutCommand,
                 OrderIndex = s.OrderIndex,
                 RestTime = s.RestTime
             });
-            _dbContext.Sets.AddRange(sets);           
+            _dbContext.Sets.AddRange(sets);
         }
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

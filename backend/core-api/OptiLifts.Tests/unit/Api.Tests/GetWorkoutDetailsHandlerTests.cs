@@ -3,8 +3,8 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Workouts.GetWorkoutDetails;
-using OptiLifts.Domain.Workouts;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Workouts;
 

@@ -29,5 +29,5 @@ public sealed record UpdateWorkoutCommand(
 public sealed record UpdateWorkoutRequest(
     Guid? FolderId,
     string Name,
-    IReadOnlyList<UpdateWorkoutExerciseDto> Exercises 
+    IReadOnlyList<UpdateWorkoutExerciseDto> Exercises
 );

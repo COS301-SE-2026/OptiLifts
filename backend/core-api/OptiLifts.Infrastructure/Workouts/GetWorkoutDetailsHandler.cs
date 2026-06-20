@@ -26,7 +26,7 @@ public sealed class GetWorkoutDetailsHandler : IRequestHandler<GetWorkoutDetails
         }
 
         var exercises = await (
-            from we in _dbContext.WorkoutExercises.AsNoTracking() 
+            from we in _dbContext.WorkoutExercises.AsNoTracking()
             where we.WorkoutId == workout.Id
             join ex in _dbContext.Exercises.AsNoTracking() on we.ExerciseId equals ex.Id
             select new
@@ -46,14 +46,14 @@ public sealed class GetWorkoutDetailsHandler : IRequestHandler<GetWorkoutDetails
             .AsNoTracking()
             .Where(m => muscleIds.Contains(m.Id))
             .ToDictionaryAsync(m => m.Id, m => m.Name, cancellationToken);
-        
+
         var exerciseIds = exercises.Select(e => e.Id).ToArray();
         var sets = await _dbContext.Sets
             .AsNoTracking()
             .Where(s => exerciseIds.Contains(s.WorkoutExerciseId))
             .OrderBy(s => s.OrderIndex)
             .ToListAsync(cancellationToken);
-        
+
         var mapped = exercises.Select(ex =>
         {
             var exerciseSets = sets
@@ -84,7 +84,7 @@ public sealed class GetWorkoutDetailsHandler : IRequestHandler<GetWorkoutDetails
             workout.Name,
             workout.FolderId,
             mapped
-        );        
+        );
     }
     private static string MapSetTypeToFrontend(Domain.Workouts.SetType type) => type switch
     {

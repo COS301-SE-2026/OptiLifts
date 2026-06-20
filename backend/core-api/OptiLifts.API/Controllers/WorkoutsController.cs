@@ -7,8 +7,8 @@ using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
-using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.GetWorkoutDetails;
+using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.UpdateWorkout;
 
 namespace OptiLifts.API.Controllers;

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.DeleteWorkout;
 
 namespace OptiLifts.API.Controllers;
 
@@ -82,5 +83,30 @@ public sealed class WorkoutsController : ControllerBase
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return Guid.TryParse(userIdValue, out userId);
+    }
+
+    [HttpDelete("{workoutId:guid}")]
+    public async Task<IActionResult> DeleteWorkout(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var deleted = await _sender.Send(new DeleteWorkoutCommand(workoutId, userId), cancellationToken);
+
+        if (!deleted)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Workout was not found for this user."
+            });
+            
+        }
+        return Ok(new { message = "Workout deleted successfully." });
+
     }
 }

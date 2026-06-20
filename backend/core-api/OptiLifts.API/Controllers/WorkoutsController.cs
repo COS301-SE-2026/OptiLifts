@@ -8,6 +8,8 @@ using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.GetWorkoutDetails;
+using OptiLifts.Application.Workouts.UpdateWorkout;
 
 namespace OptiLifts.API.Controllers;
 
@@ -17,6 +19,7 @@ namespace OptiLifts.API.Controllers;
 [Authorize]
 public sealed class WorkoutsController : ControllerBase
 {
+    private const string NotFoundTitle = "Not Found";
     private readonly ISender _sender;
 
     public sealed record AddExerciseToWorkoutRequest(Guid ExerciseId);
@@ -102,7 +105,7 @@ public sealed class WorkoutsController : ControllerBase
             return NotFound(new
             {
                 status = 404,
-                title = "Not Found",
+                title = NotFoundTitle,
                 message = "Workout was not found for this user."
             });
 
@@ -127,7 +130,7 @@ public sealed class WorkoutsController : ControllerBase
             return NotFound(new
             {
                 status = 404,
-                title = "Not Found",
+                title = NotFoundTitle,
                 message = "Source workout was not found for this user."
             });
         }
@@ -135,5 +138,55 @@ public sealed class WorkoutsController : ControllerBase
 
     }
 
+    [HttpGet("{workoutId:guid}")]
+    public async Task<ActionResult<WorkoutDetailsDto>> GetWorkoutDetails(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var result = await _sender.Send(new GetWorkoutDetailsQuery(workoutId, userId), cancellationToken);
+        if (result == null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout was not found."
+            });
+        }
+        return Ok(result);
+    }
+
+    [HttpPut("{workoutId:guid}")]
+    public async Task<IActionResult> UpdateWorkout(
+        [FromRoute] Guid workoutId,
+        [FromBody] UpdateWorkoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new UpdateWorkoutCommand(
+            workoutId,
+            userId,
+            request.FolderId,
+            request.Name,
+            request.Exercises);
+        var success = await _sender.Send(command, cancellationToken);
+        if (!success)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout not found or unable to update."
+            });
+        }
+        return Ok(new { message = "Workout updated successfully." });
+    }
 
 }

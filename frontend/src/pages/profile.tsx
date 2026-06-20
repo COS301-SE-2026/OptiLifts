@@ -1,78 +1,169 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { BarChart } from '@/components/ui/barchart'
 import { Calendar } from '@/components/ui/calendar'
 import { ProfileOverview } from '@/components/ui/profile-overview'
 import { WorkoutOverview } from '@/components/ui/workout-overview'
-import type { ProfileOverviewProps } from '@/types/profile'
+import { useAuth } from '@/context/auth-context'
+import { customFetch } from '@/lib/custom-fetch'
+import type { ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
 import type { CalendarProps } from '@/types/calendar'
-import type { WorkoutOverviewProps } from '@/types/workout'
-import type { BarChartDatum } from '@/types/barchart'
 
-const WORKOUT_DAYS: CalendarProps['highlightedDates'] = ['2026-06-02', '2026-06-05', '2026-06-11', '2026-06-14', '2026-06-18']
+const pad = (value: number) => String(value).padStart(2, '0')
 
-const PROFILE: ProfileOverviewProps = {
-  name: 'Alex',
-  email: 'gymgoer@gmail.com',
-  bio: 'Loves to gym every day all day. This is their favourite app ever.',
-}
+const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
 
-const STATS = [
-  { label: 'Streak', value: '5 weeks' },
-  { label: 'Workouts', value: '51' },
-  { label: 'Records', value: '10 PRs' },
-] as const
-
-const RECENT_WORKOUTS: WorkoutOverviewProps[] = [
-  {
-    name: 'Pull',
-    exercises: ['Lat Pulldown', 'Iso-Lateral High Row', 'Vbar Low Row', 'Another Exercise', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
-    prs: '10 PRs',
-    duration: '1h 5min',
-    volume: '4 500 kg',
-    sets: '23',
-  },
-  {
-    name: 'Push',
-    exercises: ['Lat Pulldown', 'Iso-Lateral High Row', 'Vbar Low Row'],
-    prs: '10 PRs',
-    duration: '1h 5min',
-    volume: '3 000 kg',
-    sets: '16',
-  },
-]
-
-const formatShortDate = (date: Date) =>
-  new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date)
-
-const CHART_DATA: BarChartDatum[] = [
-  { label: 'Mar 23', value: 1.1 },
-  { label: '', value: 0.95 },
-  { label: '', value: 0.45 },
-  { label: 'Apr 6', value: 1.05 },
-  { label: '', value: 1.1 },
-  { label: 'Apr 20', value: 2.6 },
-  { label: '', value: 0.95 },
-  { label: 'May 4', value: 0.7 },
-  { label: '', value: 0.65 },
-  { label: 'May 18', value: 1.1 },
-  { label: '', value: 2.0 },
-  { label: formatShortDate(new Date()), value: 1.45 },
-]
+const toMonthQuery = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`
 
 export default function ProfilePage() {
+  const { isAuthenticated, isHydrated } = useAuth()
+  const [profileData, setProfileData] = useState<ProfilePageResponse | null>(null)
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()))
+  const [calendarDates, setCalendarDates] = useState<CalendarProps['highlightedDates']>([])
+  const [calendarLoading, setCalendarLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isHydrated || !isAuthenticated) {
+      return
+    }
+
+    let isActive = true
+
+    async function loadProfile() {
+      setIsFetching(true)
+      setError(null)
+
+      try {
+        const response = await customFetch('/api/profile/overview', {
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to load profile (${response.status})`)
+        }
+
+        const data = (await response.json()) as ProfilePageResponse
+
+        if (isActive) {
+          setProfileData(data)
+        }
+      } catch (loadError) {
+        if (isActive) {
+          setError(loadError instanceof Error ? loadError.message : 'Failed to load profile.')
+        }
+      } finally {
+        if (isActive) {
+          setIsFetching(false)
+        }
+      }
+    }
+
+    void loadProfile()
+
+    return () => {
+      isActive = false
+    }
+  }, [isHydrated, isAuthenticated])
+
+  useEffect(() => {
+    if (!isHydrated || !isAuthenticated) {
+      return
+    }
+
+    let isActive = true
+
+    async function loadCalendar() {
+      setCalendarLoading(true)
+
+      try {
+        const monthQuery = toMonthQuery(calendarMonth)
+        const [year, month] = monthQuery.split('-')
+
+        const response = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`, {
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to load calendar (${response.status})`)
+        }
+
+        const data = (await response.json()) as ProfileCalendarResponse
+
+        if (isActive) {
+          setCalendarDates(data.highlightedDates)
+        }
+      } catch {
+        if (isActive) {
+          setCalendarDates([])
+        }
+      } finally {
+        if (isActive) {
+          setCalendarLoading(false)
+        }
+      }
+    }
+
+    void loadCalendar()
+
+    return () => {
+      isActive = false
+    }
+  }, [calendarMonth, isHydrated, isAuthenticated])
+
+  const controlledCalendarMonth = useMemo(() => startOfMonth(calendarMonth), [calendarMonth])
+
+  const displayProfile = profileData?.profile
+  const displayBadges = profileData?.badges?.slice(0, 3) ?? []
+  const displayWorkouts = profileData?.recentWorkouts ?? []
+  const displayChartData = profileData?.chartData ?? []
+  const displayChartTitle = profileData?.chartTitle ?? 'Workout activity'
+  const isLoading = !isHydrated || isFetching
+  const hasWorkouts = displayWorkouts.length > 0
+
   return (
     <section className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-8 w-full max-w-[1144px]">
-        <ProfileOverview name={PROFILE.name} email={PROFILE.email} bio={PROFILE.bio} />
+        {displayProfile ? (
+          <ProfileOverview
+            name={displayProfile.name}
+            email={displayProfile.email}
+            bio={displayProfile.bio ?? ''}
+            profileImageUrl={displayProfile.profileImageUrl}
+          />
+        ) : (
+          <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+            {isLoading ? 'Loading profile...' : error ?? 'No profile data available.'}
+          </div>
+        )}
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,600px)_520px] lg:items-start">
-        <BarChart data={CHART_DATA} className="w-full max-w-[600px]" />
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,600px)_minmax(0,520px)] lg:items-stretch">
+        <BarChart title={displayChartTitle} data={displayChartData} className="w-full max-w-[600px]" />
 
-        <div className="grid grid-cols-3 gap-4 self-start sm:gap-5 lg:mt-12">
-          {STATS.map((stat) => (
-            <Badge key={stat.label} label={stat.label} value={stat.value} className="aspect-square w-full min-h-[180px]" />
-          ))}
+        <div className="grid h-full grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:mt-12">
+          {displayBadges.length > 0 ? (
+            displayBadges.map((badge) => (
+              <Badge
+                key={badge.name}
+                name={badge.name}
+                description={badge.description}
+                category={badge.category}
+                earnedAt={badge.earnedAt}
+                iconUrl={badge.iconUrl}
+                className="h-full"
+              />
+            ))
+          ) : (
+            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-3">
+              You have not earned any badges yet.
+            </div>
+          )}
         </div>
       </div>
 
@@ -80,13 +171,24 @@ export default function ProfilePage() {
         <h2 className="mb-3 text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.9fr)] lg:items-stretch">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:h-full lg:items-stretch">
-            {RECENT_WORKOUTS.map((workout) => (
-              <WorkoutOverview key={workout.name} {...workout} className="h-full" />
-            ))}
+            {hasWorkouts ? (
+              displayWorkouts.map((workout) => (
+                <WorkoutOverview key={workout.name} {...workout} className="h-full" />
+              ))
+            ) : (
+              <div className="rounded-lg border border-border bg-card px-4 py-6 text-sm text-muted-foreground sm:col-span-2">
+                {isLoading ? 'Loading workouts...' : 'You do not have any workouts yet.'}
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <Calendar highlightedDates={WORKOUT_DAYS} />
+            <Calendar
+              highlightedDates={calendarDates}
+              month={controlledCalendarMonth}
+              onMonthChange={setCalendarMonth}
+              className={calendarLoading ? 'opacity-70' : undefined}
+            />
           </div>
         </div>
       </div>

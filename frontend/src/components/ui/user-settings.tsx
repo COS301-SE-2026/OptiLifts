@@ -128,7 +128,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                     displayName: data.profile.displayName,
                     bio: data.profile.bio || "",
                     sex: data.profile.sex || "PreferNotToSay",
-                    dateOfBirth: data.profile.dateOfBirth || "",
+                    dateOfBirth: data.profile.dateOfBirth ? data.profile.dateOfBirth.split('T')[0] : "",
                     weight: (data.profile.weight) ? data.profile.weight.toString() : "",
                     height: (data.profile.height) ? data.profile.height.toString() : ""
                 });

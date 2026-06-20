@@ -50,6 +50,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var recentLogIds = recentSessions.Select(session => session.LogId).ToArray();
 
         var workoutExercises = await LoadWorkoutExercisesAsync(recentWorkoutIds, cancellationToken);
+        var workoutSets = await LoadWorkoutSetsAsync(recentWorkoutIds, cancellationToken);
         var recentLogSets = await LoadWorkoutLogSetsAsync(recentLogIds, cancellationToken);
         var badges = await LoadEarnedBadgesAsync(user.Id, cancellationToken);
 
@@ -62,7 +63,11 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
                 .ToArray();
 
             var sessionSets = recentLogSets.Where(entry => entry.LogId == session.LogId).ToArray();
-            var sessionVolume = sessionSets.Sum(entry => (double)entry.Reps * entry.Weight);
+            var plannedSets = workoutSets.Where(entry => entry.WorkoutId == session.WorkoutId).ToArray();
+            var sessionVolume = sessionSets.Length > 0
+                ? sessionSets.Sum(entry => (double)entry.Reps * entry.Weight)
+                : plannedSets.Sum(entry => (double)(entry.Reps ?? 0) * (entry.Weight ?? 0));
+            var sessionSetCount = sessionSets.Length > 0 ? sessionSets.Length : plannedSets.Length;
 
             return new ProfileWorkoutDto(
                 session.WorkoutName,
@@ -70,7 +75,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
                 $"{Math.Max(1, exerciseNames.Length)} PRs",
                 FormatDuration(session.CompletedAt - session.StartedAt),
                 FormatWeight(sessionVolume),
-                $"{sessionSets.Length} sets");
+                $"{sessionSetCount} sets");
         }).ToArray();
 
         var totalSessions = sessions.Count;
@@ -223,8 +228,8 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
 
         return await (
             from workoutSet in _dbContext.Sets.AsNoTracking()
-            where workoutIds.Contains(workoutSet.WorkoutExerciseId)
             join workoutExercise in _dbContext.WorkoutExercises.AsNoTracking() on workoutSet.WorkoutExerciseId equals workoutExercise.Id
+            where workoutIds.Contains(workoutExercise.WorkoutId)
             select new WorkoutSetRow(
                 workoutExercise.WorkoutId,
                 workoutSet.Reps,

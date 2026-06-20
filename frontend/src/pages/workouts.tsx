@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
@@ -27,50 +27,103 @@ export default function WorkoutsPage() {
 
   const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
 
+  const loadWorkouts = useCallback(async (selectIdAfterLoad?: string) => {
+    setIsFetching(true)
+    setError(null)
+
+    try {
+      const response = await customFetch('/api/workouts', {
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to load workouts (${response.status})`)
+      }
+
+      const data = (await response.json()) as Workout[]
+      setWorkouts(data)
+
+      if (selectIdAfterLoad) {
+        setSelectedId(selectIdAfterLoad)
+      } else {
+        setSelectedId((currentId) => {
+          if (data.some((w) => w.id === currentId)) {
+            return currentId
+          }
+          return data[0]?.id ?? null
+        })
+      }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
+    } finally {
+      setIsFetching(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) {
       return
     }
-
-    let isActive = true
-    async function loadWorkouts() {
-      setIsFetching(true)
-      setError(null)
-
-      try {
-        const response = await customFetch('/api/workouts', {
-          headers: {
-            Accept: 'application/json',
-          },
-        })
-        if (!response.ok) {
-          throw new Error(`Failed to load workouts (${response.status})`)
-        }
-
-        const data = (await response.json()) as Workout[]
-
-        if (isActive) {
-          setWorkouts(data)
-          setSelectedId((currentId) => currentId ?? data[0]?.id ?? null)
-        }
-      } catch (loadError) {
-        if (isActive) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
-        }
-      } finally {
-        if (isActive) {
-          setIsFetching(false)
-        }
-      }
-    }
-
     void loadWorkouts()
+  }, [isHydrated, isAuthenticated, loadWorkouts])
 
-    return () => {
-      isActive = false
+  //duplication
+  const handleDuplicate = async (workoutId: string) => {
+    setIsFetching(true)
+    setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${workoutId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to duplicate workout (${response.status})`)
+      }
+      const dupeResult = (await response.json()) as { workoutId: string }
+      await loadWorkouts(dupeResult.workoutId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate workout.')
+      setIsFetching(false)
     }
-  }, [isHydrated, isAuthenticated])
+  }
 
+  //deletions
+  const handleDelete = async (workoutId: string) => {
+    if (!confirm('Are you certain you want to delete this workout. This action is permament.')) {
+      return
+    }
+    setIsFetching(true)
+    setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${workoutId}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to delete workout (${response.status})`)
+      }
+
+      setWorkouts((prev) => {
+        const update = prev.filter((w) => w.id !== workoutId)
+        if (selectedId === workoutId) {
+          setSelectedId(update[0]?.id ?? null)
+        }
+        return update
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete workout')
+    } finally {
+      setIsFetching(false)
+    }
+
+  }
+
+  //old
   const visibleWorkouts = useMemo(() => (isAuthenticated ? workouts : []), [isAuthenticated, workouts])
   const isLoading = !isHydrated || isFetching
   const displayError = authError ?? error
@@ -147,9 +200,9 @@ export default function WorkoutsPage() {
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>
-                        <DropdownMenuItem onSelect={() => {}}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {}}>Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {}} data-variant="destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => { }}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDelete(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
                       </DropdownMenuEllipsisContent>
                     </DropdownMenu>
                   </CardAction>

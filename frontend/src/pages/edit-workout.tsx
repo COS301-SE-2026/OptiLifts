@@ -1,0 +1,490 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '@/context/auth-context'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Plus, Dumbbell } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ExerciseCard } from '@/components/ui/exercise-card'
+import { PageTitle } from '@/components/ui/page-title'
+import { CreateExercise } from '@/components/ui/create-exercise'
+import { SearchInput } from '@/components/ui/search-input'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { CircularProfileImage } from '@/components/ui/circular-image'
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import type { WorkoutExercise } from '@/types/create-workout'
+import type { MuscleName } from '@/types/workout'
+import { customFetch } from '@/lib/custom-fetch'
+
+
+type CatalogExercise = {
+    id: string
+    name: string
+    muscleGroup: MuscleName
+    equipment?: string
+    imageUrl?: string
+}
+
+type ExerciseApiResponse = {
+    id: string
+    name: string
+    primaryMuscles?: string[]
+    equipment?: string
+    imageUrl?: string
+}
+
+type SelectedWorkoutExercise = WorkoutExercise & {
+    exerciseCatalogId?: string
+}
+
+type ApiWorkoutSet = {
+    id: string
+    type: 'W' | 'I' | 'D'
+    kg: number | null
+    reps: number | null
+}
+
+type ApiWorkoutExercises = {
+    id: string
+    exerciseCatalogId: string
+    name: string
+    muscle: MuscleName
+    imageUrl?: string
+    sets: ApiWorkoutSet[]
+}
+
+type ApiWorkoutDetails = {
+    id: string
+    name: string
+    folderId: string | null
+    exercises: ApiWorkoutExercises[]
+}
+
+const RECOMMENDED_EXERCISES = [
+    { name: 'Bicep curl', muscleGroup: 'Biceps' as MuscleName },
+    { name: 'Tricep pushdown', muscleGroup: 'Triceps' as MuscleName },
+    { name: 'Lat pulldown', muscleGroup: 'Lats' as MuscleName },
+    { name: 'Pull Up', muscleGroup: 'Lats' as MuscleName },
+    { name: 'Overhead Press', muscleGroup: 'Shoulders' as MuscleName },
+    { name: 'Leg Press', muscleGroup: 'Hamstrings' as MuscleName },
+] as const
+
+
+const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
+const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
+
+function MuscleDiagramPlaceholder() {
+    return (
+        <div className="flex h-28 w-48 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted-foreground text-xs text-center leading-tight select-none">
+            Muscle<br />Diagram
+        </div>
+    )
+}
+
+//offset
+let nextExerciseId = 1000
+//sonarqube 4 level fix
+function mappingWorkouttoExercises(apiExercises: ApiWorkoutExercises[]): SelectedWorkoutExercise[] {
+    return apiExercises.map((ex) => ({
+        id: ex.id,
+        name: ex.name,
+        muscle: ex.muscle,
+        imageUrl: ex.imageUrl,
+        exerciseCatalogId: ex.exerciseCatalogId,
+        sets: ex.sets.map((set) => ({
+            id: set.id,
+            type: set.type,
+            kg: set.kg ?? '',
+            reps: set.reps ?? ''
+        }))
+    }))
+}
+
+export default function EditWorkoutPage() {
+    const { id: workoutId } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const { isAuthenticated } = useAuth()
+
+    const [workoutName, setWorkoutName] = useState('')
+    const [exercises, setExercises] = useState<SelectedWorkoutExercise[]>([])
+
+    const [loadingWorkout, setLoadingWorkout] = useState(true)
+    const [loadError, setLoadError] = useState<string | null>(null)
+
+    const [saving, setSaving] = useState(false)
+    const [saveError, setSaveError] = useState<string | null>(null)
+    const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
+    const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
+    const [searchQuery, setSearchQuery] = useState('')
+
+    const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
+    const [loadingExercises, setLoadingExercises] = useState(true)
+    const [exercisesError, setExercisesError] = useState<string | null>(null)
+    const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
+
+    const fetchExercises = useCallback(async () => {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        const res = await customFetch('/api/exercises', { headers })
+
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
+            if (res.status === 404) throw new Error('Endpoint not found (404) - is the API running?')
+            throw new Error(`HTTP ${res.status}`)
+        }
+
+        const json = (await res.json()) as ExerciseApiResponse[]
+        return json.map((ex) => ({
+            id: ex.id,
+            name: ex.name,
+            muscleGroup: (ex.primaryMuscles?.[0] || 'Other') as MuscleName,
+            equipment: ex.equipment,
+            imageUrl: ex.imageUrl
+        })) as CatalogExercise[]
+    }, [])
+
+    const fetchWorkoutDetails = useCallback(async () => {
+        if (!workoutId) return
+        const res = await customFetch(`/api/workouts/${workoutId}`)
+        if (!res.ok) {
+            if (res.status === 404) throw new Error('Workout not found')
+            throw new Error(`Failed to load workout details (${res.status})`)
+        }
+        return (await res.json()) as ApiWorkoutDetails
+    }, [workoutId])
+
+    useEffect(() => {
+        let mounted = true
+        const loadAll = async () => {
+            setLoadingWorkout(true)
+            setLoadingExercises(true)
+            setLoadError(null)
+
+            try {
+                const [catalogData, workoutDetails] = await Promise.all([
+                    fetchExercises(), fetchWorkoutDetails()
+                ])
+                if (!mounted) return
+                if (catalogData) {
+                    setAllExercises(catalogData)
+                }
+                if (workoutDetails) {
+                    setWorkoutName(workoutDetails.name)
+                    const mappedExer = mappingWorkouttoExercises(workoutDetails.exercises)
+                    setExercises(mappedExer)
+                }
+            } catch (err) {
+                if (!mounted) return
+                setLoadError(err instanceof Error ? err.message : 'Failed to load data')
+            } finally {
+                if (mounted) {
+                    setLoadingWorkout(false)
+                    setLoadingExercises(false)
+                }
+            }
+        }
+        void loadAll()
+        return () => {
+            mounted = false
+        }
+    }, [fetchExercises, fetchWorkoutDetails])
+
+    const removeExercise = (id: string) =>
+        setExercises(prev => prev.filter(e => e.id !== id))
+
+    const updateSets = (id: string, sets: WorkoutExercise['sets']) =>
+        setExercises(prev => prev.map(e => e.id === id ? { ...e, sets } : e))
+
+    const addExercise = (exercise: CatalogExercise) =>
+        setExercises(prev => [
+            ...prev,
+            {
+                id: `ex-${nextExerciseId++}`,
+                name: exercise.name,
+                muscle: exercise.muscleGroup,
+                sets: [],
+                exerciseCatalogId: exercise.id,
+            },
+        ])
+
+    const addExerciseByName = (name: string, muscle: MuscleName) => {
+        const match = allExercises.find(exercise => exercise.name === name)
+
+        if (match) {
+            addExercise(match)
+            return
+        }
+
+        setExercises(prev => [
+            ...prev,
+            {
+                id: `ex-${nextExerciseId++}`,
+                name,
+                muscle,
+                sets: [],
+            },
+        ])
+    }
+
+    const handleExerciseSaved = async () => {
+        try {
+            const refreshedExercises = await fetchExercises()
+            setAllExercises(refreshedExercises || [])
+        } catch (err) {
+            setExercisesError(err instanceof Error ? err.message : 'Failed to reload exercises catalog')
+        }
+    }
+
+    const saveWorkout = async () => {
+        if (!workoutName.trim() || !isAuthenticated || !workoutId) return
+        setSaving(true)
+        setSaveError(null)
+
+        const payload = { //update with different possible set types
+            folderId: null,
+            name: workoutName.trim(),
+            exercises: exercises.map((ex, exIndex) => ({
+                exerciseId: ex.exerciseCatalogId,
+                orderIndex: exIndex,
+                sets: ex.sets.map((set, setIndex) => ({
+                    type: set.type,
+                    reps: set.reps === '' ? null : Number(set.reps),
+                    weight: set.kg === '' ? null : Number(set.kg),
+                    orderIndex: setIndex,
+                    restTime: 60,
+                    duration: null,
+                    distance: null
+                }))
+            }))
+        }
+        try {
+            const res = await customFetch(`/api/workouts/${workoutId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (!res.ok) {
+                const text = await res.text()
+                throw new Error(text || `Failed to save changes (${res.status})`)
+            }
+            navigate('/workouts')
+        } catch (error) {
+            setSaveError(error instanceof Error ? error.message : 'Failed to update workout')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const filteredRecommended = RECOMMENDED_EXERCISES.filter((ex) => {
+        const q = searchQuery.trim().toLowerCase()
+        if (q && !ex.name.toLowerCase().includes(q) && !ex.muscleGroup.toLowerCase().includes(q)) return false
+        return true
+    })
+
+    const filteredExercises = allExercises.filter((ex) => {
+        const q = searchQuery.trim().toLowerCase()
+        if (q && !ex.name.toLowerCase().includes(q) && !ex.muscleGroup.toLowerCase().includes(q)) return false
+        if (selectedMuscle !== 'All Muscles' && ex.muscleGroup !== selectedMuscle) return false
+        if (selectedEquipment !== 'All Equipment' && ex.equipment !== selectedEquipment) return false
+        return true
+    })
+
+    const exercisesListContent = (() => {
+        if (loadingExercises) {
+            return <p className="px-2 py-3 text-sm text-muted-foreground">Loading exercises...</p>
+        }
+
+        if (exercisesError) {
+            return <p className="px-2 py-3 text-sm text-destructive">{exercisesError}</p>
+        }
+
+        if (filteredExercises.length === 0) {
+            return <p className="px-2 py-3 text-sm text-muted-foreground">No exercises match your filters.</p>
+        }
+
+        return filteredExercises.map((ex) => (
+            <div key={ex.name} className="flex items-center gap-3 px-2 py-2.5">
+                <CircularProfileImage
+                    src={ex.imageUrl}
+                    alt={ex.name}
+                    className="size-9 shrink-0 border-border"
+                    fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
+                />
+                <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+                    <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
+                </div>
+                <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+                    <Plus size={12} />
+                </Button>
+            </div>
+        ))
+    })()
+
+    if (loadingWorkout) {
+        return (
+            <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl items-center justify-center px-6 py-16">
+                <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Loading workout details...</p>
+            </section>
+        )
+    }
+    if (loadError) {
+        return (
+            <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col items-center justify-center px-6 py-16 gap-4">
+                <p className="text-sm uppercase tracking-[0.2em] text-destructive font-semibold">Failed to load Workout</p>
+                <p className="text-muted-foreground">{loadError}</p>
+                <Button onClick={() => navigate('/workouts')}>Back to Workouts</Button>
+            </section>
+        )
+    }
+
+    //straight from create workout
+    return (
+        <section className="w-full px-6 py-6">
+            <div className="grid grid-cols-12 gap-6 items-start">
+                <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6">
+
+                    <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-2">
+                            <PageTitle title="Edit Workout" />
+                            <div className="flex items-center gap-3">
+                                <div className="flex flex-col gap-1 w-80">
+                                    <label htmlFor="workout-name" className="text-xs font-semibold uppercase tracking-[1px] text-muted-foreground font-sans">
+                                        Workout Name
+                                    </label>
+                                    <Input
+                                        id="workout-name"
+                                        variant="default"
+                                        placeholder="e.g. Push Day A"
+                                        value={workoutName}
+                                        onChange={e => setWorkoutName(e.target.value)}
+                                    />
+                                </div>
+                                <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim() || saving} onClick={saveWorkout}>
+                                    {saving ? 'Saving…' : 'Save Workout'}
+                                </Button>
+                            </div>
+                            {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+                        </div>
+                        <MuscleDiagramPlaceholder />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        {exercises.map(ex => (
+                            <ExerciseCard key={ex.id} exercise={ex} onRemove={removeExercise} onSetsChange={updateSets} />
+                        ))}
+                        {exercises.length === 0 && (
+                            <p className="text-sm text-muted-foreground">No exercises added yet. Use the panel on the right to add some.</p>
+                        )}
+                    </div>
+
+                </div>
+
+                <div className="col-span-12 lg:col-span-5 min-w-0">
+                    <div className="flex w-full flex-col gap-4 lg:fixed lg:top-[6.5rem] lg:right-6 lg:z-10 lg:w-[min(28rem,calc(100vw-3rem))] lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto">
+
+                        <Card className="w-full overflow-hidden border-border bg-card">
+                            <CardHeader className="px-4 py-1">
+                                <div className="flex items-center justify-between gap-3">
+                                    <CardTitle className="text-base font-bold text-foreground">Recommended</CardTitle>
+                                    <Button type="button" variant="text" className="h-auto p-0 text-xs font-semibold normal-case tracking-normal text-brand hover:text-brand-2">
+                                        Refresh
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="px-0 pb-0">
+                                <div className="divide-y divide-border/70">
+                                    <div className="max-h-44 overflow-y-auto">
+                                        {filteredRecommended.length > 0 ? filteredRecommended.map((ex) => (
+                                            <div key={ex.name} className="flex items-center gap-3 px-4 py-2.5">
+                                                <Avatar className="size-9 shrink-0 border border-border">
+                                                    <AvatarFallback className="bg-surface-2">
+                                                        <Dumbbell className="size-4 text-muted-foreground" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{ex.muscleGroup}</div>
+                                                </div>
+                                                <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExerciseByName(ex.name, ex.muscleGroup)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
+                                                    <Plus size={12} />
+                                                </Button>
+                                            </div>
+                                        )) : (
+                                            <p className="px-4 py-3 text-sm text-muted-foreground">No recommended exercises match your search.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="w-full overflow-hidden border-border bg-card">
+                            <CardHeader className="px-4 py-1">
+                                <div className="flex items-center justify-between gap-3">
+                                    <CardTitle className="text-base font-bold text-foreground">Exercises</CardTitle>
+                                    <Button type="button" variant="text" className="h-auto p-0 text-xs font-semibold normal-case tracking-normal text-brand hover:text-brand-2" onClick={() => setIsCreateExerciseOpen(true)}>
+                                        + Create Exercise
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex min-h-0 flex-col gap-2 px-4 pb-4">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
+                                        <span>{selectedMuscle}</span>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                                        {MUSCLE_OPTIONS.map(o => (
+                                            <DropdownMenuItem key={o} onSelect={() => setSelectedMuscle(o)}>{o}</DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
+                                        <span>{selectedEquipment}</span>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                                        {EQUIPMENT_OPTIONS.map(o => (
+                                            <DropdownMenuItem key={o} onSelect={() => setSelectedEquipment(o)}>{o}</DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                <div className="[&>div]:max-w-none [&>div]:w-full">
+                                    <SearchInput
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        placeholder="Search"
+                                        aria-label="Search exercises"
+                                        className="h-8 w-full"
+                                    />
+                                </div>
+
+                                <div className="mt-2 min-h-0 overflow-y-auto pr-1">
+                                    <div className="divide-y divide-border/70">
+                                        {exercisesListContent}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                    </div>
+                </div>
+            </div>
+            <CreateExercise
+                isOpen={isCreateExerciseOpen}
+                onCancel={() => setIsCreateExerciseOpen(false)}
+                onSaved={handleExerciseSaved}
+            />
+        </section>
+    )
+}

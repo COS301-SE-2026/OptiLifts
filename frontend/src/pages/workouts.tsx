@@ -204,7 +204,7 @@ export default function WorkoutsPage() {
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>
-                        <DropdownMenuItem onSelect={() => { }}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${w.id}`)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => setDeleteTargetId(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
                       </DropdownMenuEllipsisContent>

@@ -1,3 +1,4 @@
+import EditWorkoutPage from '@/pages/edit-workout'
 import CreateWorkoutPage from '@/pages/create-workout'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
@@ -65,6 +66,7 @@ function App() {
           <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
+          <Route path="workouts/edit/:id" element={<EditWorkoutPage />} />
           <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />

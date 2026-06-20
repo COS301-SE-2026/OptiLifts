@@ -1,29 +1,15 @@
-import type { BarChartDatum, BarChartProps } from '@/types/barchart'
+import type { BarChartProps } from '@/types/barchart'
 
-const formatShortDate = (date: Date) =>
-  new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date)
+export function BarChart({ title = 'Hours this week', data = [], className }: BarChartProps) {
+  const dataMax = data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0
+  const maxValue = Math.max(1, Math.ceil(dataMax))
 
-const createDefaultData = (): BarChartDatum[] => {
-  const todayLabel = formatShortDate(new Date())
-
-  return [
-    { label: 'Mar 23', value: 1.1 },
-    { label: '', value: 0.95 },
-    { label: '', value: 0.45 },
-    { label: 'Apr 6', value: 1.05 },
-    { label: '', value: 1.1 },
-    { label: 'Apr 20', value: 2.6 },
-    { label: '', value: 0.95 },
-    { label: 'May 4', value: 0.7 },
-    { label: '', value: 0.65 },
-    { label: 'May 18', value: 1.1 },
-    { label: '', value: 2.0 },
-    { label: todayLabel, value: 1.45 },
-  ]
-}
-
-export function BarChart({ title = 'Hours this week', data = createDefaultData(), className }: BarChartProps) {
-  const maxValue = 3
+  const yAxisLabels = [
+    maxValue,
+    (maxValue * 2) / 3,
+    (maxValue * 1) / 3,
+    0,
+  ].map((val) => (Number.isInteger(val) ? val : parseFloat(val.toFixed(1))))
 
   return (
     <section className={className}>
@@ -32,10 +18,9 @@ export function BarChart({ title = 'Hours this week', data = createDefaultData()
       <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:px-5 sm:py-5">
         <div className="flex gap-3">
           <div className="flex h-[140px] flex-col justify-between pt-1 text-[0.65rem] text-muted-foreground">
-            <span>3 hr</span>
-            <span>2 hr</span>
-            <span>1 hr</span>
-            <span>0 hr</span>
+            {yAxisLabels.map((label, index) => (
+              <span key={`label-${index}`}>{label} hr</span>
+            ))}
           </div>
 
           <div className="min-w-0 flex-1">

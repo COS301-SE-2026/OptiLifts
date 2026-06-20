@@ -6,6 +6,7 @@ import { WorkoutOverview } from '@/components/ui/workout-overview'
 import type { ProfileOverviewProps } from '@/types/profile'
 import type { CalendarProps } from '@/types/calendar'
 import type { WorkoutOverviewProps } from '@/types/workout'
+import type { BarChartDatum } from '@/types/barchart'
 
 const WORKOUT_DAYS: CalendarProps['highlightedDates'] = ['2026-06-02', '2026-06-05', '2026-06-11', '2026-06-14', '2026-06-18']
 
@@ -40,7 +41,23 @@ const RECENT_WORKOUTS: WorkoutOverviewProps[] = [
   },
 ]
 
-/* ---- Page ---- */
+const formatShortDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date)
+
+const CHART_DATA: BarChartDatum[] = [
+  { label: 'Mar 23', value: 1.1 },
+  { label: '', value: 0.95 },
+  { label: '', value: 0.45 },
+  { label: 'Apr 6', value: 1.05 },
+  { label: '', value: 1.1 },
+  { label: 'Apr 20', value: 2.6 },
+  { label: '', value: 0.95 },
+  { label: 'May 4', value: 0.7 },
+  { label: '', value: 0.65 },
+  { label: 'May 18', value: 1.1 },
+  { label: '', value: 2.0 },
+  { label: formatShortDate(new Date()), value: 1.45 },
+]
 
 export default function ProfilePage() {
   return (
@@ -50,7 +67,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,600px)_520px] lg:items-start">
-        <BarChart className="w-full max-w-[600px]" />
+        <BarChart data={CHART_DATA} className="w-full max-w-[600px]" />
 
         <div className="grid grid-cols-3 gap-4 self-start sm:gap-5 lg:mt-12">
           {STATS.map((stat) => (

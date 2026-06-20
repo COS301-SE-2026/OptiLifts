@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Domain.Users;
-using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
 
@@ -8,11 +7,13 @@ namespace OptiLifts.Infrastructure.Database.Seeders;
 
 public static class DatabaseSeeder
 {
+    // Only encryption-critical data (users) is seeded here, because writing through
+    // EF is what applies the [Encrypted] value converters. All reference/demo data
+    // (muscles, exercises, folders, workouts, sets) lives in
+    // SqlScripts/seed-demo-data.sql and is loaded via `pnpm db:seed:sql`.
     public static async Task SeedAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken = default)
     {
         await SeedUsersAsync(dbContext, cancellationToken);
-        await SeedMusclesAsync(dbContext, cancellationToken);
-        await SeedExercisesAsync(dbContext, cancellationToken);
     }
 
     private static async Task SeedUsersAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
@@ -46,6 +47,21 @@ public static class DatabaseSeeder
                 Bio = "Hypertrophy-focused lifter trying out the app.",
                 Metric = true,
                 LightTheme = true
+            },
+            new
+            {
+                // Rich profile-page demo account. Workouts/logs are seeded in seed-demo-data.sql.
+                Email = "gymgoer@gmail.com",
+                Password = "GymGoer123!",
+                DisplayName = "Alex",
+                Level = 12,
+                Weight = "78.0",
+                Height = "182",
+                Sex = "Male",
+                DateOfBirth = "1999-02-14",
+                Bio = "Loves to gym every day all day. This is their favourite app ever.",
+                Metric = true,
+                LightTheme = false
             }
         };
 
@@ -70,83 +86,6 @@ public static class DatabaseSeeder
                     Bio = u.Bio,
                     Metric = u.Metric,
                     LightTheme = u.LightTheme
-                });
-            }
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private static async Task SeedMusclesAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
-    {
-        var muscleNames = new[]
-        {
-            "Abductors",
-            "Adductors",
-            "Abdominals",
-            "Biceps",
-            "Chest",
-            "Calves",
-            "Forearms",
-            "Glutes",
-            "Hamstrings",
-            "Lats",
-            "Lower Back",
-            "Middle Back",
-            "Quadriceps",
-            "Shoulders",
-            "Trapezius",
-            "Triceps"
-        };
-
-        foreach (var name in muscleNames)
-        {
-            if (!await dbContext.Muscles.AnyAsync(m => m.Name == name, cancellationToken))
-            {
-                dbContext.Muscles.Add(new Muscle { Name = name });
-            }
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private static async Task SeedExercisesAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
-    {
-        // map muscle name -> id so exercises can reference the primary_muscle FK
-        var muscles = await dbContext.Muscles
-            .ToDictionaryAsync(m => m.Name, m => m.Id, cancellationToken);
-
-        var exercisesToEnsure = new[]
-        {
-            new { Name = "Barbell Bench Press", Type = ExerciseType.WeightReps,        Muscle = "Chest",       Mechanic = "Compound",  Equipment = "Barbell" },
-            new { Name = "Pull Up",             Type = ExerciseType.BodyweightReps,    Muscle = "Back",        Mechanic = "Compound",  Equipment = "Bodyweight" },
-            new { Name = "Barbell Back Squat",  Type = ExerciseType.WeightReps,        Muscle = "Quadriceps",  Mechanic = "Compound",  Equipment = "Barbell" },
-            new { Name = "Deadlift",            Type = ExerciseType.WeightReps,        Muscle = "Hamstrings",  Mechanic = "Compound",  Equipment = "Barbell" },
-            new { Name = "Overhead Press",      Type = ExerciseType.WeightReps,        Muscle = "Shoulders",   Mechanic = "Compound",  Equipment = "Barbell" },
-            new { Name = "Dumbbell Bicep Curl", Type = ExerciseType.WeightReps,        Muscle = "Biceps",      Mechanic = "Isolation", Equipment = "Dumbbell" },
-            new { Name = "Tricep Pushdown",     Type = ExerciseType.WeightReps,        Muscle = "Triceps",     Mechanic = "Isolation", Equipment = "Cable" },
-            new { Name = "Plank",               Type = ExerciseType.Duration,          Muscle = "Abdominals",  Mechanic = "Isolation", Equipment = "Bodyweight" },
-            new { Name = "Running",             Type = ExerciseType.DistanceDuration,  Muscle = "Quadriceps",  Mechanic = "Compound",  Equipment = "Bodyweight" }
-        };
-
-        foreach (var e in exercisesToEnsure)
-        {
-            if (!muscles.TryGetValue(e.Muscle, out var primaryMuscleId))
-            {
-                continue; // muscle missing -> skip rather than violate the FK
-            }
-
-            // global/default exercises have no owner (UserId == null)
-            if (!await dbContext.Exercises.AnyAsync(x => x.Name == e.Name && x.UserId == null, cancellationToken))
-            {
-                dbContext.Exercises.Add(new Exercise
-                {
-                    Name = e.Name,
-                    Mechanic = e.Mechanic,
-                    Equipment = e.Equipment,
-                    ExerciseType = e.Type,
-                    PrimaryMuscleId = primaryMuscleId,
-                    UserId = null
                 });
             }
         }

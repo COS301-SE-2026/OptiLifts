@@ -164,6 +164,25 @@ FROM seed_constants c JOIN muscles m ON m.name = 'Lats'
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
+-- Additional global library exercises (not referenced by the demo workouts).
+-- Moved here from DatabaseSeeder.cs. Idempotent via NOT EXISTS on name.
+-- ---------------------------------------------------------------------------
+INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
+SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.muscle_id, NULL, NULL
+FROM (VALUES
+    ('Pull Up',             'compound',  'bodyweight', 'BodyweightReps',   'Lats'),
+    ('Deadlift',            'compound',  'barbell',    'WeightReps',       'Hamstrings'),
+    ('Dumbbell Bicep Curl', 'isolated',  'dumbbell',   'WeightReps',       'Biceps'),
+    ('Tricep Pushdown',     'isolated',  'cable',      'WeightReps',       'Triceps'),
+    ('Plank',               'isolated',  'bodyweight', 'Duration',         'Abdominals'),
+    ('Running',             'compound',  'bodyweight', 'DistanceDuration', 'Quadriceps')
+) AS v(name, mechanic, equipment, exercise_type, muscle_name)
+JOIN muscles m ON m.name = v.muscle_name
+WHERE NOT EXISTS (
+    SELECT 1 FROM exercise_dictionary e WHERE e.name = v.name AND e.user_id IS NULL
+);
+
+-- ---------------------------------------------------------------------------
 -- Secondary muscles (sec_muscles join). Guarded by NOT EXISTS per pair.
 -- ---------------------------------------------------------------------------
 INSERT INTO sec_muscles (sec_muscle_id, muscle_id, exercise_id)
@@ -280,5 +299,120 @@ CROSS JOIN LATERAL (VALUES
     (c.set_calf_id,     c.we_calf_id,     12, 60::real,   60)
 ) AS v(set_id, we_id, reps, weight, rest_time)
 ON CONFLICT (set_id) DO NOTHING;
+
+-- ===========================================================================
+-- Profile-page demo data for "Alex" (gymgoer@gmail.com).
+-- The user itself is created by the C# seeder (encrypted), so run `dotnet run`
+-- before this script. Logs attach to the user via scheduled_entries; the
+-- encrypted workout_logs.notes column is left NULL (raw SQL can't encrypt).
+-- ===========================================================================
+DO $$
+DECLARE
+    alex_id uuid;
+    v_folder uuid;
+    v_pull uuid;
+    v_push uuid;
+    v_we uuid;
+    v_ex uuid;
+    v_entry uuid;
+    v_day timestamp;
+    i int;
+    rec record;
+BEGIN
+    SELECT user_id INTO alex_id FROM users
+    WHERE email_hash = encode(sha256('gymgoer@gmail.com'::bytea), 'hex');
+
+    IF alex_id IS NULL THEN
+        RAISE NOTICE 'Alex (gymgoer@gmail.com) not found - run the C# seeder (dotnet run) before this script.';
+        RETURN;
+    END IF;
+
+    -- idempotent: skip if the demo block is already present
+    IF EXISTS (SELECT 1 FROM workouts WHERE user_id = alex_id AND name IN ('Pull', 'Push')) THEN
+        RAISE NOTICE 'Alex demo data already seeded - skipping.';
+        RETURN;
+    END IF;
+
+    INSERT INTO folders (folder_id, user_id, name, description, created_at)
+    VALUES (gen_random_uuid(), alex_id, 'My Split', 'Demo training split', NOW())
+    RETURNING folder_id INTO v_folder;
+
+    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+    VALUES (gen_random_uuid(), v_folder, 'Pull', 1, alex_id, NOW())
+    RETURNING workout_id INTO v_pull;
+
+    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+    VALUES (gen_random_uuid(), v_folder, 'Push', 2, alex_id, NOW())
+    RETURNING workout_id INTO v_push;
+
+    -- exercises + sets for each recent-workout card (volume = weight*reps, count = #sets)
+    FOR rec IN
+        SELECT * FROM (VALUES
+            (v_pull, 'Lat Pulldown',        1, 5, 12, 45::real),
+            (v_pull, 'Seated Cable Row',    2, 5, 10, 50::real),
+            (v_pull, 'Pull Up',             3, 4, 8,  0::real),
+            (v_pull, 'Dumbbell Bicep Curl', 4, 4, 12, 14::real),
+            (v_push, 'Barbell Bench Press', 1, 4, 8,  60::real),
+            (v_push, 'Overhead Press',      2, 4, 8,  40::real),
+            (v_push, 'Incline Dumbbell Press', 3, 4, 10, 30::real),
+            (v_push, 'Tricep Pushdown',     4, 4, 12, 25::real)
+        ) AS t(workout_id, ex_name, ord, n_sets, reps, weight)
+    LOOP
+        SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
+        WHERE name = rec.ex_name AND user_id IS NULL
+        LIMIT 1;
+        CONTINUE WHEN v_ex IS NULL;
+
+        INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index)
+        VALUES (gen_random_uuid(), rec.workout_id, v_ex, rec.ord)
+        RETURNING workout_exercise_id INTO v_we;
+
+        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, order_index, rest_time)
+        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, gs, 90
+        FROM generate_series(1, rec.n_sets) AS gs;
+    END LOOP;
+
+    -- ~51 logged sessions spread across 2026-03-23 .. mid-June (calendar / hours / streak / count)
+    FOR i IN 0..50 LOOP
+        v_day := TIMESTAMP '2026-03-23 17:00:00' + (i * INTERVAL '41 hours');
+
+        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+        VALUES (gen_random_uuid(), alex_id, CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END, v_day, 'Completed')
+        RETURNING entry_id INTO v_entry;
+
+        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+        VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '65 minutes', false, NULL);
+    END LOOP;
+END $$;
+
+-- ===========================================================================
+-- Badge definitions. `code` maps to an IBadgeRule (only "workout_count" has a
+-- rule today); "streak_weeks" has no rule yet but can still be awarded manually.
+-- Idempotent by name.
+-- ===========================================================================
+INSERT INTO badges (badge_id, code, name, description, category, threshold, created_at)
+SELECT gen_random_uuid(), v.code, v.name, v.description, v.category, v.threshold, NOW()
+FROM (VALUES
+    ('workout_count', 'First Workout', 'Complete your first workout', 'Milestone', 1),
+    ('workout_count', '10 Workouts',   'Complete 10 workouts',        'Milestone', 10),
+    ('workout_count', '50 Workouts',   'Complete 50 workouts',        'Milestone', 50),
+    ('workout_count', 'Century Club',  'Complete 100 workouts',       'Milestone', 100),
+    ('streak_weeks',  'Consistent',    'Train 5 weeks in a row',      'Streak',    5)
+) AS v(code, name, description, category, threshold)
+WHERE NOT EXISTS (SELECT 1 FROM badges b WHERE b.name = v.name);
+
+-- ===========================================================================
+-- Award earned badges to Alex (gymgoer@gmail.com). He has 51 workouts, so he
+-- earns the three workout-count milestones + the streak badge; "Century Club"
+-- (100) is intentionally left unearned. Idempotent via unique (user_id, badge_id).
+-- ===========================================================================
+INSERT INTO user_badges (user_badge_id, user_id, badge_id, earned_at)
+SELECT gen_random_uuid(), u.user_id, b.badge_id, NOW()
+FROM users u
+JOIN badges b ON b.name IN ('First Workout', '10 Workouts', '50 Workouts', 'Consistent')
+WHERE u.email_hash = encode(sha256('gymgoer@gmail.com'::bytea), 'hex')
+  AND NOT EXISTS (
+      SELECT 1 FROM user_badges ub WHERE ub.user_id = u.user_id AND ub.badge_id = b.badge_id
+  );
 
 COMMIT;

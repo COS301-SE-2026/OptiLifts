@@ -35,20 +35,28 @@ public sealed class AddExerciseToWorkoutHandler : IRequestHandler<AddExerciseToW
             return false;
         }
 
-        var currentMaxOrderIndex = await _dbContext.Sets
+        var currentMaxOrderIndex = await _dbContext.WorkoutExercises
             .AsNoTracking()
-            .Where(set => set.WorkoutId == request.WorkoutId)
-            .Select(set => (int?)set.OrderIndex)
+            .Where(we => we.WorkoutId == request.WorkoutId)
+            .Select(we => (int?)we.OrderIndex)
             .MaxAsync(cancellationToken) ?? 0;
 
-        var workoutSet = new WorkoutSet
+        var workoutExercise = new WorkoutExercise
         {
             WorkoutId = request.WorkoutId,
             ExerciseId = request.ExerciseId,
+            OrderIndex = currentMaxOrderIndex + 1
+        };
+
+        _dbContext.WorkoutExercises.Add(workoutExercise);
+
+        var workoutSet = new WorkoutSet
+        {
+            WorkoutExerciseId = workoutExercise.Id,
             Type = SetType.Normal,
             Reps = 0,
             Weight = 0,
-            OrderIndex = currentMaxOrderIndex + 1,
+            OrderIndex = 1,
             RestTime = 0
         };
 

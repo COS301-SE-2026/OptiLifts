@@ -97,14 +97,21 @@ public sealed class AddExerciseToWorkoutFixture : IAsyncLifetime
         await using var scope = _factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
 
+        var primaryMuscle = await db.Muscles.FirstOrDefaultAsync()
+                    ?? new Muscle { Id = Guid.NewGuid(), Name = "Chest" };
+
+        if (db.Entry(primaryMuscle).State == EntityState.Detached)
+        {
+            db.Muscles.Add(primaryMuscle);
+        }
+
         var exercise = new Exercise
         {
             Name = name,
-            Category = "Strength",
+            ExerciseType = default,
             Mechanic = "compound",
             Equipment = "barbell",
-            PrimaryMuscles = new List<string> { "Chest" },
-            SecondaryMuscles = new List<string>()
+            PrimaryMuscleId = primaryMuscle.Id
         };
 
         db.Exercises.Add(exercise);
@@ -116,7 +123,16 @@ public sealed class AddExerciseToWorkoutFixture : IAsyncLifetime
     {
         await using var scope = _factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-        return await db.Sets.AnyAsync(s => s.WorkoutId == workoutId && s.ExerciseId == exerciseId);
+        var workoutExercise = await db.WorkoutExercises
+            .AsNoTracking()
+            .FirstOrDefaultAsync(we => we.WorkoutId == workoutId && we.ExerciseId == exerciseId);
+
+        if (workoutExercise == null)
+        {
+            return false;
+        }
+
+        return await db.Sets.AnyAsync(s => s.WorkoutExerciseId == workoutExercise.Id);
     }
 }
 

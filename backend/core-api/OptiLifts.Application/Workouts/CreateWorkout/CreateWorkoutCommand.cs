@@ -4,12 +4,19 @@ namespace OptiLifts.Application.Workouts.CreateWorkout;
 
 //the request model (ie data needed to run command)
 public sealed record CreateWorkoutSetDto(
-    Guid ExerciseId,
     string Type,
-    int Reps,
-    float Weight,
+    int? Reps,
+    float? Weight,
+    int? Duration,
+    float? Distance,
     int OrderIndex,
     int RestTime
+);
+
+public sealed record CreateWorkoutExerciseDto(
+    Guid ExerciseId,
+    int OrderIndex,
+    IReadOnlyList<CreateWorkoutSetDto> Sets
 );
 
 public sealed record CreateWorkoutCommand(
@@ -17,5 +24,5 @@ public sealed record CreateWorkoutCommand(
     string Name,
     int? DayIndex,
     Guid CreatedBy,
-    IReadOnlyList<CreateWorkoutSetDto> Sets
+    IReadOnlyList<CreateWorkoutExerciseDto> Exercises
 ) : IRequest<CreateWorkoutResult>;

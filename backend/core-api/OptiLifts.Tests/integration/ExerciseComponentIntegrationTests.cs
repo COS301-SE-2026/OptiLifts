@@ -37,7 +37,7 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
     public async Task CreateCustomExercise_CanBeRetrievedByGetExercises()
     {
         var user = await _fixture.SeedUserAsync("integration-exercise-1@optilifts.com", "Exercise User One");
-
+        await _fixture.SeedMuscleAsync("Biceps");
         var client = _fixture.GetAuthenticatedClient(user);
 
         using var createContent = BuildCustomExerciseContent(
@@ -70,6 +70,9 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
         var userOne = await _fixture.SeedUserAsync("integration-exercise-2@optilifts.com", "Exercise User Two");
         var userTwo = await _fixture.SeedUserAsync("integration-exercise-3@optilifts.com", "Exercise User Three");
 
+        await _fixture.SeedMuscleAsync("Lats");
+        await _fixture.SeedMuscleAsync("Chest");
+
         var clientOne = _fixture.GetAuthenticatedClient(userOne);
         var clientTwo = _fixture.GetAuthenticatedClient(userTwo);
 
@@ -78,7 +81,7 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
             mechanic: "compound",
             equipment: "barbell",
             category: "Strength",
-            primaryMuscles: ["Back"],
+            primaryMuscles: ["Lats"],
             secondaryMuscles: []);
 
         var resp1 = await clientOne.PostAsync("/api/exercises/custom", userOneContent);
@@ -204,6 +207,20 @@ public sealed class ExercisesApiFixture : IAsyncLifetime
         var tokenService = new JwtTokenService(JwtSecret, 60);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateToken(user));
         return client;
+    }
+
+    public async Task<Domain.Workouts.Muscle> SeedMuscleAsync(string name)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+
+        var existing = await db.Muscles.FirstOrDefaultAsync(m => m.Name == name);
+        if (existing is not null) return existing;
+
+        var muscle = new Domain.Workouts.Muscle { Name = name };
+        db.Muscles.Add(muscle);
+        await db.SaveChangesAsync();
+        return muscle;
     }
 
     public async Task<Domain.Users.User> SeedUserAsync(string email, string displayName)

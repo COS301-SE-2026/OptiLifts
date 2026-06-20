@@ -1,8 +1,9 @@
 BEGIN;
 
 -- ---------------------------------------------------------------------------
--- Muscles (idempotent). No unique constraint exists on muscles.name, so we
--- guard each insert with NOT EXISTS. gen_random_uuid() is built into PG13+.
+-- Muscles (idempotent). No unique constraint exists on muscles.name, so the
+-- insert is guarded with an anti-join (LEFT JOIN ... IS NULL).
+-- gen_random_uuid() is built into PG13+.
 -- ---------------------------------------------------------------------------
 INSERT INTO muscles (muscle_id, name)
 SELECT gen_random_uuid(), v.name
@@ -24,7 +25,8 @@ FROM (VALUES
     ('Traps'),
     ('Triceps')
 ) AS v(name)
-WHERE NOT EXISTS (SELECT 1 FROM muscles m WHERE m.name = v.name);
+LEFT JOIN muscles m ON m.name = v.name
+WHERE m.muscle_id IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- Stable demo ids + repeated literals, defined once (avoids duplicated
@@ -208,7 +210,7 @@ ON CONFLICT (exercise_dict_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
 -- Additional global library exercises (not referenced by the demo workouts).
--- Idempotent via NOT EXISTS on name.
+-- Idempotent via an anti-join on (name, user_id IS NULL).
 -- ---------------------------------------------------------------------------
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
 SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.muscle_id, NULL, NULL
@@ -222,13 +224,12 @@ CROSS JOIN LATERAL (VALUES
     ('Running',             c.mechanic_compound, c.equipment_bodyweight, 'DistanceDuration', c.muscle_quadriceps)
 ) AS v(name, mechanic, equipment, exercise_type, muscle_name)
 JOIN muscles m ON m.name = v.muscle_name
-WHERE NOT EXISTS (
-    SELECT 1 FROM exercise_dictionary e WHERE e.name = v.name AND e.user_id IS NULL
-);
+LEFT JOIN exercise_dictionary e ON e.name = v.name AND e.user_id IS NULL
+WHERE e.exercise_dict_id IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- Secondary muscles (sec_muscles join). Exercise ids come from seed_constants
--- (no raw UUID literals); guarded by NOT EXISTS per pair.
+-- (no raw UUID literals); guarded by an anti-join per pair.
 -- ---------------------------------------------------------------------------
 INSERT INTO sec_muscles (sec_muscle_id, muscle_id, exercise_id)
 SELECT gen_random_uuid(), m.muscle_id, e.exercise_id
@@ -252,9 +253,8 @@ CROSS JOIN LATERAL (VALUES
     (c.exercise_pulldown_id, c.muscle_biceps)
 ) AS e(exercise_id, muscle_name)
 JOIN muscles m ON m.name = e.muscle_name
-WHERE NOT EXISTS (
-    SELECT 1 FROM sec_muscles s WHERE s.exercise_id = e.exercise_id AND s.muscle_id = m.muscle_id
-);
+LEFT JOIN sec_muscles s ON s.exercise_id = e.exercise_id AND s.muscle_id = m.muscle_id
+WHERE s.sec_muscle_id IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- Folders.
@@ -376,7 +376,8 @@ BEGIN
     END IF;
 
     -- idempotent: skip if the demo block is already present
-    IF EXISTS (SELECT 1 FROM workouts WHERE user_id = alex_id AND name IN ('Pull', 'Push')) THEN
+    PERFORM 1 FROM workouts WHERE user_id = alex_id AND name IN ('Pull', 'Push');
+    IF FOUND THEN
         RAISE NOTICE 'Alex demo data already seeded - skipping.';
         RETURN;
     END IF;
@@ -436,7 +437,7 @@ END $$;
 -- ===========================================================================
 -- Badge definitions. `code` maps to an IBadgeRule (only "workout_count" has a
 -- rule today); "streak_weeks" has no rule yet but can still be awarded manually.
--- Idempotent by name.
+-- Idempotent via the unique index on badges.name.
 -- ===========================================================================
 INSERT INTO badges (badge_id, code, name, description, category, threshold, created_at)
 SELECT gen_random_uuid(), v.code, v.name, v.description, v.category, v.threshold, NOW()
@@ -448,7 +449,7 @@ CROSS JOIN LATERAL (VALUES
     (c.badge_code_count, 'Century Club',  'Complete 100 workouts',       c.badge_cat_milestone, 100),
     ('streak_weeks',     'Consistent',    'Train 5 weeks in a row',      'Streak',              5)
 ) AS v(code, name, description, category, threshold)
-WHERE NOT EXISTS (SELECT 1 FROM badges b WHERE b.name = v.name);
+ON CONFLICT (name) DO NOTHING;
 
 -- ===========================================================================
 -- Award earned badges to Alex (gymgoer@gmail.com). He has 51 workouts, so he
@@ -460,8 +461,6 @@ SELECT gen_random_uuid(), u.user_id, b.badge_id, NOW()
 FROM seed_constants c
 JOIN users u ON u.email_hash = encode(sha256('gymgoer@gmail.com'::bytea), c.hex_enc)
 JOIN badges b ON b.name IN ('First Workout', '10 Workouts', '50 Workouts', 'Consistent')
-WHERE NOT EXISTS (
-    SELECT 1 FROM user_badges ub WHERE ub.user_id = u.user_id AND ub.badge_id = b.badge_id
-);
+ON CONFLICT (user_id, badge_id) DO NOTHING;
 
 COMMIT;

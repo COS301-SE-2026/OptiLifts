@@ -36,4 +36,43 @@ public sealed class UserSettingsController : ControllerBase
             return NotFound();
         }
     }
+
+    [HttpPatch("profilepicture")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile profilePicture, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (profilePicture == null || profilePicture.Length == 0)
+        {
+            return BadRequest("No file uploaded or file is empty.");
+        }
+
+        if (!profilePicture.ContentType.StartsWith("image/"))
+        {
+            return BadRequest("File must be an image.");
+        }
+
+        try
+        {
+            using var stream = profilePicture.OpenReadStream();
+            var command = new UploadProfilePictureCommand(
+                userId,
+                stream,
+                profilePicture.FileName,
+                profilePicture.ContentType
+            );
+            var imageUrl = await _sender.Send(command, cancellationToken);
+            return Ok(new { profilePictureUrl = imageUrl });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
 }

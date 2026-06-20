@@ -161,7 +161,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     }, [isOpen, user]);
 
     const saveProfileDetails = async () => {
-        const res = await customFetch("/api/users/me/profile", {
+        const res = await customFetch("/api/users/me/personalDetails", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -216,7 +216,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         const formData = new FormData();
         formData.append("profilePicture", selectedImg);
         const res = await customFetch("/api/users/me/profilepicture", {
-            method: "POST",
+            method: "PATCH",
             body: formData
         });
 

@@ -74,6 +74,8 @@ interface UserSettingsDto {
 function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const { user } = useAuth();
 
+    const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
+
     //states 
     const [profile, setProfile] = useState({
         displayName: "",
@@ -113,6 +115,14 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             return;
         }
 
+        document.documentElement.classList.toggle("dark", preferences.theme === "dark");
+    }, [preferences.theme, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
         async function getSettings() {
             setIsLoading(true);
             setErrorMessage(null);
@@ -136,10 +146,13 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
                 setSelectedImgUrl(data.profile.profilePictureUrl);
 
-                setPreferences({
+                const loadedPreferences = {
                     theme: data.preferences.theme || "dark",
                     units: data.preferences.units || "metric"
-                });
+                };
+
+                setPreferences(loadedPreferences);
+                initialPreferencesRef.current = loadedPreferences;
 
             } catch (error) {
                 const typedError = (error instanceof Error) ? error : new Error("Could not load settings");
@@ -267,6 +280,16 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         } finally {
             setIsSaving(false);
         }
+
+    };
+
+    const revertTheme = () => {
+        if (initialPreferencesRef.current) {
+            document.documentElement.classList.toggle(
+                "dark",
+                initialPreferencesRef.current.theme === "dark"
+            );
+        }
     };
 
     return {
@@ -274,7 +297,9 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         preferences, updatePreferences,
         security, updateSecurity,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
-        isLoading, isSaving, errorMessage, handleSave
+        isLoading, isSaving, errorMessage, handleSave,
+        revertTheme
+
     };
 }
 
@@ -520,7 +545,8 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         preferences, updatePreferences,
         security, updateSecurity,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
-        isLoading, isSaving, errorMessage, handleSave
+        isLoading, isSaving, errorMessage, handleSave,
+        revertTheme
     } = useSettingsLogic(isOpen, onClose);
 
     if (!isOpen) {
@@ -535,6 +561,8 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
 
         setSelectedImg(null);
         setSelectedImgUrl(null);
+
+        revertTheme();
 
         onClose();
     };
@@ -603,7 +631,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                 )}
             </div>
 
-             <ConfirmDialog
+            <ConfirmDialog
                 isOpen={isLogoutConfirmOpen}
                 onClose={() => setIsLogoutConfirmOpen(false)}
                 onConfirm={() => {

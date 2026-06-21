@@ -160,4 +160,45 @@ public sealed class UserSettingsController : ControllerBase
         }
     }
 
+    public sealed record UpdatePasswordRequest(
+        string CurrentPassword,
+        string NewPassword
+    );
+
+    [HttpPost("updatePassword")]
+    public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrEmpty(request.CurrentPassword) || string.IsNullOrEmpty(request.NewPassword))
+        {
+            return BadRequest("Current password and new password are required.");
+        }
+
+        try
+        {
+            var command = new UpdatePasswordCommand(
+                userId,
+                request.CurrentPassword,
+                request.NewPassword
+            );
+
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            return BadRequest(new { error = e.Message });
+        }
+    }
+
 }

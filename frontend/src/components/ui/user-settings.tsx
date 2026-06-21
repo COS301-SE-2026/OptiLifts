@@ -193,7 +193,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             return;
         }
 
-        const res = await customFetch("/api/users/me/change-password", {
+        const res = await customFetch("/api/users/me/updatePassword", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -229,7 +229,10 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         e.preventDefault();
         setErrorMessage(null);
 
-        if (security.newPassword !== "") {
+        if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
+            setErrorMessage("All password fields are required.");
+            return;
+        }else{
             if (security.newPassword !== security.confirmPassword) {
                 setErrorMessage("New passwords do not match.");
                 return;

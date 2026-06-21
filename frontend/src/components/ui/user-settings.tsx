@@ -76,6 +76,10 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
 
+    const [profileChanged, setProfileChanged] = useState(false);
+    const [preferenceChanged, setPreferenceChanged] = useState(false);
+    const [securityChanged, setSecurityChanged] = useState(false);
+
     //states 
     const [profile, setProfile] = useState({
         displayName: "",
@@ -106,9 +110,18 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     // takes field and uses it as key to update state w/ new value 
     // prev => ...prev takes the old object and makes a new one with the old values but updates the new value
-    const updateProfile = (field: string, value: string) => setProfile(prev => ({ ...prev, [field]: value }));
-    const updatePreferences = (field: string, value: string) => setPreferences(prev => ({ ...prev, [field]: value }));
-    const updateSecurity = (field: string, value: string) => setSecurity(prev => ({ ...prev, [field]: value }));
+    const updateProfile = (field: string, value: string) => {
+        setProfile(prev => ({ ...prev, [field]: value }));
+        setProfileChanged(true);
+    }
+    const updatePreferences = (field: string, value: string) => {
+        setPreferences(prev => ({ ...prev, [field]: value }));
+        setPreferenceChanged(true);
+    }
+    const updateSecurity = (field: string, value: string) => {
+        setSecurity(prev => ({ ...prev, [field]: value }));
+        setSecurityChanged(true);
+    }
 
     useEffect(() => {
         if (!isOpen) {
@@ -126,6 +139,10 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         async function getSettings() {
             setIsLoading(true);
             setErrorMessage(null);
+
+            setProfileChanged(false);
+            setPreferenceChanged(false);
+            setSecurityChanged(false);
 
             try {
                 const response = await customFetch("/api/users/me/settings");
@@ -203,8 +220,20 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     };
 
     const savePassword = async () => {
-        if (security.newPassword === "" || security.currentPassword === "") {
+
+        if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
+            setErrorMessage("All password fields are required.");
             return;
+        } else {
+            if (security.newPassword !== security.confirmPassword) {
+                setErrorMessage("New passwords do not match.");
+                return;
+            }
+
+            if (security.currentPassword === "") {
+                setErrorMessage("Enter current password");
+                return;
+            }
         }
 
         const res = await customFetch("/api/users/me/updatePassword", {
@@ -240,35 +269,32 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     };
 
     const handleSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+
         e.preventDefault();
         setErrorMessage(null);
 
-        if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
-            setErrorMessage("All password fields are required.");
-            return;
-        } else {
-            if (security.newPassword !== security.confirmPassword) {
-                setErrorMessage("New passwords do not match.");
-                return;
-            }
-
-            if (security.currentPassword === "") {
-                setErrorMessage("Enter current password");
-                return;
-            }
-        }
-
         setIsSaving(true);
         try {
-            await saveProfileDetails();
-            await saveProfilePic();
-            await savePreferences();
-            await savePassword();
+            if (profileChanged) {
+                await saveProfileDetails();
+            }
 
-            if (preferences.theme === "dark") {
-                document.documentElement.classList.add("dark");
-            } else {
-                document.documentElement.classList.remove("dark");
+            if (selectedImg) {
+                await saveProfilePic();
+            }
+
+            if (preferenceChanged) {
+                await savePreferences();
+
+                if (preferences.theme === "dark") {
+                    document.documentElement.classList.add("dark");
+                } else {
+                    document.documentElement.classList.remove("dark");
+                }
+            }
+
+            if (securityChanged) {
+                await savePassword();
             }
 
             toast.success("Settings saved successfully", "Saved");

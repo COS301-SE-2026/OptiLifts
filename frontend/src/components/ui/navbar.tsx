@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useAuth } from '@/context/auth-context'
 
 const PUBLIC_LINKS = [
@@ -49,7 +48,6 @@ export function Navbar() {
             {label}
           </Link>
         ))}
-        <ThemeToggle />
         
       </nav>
 

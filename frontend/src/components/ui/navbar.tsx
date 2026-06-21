@@ -1,6 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useAuth } from '@/context/auth-context'
 
@@ -19,24 +17,9 @@ const LINKS = [
 
 export function Navbar() {
   const { pathname } = useLocation()
-  const { isHydrated, isAuthenticated, logout } = useAuth()
+  const { isAuthenticated} = useAuth()
 
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
-  const authControls = isHydrated && isAuthenticated ? (
-    <div className="ml-3 flex items-center gap-3 border-l border-border pl-4">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="px-4"
-        onClick={logout}
-      >
-        <LogOut size={14} />
-        Logout
-      </Button>
-    </div>
-  ) : null
-
   const homeLink = isAuthenticated ? '/workouts' : '/register'
 
   return (
@@ -68,7 +51,6 @@ export function Navbar() {
         ))}
         <ThemeToggle />
         
-        {authControls} {/* shows logout if they're logged in and state is hydrated */}
       </nav>
 
     </header>

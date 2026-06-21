@@ -12,6 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type UserSettingsPopupProps = Readonly<{
     isOpen: boolean;
@@ -232,7 +233,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
             setErrorMessage("All password fields are required.");
             return;
-        }else{
+        } else {
             if (security.newPassword !== security.confirmPassword) {
                 setErrorMessage("New passwords do not match.");
                 return;
@@ -368,8 +369,8 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Sex</span>
                     <DropdownMenu>
-                        <DropdownMenuTrigger 
-                            variant="filter" 
+                        <DropdownMenuTrigger
+                            variant="filter"
                             className="w-full bg-transparent dark:bg-input/30 rounded-lg border-input h-8 py-1 px-2.5"
                         >
                             {profile.sex === "PreferNotToSay" ? "Prefer not to say" : profile.sex}
@@ -410,8 +411,8 @@ function PreferencesSection({ preferences, updatePreferences }: PreferencesParam
             <div className="flex items-center justify-between">
                 <span className="text-sm">Theme</span>
                 <DropdownMenu>
-                    <DropdownMenuTrigger 
-                        variant="filter" 
+                    <DropdownMenuTrigger
+                        variant="filter"
                         className="w-48 bg-transparent dark:bg-input/30 rounded-lg border-input h-8 py-1 px-2.5"
                     >
                         {preferences.theme === "light" ? "Light Mode" : "Dark Mode"}
@@ -425,8 +426,8 @@ function PreferencesSection({ preferences, updatePreferences }: PreferencesParam
             <div className="flex items-center justify-between">
                 <span className="text-sm">Units</span>
                 <DropdownMenu>
-                    <DropdownMenuTrigger 
-                        variant="filter" 
+                    <DropdownMenuTrigger
+                        variant="filter"
                         className="w-48 bg-transparent dark:bg-input/30 rounded-lg border-input h-8 py-1 px-2.5"
                     >
                         {preferences.units === "metric" ? "Metric (kg / cm)" : "Imperial (lbs / in)"}
@@ -511,6 +512,9 @@ function SecuritySection({ security, updateSecurity }: SecurityParams) {
 }
 
 export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
+    const { logout } = useAuth();
+    const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
     const {
         profile, updateProfile,
         preferences, updatePreferences,
@@ -528,11 +532,11 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         if (selectedImgUrl?.startsWith("blob:")) {
             URL.revokeObjectURL(selectedImgUrl);
         }
-        
+
         setSelectedImg(null);
         setSelectedImgUrl(null);
-        
-        onClose(); 
+
+        onClose();
     };
 
     return (
@@ -575,6 +579,22 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                             security={security} updateSecurity={updateSecurity}
                         />
 
+                        {/* logout */}
+                        <div className="space-y-4 pt-2">
+                            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Account Management</h3>
+                            <div className="flex items-center justify-between gap-4">
+                                <span className="text-sm text-muted-foreground">Log out of your current session on this device.</span>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-48 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
+                                    onClick={() => setIsLogoutConfirmOpen(true)}
+                                >
+                                    Log Out
+                                </Button>
+                            </div>
+                        </div>
+
                         <div className="flex justify-end gap-3 pt-4 border-t border-border">
                             <Button type="button" variant="secondary" onClick={handleClosePopup} disabled={isSaving}>Cancel</Button>
                             <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
@@ -582,6 +602,22 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                     </form>
                 )}
             </div>
+
+             <ConfirmDialog
+                isOpen={isLogoutConfirmOpen}
+                onClose={() => setIsLogoutConfirmOpen(false)}
+                onConfirm={() => {
+                    setIsLogoutConfirmOpen(false);
+                    onClose();
+                    logout();
+                }}
+                title="Log Out"
+                description="Are you sure you want to log out of your account?"
+                confirmText="Log Out"
+                cancelText="Cancel"
+                variant="danger"
+            />
         </div>
+
     );
 }

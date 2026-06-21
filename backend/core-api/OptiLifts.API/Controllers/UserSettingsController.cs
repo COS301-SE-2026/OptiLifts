@@ -124,4 +124,40 @@ public sealed class UserSettingsController : ControllerBase
         }
     }
 
+    public sealed record PreferencesRequest(
+        string Theme,
+        string Units
+    );
+
+    [HttpPatch("preferences")]
+    public async Task<IActionResult> UpdateUserPreferences([FromBody] PreferencesRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrEmpty(request.Theme) || string.IsNullOrEmpty(request.Units))
+        {
+            return BadRequest("Theme and units are required.");
+        }
+
+        try
+        {
+            var command = new UpdateUserPreferencesCommand(
+                userId,
+                request.Theme,
+                request.Units
+            );
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
 }

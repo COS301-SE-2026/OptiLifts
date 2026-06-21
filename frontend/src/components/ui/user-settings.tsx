@@ -263,6 +263,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             throw new Error("Enter current password");
         }
 
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+        if (!passwordRegex.test(security.newPassword)) {
+            throw new Error("New password does not meet complexity requirements.");
+        }
+
         const res = await customFetch("/api/users/me/updatePassword", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -561,6 +566,10 @@ function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
     return (
         <div className="space-y-4">
             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Change Password</h3>
+
+             <p className="text-xs text-muted-foreground -mt-2">
+                Passwords need 8 or more characters containing uppercase, lowercase, numbers, and special characters
+            </p>
 
             <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-muted-foreground">Current Password</span>

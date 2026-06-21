@@ -39,7 +39,7 @@ public sealed class UserSettingsController : ControllerBase
         }
     }
 
-    [HttpPatch("profilepicture")]
+    [HttpPatch("profilePicture")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile profilePicture, CancellationToken cancellationToken)
     {
@@ -71,6 +71,27 @@ public sealed class UserSettingsController : ControllerBase
             );
             var imageUrl = await _sender.Send(command, cancellationToken);
             return Ok(new { profilePictureUrl = imageUrl });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpDelete("deleteProfilePicture")]
+    public async Task<IActionResult> DeleteProfilePicture(CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            await _sender.Send(new DeleteProfilePictureCommand(userId), cancellationToken);
+            return NoContent();
         }
         catch (KeyNotFoundException)
         {

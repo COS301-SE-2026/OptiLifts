@@ -75,7 +75,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const { user } = useAuth();
 
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
-
+    
+    const [initialProfilePicUrl, setInitialProfilePicUrl] = useState<string | null>(null);
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
@@ -123,6 +124,16 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         setSecurityChanged(true);
     }
 
+    const deleteProfilePic = async () => {
+        const res = await customFetch("/api/users/me/deleteProfilePicture", {
+            method: "DELETE"
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to delete profile picture.");
+        }
+    };
+
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -162,6 +173,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                 });
 
                 setSelectedImgUrl(data.profile.profilePictureUrl);
+                setInitialProfilePicUrl(data.profile.profilePictureUrl);
 
                 const loadedPreferences = {
                     theme: data.preferences.theme || "dark",
@@ -251,6 +263,13 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     };
 
     const saveProfilePic = async () => {
+
+        if (initialProfilePicUrl !== null && selectedImgUrl === null) {
+            await deleteProfilePic(); 
+            setInitialProfilePicUrl(null); 
+            return;
+        }
+
         if (!selectedImg) {
             return;
         }
@@ -258,7 +277,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         //creates an object passed via multipart/mixed, more efficient than base64 json
         const formData = new FormData();
         formData.append("profilePicture", selectedImg);
-        const res = await customFetch("/api/users/me/profilepicture", {
+        const res = await customFetch("/api/users/me/profilePicture", {
             method: "PATCH",
             body: formData
         });
@@ -279,9 +298,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                 await saveProfileDetails();
             }
 
-            if (selectedImg) {
-                await saveProfilePic();
-            }
+            await saveProfilePic();
 
             if (preferenceChanged) {
                 await savePreferences();

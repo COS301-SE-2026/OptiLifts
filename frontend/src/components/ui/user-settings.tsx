@@ -32,6 +32,7 @@ type ProfileParams = Readonly<{
     selectedImgUrl: string | null;
     setSelectedImg: (file: File | null) => void;
     setSelectedImgUrl: (url: string | null) => void;
+    error?: string | null;
 }>;
 
 type PreferencesParams = Readonly<{
@@ -40,6 +41,7 @@ type PreferencesParams = Readonly<{
         units: string;
     };
     updatePreferences: (field: string, value: string) => void;
+    error?: string | null;
 }>;
 
 type SecurityParams = Readonly<{
@@ -49,6 +51,7 @@ type SecurityParams = Readonly<{
         confirmPassword: string;
     };
     updateSecurity: (field: string, value: string) => void;
+    error?: string | null;
 }>;
 
 interface UserSettingsDto {
@@ -75,11 +78,16 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const { user } = useAuth();
 
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
-    
+
     const [initialProfilePicUrl, setInitialProfilePicUrl] = useState<string | null>(null);
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
+
+    const [profileError, setProfileError] = useState<string | null>(null);
+    const [preferencesError, setPreferencesError] = useState<string | null>(null);
+    const [securityError, setSecurityError] = useState<string | null>(null);
+    const [generalError, setGeneralError] = useState<string | null>(null);
 
     //states 
     const [profile, setProfile] = useState({
@@ -107,7 +115,6 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // takes field and uses it as key to update state w/ new value 
     // prev => ...prev takes the old object and makes a new one with the old values but updates the new value
@@ -149,11 +156,15 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
         async function getSettings() {
             setIsLoading(true);
-            setErrorMessage(null);
 
             setProfileChanged(false);
             setPreferenceChanged(false);
             setSecurityChanged(false);
+
+            setProfileError(null);
+            setPreferencesError(null);
+            setSecurityError(null);
+            setGeneralError(null);
 
             try {
                 const response = await customFetch("/api/users/me/settings");
@@ -185,7 +196,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
             } catch (error) {
                 const typedError = (error instanceof Error) ? error : new Error("Could not load settings");
-                setErrorMessage(typedError.message);
+                setGeneralError(typedError.message);
             } finally {
                 setIsLoading(false);
             }
@@ -229,23 +240,27 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         if (!res.ok) {
             throw new Error("Could not update preferences.");
         }
+
+        if (preferences.theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+
     };
 
     const savePassword = async () => {
 
         if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
-            setErrorMessage("All password fields are required.");
-            return;
-        } else {
-            if (security.newPassword !== security.confirmPassword) {
-                setErrorMessage("New passwords do not match.");
-                return;
-            }
+            throw new Error("All password fields are required.");
+        }
 
-            if (security.currentPassword === "") {
-                setErrorMessage("Enter current password");
-                return;
-            }
+        if (security.newPassword !== security.confirmPassword) {
+            throw new Error("New passwords do not match.");
+        }
+
+        if (security.currentPassword === "") {
+            throw new Error("Enter current password");
         }
 
         const res = await customFetch("/api/users/me/updatePassword", {
@@ -265,8 +280,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const saveProfilePic = async () => {
 
         if (initialProfilePicUrl !== null && selectedImgUrl === null) {
-            await deleteProfilePic(); 
-            setInitialProfilePicUrl(null); 
+            await deleteProfilePic();
+            setInitialProfilePicUrl(null);
             return;
         }
 
@@ -288,42 +303,54 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     };
 
     const handleSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-
         e.preventDefault();
-        setErrorMessage(null);
+        setProfileError(null);
+        setPreferencesError(null);
+        setSecurityError(null);
+        setGeneralError(null);
 
         setIsSaving(true);
+        let errors = false;
         try {
             if (profileChanged) {
                 await saveProfileDetails();
             }
-
             await saveProfilePic();
+        }
+        catch (err) {
+            const typedError = (err instanceof Error) ? err : new Error("Failed to save profile details");
+            setProfileError(typedError.message);
+            errors = true;
+        }
 
+        try {
             if (preferenceChanged) {
                 await savePreferences();
-
-                if (preferences.theme === "dark") {
-                    document.documentElement.classList.add("dark");
-                } else {
-                    document.documentElement.classList.remove("dark");
-                }
             }
+        }
+        catch (err) {
+            const typedError = (err instanceof Error) ? err : new Error("Failed to save preferences");
+            setPreferencesError(typedError.message);
+            errors = true;
+        }
 
+        try {
             if (securityChanged) {
                 await savePassword();
             }
-
-            toast.success("Settings saved successfully", "Saved");
-            onClose();
-
-        } catch (error) {
-            const typedError = (error instanceof Error) ? error : new Error("Unknown error occurred");
-            setErrorMessage(typedError.message);
-        } finally {
-            setIsSaving(false);
+        }
+        catch (err) {
+            const typedError = (err instanceof Error) ? err : new Error("Failed to change password");
+            setSecurityError(typedError.message);
+            errors = true;
         }
 
+        setIsSaving(false);
+
+        if (!errors) {
+            toast.success("Settings saved successfully", "Saved");
+            onClose();
+        }
     };
 
     const revertTheme = () => {
@@ -340,14 +367,16 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         preferences, updatePreferences,
         security, updateSecurity,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
-        isLoading, isSaving, errorMessage, handleSave,
+        isLoading, isSaving,
+        profileError, preferencesError, securityError, generalError,
+        handleSave,
         revertTheme
 
     };
 }
 
 
-function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg, setSelectedImgUrl }: ProfileParams) {
+function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg, setSelectedImgUrl, error }: ProfileParams) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleImgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -468,11 +497,18 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                     <Input type="number" step="0.1" value={profile.height} onChange={(e) => updateProfile("height", e.target.value)} />
                 </div>
             </div>
+
+            {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs p-2.5 rounded-lg mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {error}
+                </div>
+            )}
+
         </div>
     );
 }
 
-function PreferencesSection({ preferences, updatePreferences }: PreferencesParams) {
+function PreferencesSection({ preferences, updatePreferences, error }: PreferencesParams) {
     return (
         <div className="space-y-4">
             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">App Preferences</h3>
@@ -506,11 +542,18 @@ function PreferencesSection({ preferences, updatePreferences }: PreferencesParam
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+
+            {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs p-2.5 rounded-lg mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {error}
+                </div>
+            )}
+
         </div>
     );
 }
 
-function SecuritySection({ security, updateSecurity }: SecurityParams) {
+function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
     const [showCurrent, setShowCurrent] = useState<boolean>(false);
     const [showNew, setShowNew] = useState<boolean>(false);
     const [showConfirm, setShowConfirm] = useState<boolean>(false);
@@ -575,6 +618,13 @@ function SecuritySection({ security, updateSecurity }: SecurityParams) {
                     </Button>
                 </div>
             </div>
+
+            {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs p-2.5 rounded-lg mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {error}
+                </div>
+            )}
+
         </div>
     );
 }
@@ -588,7 +638,9 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         preferences, updatePreferences,
         security, updateSecurity,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
-        isLoading, isSaving, errorMessage, handleSave,
+        isLoading, isSaving,
+        profileError, preferencesError, securityError, generalError,
+        handleSave,
         revertTheme
     } = useSettingsLogic(isOpen, onClose);
 
@@ -629,9 +681,9 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                 ) : (
                     <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-6">
 
-                        {errorMessage && (
+                        {generalError && (
                             <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-3 rounded-lg">
-                                {errorMessage}
+                                {generalError}
                             </div>
                         )}
 
@@ -640,14 +692,17 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                             selectedImgUrl={selectedImgUrl}
                             setSelectedImg={setSelectedImg}
                             setSelectedImgUrl={setSelectedImgUrl}
+                            error={profileError}
                         />
 
                         <PreferencesSection
                             preferences={preferences} updatePreferences={updatePreferences}
+                            error={preferencesError}
                         />
 
                         <SecuritySection
                             security={security} updateSecurity={updateSecurity}
+                            error={securityError}
                         />
 
                         {/* logout */}

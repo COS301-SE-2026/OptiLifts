@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Users;
 using OptiLifts.Infrastructure.Database;
@@ -17,6 +18,17 @@ public sealed class ChangePasswordHandler : IRequestHandler<UpdatePasswordComman
     }
     public async Task Handle(UpdatePasswordCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            throw new ArgumentException("New password does not meet complexity requirements.");
+        }
+
+        var reg = new Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$");
+        if (!reg.IsMatch(request.NewPassword))
+        {
+            throw new ArgumentException("New password does not meet complexity requirements.");
+        }
+
         var user = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 

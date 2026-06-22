@@ -274,32 +274,32 @@ ON CONFLICT (folder_id) DO NOTHING;
 -- ---------------------------------------------------------------------------
 -- Workouts (created_by column is now user_id).
 -- ---------------------------------------------------------------------------
-INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-SELECT c.workout_push_id, f.folder_id, 'Push Day A', 1, u.user_id, NOW()
+INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+SELECT c.workout_push_id, f.folder_id, 'Push Day A', u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
 WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
-INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-SELECT c.workout_pull_id, f.folder_id, 'Pull Day A', 1, u.user_id, NOW()
+INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+SELECT c.workout_pull_id, f.folder_id, 'Pull Day A', u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
 WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
-INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-SELECT c.workout_upper_b_id, f.folder_id, 'Upper B', 2, u.user_id, NOW()
+INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+SELECT c.workout_upper_b_id, f.folder_id, 'Upper B', u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_push_id
 JOIN users u ON u.user_id = f.user_id
 WHERE u.email_hash = encode(sha256(c.test_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
-INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-SELECT c.workout_lower_b_id, f.folder_id, 'Lower B', 2, u.user_id, NOW()
+INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+SELECT c.workout_lower_b_id, f.folder_id, 'Lower B', u.user_id, NOW()
 FROM seed_constants c
 JOIN folders f ON f.folder_id = c.folder_pull_id
 JOIN users u ON u.user_id = f.user_id
@@ -386,12 +386,12 @@ BEGIN
     VALUES (gen_random_uuid(), alex_id, 'My Split', 'Demo training split', NOW())
     RETURNING folder_id INTO v_folder;
 
-    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-    VALUES (gen_random_uuid(), v_folder, 'Pull', 1, alex_id, NOW())
+    INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+    VALUES (gen_random_uuid(), v_folder, 'Pull', alex_id, NOW())
     RETURNING workout_id INTO v_pull;
 
-    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-    VALUES (gen_random_uuid(), v_folder, 'Push', 2, alex_id, NOW())
+    INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+    VALUES (gen_random_uuid(), v_folder, 'Push', alex_id, NOW())
     RETURNING workout_id INTO v_push;
 
     -- exercises + sets for each recent-workout card (volume = weight*reps, count = #sets)

@@ -122,7 +122,7 @@ public class CreateWorkoutIntegrationTests : IClassFixture<CreateWorkoutFixture>
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateToken(userId));
 
-        var body = new CreateWorkoutRequest(null, "Push Day A", 1, []);
+        var body = new CreateWorkoutRequest(null, "Push Day A", []);
         var response = await client.PostAsJsonAsync("/api/workouts", body);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -137,7 +137,7 @@ public class CreateWorkoutIntegrationTests : IClassFixture<CreateWorkoutFixture>
     public async Task PostWorkout_Returns401_WhenNoToken()
     {
         var client = _fixture.CreateClient();
-        var body = new CreateWorkoutRequest(null, "Push Day", null, []);
+        var body = new CreateWorkoutRequest(null, "Push Day", []);
         var response = await client.PostAsJsonAsync("/api/workouts", body);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -150,7 +150,7 @@ public class CreateWorkoutIntegrationTests : IClassFixture<CreateWorkoutFixture>
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateToken(userId));
 
-        var body = new CreateWorkoutRequest(null, "Leg Day", 3, []);
+        var body = new CreateWorkoutRequest(null, "Leg Day", []);
         await client.PostAsJsonAsync("/api/workouts", body);
 
         var response = await client.GetAsync("/api/workouts");

@@ -1,6 +1,6 @@
+using System.Text.RegularExpressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Users;
 using OptiLifts.Infrastructure.Database;

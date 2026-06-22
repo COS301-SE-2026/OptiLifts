@@ -49,9 +49,9 @@ public class UpdatePasswordHandlerTests
 
         await handler.Handle(command, CancellationToken.None);
         var updatedUser = await context.Users.FindAsync(userId);
-        
+
         updatedUser.Should().NotBeNull();
-        updatedUser!.PasswordHash.Should().Be("NEW_HASH");
+        updatedUser.PasswordHash.Should().Be("NEW_HASH");
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class UpdatePasswordHandlerTests
 
         var hasherMock = new Mock<IPasswordHasher>();
         var handler = new ChangePasswordHandler(context, hasherMock.Object);
-        var command = new UpdatePasswordCommand(userId, "Password123!", "7charac"); 
+        var command = new UpdatePasswordCommand(userId, "Password123!", "7charac");
 
         await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
     }
@@ -113,7 +113,7 @@ public class UpdatePasswordHandlerTests
 
         var hasherMock = new Mock<IPasswordHasher>();
         var handler = new ChangePasswordHandler(context, hasherMock.Object);
-        var command = new UpdatePasswordCommand(userId, "Password123!", "NoSpecial123"); 
+        var command = new UpdatePasswordCommand(userId, "Password123!", "NoSpecial123");
 
         await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
     }
@@ -132,7 +132,7 @@ public class UpdatePasswordHandlerTests
 
         var hasherMock = new Mock<IPasswordHasher>();
         var handler = new ChangePasswordHandler(context, hasherMock.Object);
-        var command = new UpdatePasswordCommand(userId, "Password123!", "NoDigits!"); 
+        var command = new UpdatePasswordCommand(userId, "Password123!", "NoDigits!");
 
         await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
     }

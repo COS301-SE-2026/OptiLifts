@@ -1,5 +1,7 @@
 using MediatR;
+
 namespace OptiLifts.Application.Users;
+
 public sealed record UpdateProfileDetailsCommand(
     Guid UserId,
     string DisplayName,

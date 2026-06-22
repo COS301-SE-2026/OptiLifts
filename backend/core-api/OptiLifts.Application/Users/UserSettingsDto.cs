@@ -1,9 +1,11 @@
 namespace OptiLifts.Application.Users;
+
 public record UserSettingsDto
 {
     public ProfileDto Profile { get; init; } = null!;
     public PreferencesDto Preferences { get; init; } = null!;
 }
+
 public record ProfileDto(
     string DisplayName,
     string? Bio,
@@ -13,6 +15,7 @@ public record ProfileDto(
     double? Height,
     string? ProfilePictureUrl
 );
+
 public record PreferencesDto(
     string Theme,
     string Units

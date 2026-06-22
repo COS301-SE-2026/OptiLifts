@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Users;
 using OptiLifts.Infrastructure.Database;
+
 namespace OptiLifts.Infrastructure.Users;
 
 public sealed class UpdateUserPreferencesHandler : IRequestHandler<UpdateUserPreferencesCommand>

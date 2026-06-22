@@ -11,7 +11,7 @@ namespace OptiLifts.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "DayIndex",
+                name: "day_index",
                 table: "workouts");
         }
 
@@ -19,7 +19,7 @@ namespace OptiLifts.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "DayIndex",
+                name: "day_index",
                 table: "workouts",
                 type: "integer",
                 nullable: true);

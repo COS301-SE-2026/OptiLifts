@@ -65,3 +65,13 @@ export type MuscleDigramProps = Readonly<{
   highlightedMuscles: MuscleName[]
   variant?: 'front' | 'back' | 'both'
 }>
+
+export type WorkoutOverviewProps = Readonly<{
+  name: string
+  exercises: string[]
+  prs: string
+  duration: string
+  volume: string
+  sets: string
+  className?: string
+}>

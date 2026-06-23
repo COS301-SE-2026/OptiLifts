@@ -3,11 +3,16 @@ import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/ui/page-title'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import type { ProfileOverviewProps } from '@/types/profile'
+import { useState } from "react"
+import { UserSettingsPopup } from "@/components/ui/user-settings"
 
 export function ProfileOverview({ name, email, bio, profileImageUrl }: ProfileOverviewProps) {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   return (
     <section className="relative rounded-lg border border-border bg-card p-3 sm:p-4">
-      <Button variant="default" size="sm" className="absolute right-3 top-3 sm:right-4 sm:top-4">
+      <Button variant="default" size="sm" className="absolute right-3 top-3 sm:right-4 sm:top-4"
+        onClick={() => setIsSettingsOpen(true)}
+      >
         <span>Settings</span>
         <Settings size={16} className="ml-2" />
       </Button>
@@ -19,16 +24,21 @@ export function ProfileOverview({ name, email, bio, profileImageUrl }: ProfileOv
 
         <div className="min-w-0">
           <PageTitle title={name} />
-            <p className="text-foreground">
-              <span className="font-semibold">Email:</span>{' '}
-              <span className="text-muted-foreground">{email}</span>
-            </p>
-            <p className="text-foreground">
-              <span className="font-semibold">Bio:</span>{' '}
-              <span className="text-muted-foreground">{bio}</span>
-            </p>
+          <p className="text-foreground">
+            <span className="font-semibold">Email:</span>{' '}
+            <span className="text-muted-foreground">{email}</span>
+          </p>
+          <p className="text-foreground">
+            <span className="font-semibold">Bio:</span>{' '}
+            <span className="text-muted-foreground">{bio}</span>
+          </p>
         </div>
       </div>
+
+      <UserSettingsPopup
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </section>
   )
 }

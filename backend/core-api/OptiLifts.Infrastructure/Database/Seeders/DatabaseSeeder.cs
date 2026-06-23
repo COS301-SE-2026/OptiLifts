@@ -47,6 +47,21 @@ public static class DatabaseSeeder
                 Metric = true,
                 LightTheme = true
             },
+            new
+            {
+                // Rich profile-page demo account. Workouts/logs are seeded in seed-demo-data.sql.
+                Email = "gymgoer@gmail.com",
+                Password = "GymGoer123!",
+                DisplayName = "Alex",
+                Level = 12,
+                Weight = "78.0",
+                Height = "182",
+                Sex = "Male",
+                DateOfBirth = "1999-02-14",
+                Bio = "Loves to gym every day all day. This is their favourite app ever.",
+                Metric = true,
+                LightTheme = false
+            }
         };
 
         foreach (var u in usersToEnsure)

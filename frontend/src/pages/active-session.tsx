@@ -91,6 +91,35 @@ export default function ActiveSessionPage() {
             </div>
           </div>
         </div>
+
+        <div className="flex flex-col gap-6 w-full">
+          
+          <Card className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
+            <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
+                <div>
+                  <CardTitle className="text-base font-bold">{exercises[0].name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{exercises[0].muscleGroup}</p>
+                </div>
+              </div>
+              <CardAction>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                </Button>
+              </CardAction>
+            </CardHeader>
+
+            <CardContent className="px-5 pb-4">
+              <div className="mb-2 grid grid-cols-[4rem_1.5fr_1fr_1fr_1fr_5rem] gap-4 px-2 text-center text-xs font-semibold tracking-wide text-muted-foreground">
+                <div>SET</div>
+                <div>PREVIOUS</div>
+                <div>KG</div>
+                <div>REPS</div>
+                <div>RPE</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </section>
   )

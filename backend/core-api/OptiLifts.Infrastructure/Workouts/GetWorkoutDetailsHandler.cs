@@ -27,5 +27,27 @@ public sealed class GetWorkoutDetailsHandler : IRequestHandler<GetWorkoutDetails
             return null;
         }
 
+        var exerciseRows = await (
+            from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
+            where workoutExercise.WorkoutId == request.WorkoutId
+            join exercise in _dbContext.Exercises.AsNoTracking()
+                on workoutExercise.ExerciseId equals exercise.Id
+            join muscle in _dbContext.Muscles.AsNoTracking()
+                on exercise.PrimaryMuscleId equals muscle.Id into muscleJoin
+            from muscle in muscleJoin.DefaultIfEmpty()
+            orderby workoutExercise.OrderIndex
+            select new
+            {
+                workoutExercise.Id,
+                workoutExercise.ExerciseId,
+                ExerciseName = exercise.Name,
+                MuscleGroup = muscle != null ? muscle.Name : "Unknown",
+                workoutExercise.OrderIndex
+            })
+            .ToListAsync(cancellationToken);
+
+        var workoutExerciseIds = exerciseRows.Select(row => row.Id).ToArray();
+
+
     }
 }

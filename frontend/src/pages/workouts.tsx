@@ -198,7 +198,7 @@ export default function WorkoutsPage() {
                   }
                 }}
               >
-                <CardHeader>
+                <CardHeader className="flex items-start justify-between">
                   <CardTitle className="font-bold">{w.name}</CardTitle>
                   <CardAction>
                     <DropdownMenu>
@@ -212,9 +212,14 @@ export default function WorkoutsPage() {
                   </CardAction>
                 </CardHeader>
 
-                <CardContent>
-                  <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
-                  <p className="text-sm mt-1 text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
+                <CardContent className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
+                    <p className="mt-1 text-sm text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
+                  </div>
+                  <Button size="sm" onClick={() => navigate('/active-session', { state: { workout: w } })}>
+                    Start Workout
+                  </Button>
                 </CardContent>
               </Card>
             ))}

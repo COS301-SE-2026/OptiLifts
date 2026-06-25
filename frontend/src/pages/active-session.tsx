@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
+import { NumericalUnderscoreInput } from '@/components/ui/input'
+import { Check, X, Plus, ChevronDown, MoreHorizontal } from 'lucide-react'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -74,6 +76,16 @@ export default function ActiveSessionPage() {
     []
   )
 
+  const summary = useMemo(() => {
+    const completedSets = exercises.flatMap((exercise) => exercise.sets).filter((set) => set.completed)
+    const totalVolume = 1500 
+    
+    return {
+      completedSets: completedSets.length,
+      totalSets: 12,
+      totalVolume,
+    }
+  }, [exercises])
 
   return (
     <section className="w-full px-6 py-6 font-sans text-foreground">
@@ -88,6 +100,14 @@ export default function ActiveSessionPage() {
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Duration</p>
               <p className="text-sm font-bold">{formatTime(secondsElapsed)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">Volume</p>
+              <p className="text-sm font-bold">{summary.totalVolume.toLocaleString()} kg</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">Sets</p>
+              <p className="text-sm font-bold">{summary.totalSets}</p>
             </div>
           </div>
         </div>
@@ -105,6 +125,7 @@ export default function ActiveSessionPage() {
               </div>
               <CardAction>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <MoreHorizontal className="h-5 w-5" />
                 </Button>
               </CardAction>
             </CardHeader>
@@ -116,7 +137,45 @@ export default function ActiveSessionPage() {
                 <div>KG</div>
                 <div>REPS</div>
                 <div>RPE</div>
+                <div className="w-full flex justify-center"><Check className="h-4 w-4" /></div>
               </div>
+
+              <div className="space-y-2">
+                {exercises[0].sets.map((set) => (
+                  <div key={set.id} className="grid grid-cols-[4rem_1.5fr_1fr_1fr_0.8fr_5rem] items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium">
+                    <Button variant="outline" size="sm" className="h-8 w-full justify-between px-2 text-xs bg-surface-2">
+                      {set.type} <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
+                    </Button>
+                    
+                    <div className="text-muted-foreground font-normal">{set.previous}</div>
+                    
+                    <NumericalUnderscoreInput
+                      defaultValue={set.kg}
+                      className="text-xl text-center mx-auto"
+                    />
+                    <NumericalUnderscoreInput
+                      defaultValue={set.reps}
+                      className="text-xl text-center mx-auto"
+                    />
+                    <div className="flex items-center justify-center border border-border rounded-md h-7 bg-surface-2">
+                      <span className="text-xs w-full text-center">{set.rpe}</span>
+                    </div>
+                    
+                    <div className="flex w-full items-center justify-center gap-1">
+                      <Button variant="icon" size="icon" className="h-7 w-7 rounded-md bg-surface-2 border-border">
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button variant="outline" className="mt-3 w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-9 text-xs">
+                <Plus className="mr-2 h-3.5 w-3.5" /> Add Set
+              </Button>
             </CardContent>
           </Card>
         </div>

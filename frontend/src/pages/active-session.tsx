@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -9,7 +11,23 @@ type WorkoutLocationState = Readonly<{
   }>
 }>
 
+type SetData = {
+  id: string
+  type: 'W' | '1' | '2' | '3'
+  previous: string
+  kg: number | string
+  reps: number | string
+  rpe: number | string
+  completed: boolean
+}
 
+type ExerciseData = Readonly<{
+  id: string
+  name: string
+  muscleGroup: string
+  sets: SetData[]
+  recommendation?: string
+}>
 
 export default function ActiveSessionPage() {
   const location = useLocation()
@@ -29,6 +47,32 @@ export default function ActiveSessionPage() {
     if (h > 0) return `${h}h ${m}min`
     return `${m}m`
   }
+
+  const exercises: ExerciseData[] = useMemo(
+    () => [
+      {
+        id: 'bicep-curl-1',
+        name: 'Bicep Curl (Dumbbell)',
+        muscleGroup: 'Biceps',
+        sets: [
+          { id: '1', type: 'W', previous: '20KG x 10', kg: 20, reps: 11, rpe: 8.5, completed: true },
+          { id: '2', type: '1', previous: '20KG x 8', kg: 20, reps: 8, rpe: 'RPE', completed: true },
+          { id: '3', type: '2', previous: '20KG x 7', kg: 20, reps: 7, rpe: 'RPE', completed: true },
+        ],
+      },
+      {
+        id: 'bicep-curl-2',
+        name: 'Bicep Curl (Dumbbell)',
+        muscleGroup: 'Biceps',
+        sets: [
+          { id: '1', type: 'W', previous: '20KG x 10', kg: 20, reps: 11, rpe: 8.5, completed: true },
+          { id: '2', type: '1', previous: '20KG x 8', kg: 20, reps: 8, rpe: 'RPE', completed: true },
+          { id: '3', type: '2', previous: '20KG x 7', kg: 20, reps: 7, rpe: 'RPE', completed: false },
+        ],
+      },
+    ],
+    []
+  )
 
 
   return (

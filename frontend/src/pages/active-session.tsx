@@ -198,7 +198,70 @@ export default function ActiveSessionPage() {
               </CardContent>
             </Card>
 
+            <Card className="border-border bg-card rounded-xl">
+              <CardHeader className="pb-1 px-4 pt-4">
+                <CardTitle className="text-sm font-bold">Why?</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Based on your RPE, this would be a good alternative for your next exercise.
+                </p>
+              </CardContent>
+            </Card>
           </div>
+
+          <Card className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
+            <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
+                <div>
+                  <CardTitle className="text-base font-bold">{exercises[1].name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{exercises[1].muscleGroup}</p>
+                </div>
+              </div>
+              <CardAction>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </CardAction>
+            </CardHeader>
+
+            <CardContent className="px-5 pb-4">
+              <div className="space-y-2">
+                {exercises[1].sets.map((set) => (
+                  <div key={set.id} className="grid grid-cols-[4rem_1.5fr_1fr_1fr_0.8fr_5rem] items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium">
+                    <Button variant="outline" size="sm" className="h-8 w-full justify-between px-2 text-xs bg-surface-2">
+                      {set.type} <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
+                    </Button>
+                    
+                    <div className="text-muted-foreground font-normal">{set.previous}</div>
+                    
+                    <NumericalUnderscoreInput
+                      defaultValue={set.kg}
+                      className="text-xl text-center mx-auto"
+                    />
+                    <NumericalUnderscoreInput
+                      defaultValue={set.reps}
+                      className="text-xl text-center mx-auto"
+                    />
+                    <div className="flex items-center justify-center border border-border rounded-md h-7 bg-surface-2">
+                      <span className="text-xs w-full text-center">{set.rpe}</span>
+                    </div>
+                    
+                    <div className="flex w-full items-center justify-center gap-1">
+                      <Button variant="icon" size="icon" className="h-7 w-7 rounded-md bg-surface-2 border-border">
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
         </div>
       </div>
     </section>

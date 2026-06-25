@@ -48,6 +48,25 @@ public sealed class GetWorkoutDetailsHandler : IRequestHandler<GetWorkoutDetails
 
         var workoutExerciseIds = exerciseRows.Select(row => row.Id).ToArray();
 
+        var setRows = workoutExerciseIds.Length == 0
+            ? []
+            : await _dbContext.Sets
+                .AsNoTracking()
+                .Where(set => workoutExerciseIds.Contains(set.WorkoutExerciseId))
+                .Select(set => new
+                {
+                    set.Id,
+                    set.WorkoutExerciseId,
+                    Type = set.Type.ToString(),
+                    set.Reps,
+                    set.Weight,
+                    set.Duration,
+                    set.Distance,
+                    set.OrderIndex,
+                    set.RestTime
+                })
+                .ToListAsync(cancellationToken);
+
 
     }
 }

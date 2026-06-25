@@ -178,6 +178,27 @@ export default function ActiveSessionPage() {
               </Button>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="border-border bg-card rounded-xl">
+              <CardHeader className="pb-2 px-4 pt-4">
+                <CardTitle className="text-sm font-bold">Recommended</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center justify-between px-4 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-surface-2 border border-border" />
+                  <div>
+                    <p className="text-sm font-bold leading-tight">Bicep curl</p>
+                    <p className="text-xs text-muted-foreground">Biceps</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="icon" className="h-7 w-7 rounded-md bg-surface-2 border-border">
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </CardContent>
+            </Card>
+
+          </div>
         </div>
       </div>
     </section>

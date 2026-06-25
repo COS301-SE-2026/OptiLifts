@@ -5,6 +5,5 @@ public sealed record CreateWorkoutResult(
     Guid WorkoutId,
     string Name,
     Guid? FolderId,
-    int? DayIndex,
     DateTime CreatedAt
 );

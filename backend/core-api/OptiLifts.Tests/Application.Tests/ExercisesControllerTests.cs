@@ -31,7 +31,7 @@ public class ExercisesControllerTests
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) }));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } };
 
-        var result = await controller.GetExercises(CancellationToken.None);
+        var result = await controller.GetExercises(null, null, null, CancellationToken.None);
 
         result.Should().BeOfType<OkObjectResult>();
         var ok = result as OkObjectResult;

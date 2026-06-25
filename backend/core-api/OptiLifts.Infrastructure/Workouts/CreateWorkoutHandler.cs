@@ -20,7 +20,6 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
         {
             FolderId = request.FolderId,
             Name = request.Name,
-            DayIndex = request.DayIndex,
             CreatedBy = request.CreatedBy,
             CreatedAt = DateTime.UtcNow
         };
@@ -58,7 +57,6 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
             workout.Id,
             workout.Name,
             workout.FolderId,
-            workout.DayIndex,
             workout.CreatedAt
         );
     }

@@ -45,7 +45,7 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
             UserId = request.UserId,
             Name = request.Name,
             Mechanic = request.Mechanic,
-            Equipment = request.Equipment,
+            Equipment = request.Equipment?.Trim().ToLower(),
             ExerciseType = exerciseType,
             PrimaryMuscleId = primaryMuscleId,
             ImageUrl = imageUrl

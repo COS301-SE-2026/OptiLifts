@@ -1,0 +1,27 @@
+root = true
+[*.cs]
+
+# linux line endings
+end_of_line = lf
+
+indent_style = space
+indent_size = 4
+
+# organize using directives
+dotnet_sort_system_usings_first = true:suggestion
+dotnet_separate_import_directive_groups = true:suggestion
+
+# namespace declarations 
+csharp_style_namespace_declarations = file_scoped:error
+
+# new line formatting
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# Exclude EF Core Migrations
+[**/Migrations/**]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.severity = none

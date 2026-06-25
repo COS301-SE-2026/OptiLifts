@@ -1,11 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MediatR;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
-using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.CreateWorkout;
+using OptiLifts.Application.Workouts.DeleteWorkout;
+using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.GetWorkouts;
 
 namespace OptiLifts.API.Controllers;
 
@@ -44,11 +46,15 @@ public sealed class WorkoutsController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized();
 
-        var sets = request.Sets
-            .Select(s => new CreateWorkoutSetDto(s.ExerciseId, s.Type, s.Reps, s.Weight, s.OrderIndex, s.RestTime))
+        var exercises = request.Exercises
+            .Select(e => new CreateWorkoutExerciseDto(
+                e.ExerciseId,
+                e.OrderIndex,
+                e.Sets.Select(s => new CreateWorkoutSetDto(
+                    s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.OrderIndex, s.RestTime)).ToList()))
             .ToList();
 
-        var command = new CreateWorkoutCommand(request.FolderId, request.Name, request.DayIndex, userId, sets);
+        var command = new CreateWorkoutCommand(request.FolderId, request.Name, request.DayIndex, userId, exercises);
         var result = await _sender.Send(command, cancellationToken);
 
         return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);
@@ -79,4 +85,55 @@ public sealed class WorkoutsController : ControllerBase
 
         return Guid.TryParse(userIdValue, out userId);
     }
+
+    [HttpDelete("{workoutId:guid}")]
+    public async Task<IActionResult> DeleteWorkout(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var deleted = await _sender.Send(new DeleteWorkoutCommand(workoutId, userId), cancellationToken);
+
+        if (!deleted)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Workout was not found for this user."
+            });
+
+        }
+        return Ok(new { message = "Workout deleted successfully." });
+
+    }
+
+    [HttpPost("{workoutId:guid}/duplicate")]
+    public async Task<ActionResult<DuplicateWorkoutResult>> DuplicateWorkout(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var result = await _sender.Send(new DuplicateWorkoutCommand(workoutId, userId), cancellationToken);
+
+        if (result == null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Source workout was not found for this user."
+            });
+        }
+        return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);
+
+    }
+
+
 }

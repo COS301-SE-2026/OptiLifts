@@ -1,11 +1,11 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Configuration;
 using OptiLifts.Application.Storage;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using System;
 
 namespace OptiLifts.Infrastructure.Storage;
 
@@ -15,7 +15,7 @@ public class AzureBlobStorageService : IBlobStorageService
 
     public AzureBlobStorageService(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("AzureStorage");
+        _connectionString = configuration.GetConnectionString("AzureStorage")!;
 
         if (string.IsNullOrWhiteSpace(_connectionString))
         {

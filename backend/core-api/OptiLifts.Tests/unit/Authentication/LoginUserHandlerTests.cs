@@ -7,8 +7,9 @@ using OptiLifts.Application.Auth.Login;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 
-namespace OptiLifts.Tests.Authentication;
+namespace OptiLifts.Tests.Unit.Authentication;
 
 public class LoginUserHandlerTests
 {
@@ -35,6 +36,7 @@ public class LoginUserHandlerTests
         context.Users.Add(new User
         {
             Email = "jordan@gmail.com",
+            EmailHash = EmailHasher.HashEmail("jordan@gmail.com"),
             PasswordHash = "HASHED_Passw0rd!",
             DisplayName = "Jordan",
             CreatedAt = new DateTime(2026, 01, 01, 12, 0, 0, DateTimeKind.Utc)
@@ -53,7 +55,8 @@ public class LoginUserHandlerTests
         var result = await handler.Handle(lcmd, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.Token.Should().Be("FAKE_TOKEN");
+        result.AccessToken.Should().Be("FAKE_TOKEN");
+        result.RefreshToken.Should().NotBeNullOrWhiteSpace();
         result.User.Email.Should().Be("jordan@gmail.com");
         result.User.DisplayName.Should().Be("Jordan");
         result.User.CreatedAt.Should().Be(new DateTime(2026, 01, 01, 12, 0, 0, DateTimeKind.Utc));
@@ -93,6 +96,7 @@ public class LoginUserHandlerTests
         context.Users.Add(new User
         {
             Email = "jordan@gmail.com",
+            EmailHash = EmailHasher.HashEmail("jordan@gmail.com"),
             PasswordHash = "HASHED_Passw0rd!",
             DisplayName = "Jordan"
         });

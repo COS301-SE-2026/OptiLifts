@@ -1,5 +1,5 @@
-using MediatR;
 using System.IO;
+using MediatR;
 
 namespace OptiLifts.Application.Exercises.CreateCustomExercise;
 

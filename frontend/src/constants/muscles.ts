@@ -1,10 +1,10 @@
 export const MUSCLE_GROUPS = [
-  "Abdominals",
   "Abductors",
   "Adductors",
+  "Abdominals",
   "Biceps",
-  "Calves",
   "Chest",
+  "Calves",
   "Forearms",
   "Glutes",
   "Hamstrings",
@@ -13,7 +13,7 @@ export const MUSCLE_GROUPS = [
   "Middle Back",
   "Quadriceps",
   "Shoulders",
-  "Traps",
+  "Trapezius",
   "Triceps",
 ] as const
 

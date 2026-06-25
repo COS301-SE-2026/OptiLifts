@@ -7,6 +7,7 @@ using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.GetWorkoutDetails;
 using OptiLifts.Application.Workouts.GetWorkouts;
 
 namespace OptiLifts.API.Controllers;
@@ -35,6 +36,25 @@ public sealed class WorkoutsController : ControllerBase
         }
 
         var result = await _sender.Send(new GetWorkoutsQuery(userId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{workoutId:guid}")]
+    public async Task<ActionResult<WorkoutDetailDto>> GetWorkoutById(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _sender.Send(new GetWorkoutDetailsQuery(workoutId, userId), cancellationToken);
+        if (result is null)
+        {
+            return NotFound();
+        }
+
         return Ok(result);
     }
 

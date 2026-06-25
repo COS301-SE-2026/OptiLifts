@@ -67,6 +67,40 @@ public sealed class GetWorkoutDetailsHandler : IRequestHandler<GetWorkoutDetails
                 })
                 .ToListAsync(cancellationToken);
 
+        var setsByExerciseId = setRows
+            .GroupBy(row => row.WorkoutExerciseId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<WorkoutSetDetailDto>)group
+                    .OrderBy(row => row.OrderIndex)
+                    .Select(row => new WorkoutSetDetailDto(
+                        row.Id,
+                        row.Type,
+                        row.Reps,
+                        row.Weight,
+                        row.Duration,
+                        row.Distance,
+                        row.OrderIndex,
+                        row.RestTime))
+                    .ToList());
 
+        var exercises = exerciseRows
+            .Select(row => new WorkoutExerciseDetailDto(
+                row.Id,
+                row.ExerciseId,
+                row.ExerciseName,
+                row.MuscleGroup,
+                row.OrderIndex,
+                setsByExerciseId.TryGetValue(row.Id, out var sets) ? sets : []))
+            .ToList();
+
+        var primaryMuscleGroups = exercises
+            .Select(exercise => exercise.MuscleGroup)
+            .Where(name => !string.IsNullOrWhiteSpace(name) && name != "Unknown")
+            .Distinct()
+            .Take(3)
+            .ToArray();
+
+        return new WorkoutDetailDto(workout.Id, workout.Name, primaryMuscleGroups, exercises);
     }
 }

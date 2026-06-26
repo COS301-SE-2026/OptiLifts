@@ -1,4 +1,4 @@
-import badgeIcon from '../../../../docs/images/badge.png'
+import badgeIcon from "../../assets/badge.png";
 import type { WorkoutOverviewProps } from '@/types/workout'
 
 const MAX_VISIBLE_EXERCISES = 10

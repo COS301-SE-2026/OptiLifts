@@ -35,6 +35,7 @@ services:
     build:
       context: ./backend/core-api
       dockerfile: Dockerfile
+      network: host
       
     ports:
       - "5036:8080"
@@ -53,6 +54,7 @@ services:
       - AiApiBaseUrl=http://ai-api:8000
       
       - RUN_MIGRATIONS=true
+      - DEV_SEEDING=${DEV_SEEDING}
 
     depends_on:
       db:
@@ -67,6 +69,7 @@ services:
     build:
       context: ./backend/ai-api
       dockerfile: Dockerfile
+      network: host
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -75,8 +78,9 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      network: host
       args:
-        - VITE_API_BASE= ${VITE_API_BASE}
+        - VITE_API_BASE=/api
     # so application is on 5173 externally 
     ports:
       - "${FRONTEND_PORT:-5173}:8080"

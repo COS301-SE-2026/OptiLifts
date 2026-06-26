@@ -13,6 +13,20 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken = default)
     {
         await SeedUsersAsync(dbContext, cancellationToken);
+
+        if (!await dbContext.Workouts.AnyAsync(cancellationToken))
+        {
+            var assembly = typeof(DatabaseSeeder).Assembly;
+            using var stream = assembly.GetManifestResourceStream("OptiLifts.Infrastructure.Database.SqlScripts.seed-demo-data.sql");
+
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream);
+                var script = await reader.ReadToEndAsync(cancellationToken);
+
+                await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
+            }
+        }
     }
 
     private static async Task SeedUsersAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)

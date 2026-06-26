@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const rootDir = fileURLToPath(new URL('..', import.meta.url))
   const env = loadEnv(mode, rootDir, '')
 
-  const apiBaseUrl = env.VITE_API_BASE ?? 'http://localhost:5036'
+  const apiBaseUrl = env.API_BASE_URL ?? 'http://localhost:5036'
   const frontendPort = Number(env.FRONTEND_PORT ?? '5173')
 
   return {

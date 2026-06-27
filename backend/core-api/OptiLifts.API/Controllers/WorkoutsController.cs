@@ -57,7 +57,7 @@ public sealed class WorkoutsController : ControllerBase
                     s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.OrderIndex, s.RestTime)).ToList()))
             .ToList();
 
-        var command = new CreateWorkoutCommand(request.FolderId, request.Name, request.DayIndex, userId, exercises);
+        var command = new CreateWorkoutCommand(request.FolderId, request.Name, userId, exercises);
         var result = await _sender.Send(command, cancellationToken);
 
         return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);

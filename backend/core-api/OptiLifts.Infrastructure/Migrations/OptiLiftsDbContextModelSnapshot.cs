@@ -423,10 +423,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
-                    b.Property<int?>("DayIndex")
-                        .HasColumnType("integer")
-                        .HasColumnName("day_index");
-
                     b.Property<Guid?>("FolderId")
                         .HasColumnType("uuid")
                         .HasColumnName("folder_id");

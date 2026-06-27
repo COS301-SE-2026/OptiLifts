@@ -22,15 +22,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { WorkoutExercise } from '@/types/create-workout'
+import type { WorkoutExercise, SetType } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
-
-type WorkoutCreationResponse = {
-  workoutId?: string
-  WorkoutId?: string
-  id?: string
-}
 
 type CatalogExercise = {
   id: string
@@ -48,6 +42,28 @@ type ExerciseApiResponse = {
   imageUrl?: string
 }
 
+type CreateWorkoutSetPayload = {
+  type: string
+  reps: number | null
+  weight: number | null
+  duration: number | null
+  distance: number | null
+  orderIndex: number
+  restTime: number
+}
+
+type CreateWorkoutExercisePayload = {
+  exerciseId: string
+  orderIndex: number
+  sets: CreateWorkoutSetPayload[]
+}
+
+type CreateWorkoutPayload = {
+  name: string
+  folderId: string | null
+  exercises: CreateWorkoutExercisePayload[]
+}
+
 type SelectedWorkoutExercise = WorkoutExercise & {
   exerciseCatalogId?: string
 }
@@ -63,7 +79,6 @@ const RECOMMENDED_EXERCISES = [
 
 
 const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
-const EQUIPMENT_OPTIONS = ['All Equipment', 'Dumbbell', 'Barbell', 'Cable', 'Machine', 'Bodyweight'] as const
 
 function MuscleDiagramPlaceholder() 
 {
@@ -76,6 +91,30 @@ function MuscleDiagramPlaceholder()
 
 let nextExerciseId = 0
 
+const SET_TYPE_MAP: Record<SetType, string> = { W: 'Warmup', I: 'Normal', D: 'Dropset'}
+
+async function getErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    if ((res.headers.get('content-type') ?? '').includes('application/json')) {
+      const data = await res.json()
+      const msg = data?.message ?? data?.detail ?? data?.title    
+      if (typeof msg === 'string' && msg.trim()) return msg
+    }
+  }
+  catch {
+    // body wasn't JSON or couldn't be read; fall through to status-based message
+  }
+  switch (res.status) {
+    case 400: return "Some workout details are invalid. Please check and try again."
+    case 401: return "Your session has expired. Please login again."
+    case 403: return "You do not have permission to do that."
+    case 404: return "Workout Service not found"
+    case 409: return "You already have a workout with these details."
+    case 500: return "Something went wrong on our end. Please try again in a few minutes"
+    default: return fallback
+  }
+}
+
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
   const [workoutName, setWorkoutName] = useState('')
@@ -83,9 +122,9 @@ export default function CreateWorkoutPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
-  const [selectedEquipment, setSelectedEquipment] = useState<(typeof EQUIPMENT_OPTIONS)[number]>('All Equipment')
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
-
+ 
   const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
@@ -180,43 +219,40 @@ export default function CreateWorkoutPage() {
 
   const saveWorkout = async () => {
     if (!workoutName.trim() || !isAuthenticated) return
+    
+    const payload: CreateWorkoutPayload = {
+      name: workoutName.trim(),
+      folderId: null,
+      exercises: exercises
+        .filter(e => e.exerciseCatalogId)
+        .map((e, exerciseIndex) => ({
+          exerciseId: e.exerciseCatalogId as string,
+          orderIndex: exerciseIndex,
+          sets: e.sets.map((s, setIndex) => ({
+            type: SET_TYPE_MAP[s.type] ?? 'Normal',
+            reps: s.reps === '' ? null : Number(s.reps),
+            weight: s.kg === '' ? null : Number(s.kg),
+            duration: null,
+            distance: null,
+            orderIndex: setIndex,
+            restTime: 0,
+          })),
+        })),
+    }
+
     setSaving(true)
     setSaveError(null)
+    
     try {
       const res = await customFetch('/api/workouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json'},
-        body: JSON.stringify({ folderId: null, name: workoutName.trim(), dayIndex: null, sets: [] }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || `Failed to create workout (${res.status})`)
-      }
-
-      const createdWorkout = (await res.json()) as WorkoutCreationResponse
-      const workoutId = createdWorkout.workoutId ?? createdWorkout.WorkoutId ?? createdWorkout.id
-
-      const exerciseIds = exercises
-        .map(exercise => exercise.exerciseCatalogId)
-        .filter((id): id is string => Boolean(id))
-
-      if (workoutId && exerciseIds.length > 0) {
-        await Promise.all(
-          exerciseIds.map(async (exerciseId) => {
-            const addResponse = await customFetch(`/api/workouts/${workoutId}/exercises`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'              },
-              body: JSON.stringify({ exerciseId }),
-            })
-
-            if (!addResponse.ok) {
-              const text = await addResponse.text()
-              throw new Error(text || `Failed to add exercise ${exerciseId} to workout (${addResponse.status})`)
-            }
-          })
-        )
+        setSaveError(await getErrorMessage(res, `Failed to create workout (${res.status})`))
+        return
       }
 
       navigate('/workouts')
@@ -235,11 +271,13 @@ export default function CreateWorkoutPage() {
     return true
   })
 
+  const EQUIPMENT_OPTIONS = ['All Equipment', ...Array.from(new Set(allExercises.map(e => e.equipment).filter(Boolean) as string[])).map(e => e.charAt(0).toUpperCase() + e.slice(1))]
+
   const filteredExercises = allExercises.filter((ex) => {
     const q = searchQuery.trim().toLowerCase()
     if (q && !ex.name.toLowerCase().includes(q) && !ex.muscleGroup.toLowerCase().includes(q)) return false
     if (selectedMuscle !== 'All Muscles' && ex.muscleGroup !== selectedMuscle) return false
-    if (selectedEquipment !== 'All Equipment' && ex.equipment !== selectedEquipment) return false
+    if (selectedEquipment !== 'All Equipment' && ex.equipment?.toLowerCase() !== selectedEquipment.toLowerCase()) return false
     return true
   })
 
@@ -257,7 +295,7 @@ export default function CreateWorkoutPage() {
     }
 
     return filteredExercises.map((ex) => (
-      <div key={ex.name} className="flex items-center gap-3 px-2 py-2.5">
+      <div key={ex.id} className="flex items-center gap-3 px-2 py-2.5">
         <CircularProfileImage
           src={ex.imageUrl}
           alt={ex.name}

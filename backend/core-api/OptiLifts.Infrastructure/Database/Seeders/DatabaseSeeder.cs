@@ -8,12 +8,25 @@ namespace OptiLifts.Infrastructure.Database.Seeders;
 public static class DatabaseSeeder
 {
     // Only encryption-critical data (users) is seeded here, because writing through
-    // EF is what applies the [Encrypted] value converters. All reference/demo data
-    // (muscles, exercises, folders, workouts, sets) lives in
-    // SqlScripts/seed-demo-data.sql and is loaded via `pnpm db:seed:sql`.
+    // EF is what applies the [Encrypted] value converters. The Alex profile demo
+    // rows now live in Database/SqlScripts/seed-demo-data.sql.
     public static async Task SeedAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken = default)
     {
         await SeedUsersAsync(dbContext, cancellationToken);
+
+        if (!await dbContext.Workouts.AnyAsync(cancellationToken))
+        {
+            var assembly = typeof(DatabaseSeeder).Assembly;
+            using var stream = assembly.GetManifestResourceStream("OptiLifts.Infrastructure.Database.SqlScripts.seed-demo-data.sql");
+
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream);
+                var script = await reader.ReadToEndAsync(cancellationToken);
+
+                await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
+            }
+        }
     }
 
     private static async Task SeedUsersAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)

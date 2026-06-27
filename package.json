@@ -11,6 +11,11 @@
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
     "dev:ai": "cd backend/ai-api && ./venv/bin/uvicorn main:app --reload --port 8000",
 
+    "prod": "docker compose -f docker-compose.prod.yml up --build -d",
+    "prod:stop": "docker compose -f docker-compose.prod.yml stop",
+    "prod:down": "docker compose -f docker-compose.prod.yml down",
+    "prod:down:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
+
     "db": "docker compose up -d",
     "db:start": "docker compose start",
     "db:stop": "docker compose stop",

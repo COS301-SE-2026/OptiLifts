@@ -20,6 +20,5 @@ public sealed record CreateWorkoutExerciseRequest(
 public sealed record CreateWorkoutRequest(
     Guid? FolderId,
     string Name,
-    int? DayIndex,
     IReadOnlyList<CreateWorkoutExerciseRequest> Exercises
 );

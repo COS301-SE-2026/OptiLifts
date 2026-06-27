@@ -51,14 +51,13 @@ public class CreateWorkoutHandlerTests
         var (userId, folderId) = await SeedUserAndFolder(db, "a@example.com");
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Push Day A", 1, userId, []);
+        var command = new CreateWorkoutCommand(folderId, "Push Day A", userId, []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.WorkoutId.Should().NotBeEmpty();
         result.Name.Should().Be("Push Day A");
         result.FolderId.Should().Be(folderId);
-        result.DayIndex.Should().Be(1);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         var saved = await db.Workouts.FindAsync(result.WorkoutId);
@@ -95,12 +94,11 @@ public class CreateWorkoutHandlerTests
         };
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Push Day B", null, userId, exercises);
+        var command = new CreateWorkoutCommand(folderId, "Push Day B", userId, exercises);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.WorkoutId.Should().NotBeEmpty();
-        result.DayIndex.Should().BeNull();
 
         var workoutExerciseIds = db.WorkoutExercises
             .Where(we => we.WorkoutId == result.WorkoutId)
@@ -122,7 +120,7 @@ public class CreateWorkoutHandlerTests
         var (userId, folderId) = await SeedUserAndFolder(db, "c@example.com");
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Leg Day", 3, userId, []);
+        var command = new CreateWorkoutCommand(folderId, "Leg Day", userId, []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -131,6 +129,5 @@ public class CreateWorkoutHandlerTests
         saved!.Id.Should().Be(result.WorkoutId);
         saved.Name.Should().Be(result.Name);
         saved.FolderId.Should().Be(result.FolderId);
-        saved.DayIndex.Should().Be(result.DayIndex);
     }
 }

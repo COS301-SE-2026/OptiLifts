@@ -9,6 +9,7 @@ import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import WorkoutsPage from '@/pages/workouts'
 import BrandStylePage from '@/pages/brand-style/brand-style'
+import ProfilePage from '@/pages/profile'
 
 function AppLayout() {
   return (
@@ -69,7 +70,7 @@ function App() {
           <Route path="workouts/edit/:id" element={<EditWorkoutPage />} />
           <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
-          <Route path="profile" element={<PlaceholderPage title="Profile" description="Profile shell." />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>        
       </Route>
       <Route path="brand-style" element={<BrandStylePage />} />

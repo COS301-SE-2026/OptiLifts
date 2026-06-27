@@ -1,0 +1,11 @@
+.git
+.github
+
+node_modules
+**/node_modules
+frontend/dist
+frontend/node_modules
+
+backend/
+docs/
+tests/

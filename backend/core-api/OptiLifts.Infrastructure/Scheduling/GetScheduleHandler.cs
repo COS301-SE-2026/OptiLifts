@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application.Scheduling.GetSchedule;
 using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Scheduling;

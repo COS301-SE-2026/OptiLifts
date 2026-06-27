@@ -15,6 +15,7 @@ public class WorkoutExerciseConfiguration : IEntityTypeConfiguration<WorkoutExer
 
         builder.Property(we => we.WorkoutId).HasColumnName("workout_id").IsRequired();
         builder.Property(we => we.ExerciseId).HasColumnName("exercise_dict_id").IsRequired();
+        builder.Property(we => we.GroupId).HasColumnName("group_id");
         builder.Property(we => we.OrderIndex).HasColumnName("order_index").IsRequired();
 
         //FK relationship between WE and Workout
@@ -28,5 +29,11 @@ public class WorkoutExerciseConfiguration : IEntityTypeConfiguration<WorkoutExer
                 .WithMany()
                 .HasForeignKey(we => we.ExerciseId)
                 .OnDelete(DeleteBehavior.Restrict);
+        
+        //FK between WE and ExerciseGroup
+        builder.HasOne<ExerciseGroup>()
+                .WithMany()
+                .HasForeignKey(we => we.GroupId)
+                .OnDelete(DeleteBehavior.SetNull);
     }
 }

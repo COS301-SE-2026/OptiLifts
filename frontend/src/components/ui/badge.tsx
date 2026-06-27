@@ -1,4 +1,4 @@
-import badgeIcon from '../../../../docs/images/badge.png'
+import badgeIcon from "../../assets/badge.png";
 
 type BadgeProps = Readonly<{
   name: string

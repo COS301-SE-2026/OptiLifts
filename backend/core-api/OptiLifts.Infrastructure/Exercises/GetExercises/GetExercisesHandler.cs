@@ -17,9 +17,28 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
 
     public async Task<List<ExerciseDto>> Handle(GetExercisesQuery request, CancellationToken cancellationToken)
     {
-        var exercises = await _dbContext.Exercises
-            .Where(e => e.UserId == null || e.UserId == request.UserId)
-            .ToListAsync(cancellationToken);
+        var query = _dbContext.Exercises
+            .Where(e => e.UserId == null || e.UserId == request.UserId);
+
+        if (!string.IsNullOrWhiteSpace(request.Equipment))
+        {
+            var equipment = request.Equipment.Trim().ToLower();
+            query = query.Where(e => e.Equipment != null && e.Equipment.ToLower() == equipment);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Muscle))
+        {
+            var muscle = request.Muscle.Trim().ToLower();
+            query = query.Where(e => _dbContext.Muscles.Any(m => m.Id == e.PrimaryMuscleId && m.Name.ToLower() == muscle));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.Trim().ToLower();
+            query = query.Where(e => e.Name.ToLower().Contains(search) || _dbContext.Muscles.Any(m => m.Id == e.PrimaryMuscleId && m.Name.ToLower().Contains(search)));
+        }
+
+        var exercises = await query.ToListAsync(cancellationToken);
 
         var exerciseIds = exercises.Select(e => e.Id).ToList();
         var primaryMuscleIds = exercises.Select(e => e.PrimaryMuscleId).Distinct().ToList();

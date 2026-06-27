@@ -1,12 +1,8 @@
-using System.Text;
 using DotNetEnv;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using OptiLifts.API;
 using OptiLifts.Application;
-using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
-using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Infrastructure.Gamification;
@@ -93,51 +89,7 @@ builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();
 builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 
 //register auth implementations
-builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-var jwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not set.");
-var jwtExpiryMinutes = int.TryParse(builder.Configuration["JWT_EXP_MINUTES"], out var expiryMinutes)
-    ? expiryMinutes
-    : 1440;
-
-byte[] keyBytes;
-try
-{
-    keyBytes = Convert.FromBase64String(jwtSecret);
-}
-catch (FormatException)
-{
-    keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
-}
-
-builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
-        };
-
-        //get token from http cookie
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                if (context.Request.Cookies.TryGetValue("access_token", out var token))
-                {
-                    context.Token = token;
-                }
-                return Task.CompletedTask;
-            }
-        };
-    });
-
+builder.Services.AuthProgramHelper(builder.Configuration);
 var app = builder.Build();
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
@@ -146,7 +98,12 @@ if (runMigrations)
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
     await dbContext.Database.MigrateAsync();
-    await DatabaseSeeder.SeedAsync(dbContext);
+
+    var seed = string.Equals(builder.Configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
+    if (seed)
+    {
+        await DatabaseSeeder.SeedAsync(dbContext);
+    }
 }
 
 // Swagger UI available at http://localhost:<port>/swagger

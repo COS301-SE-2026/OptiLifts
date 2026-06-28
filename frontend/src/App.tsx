@@ -7,6 +7,8 @@ import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import WorkoutsPage from '@/pages/workouts'
+import WorkoutDetailPage from '@/pages/workout-detail'
+import WorkoutLogDetailPage from '@/pages/workout-log-detail'
 import BrandStylePage from '@/pages/brand-style/brand-style'
 import ProfilePage from '@/pages/profile'
 
@@ -65,6 +67,8 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
           <Route path="workouts" element={<WorkoutsPage />} />
+          <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
+          <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
           <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />

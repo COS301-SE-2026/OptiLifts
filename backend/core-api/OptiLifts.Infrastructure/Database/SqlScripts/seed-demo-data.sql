@@ -217,11 +217,15 @@ SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.mu
 FROM seed_constants c
 CROSS JOIN LATERAL (VALUES
     ('Pull Up',             c.mechanic_compound, c.equipment_bodyweight, 'BodyweightReps',   c.muscle_lats),
+    ('Weighted Pull Up',    c.mechanic_compound, c.equipment_bodyweight, 'WeightedBodyweight', c.muscle_lats),
+    ('Assisted Pull Up',    c.mechanic_compound, c.equipment_machine,    'AssistedWeightReps', c.muscle_lats),
     ('Deadlift',            c.mechanic_compound, c.equipment_barbell,    c.exercise_type,    c.muscle_hamstrings),
     ('Dumbbell Bicep Curl', c.mechanic_isolated, c.equipment_dumbbell,   c.exercise_type,    c.muscle_biceps),
     ('Tricep Pushdown',     c.mechanic_isolated, c.equipment_cable,      c.exercise_type,    c.muscle_triceps),
     ('Plank',               c.mechanic_isolated, c.equipment_bodyweight, 'Duration',         c.muscle_abdominals),
-    ('Running',             c.mechanic_compound, c.equipment_bodyweight, 'DistanceDuration', c.muscle_quadriceps)
+    ('Weighted Plank',      c.mechanic_isolated, c.equipment_dumbbell,   'DurationWeight',   c.muscle_abdominals),
+    ('Running',             c.mechanic_compound, c.equipment_bodyweight, 'DistanceDuration', c.muscle_quadriceps),
+    ('Suitcase Carry',      c.mechanic_compound, c.equipment_dumbbell,   'WeightDistance',   c.muscle_lower_back)
 ) AS v(name, mechanic, equipment, exercise_type, muscle_name)
 JOIN muscles m ON m.name = v.muscle_name
 LEFT JOIN exercise_dictionary e ON e.name = v.name AND e.user_id IS NULL
@@ -360,9 +364,11 @@ DECLARE
     v_folder uuid;
     v_pull uuid;
     v_push uuid;
+    v_full_body uuid;
     v_we uuid;
     v_ex uuid;
     v_entry uuid;
+    v_log uuid;
     v_day timestamp;
     i int;
     rec record;
@@ -375,36 +381,103 @@ BEGIN
         RETURN;
     END IF;
 
-    -- idempotent: skip if the demo block is already present
-    PERFORM 1 FROM workouts WHERE user_id = alex_id AND name IN ('Pull', 'Push');
-    IF FOUND THEN
-        RAISE NOTICE 'Alex demo data already seeded - skipping.';
-        RETURN;
+    DELETE FROM workout_log_sets
+    WHERE log_id IN (
+        SELECT log_id
+        FROM workout_logs
+        WHERE entry_id IN (
+            SELECT entry_id
+            FROM scheduled_entries
+            WHERE user_id = alex_id
+        )
+    );
+
+    DELETE FROM workout_logs
+    WHERE entry_id IN (
+        SELECT entry_id
+        FROM scheduled_entries
+        WHERE user_id = alex_id
+    );
+
+    DELETE FROM scheduled_entries
+    WHERE user_id = alex_id;
+
+    DELETE FROM sets
+    WHERE workout_exercise_id IN (
+        SELECT workout_exercise_id
+        FROM workout_exercises
+        WHERE workout_id IN (
+            SELECT workout_id
+            FROM workouts
+            WHERE user_id = alex_id AND name IN ('Pull', 'Push')
+        )
+    );
+
+    DELETE FROM workout_exercises
+    WHERE workout_id IN (
+        SELECT workout_id
+        FROM workouts
+        WHERE user_id = alex_id AND name IN ('Pull', 'Push', 'Full Body')
+    );
+
+    DELETE FROM workouts
+    WHERE user_id = alex_id AND name = 'Full Body';
+
+    SELECT folder_id INTO v_folder
+    FROM folders
+    WHERE user_id = alex_id AND name = 'My Split'
+    LIMIT 1;
+
+    IF v_folder IS NULL THEN
+        INSERT INTO folders (folder_id, user_id, name, description, created_at)
+        VALUES (gen_random_uuid(), alex_id, 'My Split', 'Demo training split', NOW())
+        RETURNING folder_id INTO v_folder;
     END IF;
 
-    INSERT INTO folders (folder_id, user_id, name, description, created_at)
-    VALUES (gen_random_uuid(), alex_id, 'My Split', 'Demo training split', NOW())
-    RETURNING folder_id INTO v_folder;
+    SELECT workout_id INTO v_pull
+    FROM workouts
+    WHERE user_id = alex_id AND name = 'Pull'
+    LIMIT 1;
 
-    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-    VALUES (gen_random_uuid(), v_folder, 'Pull', 1, alex_id, NOW())
-    RETURNING workout_id INTO v_pull;
+    IF v_pull IS NULL THEN
+        INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, 'Pull', 1, alex_id, NOW())
+        RETURNING workout_id INTO v_pull;
+    END IF;
 
-    INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-    VALUES (gen_random_uuid(), v_folder, 'Push', 2, alex_id, NOW())
-    RETURNING workout_id INTO v_push;
+    SELECT workout_id INTO v_push
+    FROM workouts
+    WHERE user_id = alex_id AND name = 'Push'
+    LIMIT 1;
+
+    IF v_push IS NULL THEN
+        INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, 'Push', 2, alex_id, NOW())
+        RETURNING workout_id INTO v_push;
+    END IF;
+
+    SELECT workout_id INTO v_full_body
+    FROM workouts
+    WHERE user_id = alex_id AND name = 'Full Body'
+    LIMIT 1;
+
+    IF v_full_body IS NULL THEN
+        INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, 'Full Body', 3, alex_id, NOW())
+        RETURNING workout_id INTO v_full_body;
+    END IF;
 
     -- exercises + sets for each recent-workout card (volume = weight*reps, count = #sets)
     FOR rec IN
         SELECT * FROM (VALUES
-            (v_pull, 'Lat Pulldown',        1, 5, 12, 45::real),
-            (v_pull, 'Seated Cable Row',    2, 5, 10, 50::real),
-            (v_pull, 'Pull Up',             3, 4, 8,  0::real),
-            (v_pull, 'Dumbbell Bicep Curl', 4, 4, 12, 14::real),
-            (v_push, 'Barbell Bench Press', 1, 4, 8,  60::real),
-            (v_push, 'Overhead Press',      2, 4, 8,  40::real),
-            (v_push, 'Incline Dumbbell Press', 3, 4, 10, 30::real),
-            (v_push, 'Tricep Pushdown',     4, 4, 12, 25::real)
+            (v_pull, 'Lat Pulldown',            1, 5, 12, 45::real),
+            (v_pull, 'Seated Cable Row',        2, 4, 10, 50::real),
+            (v_pull, 'Pull Up',                 3, 4, 8,   0::real),
+            (v_pull, 'Dumbbell Bicep Curl',     4, 3, 12, 14::real),
+            (v_push, 'Barbell Bench Press',     1, 4, 8,  60::real),
+            (v_push, 'Overhead Press',          2, 4, 8,  40::real),
+            (v_push, 'Incline Dumbbell Press',   3, 4, 10, 30::real),
+            (v_push, 'Tricep Pushdown',          4, 4, 12, 25::real)
         ) AS t(workout_id, ex_name, ord, n_sets, reps, weight)
     LOOP
         SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
@@ -416,8 +489,34 @@ BEGIN
         VALUES (gen_random_uuid(), rec.workout_id, v_ex, rec.ord)
         RETURNING workout_exercise_id INTO v_we;
 
-        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, order_index, rest_time)
-        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, gs, 90
+        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, NULL, NULL, gs, 90
+        FROM generate_series(1, rec.n_sets) AS gs;
+    END LOOP;
+
+    FOR rec IN
+        SELECT * FROM (VALUES
+            (v_full_body, 'Barbell Bench Press',  1, 1,    8,   NULL::integer, 60::real,   NULL::real),
+            (v_full_body, 'Pull Up',              2, 1,   10,   NULL::integer, NULL::real,  0::real),
+            (v_full_body, 'Weighted Pull Up',     3, 1,    6,   NULL::integer, 10::real,    NULL::real),
+            (v_full_body, 'Assisted Pull Up',     4, 1,    8,   NULL::integer, 20::real,    NULL::real),
+            (v_full_body, 'Plank',                5, 1, NULL::integer, 60,     NULL::real,  NULL::real),
+            (v_full_body, 'Weighted Plank',       6, 1, NULL::integer, 45,     12::real,    NULL::real),
+            (v_full_body, 'Running',              7, 1, 1800,   900,          NULL::real,   NULL::real),
+            (v_full_body, 'Suitcase Carry',       8, 1,   30,    NULL::integer, 40::real,    30::real)
+        ) AS t(workout_id, ex_name, ord, n_sets, reps, duration, weight, distance)
+    LOOP
+        SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
+        WHERE name = rec.ex_name AND user_id IS NULL
+        LIMIT 1;
+        CONTINUE WHEN v_ex IS NULL;
+
+        INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index)
+        VALUES (gen_random_uuid(), rec.workout_id, v_ex, rec.ord)
+        RETURNING workout_exercise_id INTO v_we;
+
+        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, rec.duration, rec.distance, gs, 90
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
@@ -430,8 +529,64 @@ BEGIN
         RETURNING entry_id INTO v_entry;
 
         INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
-        VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '65 minutes', false, NULL);
+        VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '65 minutes', false, NULL)
+        RETURNING log_id INTO v_log;
+
+        PERFORM 1
+        FROM workout_log_sets
+        WHERE log_id = v_log;
+
+        IF FOUND THEN
+            CONTINUE;
+        END IF;
+
+        INSERT INTO workout_log_sets (
+            log_set_id, log_id, exercise_id, set_id, set_type, reps, weight, rpe, order_index, ai_suggested, logged_at)
+        SELECT
+            gen_random_uuid(),
+            v_log,
+            we.exercise_dict_id,
+            s.set_id,
+            s.set_type,
+            s.reps,
+            s.weight,
+            CASE WHEN i % 3 = 0 THEN 7.5 WHEN i % 3 = 1 THEN 8.0 ELSE 8.5 END,
+            s.order_index,
+            false,
+            v_day + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
+        FROM workout_exercises we
+        JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
+        WHERE we.workout_id = CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END
+          AND we.order_index <= 4;
     END LOOP;
+
+    v_day := TIMESTAMP '2026-03-23 17:00:00' + (51 * INTERVAL '41 hours');
+
+    INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+    VALUES (gen_random_uuid(), alex_id, v_full_body, v_day, 'Completed')
+    RETURNING entry_id INTO v_entry;
+
+    INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+    VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '82 minutes', false, NULL)
+    RETURNING log_id INTO v_log;
+
+    INSERT INTO workout_log_sets (
+        log_set_id, log_id, exercise_id, set_id, set_type, reps, weight, rpe, order_index, ai_suggested, logged_at)
+    SELECT
+        gen_random_uuid(),
+        v_log,
+        we.exercise_dict_id,
+        s.set_id,
+        s.set_type,
+        COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
+        COALESCE(s.weight, 0),
+        CASE WHEN we.order_index % 3 = 0 THEN 7.5 WHEN we.order_index % 3 = 1 THEN 8.0 ELSE 8.5 END,
+        s.order_index,
+        false,
+        v_day + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
+    FROM workout_exercises we
+    JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
+    WHERE we.workout_id = v_full_body;
 END $$;
 
 -- ===========================================================================

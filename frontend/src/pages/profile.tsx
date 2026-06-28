@@ -167,12 +167,19 @@ export default function ProfilePage() {
       </div>
 
       <div className="mb-8">
-        <h2 className="mb-3 text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
+        </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.9fr)] lg:items-stretch">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:h-full lg:items-stretch">
             {hasWorkouts ? (
               displayWorkouts.map((workout) => (
-                <WorkoutOverview key={workout.name} {...workout} className="h-full" />
+                <WorkoutOverview
+                  key={`${workout.workoutId}-${workout.logId ?? 'planned'}`}
+                  {...workout}
+                  href={workout.logId ? `/workouts/${workout.workoutId}/logs/${workout.logId}` : undefined}
+                  className="h-full"
+                />
               ))
             ) : (
               <div className="rounded-lg border border-border bg-card px-4 py-6 text-sm text-muted-foreground sm:col-span-2">

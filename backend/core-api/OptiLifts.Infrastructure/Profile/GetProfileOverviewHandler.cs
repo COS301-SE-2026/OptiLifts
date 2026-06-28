@@ -45,7 +45,11 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         IReadOnlyList<SessionRow> sessions,
         CancellationToken cancellationToken)
     {
-        var recentSessions = sessions.Take(RecentWorkoutCount).ToArray();
+        var recentSessions = sessions
+            .GroupBy(session => session.WorkoutId)
+            .Select(group => group.First())
+            .Take(RecentWorkoutCount)
+            .ToArray();
         var recentWorkoutIds = recentSessions.Select(session => session.WorkoutId).Distinct().ToArray();
         var recentLogIds = recentSessions.Select(session => session.LogId).ToArray();
 
@@ -70,6 +74,8 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
             var sessionSetCount = sessionSets.Length > 0 ? sessionSets.Length : plannedSets.Length;
 
             return new ProfileWorkoutDto(
+                session.WorkoutId,
+                session.LogId,
                 session.WorkoutName,
                 exerciseNames,
                 $"{Math.Max(1, exerciseNames.Length)} PRs",
@@ -126,6 +132,8 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
             var duration = EstimateDuration(plannedSets);
 
             return new ProfileWorkoutDto(
+                workout.WorkoutId,
+                null,
                 workout.Name,
                 exerciseNames,
                 $"{Math.Max(1, exerciseNames.Length)} PRs",

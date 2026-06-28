@@ -21,6 +21,8 @@ export type ProfileBadge = Readonly<{
 }>
 
 export type ProfileWorkoutSummary = Readonly<{
+  workoutId: string
+  logId: string | null
   name: string
   exercises: string[]
   prs: string

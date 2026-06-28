@@ -1,12 +1,10 @@
-import type { ReactNode } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatLoggedExerciseSetText } from '@/lib/exercise-format'
-import type { WorkoutLogExercisePlanItem, WorkoutLogExercisePlanProps } from '@/types/workout-log-exercise-plan'
+import type {WorkoutLogExercisePlanProps } from '@/types/workout-log-exercise-plan'
 
 export function WorkoutLogExercisePlan({
   title = 'Exercises Completed',
-  subtitle,
   exercises,
   className,
   emptyState = 'No logged sets have been recorded for this workout yet.',
@@ -28,7 +26,7 @@ export function WorkoutLogExercisePlan({
               {normalizedExercises.map((exercise) => (
                 <div
                   key={exercise.id}
-                  className="grid grid-cols-[72px_minmax(0,1fr)_clamp(280px,18vw,176px)] items-center gap-5 rounded-2xl border border-border bg-[#d9d9d9] px-4 py-4"
+                  className="grid grid-cols-[72px_minmax(0,1fr)_minmax(280px,28vw)] items-center gap-5 rounded-2xl border border-border bg-[#d9d9d9] px-4 py-4"
                 >
                   <Avatar className="h-[72px] w-[72px] shrink-0 border border-[#7f7f7f] bg-white">
                     <AvatarFallback className="bg-white text-transparent" />
@@ -39,7 +37,7 @@ export function WorkoutLogExercisePlan({
                     <p className="mt-1 truncate text-sm text-muted-foreground">{exercise.primaryMuscle}</p>
                   </div>
 
-                  <div className="w-[284px] justify-self-end rounded-xl bg-[#f5f5f5] px-5 py-4 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03)]">
+                  <div className="w-full justify-self-end rounded-xl bg-[#f5f5f5] px-5 py-4 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03)]">
                     <div className="grid gap-y-2 text-sm text-foreground">
                       {exercise.sets.map((set) => (
                         <div key={set.id} className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-4">

@@ -34,7 +34,11 @@ function appendRestTime(text: string, restTime: string) {
   return restTime ? `${text} (${restTime})` : text
 }
 
-export function formatPlannedExerciseSetText(exerciseType: ExerciseTypeValue, set: PlannedExerciseSet) {
+export function formatPlannedExerciseSetText(
+  exerciseType: ExerciseTypeValue,
+  set: PlannedExerciseSet,
+  options?: Readonly<{ includeRestTime?: boolean }>,
+) {
   const reps = set.reps !== null ? `${set.reps}` : ''
   const weight = set.weight !== null ? formatWeight(set.weight) : ''
   const duration = formatDurationValue(set.duration)
@@ -68,6 +72,10 @@ export function formatPlannedExerciseSetText(exerciseType: ExerciseTypeValue, se
     default:
       text = [weight, reps ? `x ${reps} reps` : ''].filter(Boolean).join(' ')
       break
+  }
+
+  if (options?.includeRestTime === false) {
+    return text
   }
 
   return appendRestTime(text, set.restTime)

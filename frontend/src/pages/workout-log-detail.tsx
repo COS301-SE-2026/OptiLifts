@@ -13,6 +13,26 @@ function formatVolume(totalVolume: number) {
   return `${new Intl.NumberFormat('en-US').format(Math.round(totalVolume))} kg`
 }
 
+function formatDurationAsHours(duration: string | null) {
+  if (!duration) {
+    return '--:--'
+  }
+
+  const [hoursText, minutesText] = duration.split(':')
+  const hours = Number.parseInt(hoursText ?? '0', 10)
+  const minutes = Number.parseInt(minutesText ?? '0', 10)
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return duration
+  }
+
+  if (hours === 0) {
+    return `${minutes}m`
+  }
+
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
+}
+
 export default function WorkoutLogDetailPage() {
   const { workoutId, logId } = useParams()
   const { isAuthenticated, isHydrated } = useAuth()
@@ -95,7 +115,7 @@ export default function WorkoutLogDetailPage() {
     const totalSets = loggedSets.length
 
     return {
-      duration: workout.duration ?? '--:--',
+      duration: formatDurationAsHours(workout.duration),
       volume: formatVolume(totalVolume),
       sets: `${totalSets}`,
     }
@@ -103,7 +123,7 @@ export default function WorkoutLogDetailPage() {
   const highlightedMuscles = (workout?.primaryMuscleGroups ?? []) as MuscleName[]
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
+    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-none flex-col gap-8 overflow-hidden px-6 py-12">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout Log</p>
@@ -155,7 +175,7 @@ export default function WorkoutLogDetailPage() {
       )}
 
       {!isLoading && !error && workout && (
-        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
+        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)]">
           <div className="flex min-h-0 flex-col gap-4">
             <WorkoutLogExercisePlan
               exercises={workout.exercises}

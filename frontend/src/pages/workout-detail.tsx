@@ -140,7 +140,7 @@ export default function WorkoutDetailPage() {
   }, [workout])
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
+    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-none flex-col gap-8 overflow-hidden px-6 py-12">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout</p>
@@ -185,7 +185,7 @@ export default function WorkoutDetailPage() {
       )}
 
       {!isLoading && !error && workout && (
-        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)]">
+        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)]">
           <div className="flex min-h-0 flex-col gap-4">
             <ExercisePlan
               exercises={plannedExercises}

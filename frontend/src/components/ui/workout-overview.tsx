@@ -1,22 +1,23 @@
+import { Link } from 'react-router-dom'
 import badgeIcon from '../../../../docs/images/badge.png'
 import type { WorkoutOverviewProps } from '@/types/workout'
 
 const MAX_VISIBLE_EXERCISES = 10
 
-export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, className }: WorkoutOverviewProps) {
+export function WorkoutOverview({ href, name, exercises, prs, duration, volume, sets, className }: WorkoutOverviewProps) {
   const visibleExercises = exercises.slice(0, MAX_VISIBLE_EXERCISES)
   const hasMoreExercises = exercises.length > visibleExercises.length
   const exerciseKeyCounts = new Map<string, number>()
 
-  return (
-    <article
-      className={[
-        'flex h-full flex-col rounded-xl border border-border bg-surface-2 px-4 py-4 shadow-sm sm:px-5 sm:py-5',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+  const rootClasses = [
+    'flex h-full flex-col rounded-xl border border-border bg-surface-2 px-4 py-4 text-left shadow-sm transition-shadow hover:shadow-md sm:px-5 sm:py-5',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const content = (
+    <>
       <div className="flex flex-1 items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h3 className="text-2xl font-bold leading-none text-foreground">{name}</h3>
@@ -79,8 +80,18 @@ export function WorkoutOverview({ name, exercises, prs, duration, volume, sets, 
           <p className="mt-1 text-base font-bold text-foreground">{sets}</p>
         </div>
       </div>
-    </article>
+    </>
   )
+
+  if (href) {
+    return (
+      <Link to={href} className={rootClasses}>
+        {content}
+      </Link>
+    )
+  }
+
+  return <article className={rootClasses}>{content}</article>
 }
 
 export default WorkoutOverview

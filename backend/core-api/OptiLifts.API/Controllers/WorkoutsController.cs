@@ -7,6 +7,8 @@ using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.GetWorkoutDetail;
+using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
 
 namespace OptiLifts.API.Controllers;
@@ -35,6 +37,57 @@ public sealed class WorkoutsController : ControllerBase
         }
 
         var result = await _sender.Send(new GetWorkoutsQuery(userId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{workoutId:guid}")]
+    public async Task<ActionResult<WorkoutDetailDto>> GetWorkoutDetail(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Workout was not found for this user."
+            });
+        }
+
+        return Ok(result);
+    }
+
+    [HttpGet("{workoutId:guid}/logs/{logId:guid}")]
+    public async Task<ActionResult<WorkoutLogDetailDto>> GetWorkoutLogDetail(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid logId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _sender.Send(new GetWorkoutLogDetailQuery(workoutId, logId, userId), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Workout log was not found for this user."
+            });
+        }
+
         return Ok(result);
     }
 

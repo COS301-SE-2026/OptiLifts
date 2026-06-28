@@ -66,7 +66,7 @@ const acrPassword = registryCredentials.passwords?.apply(p => {
 })
 
 // azure storage account for blob
-const storageAcc = new storage.StorageAccount("sa-optilifts", {
+const storageAcc = new storage.StorageAccount("saoptilifts", {
     resourceGroupName: resourceGroup.name,
     location: resourceGroup.location,
     sku: {
@@ -133,140 +133,122 @@ const containerAppEnv = new app.ManagedEnvironment("cae-optilifts", {
     location: resourceGroup.location,
 });
 
-// // frontend container app
-// const frontendApp = new app.ContainerApp("frontend", {
-//     resourceGroupName: resourceGroup.name,
-//     managedEnvironmentId: containerAppEnv.id,
-//     configuration: {
-//         ingress: {
-//             external: true, // The frontend must be accessible to users on the internet.
-//             targetPort: 8080,
+// frontend container app
+const frontendApp = new app.ContainerApp("frontend", {
+    resourceGroupName: resourceGroup.name,
+    managedEnvironmentId: containerAppEnv.id,
+    configuration: {
+        ingress: {
+            external: true, // The frontend must be accessible to users on the internet.
+            targetPort: 8080,
+        },
+        registries: [{
+            server: acrServer,
+            username: acrUsername,
+            passwordSecretRef: "acr-password",
+        }],
+        secrets: [
+            { name: "acr-password", value: acrPassword }
+        ],
+    },
+    template: {
+        containers: [{
+            name: "frontend",
+            image: pulumi.interpolate`${acrServer}/optilifts-frontend:${stackName}-v2`,
+            resources: { cpu: 0.25, memory: "0.5Gi" },
 
-//             /*
-//             customDomains: [{
-//                 name: frontendDomain,
-//                 bindingType: "SniEnabled",
-//             }],
-//             */
-//         },
-//         registries: [{
-//             server: acrServer,
-//             username: acrUsername,
-//             passwordSecretRef: "acr-password",
-//         }],
-//         secrets: [
-//             { name: "acr-password", value: acrPassword }
-//         ],
-//     },
-//     template: {
-//         containers: [{
-//             name: "frontend",
-//             image: pulumi.interpolate`${acrServer}/optilifts-frontend:${stackName}`,
-//             resources: { cpu: 0.25, memory: "0.5Gi" },
+        }],
+    },
+}, {
+    ignoreChanges: ["configuration.ingress.customDomains"]
+});
 
-//         }],
-//     },
-// });
+// copre-api container app
+const coreApiApp = new app.ContainerApp("core-api", {
+    resourceGroupName: resourceGroup.name,
+    managedEnvironmentId: containerAppEnv.id,
+    configuration: {
+        ingress: {
+            external: true, //give public url
+            targetPort: 8080,
+        },
 
-// // copre-api container app
-// const coreApiApp = new app.ContainerApp("core-api", {
-//     resourceGroupName: resourceGroup.name,
-//     managedEnvironmentId: containerAppEnv.id,
-//     configuration: {
-//         ingress: {
-//             external: true, //give public url
-//             targetPort: 8080,
-//             /* customDomains: [{
-//                 name: backendDomain,
-//                 bindingType: "SniEnabled",
-//             }], 
-//             */
-//         },
+        secrets: [
+            //make container app secrets so can inject them
+            { name: "acr-password", value: acrPassword },
+            { name: "jwt-secret", value: jwtSecret },
+            { name: "db-encryption-key", value: dbEncryptionKey },
+            { name: "postgres-password", value: postgressPassword },
+            {
+                name: "postgres-connection-string",
+                value: pulumi.interpolate`Host=${pgServer.fullyQualifiedDomainName};Port=${pgPort};Database=${pgDatabase.name};Username=optilifts_admin;Password=${postgressPassword};SslMode=Require;TrustServerCertificate=true;`
+            },
+            {
+                name: "storage-connection-string",
+                value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
+            },
+        ],
 
-//         secrets: [
-//             //make container app secrets so can inject them
-//             { name: "acr-password", value: acrPassword },
-//             { name: "jwt-secret", value: jwtSecret },
-//             { name: "db-encryption-key", value: dbEncryptionKey },
-//             { name: "postgres-password", value: postgressPassword },
-//             {
-//                 name: "postgres-connection-string",
-//                 value: pulumi.interpolate`Host=${pgServer.fullyQualifiedDomainName};Port=${pgPort};Database=${pgDatabase.name};Username=optilifts_admin;Password=${postgressPassword};SslMode=Require;TrustServerCertificate=true;`
-//             },
-//             {
-//                 name: "storage-connection-string",
-//                 value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
-//             },
-//             {
-//                 name: "redis-connection-string",
-//                 value: pulumi.interpolate`${redisCache.hostName}:${redisCache.sslPort},password=${redisKeys.primaryKey},ssl=True,abortConnect=False`
-//             }
-//         ],
+        registries: [{
+            server: acrServer,
+            username: acrUsername,
+            // sonarqube is wrong, this is how to reference the secret
+            passwordSecretRef: "acr-password",
+        }],
+    },
+    template: {
+        containers: [{
+            name: "core-api",
+            image: pulumi.interpolate`${acrServer}/optilifts-core-api:${stackName}`,
+            resources: { cpu: 0.25, memory: "0.5Gi" },
+            env: [
+                { name: "POSTGRES_HOST", value: pgServer.fullyQualifiedDomainName },
+                { name: "POSTGRES_PORT", value: "5432" },
+                { name: "POSTGRES_DB", value: pgDatabase.name },
+                { name: "POSTGRES_USER", value: "optilifts_admin" },
+                { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
+                { name: "DEV_SEEDING", value: devSeeding },
+                { name: "FRONTEND_ORIGIN", value: frontendUrl },
+                { name: "JWT_SECRET", secretRef: "jwt-secret" },
+                { name: "JWT_EXP_MINUTES", value: jwtExpMin },
+                { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
+                { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
+                { name: "ConnectionStrings__AzureStorage", secretRef: "storage-connection-string" },
+            ],
+        }],
+    },
+}, { 
+    ignoreChanges: ["configuration.ingress.customDomains"] 
+});
 
-//         registries: [{
-//             server: acrServer,
-//             username: acrUsername,
-//             // sonarqube is wrong, this is how to reference the secret
-//             passwordSecretRef: "acr-password",
-//         }],
-//     },
-//     template: {
-//         containers: [{
-//             name: "core-api",
-//             image: pulumi.interpolate`${acrServer}/optilifts-core-api:${stackName}`,
-//             resources: { cpu: 0.25, memory: "0.5Gi" },
-//             env: [
-//                 { name: "POSTGRES_HOST", value: pgServer.fullyQualifiedDomainName },
-//                 { name: "POSTGRES_PORT", value: "5432" },
-//                 { name: "POSTGRES_DB", value: pgDatabase.name },
-//                 { name: "POSTGRES_USER", value: "optilifts_admin" },
-//                 { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
-//                 { name: "DEV_SEEDING", value: devSeeding },
-//                 { name: "FRONTEND_ORIGIN", value: frontendUrl },
-//                 { name: "JWT_SECRET", secretRef: "jwt-secret" },
-//                 { name: "JWT_EXP_MINUTES", value: jwtExpMin },
-//                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
-//                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
-//                 { name: "ConnectionStrings__AzureStorage", secretRef: "storage-connection-string" },
-//                 { name: "ConnectionStrings__Redis", secretRef: "redis-connection-string" }
-//             ],
-//         }],
-//     },
-// });
+const aiApiApp = new app.ContainerApp("ai-api", {
+    resourceGroupName: resourceGroup.name,
+    managedEnvironmentId: containerAppEnv.id,
+    configuration: {
+        ingress: {
+            external: false, // can only be accessed by core-api 
+            targetPort: 8000,
+        },
+        registries: [{
+            server: acrServer,
+            username: acrUsername,
+            passwordSecretRef: "acr-password",
+        }],
+        secrets: [
+            { name: "acr-password", value: acrPassword },
+        ],
+    },
+    template: {
+        containers: [{
+            name: "ai-api",
+            image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${stackName}`,
+            resources: {
+                cpu: 0.5,
+                memory: "1.0Gi"
+            },
+        }],
+    },
+});
 
-// const aiApiApp = new app.ContainerApp("ai-api", {
-//     resourceGroupName: resourceGroup.name,
-//     managedEnvironmentId: containerAppEnv.id,
-//     configuration: {
-//         ingress: {
-//             external: false, // can only be accessed by core-api 
-//             targetPort: 8000,
-//         },
-//         registries: [{
-//             server: acrServer,
-//             username: acrUsername,
-//             passwordSecretRef: "acr-password",
-//         }],
-//         secrets: [
-//             { name: "acr-password", value: acrPassword },
-//             { name: "redis-url", value: pulumi.interpolate`rediss://:${redisKeys.primaryKey}@${redisCache.hostName}:${redisCache.sslPort}` }
-//         ],
-//     },
-//     template: {
-//         containers: [{
-//             name: "ai-api",
-//             image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${stackName}`,
-//             resources: {
-//                 cpu: 0.5,
-//                 memory: "1.0Gi"
-//             },
-
-//             env: [
-//                 { name: "REDIS_URL",secretRef: "redis-url" }
-//             ]
-//         }],
-//     },
-// });
-
-// export const frontendAzureUrl = pulumi.interpolate`https://${frontendApp.configuration.apply(c => c?.ingress?.fqdn)}`;
+export const frontendAzureUrl = pulumi.interpolate`https://${frontendApp.configuration.apply(c => c?.ingress?.fqdn)}`;
 export const acrLoginServer = acr.loginServer;

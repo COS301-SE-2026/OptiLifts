@@ -17,7 +17,7 @@ ENV VITE_API_BASE=$VITE_API_BASE
 WORKDIR /app/frontend
 RUN pnpm run build
 
-FROM nginxinc/nginx-unprivileged:1.25-alpine
+FROM nginxinc/nginx-unprivileged:1.25
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 

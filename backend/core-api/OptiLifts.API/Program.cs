@@ -121,7 +121,7 @@ app.UseAuthorization(); //authorization middleware
 app.MapControllers();
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq
-app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow })); 
+app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
 await app.RunAsync();
 
 public partial class Program

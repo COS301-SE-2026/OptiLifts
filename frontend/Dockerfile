@@ -18,7 +18,7 @@ WORKDIR /app/frontend
 RUN pnpm run build
 
 FROM nginxinc/nginx-unprivileged:1.25
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 
 EXPOSE 8080

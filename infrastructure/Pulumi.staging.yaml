@@ -1,8 +1,0 @@
-config:
-  infrastructure:postgressPassword:
-    secure: AAABAGnVfgkEHV0spOhgXLRsqISddPKXNtzBjBHitThUlxi0nE+JqeHbNmGrc+pdjf7o896yOiIC
-  infrastructure:jwtSecret:
-    secure: AAABAHo0rIkZIUnP1gXwF6D3cvLBTYwY18fTsJKki6WPddSWCL49EXp26N3HFMUbYETL5h4pn2GRSysDXNODH/dzpKjOfGMvs8k5
-  infrastructure:dbEncryptionKey:
-    secure: AAABAIm/2NtL32zhEnoYuC14bwMkd42UQ0d+5U5rSFQ4vO53e/UUF9gL4xy2t4TfSUlHGGHdiFqsYHW1Ri1Fa/17DTdyL8tzUHrRGQ==
-  infrastructure:devSeeding: "true"

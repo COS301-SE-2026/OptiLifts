@@ -24,7 +24,7 @@ const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
 
 const resourceGroup = new resources.ResourceGroup("rgoptilifts", {
-    location: "SouthAfricaNorth",
+    location: "SouthAfricaNorth"
 });
 
 // create azure container registry
@@ -74,12 +74,20 @@ const storageAcc = new storage.StorageAccount("saoptilifts", {
         name: "Standard_LRS",
     },
     kind: "StorageV2",
+    allowBlobPublicAccess: true,
 });
 
-const blobContainer = new storage.BlobContainer("bc-optilifts", {
+const profilePicturesContainer = new storage.BlobContainer("bc-profile-pictures", {
     resourceGroupName: resourceGroup.name,
     accountName: storageAcc.name,
-    containerName: "optilifts-blob",
+    containerName: "profile-pictures",
+    publicAccess: storage.PublicAccess.Blob, 
+});
+const exercisesContainer = new storage.BlobContainer("bc-exercises", {
+    resourceGroupName: resourceGroup.name,
+    accountName: storageAcc.name,
+    containerName: "exercises",
+    publicAccess: storage.PublicAccess.Blob, 
 });
 
 const storageAccKeys = storage.listStorageAccountKeysOutput({
@@ -154,8 +162,9 @@ const frontendApp = new app.ContainerApp("frontend", {
     template: {
         containers: [{
             name: "frontend",
-            image: pulumi.interpolate`${acrServer}/optilifts-frontend:${stackName}-v2`,
+            image: pulumi.interpolate`${acrServer}/optilifts-frontend:${stackName}`,
             resources: { cpu: 0.25, memory: "0.5Gi" },
+            env: [{ name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }]
 
         }],
     },

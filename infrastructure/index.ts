@@ -153,7 +153,7 @@ const frontendApp = new app.ContainerApp("frontend", {
         registries: [{
             server: acrServer,
             username: acrUsername,
-            passwordSecretRef: "acr-password",
+            passwordSecretRef: "acr-password", // NOSONAR
         }],
         secrets: [
             { name: "acr-password", value: acrPassword }
@@ -202,7 +202,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
             server: acrServer,
             username: acrUsername,
             // sonarqube is wrong, this is how to reference the secret
-            passwordSecretRef: "acr-password",
+            passwordSecretRef: "acr-password", // NOSONAR
         }],
     },
     template: {
@@ -241,7 +241,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
         registries: [{
             server: acrServer,
             username: acrUsername,
-            passwordSecretRef: "acr-password",
+            passwordSecretRef: "acr-password", // NOSONAR
         }],
         secrets: [
             { name: "acr-password", value: acrPassword },

@@ -53,12 +53,56 @@ public sealed class GetScheduleHandlerTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
+        //updated tests after updating getschedule to include workout summaries
+        var chest = new Muscle
+        {
+            Name = "Chest"
+        };
+        db.Muscles.Add(chest);
+        await db.SaveChangesAsync();
+
+        var exercise = new Exercise
+        {
+            Name = "Bench",
+            ExerciseType = ExerciseType.WeightReps,
+            PrimaryMuscleId = chest.Id
+        };
+        db.Exercises.Add(exercise);
+        await db.SaveChangesAsync();
+
         var workout = new Workout
         {
             Name = "Hypertrophy",
             CreatedBy = userId
         };
         db.Workouts.Add(workout);
+        await db.SaveChangesAsync();
+
+        var workoutExercise = new WorkoutExercise
+        {
+            WorkoutId = workout.Id,
+            ExerciseId = exercise.Id,
+            OrderIndex = 0
+        };
+        db.WorkoutExercises.Add(workoutExercise);
+        await db.SaveChangesAsync();
+
+        var set1 = new WorkoutSet
+        {
+            WorkoutExerciseId = workoutExercise.Id,
+            Reps = 10,
+            Weight = 100,
+            OrderIndex = 0
+        };
+        var set2 = new WorkoutSet
+        {
+            WorkoutExerciseId = workoutExercise.Id,
+            Reps = 10,
+            Weight = 120,
+            OrderIndex = 1
+        };
+        db.Sets.Add(set1);
+        db.Sets.Add(set2);
         await db.SaveChangesAsync();
 
         var schedule = new DateTime(2026,6,27,10,0,0, DateTimeKind.Utc);
@@ -83,6 +127,13 @@ public sealed class GetScheduleHandlerTests
         first.WorkoutName.Should().Be("Hypertrophy");
         first.Scheduled.Should().Be(schedule);
         first.Status.Should().Be("Scheduled");
+
+        //extra after endpoint update
+        first.PrimaryMuscleGroups.Should().Contain("Chest");
+        first.ExerciseCount.Should().Be(1);
+        first.ExercisePreview.Should().Contain("Bench");
+        first.TotalVolume.Should().Be(2200);
+        first.TotalSets.Should().Be(2);
     }
 
     [Fact]

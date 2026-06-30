@@ -5,5 +5,10 @@ public sealed record ScheduledEntryDto(
     Guid WorkoutId,
     string WorkoutName,
     DateTime Scheduled,
-    string Status
+    string Status,
+    string[] PrimaryMuscleGroups,
+    int ExerciseCount,
+    string[] ExercisePreview,
+    float TotalVolume,
+    int TotalSets
 );

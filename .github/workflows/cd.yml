@@ -19,7 +19,7 @@ jobs:
           uses: actions/checkout@v4
 
         - name: Azure login
-          uses: azure/login@v1
+          uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d
           with: 
             creds: ${{secrets.AZURE_CREDENTIALS}}
 
@@ -51,7 +51,7 @@ jobs:
           run: npm install
 
         - name: Deploy via Pulumi
-          uses: pulumi/actions@v5
+          uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f
           with:
             command: up
             stack-name: prod

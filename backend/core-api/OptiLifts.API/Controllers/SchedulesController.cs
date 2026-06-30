@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using OptiLifts.Application.Scheduling.GetSchedule;
+using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
 
 namespace OptiLifts.API.Controllers;
 
@@ -38,5 +39,20 @@ public sealed class SchedulesController : ControllerBase
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return Guid.TryParse(userIdValue, out userId);
+    }
+
+    [HttpGet("me/schedule/analytics")]
+    public async Task<ActionResult<ScheduleAnalyticsDto>> GetScheduleAnalytics(
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var query = new GetScheduleAnalyticsQuery(userId, startDate, endDate);
+        var result = await _sender.Send(query, cancellationToken);
+        return Ok(result);
     }
 }

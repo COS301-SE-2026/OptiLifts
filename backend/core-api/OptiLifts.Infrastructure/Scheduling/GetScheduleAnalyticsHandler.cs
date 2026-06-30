@@ -23,10 +23,16 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
     {
         var (start, end) = ResolveDates(request.StartDate, request.EndDate);
 
-        var endLim = end.AddDays(1);
-        var entries = await _dbContext.ScheduledEntries.AsNoTracking()
-            .Where(entry => entry.UserId == request.UserId && entry.Scheduled >= start && entry.Scheduled < endLim)
-            .OrderBy(entry => entry.Scheduled)
+        //add status filtering
+        var query = _dbContext.ScheduledEntries.AsNoTracking()
+            .Where(entry => entry.UserId == request.UserId && entry.Scheduled >= start && entry.Scheduled < end.AddDays(1));
+
+        if (request.Status.HasValue)
+        {
+            query = query.Where(entry => entry.Status == request.Status.Value);
+        }
+
+        var entries = await query
             .ToListAsync(cancellationToken);
 
         if (entries.Count == 0)

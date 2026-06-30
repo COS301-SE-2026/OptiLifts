@@ -28,8 +28,16 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             end = start.AddDays(6);
         }
 
-        var entries = await _dbContext.ScheduledEntries.AsNoTracking()
-            .Where(entry => entry.UserId == request.UserId && entry.Scheduled >= start && entry.Scheduled < end.AddDays(1))
+        //add status filtering
+        var query = _dbContext.ScheduledEntries.AsNoTracking()
+            .Where(entry => entry.UserId == request.UserId && entry.Scheduled >= start && entry.Scheduled < end.AddDays(1));
+
+        if (request.Status.HasValue)
+        {
+            query = query.Where(entry => entry.Status == request.Status.Value);
+        }
+
+        var entries = await query
             .OrderBy(entry => entry.Scheduled)
             .ToListAsync(cancellationToken);
 

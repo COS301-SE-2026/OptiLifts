@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using OptiLifts.Application.Scheduling.GetSchedule;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.API.Controllers;
 
@@ -23,13 +24,14 @@ public sealed class SchedulesController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ScheduledEntryDto>>> GetSchedule(
         [FromQuery] DateTime? startDate,
         [FromQuery] DateTime? endDate,
+        [FromQuery] ScheduleStatus? status,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
         {
             return Unauthorized();
         }
-        var query = new GetScheduleQuery(userId, startDate, endDate);
+        var query = new GetScheduleQuery(userId, startDate, endDate, status);
         var result = await _sender.Send(query, cancellationToken);
         return Ok(result);
     }
@@ -45,13 +47,14 @@ public sealed class SchedulesController : ControllerBase
     public async Task<ActionResult<ScheduleAnalyticsDto>> GetScheduleAnalytics(
         [FromQuery] DateTime? startDate,
         [FromQuery] DateTime? endDate,
+        [FromQuery] ScheduleStatus? status,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
         {
             return Unauthorized();
         }
-        var query = new GetScheduleAnalyticsQuery(userId, startDate, endDate);
+        var query = new GetScheduleAnalyticsQuery(userId, startDate, endDate, status);
         var result = await _sender.Send(query, cancellationToken);
         return Ok(result);
     }

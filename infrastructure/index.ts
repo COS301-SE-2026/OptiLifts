@@ -150,6 +150,10 @@ const frontendApp = new app.ContainerApp("frontend", {
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
+            customDomains: [{
+                name: frontendDomain,
+                bindingType: "SniEnabled",
+            }],
         },
         registries: [{
             server: acrServer,
@@ -181,6 +185,11 @@ const coreApiApp = new app.ContainerApp("core-api", {
         ingress: {
             external: true, //give public url
             targetPort: 8080,
+            customDomains: [{
+                name: backendDomain,
+                bindingType: "SniEnabled",
+            }],
+            
         },
 
         secrets: [

@@ -67,36 +67,9 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         //helper function
         var (totalVolume, totalSets) = CalculateTotals(entries, statsEachWorkout);
 
-        //helper function here?
-        var muscleSet = new Dictionary<string, int>();
-        foreach(var entry in entries)
-        {
-            var weList = workoutDetails.Where(wd => wd.WorkoutId == entry.WorkoutId).ToList();
-            foreach(var we in weList)
-            {
-                var setCount = sets.Count(s => s.WorkoutExerciseId == we.WorkoutExerciseId);
-                if (setCount > 0 && we.MuscleName != "Other")
-                {
-                    if (muscleSet.ContainsKey(we.MuscleName))
-                    {
-                        muscleSet[we.MuscleName] += setCount;
-                    }
-                    else
-                    {
-                        muscleSet[we.MuscleName] = setCount;
-                    }
-                }
-            }
-        }
-
-        var totalUsedSets = muscleSet.Values.Sum();
-        var muscleDistr = muscleSet.Select(keyvalue => new MuscleDistributionDto(
-            keyvalue.Key,
-            keyvalue.Value,
-            totalUsedSets > 0? (float)keyvalue.Value / totalUsedSets * 100f : 0f
-        )).OrderByDescending(md => md.SetCount).ToList();
-
-        //fine
+        //helper function 
+        var muscleDistr = CalculateMuscleDistribution(entries, workoutDetails, sets);
+        
         return new ScheduleAnalyticsDto(
             entries.Count,
             totalVolume,
@@ -121,6 +94,29 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
     }
 
     //calculate muscle distribution
+    private static List<MuscleDistributionDto> CalculateMuscleDistribution(
+        List<ScheduledEntry> entries,
+        List<WorkoutDetailDto> workoutDetails,
+        List<WorkoutSet> sets)
+    {
+        var muscleGroups = from entry in entries
+            join detail in workoutDetails on entry.WorkoutId equals detail.WorkoutId
+            join s in sets on detail.WorkoutExerciseId equals s.WorkoutExerciseId
+            where detail.MuscleName != "Other"
+            group s by detail.MuscleName into g
+            select new MuscleDistributionDto(
+                g.Key,
+                g.Count(),
+                0f
+            );
+        var result = muscleGroups.ToList();
+        var totalSets = result.Sum(r => r.SetCount);
+        return result.Select(r => new MuscleDistributionDto(
+            r.MuscleGroup,
+            r.SetCount,
+            totalSets > 0 ? (float)r.SetCount / totalSets * 100f : 0f
+        )).ToList();
+    }
 
     //calculate the volume and set counts per workout
     private static Dictionary<Guid, (float Volume, int SetsCount)> CalculateStatsPerWorkout(

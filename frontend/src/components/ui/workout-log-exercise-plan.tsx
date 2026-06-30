@@ -26,10 +26,10 @@ export function WorkoutLogExercisePlan({
               {normalizedExercises.map((exercise) => (
                 <div
                   key={exercise.id}
-                  className="grid grid-cols-[72px_minmax(0,1fr)_minmax(280px,28vw)] items-center gap-5 rounded-2xl border border-border bg-[#d9d9d9] px-4 py-4"
+                  className="grid grid-cols-[72px_minmax(0,1fr)_minmax(280px,28vw)] items-center gap-5 rounded-2xl border border-border bg-surface-2 px-4 py-4"
                 >
-                  <Avatar className="h-[72px] w-[72px] shrink-0 border border-[#7f7f7f] bg-white">
-                    <AvatarFallback className="bg-white text-transparent" />
+                  <Avatar className="h-[72px] w-[72px] shrink-0 border border-border bg-background">
+                    <AvatarFallback className="bg-background text-transparent" />
                   </Avatar>
 
                   <div className="min-w-0 pr-4">
@@ -37,12 +37,12 @@ export function WorkoutLogExercisePlan({
                     <p className="mt-1 truncate text-sm text-muted-foreground">{exercise.primaryMuscle}</p>
                   </div>
 
-                  <div className="w-full justify-self-end rounded-xl bg-[#f5f5f5] px-5 py-4 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03)]">
+                  <div className="w-full justify-self-end rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
                     <div className="grid gap-y-2 text-sm text-foreground">
                       {exercise.sets.map((set) => (
                         <div key={set.id} className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-4">
-                          <span className="text-[0.98rem] font-medium text-foreground/90">{set.orderIndex}</span>
-                          <span className="justify-self-end whitespace-nowrap text-[0.9rem] text-foreground/90">
+                          <span className="text-[0.98rem] font-medium text-foreground">{set.orderIndex}</span>
+                          <span className="justify-self-end whitespace-nowrap text-[0.9rem] text-foreground">
                             {formatLoggedExerciseSetText(exercise.exerciseType, set)}
                           </span>
                         </div>

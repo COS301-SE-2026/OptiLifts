@@ -33,6 +33,14 @@ function formatDurationAsHours(duration: string | null) {
   return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
 }
 
+function formatCompletedDate(date: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(date))
+}
+
 export default function WorkoutLogDetailPage() {
   const { workoutId, logId } = useParams()
   const { isAuthenticated, isHydrated } = useAuth()
@@ -129,7 +137,7 @@ export default function WorkoutLogDetailPage() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout Log</p>
           <PageTitle title={workoutLabel} />
           {workout?.completedAt ? (
-            <p className="mt-2 text-sm text-muted-foreground">Completed {new Date(workout.completedAt).toLocaleString()}</p>
+            <p className="mt-2 text-sm text-muted-foreground">Completed {formatCompletedDate(workout.completedAt)}</p>
           ) : null}
         </div>
 

@@ -2,7 +2,7 @@ name: Optilifts CD Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "feature/deployment-pipeline"]
 
   # a manual trigger
   workflow_dispatch:

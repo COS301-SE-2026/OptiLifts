@@ -1,12 +1,19 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.Replication.PgOutput.Messages;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Scheduling;
 
 public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAnalyticsQuery, ScheduleAnalyticsDto>
 {
     private readonly OptiLiftsDbContext _dbContext;
+
+    private sealed record WorkoutDetailDto(
+        Guid WorkoutId,
+        Guid WorkoutExerciseId,
+        string MuscleName);
     public GetScheduleAnalyticsHandler(OptiLiftsDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -14,21 +21,11 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
 
     public async Task<ScheduleAnalyticsDto> Handle(GetScheduleAnalyticsQuery request, CancellationToken cancellationToken)
     {
-        DateTime start, end;
-        if (request.StartDate.HasValue && request.EndDate.HasValue)
-        {
-            start = request.StartDate.Value.Date;
-            end = request.EndDate.Value.Date;
-        }
-        else
-        {
-            var now = DateTime.UtcNow.Date;
-            int dif = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
-            start = now.AddDays(-dif);
-            end = start.AddDays(6);
-        }
+        var (start, end) = ResolveDates(request.StartDate, request.EndDate);
+
+        var endLim = end.AddDays(1);
         var entries = await _dbContext.ScheduledEntries.AsNoTracking()
-            .Where(entry => entry.UserId == request.UserId && entry.Scheduled >= start && entry.Scheduled < end.AddDays(1))
+            .Where(entry => entry.UserId == request.UserId && entry.Scheduled >= start && entry.Scheduled < endLim)
             .OrderBy(entry => entry.Scheduled)
             .ToListAsync(cancellationToken);
 
@@ -49,13 +46,13 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
             join ex in _dbContext.Exercises.AsNoTracking() on we.ExerciseId equals ex.Id
             join m in _dbContext.Muscles.AsNoTracking() on ex.PrimaryMuscleId equals m.Id into muscleGroup
             from m in muscleGroup.DefaultIfEmpty()
-            select new
-            {
+            select new WorkoutDetailDto
+            (
                 we.WorkoutId,
-                WorkoutExerciseId = we.Id,
-                MuscleName = m != null ? m.Name : "Other"
+                we.Id,
+                m != null ? m.Name : "Other"
 
-            })
+            ))
             .ToListAsync(cancellationToken);
         
         var workoutExerciseIds = workoutDetails.Select(wd => wd.WorkoutExerciseId).ToList();
@@ -63,34 +60,14 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         var sets = await _dbContext.Sets.AsNoTracking()
             .Where(s => workoutExerciseIds.Contains(s.WorkoutExerciseId))
             .ToListAsync(cancellationToken);
-        var statsEachWorkout = workoutids.ToDictionary(
-            id => id,
-            id =>
-            {
-                var weList = workoutDetails.Where(wd => wd.WorkoutId == id).ToList();
-                var weIds = weList.Select(we => we.WorkoutExerciseId).ToList();
-                var workoutSets = sets.Where(s => weIds.Contains(s.WorkoutExerciseId)).ToList();
 
-                return new
-                {
-                    Volume = workoutSets.Sum(s => (s.Weight ?? 0f) * (s.Reps ?? 0)),
-                    SetsCount = workoutSets.Count
-                };
-            }
-        );
+        //helper function
+        var statsEachWorkout = CalculateStatsPerWorkout(workoutids, workoutDetails, sets);
 
-        var totalWorkouts = entries.Count;
-        float TotalVolume = 0;
-        int totalSets = 0;
+        //helper function
+        var (totalVolume, totalSets) = CalculateTotals(entries, statsEachWorkout);
 
-        foreach(var entry in entries)
-        {
-            if (statsEachWorkout.TryGetValue(entry.WorkoutId, out var stat))
-            {
-                TotalVolume += stat.Volume;
-                totalSets += stat.SetsCount;
-            }
-        }
+        //helper function here?
         var muscleSet = new Dictionary<string, int>();
         foreach(var entry in entries)
         {
@@ -119,11 +96,74 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
             totalUsedSets > 0? (float)keyvalue.Value / totalUsedSets * 100f : 0f
         )).OrderByDescending(md => md.SetCount).ToList();
 
+        //fine
         return new ScheduleAnalyticsDto(
-            totalWorkouts,
-            TotalVolume,
+            entries.Count,
+            totalVolume,
             totalSets,
             muscleDistr
         );
     }
+    //helpers to reduce complexity - sonarqube issue
+    private static (DateTime Start, DateTime End) ResolveDates(DateTime? startDate, DateTime? endDate)
+    {
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            return (startDate.Value.Date, endDate.Value.Date);
+        }
+        
+        var now = DateTime.UtcNow.Date;
+        int dif = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var start = now.AddDays(-dif);
+        var end = start.AddDays(6);
+        return (start, end);
+        
+    }
+
+    //calculate muscle distribution
+
+    //calculate the volume and set counts per workout
+    private static Dictionary<Guid, (float Volume, int SetsCount)> CalculateStatsPerWorkout(
+        List<Guid> workoutIds,
+        List<WorkoutDetailDto> workoutDetails,
+        List<WorkoutSet> sets)
+    {
+        return workoutIds.ToDictionary( 
+            id => id,
+            id =>
+            {
+                var weList = workoutDetails.Where(wd => wd.WorkoutId == id).ToList();
+                var weIds = weList.Select(we => we.WorkoutExerciseId).ToList();
+                var workoutSets = sets.Where(s => weIds.Contains(s.WorkoutExerciseId)).ToList();
+
+                return 
+                (
+                    Volume: workoutSets.Sum(s => (s.Weight ?? 0f) * (s.Reps ?? 0)),
+                    SetsCount: workoutSets.Count
+                );
+            }
+        );
+
+    }
+
+    //calculate total volume and set count
+    private static (float TotalVolume, int TotalSets) CalculateTotals(
+        List<ScheduledEntry> entries,
+        Dictionary<Guid, (float Volume, int SetCount)> statsPerWorkout)
+    {
+        float totalVolume = 0;
+        int totalSets = 0;
+        foreach(var entry in entries)
+        {
+            if (statsPerWorkout.TryGetValue(entry.WorkoutId, out var stat))
+            {
+                totalVolume += stat.Volume;
+                totalSets += stat.SetCount;
+            }
+        }
+        return (totalVolume, totalSets);
+    }
+    
+    
+
 }

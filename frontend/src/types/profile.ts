@@ -41,5 +41,11 @@ export type ProfilePageResponse = Readonly<{
 }>
 
 export type ProfileCalendarResponse = Readonly<{
-  highlightedDates: readonly string[]
+  entries: readonly ProfileCalendarEntry[]
+}>
+
+export type ProfileCalendarEntry = Readonly<{
+  date: string
+  workoutId: string
+  logId: string
 }>

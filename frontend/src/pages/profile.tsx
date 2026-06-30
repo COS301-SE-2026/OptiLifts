@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { BarChart } from '@/components/ui/barchart'
 import { Calendar } from '@/components/ui/calendar'
@@ -6,8 +7,7 @@ import { ProfileOverview } from '@/components/ui/profile-overview'
 import { WorkoutOverview } from '@/components/ui/workout-overview'
 import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
-import type { ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
-import type { CalendarProps } from '@/types/calendar'
+import type { ProfileCalendarEntry, ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
@@ -17,9 +17,10 @@ const toMonthQuery = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth(
 
 export default function ProfilePage() {
   const { isAuthenticated, isHydrated } = useAuth()
+  const navigate = useNavigate()
   const [profileData, setProfileData] = useState<ProfilePageResponse | null>(null)
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()))
-  const [calendarDates, setCalendarDates] = useState<CalendarProps['highlightedDates']>([])
+  const [calendarEntries, setCalendarEntries] = useState<readonly ProfileCalendarEntry[]>([])
   const [calendarLoading, setCalendarLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -96,11 +97,11 @@ export default function ProfilePage() {
         const data = (await response.json()) as ProfileCalendarResponse
 
         if (isActive) {
-          setCalendarDates(data.highlightedDates)
+          setCalendarEntries(data.entries)
         }
       } catch {
         if (isActive) {
-          setCalendarDates([])
+          setCalendarEntries([])
         }
       } finally {
         if (isActive) {
@@ -117,6 +118,11 @@ export default function ProfilePage() {
   }, [calendarMonth, isHydrated, isAuthenticated])
 
   const controlledCalendarMonth = useMemo(() => startOfMonth(calendarMonth), [calendarMonth])
+  const calendarDates = useMemo(() => calendarEntries.map((entry) => entry.date), [calendarEntries])
+  const calendarEntriesByDate = useMemo(
+    () => new Map(calendarEntries.map((entry) => [entry.date, entry] as const)),
+    [calendarEntries],
+  )
 
   const displayProfile = profileData?.profile
   const displayBadges = profileData?.badges?.slice(0, 3) ?? []
@@ -193,6 +199,12 @@ export default function ProfilePage() {
               highlightedDates={calendarDates}
               month={controlledCalendarMonth}
               onMonthChange={setCalendarMonth}
+              onHighlightedDateClick={(dateKey) => {
+                const entry = calendarEntriesByDate.get(dateKey)
+                if (entry) {
+                  navigate(`/workouts/${entry.workoutId}/logs/${entry.logId}`)
+                }
+              }}
               className={calendarLoading ? 'opacity-70' : undefined}
             />
           </div>

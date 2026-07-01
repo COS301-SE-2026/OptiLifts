@@ -3,6 +3,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Expressions;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
@@ -46,15 +47,26 @@ public sealed class WorkoutsController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized();
 
+        var errors = CreateWorkoutValidator.Validate(request);
+        if (errors.Count > 0)
+        {
+            return BadRequest(new { errors });
+        }
+
         var exercises = request.Exercises
             .Select(e => new CreateWorkoutExerciseDto(
                 e.ExerciseId,
                 e.OrderIndex,
+                e.GroupKey,
                 e.Sets.Select(s => new CreateWorkoutSetDto(
                     s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.OrderIndex, s.RestTime)).ToList()))
             .ToList();
 
-        var command = new CreateWorkoutCommand(request.FolderId, request.Name, userId, exercises);
+        var groups = (request.Groups ?? [])
+            .Select(g => new CreateWorkoutGroupDto(g.GroupKey, g.Type, g.Rounds, g.RestTime))
+            .ToList();
+
+        var command = new CreateWorkoutCommand(request.FolderId, request.Name, userId, exercises, groups);
         var result = await _sender.Send(command, cancellationToken);
 
         return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);

@@ -102,7 +102,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             .Where(e => e.Status == ScheduleStatus.Completed)
             .Select(e => e.Id)
             .ToList();
-        
+
         var logs = new Dictionary<Guid, OptiLifts.Domain.Workouts.WorkoutLog>();
         if (entryids.Count > 0)
         {
@@ -110,9 +110,9 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 .Where(l => l.EntryId.HasValue && entryids.Contains(l.EntryId.Value))
                 .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
         }
-        
+
         //will change once PR table is implemented
-        var PRs= 1;
+        var PRs = 1;
 
         var scheduledEntryDtos = entries.Select(entry =>
         {

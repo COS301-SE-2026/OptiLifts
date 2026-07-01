@@ -12,6 +12,6 @@ public sealed record ScheduledEntryDto(
     float TotalVolume,
     int TotalSets,
     DateTime? StartedAt,
-    DateTime? CompletedAt, 
+    DateTime? CompletedAt,
     int? RecordCount
 );

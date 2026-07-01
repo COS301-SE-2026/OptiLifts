@@ -95,9 +95,9 @@ export default function PastWorkoutsPage() {
                             {/*left side */}
                             <div className="flex flex-col gap-4">
                                 <div>
-                                    <h2 className="text-xl font-bold text-foreground">{workout.name}</h2>
+                                    <h2 className="text-xl font-bold text-foreground truncate max-w-[200px] sm:max-w-[300px]">{workout.name}</h2>
                                     <p className="text-sm font-bold text-foreground/80">{workout.date}</p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
+                                    <p className="mt-1 text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2 max-w-[250px] sm:max-w-[350px]">
                                         Muscles: {workout.muscles.join(', ')}
                                     </p>
                                 </div>

@@ -10,5 +10,8 @@ public sealed record ScheduledEntryDto(
     int ExerciseCount,
     string[] ExercisePreview,
     float TotalVolume,
-    int TotalSets
+    int TotalSets,
+    DateTime? StartedAt,
+    DateTime? CompletedAt, 
+    int? RecordCount
 );

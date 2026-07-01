@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.GetSchedule;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Scheduling;
 
@@ -46,6 +47,12 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             return Array.Empty<ScheduledEntryDto>();
         }
         var workoutids = entries.Select(e => e.WorkoutId).Distinct().ToList();
+
+        var entryids = entries.Select(e => e.Id).ToList();
+
+        var logs = await _dbContext.WorkoutLogs.AsNoTracking()
+            .Where(log => log.EntryId.HasValue && entryids.Contains(log.EntryId.Value))
+            .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
 
 
         var workouts = await (
@@ -97,11 +104,17 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
         var workoutNames = await _dbContext.Workouts.AsNoTracking()
             .Where(w => workoutids.Contains(w.Id))
             .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
+        
+        //will change once PR table is implemented
+        var PRs= 1;
 
         var scheduledEntryDtos = entries.Select(entry =>
         {
             workoutStat.TryGetValue(entry.WorkoutId, out var stats);
             workoutNames.TryGetValue(entry.WorkoutId, out var name);
+
+            logs.TryGetValue(entry.Id, out var log);
+            
             return new ScheduledEntryDto(
                 entry.Id,
                 entry.WorkoutId,
@@ -112,7 +125,10 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.ExerciseCount ?? 0,
                 stats?.ExercisePreview ?? Array.Empty<string>(),
                 stats?.Volume ?? 0f,
-                stats?.TotalSets ?? 0
+                stats?.TotalSets ?? 0,
+                log?.StartedAt,
+                log?.CompletedAt,
+                PRs
             );
         }).ToList();
         return scheduledEntryDtos;

@@ -435,6 +435,66 @@ BEGIN
 END $$;
 
 -- ===========================================================================
+-- Alex's upcoming schedule. Reuses Alex's own workouts and stays idempotent
+-- per (user, workout, scheduled, status) row.
+-- ===========================================================================
+DO $$
+DECLARE
+    alex_email constant text := 'gymgoer@gmail.com';
+    hex_enc constant text := 'hex';
+    pull_name constant text := 'Pull';
+    push_name constant text := 'Push';
+    scheduled_status constant text := 'Scheduled';
+    alex_id uuid;
+    v_pull uuid;
+    v_push uuid;
+    rec record;
+BEGIN
+    SELECT user_id INTO alex_id
+    FROM users
+    WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
+
+    IF alex_id IS NULL THEN
+        RAISE NOTICE 'Alex (%) not found - run the C# seeder (dotnet run) before this block.', alex_email;
+        RETURN;
+    END IF;
+
+    SELECT workout_id INTO v_pull
+    FROM workouts
+    WHERE user_id = alex_id AND name = pull_name
+    LIMIT 1;
+
+    SELECT workout_id INTO v_push
+    FROM workouts
+    WHERE user_id = alex_id AND name = push_name
+    LIMIT 1;
+
+    IF v_pull IS NULL OR v_push IS NULL THEN
+        RAISE NOTICE 'Alex split workouts not found - run the demo split seeding before this block.';
+        RETURN;
+    END IF;
+
+    FOR rec IN
+        SELECT * FROM (VALUES
+            (TIMESTAMPTZ '2026-07-01 18:00:00+00', v_push),
+            (TIMESTAMPTZ '2026-07-03 18:00:00+00', v_pull),
+            (TIMESTAMPTZ '2026-07-05 10:00:00+00', v_push)
+        ) AS t(scheduled_at, workout_id)
+    LOOP
+        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+        SELECT gen_random_uuid(), alex_id, rec.workout_id, rec.scheduled_at, scheduled_status
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM scheduled_entries se
+            WHERE se.user_id = alex_id
+              AND se.workout_id = rec.workout_id
+              AND se.scheduled = rec.scheduled_at
+              AND se.status = scheduled_status
+        );
+    END LOOP;
+END $$;
+
+-- ===========================================================================
 -- Badge definitions. `code` maps to an IBadgeRule (only "workout_count" has a
 -- rule today); "streak_weeks" has no rule yet but can still be awarded manually.
 -- Idempotent via the unique index on badges.name.

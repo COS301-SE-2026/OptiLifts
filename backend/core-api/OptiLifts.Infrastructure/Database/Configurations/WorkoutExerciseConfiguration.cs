@@ -29,7 +29,7 @@ public class WorkoutExerciseConfiguration : IEntityTypeConfiguration<WorkoutExer
                 .WithMany()
                 .HasForeignKey(we => we.ExerciseId)
                 .OnDelete(DeleteBehavior.Restrict);
-        
+
         //FK between WE and ExerciseGroup
         builder.HasOne<ExerciseGroup>()
                 .WithMany()

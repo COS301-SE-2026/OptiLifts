@@ -17,7 +17,7 @@ public class ExerciseGroupConfiguration : IEntityTypeConfiguration<ExerciseGroup
         builder.Property(g => g.Type).HasColumnName("group_type").HasConversion<string>().IsRequired();
         builder.Property(g => g.Rounds).HasColumnName("rounds").IsRequired();
         builder.Property(g => g.RestTime).HasColumnName("rest_time").IsRequired();
-        
+
         builder.HasOne<Workout>()
                .WithMany()
                .HasForeignKey(g => g.WorkoutId)

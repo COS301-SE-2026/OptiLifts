@@ -78,10 +78,10 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
             workout.CreatedAt
         );
     }
-    private static SetType ParseSetType(string value) => 
+    private static SetType ParseSetType(string value) =>
         Enum.TryParse<SetType>(value, ignoreCase: true, out var type) ? type : SetType.Normal;
 
-    private static ExerciseGroupType ParseGroupType(string value) => 
+    private static ExerciseGroupType ParseGroupType(string value) =>
         Enum.TryParse<ExerciseGroupType>(value, ignoreCase: true, out var type) ? type : ExerciseGroupType.Circuit;
 }
 

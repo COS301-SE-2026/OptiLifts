@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Dumbbell } from 'lucide-react'
+import { Plus, Dumbbell, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExerciseCard } from '@/components/ui/exercise-card'
@@ -55,17 +55,56 @@ type CreateWorkoutSetPayload = {
 type CreateWorkoutExercisePayload = {
   exerciseId: string
   orderIndex: number
+  groupKey: string | null
   sets: CreateWorkoutSetPayload[]
+}
+
+type CreateWorkoutGroupPayload = {
+  groupKey: string
+  type: string
+  rounds: number
+  restTime: number
 }
 
 type CreateWorkoutPayload = {
   name: string
   folderId: string | null
   exercises: CreateWorkoutExercisePayload[]
+  groups: CreateWorkoutGroupPayload[]
 }
 
 type SelectedWorkoutExercise = WorkoutExercise & {
   exerciseCatalogId?: string
+  linkedToNext?: boolean
+  restTime?: number
+}
+
+const DEFAULT_ROUNDS = 3
+const DEFAULT_REST = 60
+
+type WorkoutSegment = 
+  | { kind: 'single'; exercise: SelectedWorkoutExercise; index: number }
+  | { kind: 'group'; anchorId: string; members: Array<{ exercise: SelectedWorkoutExercise; index: number }> } 
+
+// Turns the list of segments into a group of linked exercises
+function buildSegs(exercises: SelectedWorkoutExercise[]): WorkoutSegment[] {
+  const segments: WorkoutSegment[] = []
+  let i = 0
+  while (i < exercises.length) {
+    let j = i
+    while (j < exercises.length - 1 && exercises[j].linkedToNext) j++
+    if (j > i) {
+      segments.push({
+        kind: 'group',
+        anchorId: exercises[i].id,
+        members: exercises.slice(i, j + 1).map((exercise, k) => ({ exercise, index: i + k})),
+      })
+    } else {
+      segments.push({ kind: 'single', exercise: exercises[i], index: i})
+    }
+    i = j + 1
+  }
+  return segments
 }
 
 const RECOMMENDED_EXERCISES = [
@@ -77,14 +116,22 @@ const RECOMMENDED_EXERCISES = [
   { name: 'Leg Press', muscleGroup: 'Hamstrings' as MuscleName },
 ] as const
 
-
 const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
 
-function MuscleDiagramPlaceholder() 
-{
-  return (
-    <div className="flex h-28 w-48 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted-foreground text-xs text-center leading-tight select-none">
-      Muscle<br />Diagram
+function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
+  return(
+    <div className="flex justify-center">
+      <button 
+        type="button" 
+        onClick={onClick}
+        aria-label={linked ? 'Unlink exercises' : 'Link exercises'}
+        className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border transition-colors ${
+          linked ? 'border-brand bg-brand/10 text-brand' :
+            'border-border bg-surface-2 text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <Link2 className="h-4 w-4" />
+      </button>
     </div>
   )
 }
@@ -129,6 +176,19 @@ export default function CreateWorkoutPage() {
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { isAuthenticated } = useAuth()
+  const [groupSettings, setGroupSettings] = useState<Record<string, { rounds: number; restTime: number }>>({})
+
+  const toggleLink = (index: number) =>
+    setExercises(prev => prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e)))
+
+  const setGroupSetting = (anchorId: string, field: 'rounds' | 'restTime', value: number) =>
+    setGroupSettings(prev => {
+      const current = prev[anchorId] ?? { rounds: DEFAULT_ROUNDS, restTime: DEFAULT_REST }
+      return { ...prev, [anchorId]: { ...current, [field]: value } }
+    })
+
+  const updateExerciseRestTime = (id: string, value: number) =>
+    setExercises(prev => prev.map(e => (e.id === id ? { ...e, restTime: value } : e)))
 
   const fetchExercises = useCallback(async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -220,6 +280,26 @@ export default function CreateWorkoutPage() {
   const saveWorkout = async () => {
     if (!workoutName.trim() || !isAuthenticated) return
     
+    const segments = buildSegs(exercises)
+
+    const groups: CreateWorkoutGroupPayload[] = segments.flatMap(seg => {
+      if (seg.kind !== 'group') return []
+      const settings = groupSettings[seg.anchorId] ?? { rounds: DEFAULT_ROUNDS, restTime: DEFAULT_REST }
+      return [{
+        groupKey: seg.anchorId,
+        type: seg.members.length === 2 ? 'Superset' : 'Circuit',
+        rounds: settings.rounds,
+        restTime: settings.restTime,
+      }]
+    })
+
+    const groupKeyByExerciseId = new Map<string, string>()
+    for (const seg of segments) {
+      if (seg.kind === 'group') {
+        for (const m of seg.members) groupKeyByExerciseId.set(m.exercise.id, seg.anchorId)
+      }
+    }
+
     const payload: CreateWorkoutPayload = {
       name: workoutName.trim(),
       folderId: null,
@@ -228,6 +308,7 @@ export default function CreateWorkoutPage() {
         .map((e, exerciseIndex) => ({
           exerciseId: e.exerciseCatalogId as string,
           orderIndex: exerciseIndex,
+          groupKey: groupKeyByExerciseId.get(e.id) ?? null,
           sets: e.sets.map((s, setIndex) => ({
             type: SET_TYPE_MAP[s.type] ?? 'Normal',
             reps: s.reps === '' ? null : Number(s.reps),
@@ -235,9 +316,10 @@ export default function CreateWorkoutPage() {
             duration: null,
             distance: null,
             orderIndex: setIndex,
-            restTime: 0,
+            restTime: e.restTime ?? 0,
           })),
         })),
+        groups,
     }
 
     setSaving(true)
@@ -314,9 +396,9 @@ export default function CreateWorkoutPage() {
   })()
 
   return (
-    <section className="w-full px-6 py-6">
-      <div className="grid grid-cols-12 gap-6 items-start">
-        <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6">
+    <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
+      <div className="grid grid-cols-12 gap-6 lg:h-full lg:min-h-0">
+        <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2">
@@ -340,22 +422,80 @@ export default function CreateWorkoutPage() {
               </div>
               {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             </div>
-            <MuscleDiagramPlaceholder />
           </div>
-
+          <div className="max-h-[calc(100dvh-15rem)] overflow-y-auto pr-1">
           <div className="flex flex-col gap-3">
-            {exercises.map(ex => (
-              <ExerciseCard key={ex.id} exercise={ex} onRemove={removeExercise} onSetsChange={updateSets} />
-            ))}
+            {buildSegs(exercises).map((seg, si, segs) => {
+              const lastIndex = seg.kind === 'single' ? seg.index : seg.members[seg.members.length - 1].index
+              const chainAfter = si < segs.length - 1
+                ? <ChainLink linked={false} onClick={() => toggleLink(lastIndex)} />
+                : null
+
+              if (seg.kind === 'single') {
+                return (
+                  <Fragment key={seg.exercise.id}>
+                    <ExerciseCard exercise={seg.exercise} restTime={seg.exercise.restTime} onRemove={removeExercise} 
+                    onSetsChange={updateSets} onRestTimeChange={updateExerciseRestTime} />
+                    {chainAfter}
+                  </Fragment>
+                )
+              }
+
+              const settings = groupSettings[seg.anchorId] ?? { rounds: DEFAULT_ROUNDS, restTime: DEFAULT_REST }
+              const type = seg.members.length ===  2 ? 'Superset' : 'Circuit'
+
+              return(
+                <Fragment key={seg.anchorId}>
+                  <div className="flex flex-col gap-2 rounded-xl border-2 border-brand/60 bg-brand/5 p-2">
+                    <div className="flex items-center justify-between px-2 pt-1">
+                      <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <label className="flex items-center gap-1">
+                          Rounds
+                          <input 
+                            type = "number"
+                            min = {1}
+                            value = {settings.rounds || ''}
+                            placeholder="1"
+                            onChange = {e => setGroupSetting(seg.anchorId, 'rounds', Number(e.target.value))}
+                            className="w-14 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </label>
+                        <label className="flex items-center gap-1">
+                          Rest (seconds)
+                          <input 
+                            type = "number"
+                            min = {0}
+                            value = {settings.restTime || ''}
+                            placeholder="0"
+                            onChange = {e => setGroupSetting(seg.anchorId, 'restTime', Number(e.target.value))}
+                            className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    {seg.members.map((m, mi) => (
+                      <Fragment key={m.exercise.id}> 
+                        <ExerciseCard exercise={m.exercise} onRemove={removeExercise} onSetsChange={updateSets} />
+                        {mi < seg.members.length - 1 && (
+                          <ChainLink linked onClick={() => toggleLink(m.index)} />
+                        )}
+                      </Fragment>
+                    ))}
+                  </div>
+                  {chainAfter}
+                </Fragment>
+              )
+            })}
             {exercises.length === 0 && (
-              <p className="text-sm text-muted-foreground">No exercises added yet. Use the panel on the right to add some.</p>
+              <p className="text-sm text-muted-foreground">No exercises have been added. Use the panel on the right to add exercises.</p>
             )}
           </div>
-
+          </div>
         </div>
 
         <div className="col-span-12 lg:col-span-5 min-w-0">
-          <div className="flex w-full flex-col gap-4 lg:fixed lg:top-[6.5rem] lg:right-6 lg:z-10 lg:w-[min(28rem,calc(100vw-3rem))] lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto">
+          <div className="flex w-full flex-col gap-4 lg:top-[6.5rem] lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto lg:[scrollbar-gutter:stable]">
 
             <Card className="w-full overflow-hidden border-border bg-card">
             <CardHeader className="px-4 py-1">
@@ -368,7 +508,7 @@ export default function CreateWorkoutPage() {
             </CardHeader>
             <CardContent className="px-0 pb-0">
               <div className="divide-y divide-border/70">
-                <div className="max-h-44 overflow-y-auto">
+                <div className="max-h-44 overflow-y-auto pr-1">
                 {filteredRecommended.length > 0 ? filteredRecommended.map((ex) => (
                   <div key={ex.name} className="flex items-center gap-3 px-4 py-2.5">
                     <Avatar className="size-9 shrink-0 border border-border">
@@ -434,7 +574,7 @@ export default function CreateWorkoutPage() {
                 />
               </div>
 
-              <div className="mt-2 min-h-0 overflow-y-auto pr-1">
+              <div className="mt-2 min-h-0 max-h-64 overflow-y-auto pr-1">
                 <div className="divide-y divide-border/70">
                 {exercisesListContent}
                 </div>

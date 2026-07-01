@@ -26,13 +26,31 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
 
         _dbContext.Workouts.Add(workout);
 
+        var groupKeyToId = new Dictionary<string, Guid>();
+        foreach (var group in request.Groups)
+        {
+            var exerciseGroup = new ExerciseGroup
+            {
+                WorkoutId = workout.Id,
+                Type = ParseGroupType(group.Type),
+                Rounds = group.Rounds,
+                RestTime = group.RestTime
+            };
+            _dbContext.ExerciseGroups.Add(exerciseGroup);
+            groupKeyToId[group.GroupKey] = exerciseGroup.Id;
+        }
+
         foreach (var exercise in request.Exercises)
         {
+            Guid? groupId = exercise.GroupKey is not null && groupKeyToId.TryGetValue(exercise.GroupKey, out var resolvedId)
+            ? resolvedId : null;
+
             var workoutExercise = new WorkoutExercise
             {
                 WorkoutId = workout.Id,
                 ExerciseId = exercise.ExerciseId,
-                OrderIndex = exercise.OrderIndex
+                OrderIndex = exercise.OrderIndex,
+                GroupId = groupId
             };
             _dbContext.WorkoutExercises.Add(workoutExercise);
 
@@ -40,7 +58,7 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
             var sets = exercise.Sets.Select(s => new WorkoutSet
             {
                 WorkoutExerciseId = workoutExercise.Id,
-                Type = Enum.Parse<SetType>(s.Type, ignoreCase: true),
+                Type = ParseSetType(s.Type),
                 Reps = s.Reps,
                 Weight = s.Weight,
                 Duration = s.Duration,
@@ -60,4 +78,11 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
             workout.CreatedAt
         );
     }
+    private static SetType ParseSetType(string value) => 
+        Enum.TryParse<SetType>(value, ignoreCase: true, out var type) ? type : SetType.Normal;
+
+    private static ExerciseGroupType ParseGroupType(string value) => 
+        Enum.TryParse<ExerciseGroupType>(value, ignoreCase: true, out var type) ? type : ExerciseGroupType.Circuit;
 }
+
+

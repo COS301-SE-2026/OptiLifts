@@ -22,6 +22,7 @@ const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
+const imageTag = config.get("imageTag") ?? stackName;
 
 const resourceGroup = new resources.ResourceGroup("rgoptilifts", {
     location: "SouthAfricaNorth"
@@ -149,6 +150,10 @@ const frontendApp = new app.ContainerApp("frontend", {
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
+            customDomains: [{
+                name: frontendDomain,
+                bindingType: "SniEnabled",
+            }],
         },
         registries: [{
             server: acrServer,
@@ -162,7 +167,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     template: {
         containers: [{
             name: "frontend",
-            image: pulumi.interpolate`${acrServer}/optilifts-frontend:${stackName}`,
+            image: pulumi.interpolate`${acrServer}/optilifts-frontend:${imageTag}`,
             resources: { cpu: 0.25, memory: "0.5Gi" },
             env: [{ name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }]
 
@@ -180,6 +185,11 @@ const coreApiApp = new app.ContainerApp("core-api", {
         ingress: {
             external: true, //give public url
             targetPort: 8080,
+            customDomains: [{
+                name: backendDomain,
+                bindingType: "SniEnabled",
+            }],
+            
         },
 
         secrets: [
@@ -208,7 +218,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
     template: {
         containers: [{
             name: "core-api",
-            image: pulumi.interpolate`${acrServer}/optilifts-core-api:${stackName}`,
+            image: pulumi.interpolate`${acrServer}/optilifts-core-api:${imageTag}`,
             resources: { cpu: 0.25, memory: "0.5Gi" },
             env: [
                 { name: "POSTGRES_HOST", value: pgServer.fullyQualifiedDomainName },
@@ -250,7 +260,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     template: {
         containers: [{
             name: "ai-api",
-            image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${stackName}`,
+            image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${imageTag}`,
             resources: {
                 cpu: 0.5,
                 memory: "1.0Gi"

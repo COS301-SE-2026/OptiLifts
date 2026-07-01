@@ -65,7 +65,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
 
             })
             .ToListAsync(cancellationToken);
-        
+
         var workoutExerciseIds = workouts.Select(wd => wd.WorkoutExerciseId).ToList();
         var sets = await _dbContext.Sets.AsNoTracking()
             .Where(s => workoutExerciseIds.Contains(s.WorkoutExerciseId))

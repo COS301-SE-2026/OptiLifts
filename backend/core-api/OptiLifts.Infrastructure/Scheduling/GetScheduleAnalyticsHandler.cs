@@ -60,7 +60,7 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
 
             ))
             .ToListAsync(cancellationToken);
-        
+
         var workoutExerciseIds = workoutDetails.Select(wd => wd.WorkoutExerciseId).ToList();
 
         var sets = await _dbContext.Sets.AsNoTracking()
@@ -75,7 +75,7 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
 
         //helper function 
         var muscleDistr = CalculateMuscleDistribution(entries, workoutDetails, sets);
-        
+
         return new ScheduleAnalyticsDto(
             entries.Count,
             totalVolume,
@@ -90,13 +90,13 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         {
             return (startDate.Value.Date, endDate.Value.Date);
         }
-        
+
         var now = DateTime.UtcNow.Date;
         int dif = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
         var start = now.AddDays(-dif);
         var end = start.AddDays(6);
         return (start, end);
-        
+
     }
 
     //calculate muscle distribution
@@ -106,15 +106,15 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         List<WorkoutSet> sets)
     {
         var muscleGroups = from entry in entries
-            join detail in workoutDetails on entry.WorkoutId equals detail.WorkoutId
-            join s in sets on detail.WorkoutExerciseId equals s.WorkoutExerciseId
-            where detail.MuscleName != "Other"
-            group s by detail.MuscleName into g
-            select new MuscleDistributionDto(
-                g.Key,
-                g.Count(),
-                0f
-            );
+                           join detail in workoutDetails on entry.WorkoutId equals detail.WorkoutId
+                           join s in sets on detail.WorkoutExerciseId equals s.WorkoutExerciseId
+                           where detail.MuscleName != "Other"
+                           group s by detail.MuscleName into g
+                           select new MuscleDistributionDto(
+                               g.Key,
+                               g.Count(),
+                               0f
+                           );
         var result = muscleGroups.ToList();
         var totalSets = result.Sum(r => r.SetCount);
         return result.Select(r => new MuscleDistributionDto(
@@ -130,7 +130,7 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         List<WorkoutDetailDto> workoutDetails,
         List<WorkoutSet> sets)
     {
-        return workoutIds.ToDictionary( 
+        return workoutIds.ToDictionary(
             id => id,
             id =>
             {
@@ -138,7 +138,7 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
                 var weIds = weList.Select(we => we.WorkoutExerciseId).ToList();
                 var workoutSets = sets.Where(s => weIds.Contains(s.WorkoutExerciseId)).ToList();
 
-                return 
+                return
                 (
                     Volume: workoutSets.Sum(s => (s.Weight ?? 0f) * (s.Reps ?? 0)),
                     SetsCount: workoutSets.Count
@@ -155,7 +155,7 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
     {
         float totalVolume = 0;
         int totalSets = 0;
-        foreach(var entry in entries)
+        foreach (var entry in entries)
         {
             if (statsPerWorkout.TryGetValue(entry.WorkoutId, out var stat))
             {
@@ -165,7 +165,7 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         }
         return (totalVolume, totalSets);
     }
-    
-    
+
+
 
 }

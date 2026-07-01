@@ -2,10 +2,10 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Scheduling;
-using OptiLifts.Domain.Users;
 namespace OptiLifts.Tests.Api.Tests;
 
 public sealed class GetScheduleAnalyticsHandlerTests
@@ -110,7 +110,7 @@ public sealed class GetScheduleAnalyticsHandlerTests
         db.Sets.AddRange(setOne, setTwo, setThree);
         await db.SaveChangesAsync();
 
-        var schedule = new DateTime(2026,6,27,10,0,0, DateTimeKind.Utc);
+        var schedule = new DateTime(2026, 6, 27, 10, 0, 0, DateTimeKind.Utc);
         var entry = new ScheduledEntry
         {
             UserId = userId,
@@ -123,7 +123,7 @@ public sealed class GetScheduleAnalyticsHandlerTests
 
         var handler = new GetScheduleAnalyticsHandler(db);
         var result = await handler.Handle(
-            new GetScheduleAnalyticsQuery(userId, new DateTime(2026,6,25,0,0,0, DateTimeKind.Utc), new DateTime(2026,6,28,0,0,0, DateTimeKind.Utc)), CancellationToken.None);
+            new GetScheduleAnalyticsQuery(userId, new DateTime(2026, 6, 25, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 6, 28, 0, 0, 0, DateTimeKind.Utc)), CancellationToken.None);
 
         result.TotalWorkouts.Should().Be(1);
         result.TotalVolume.Should().Be(1500);
@@ -202,13 +202,13 @@ public sealed class GetScheduleAnalyticsHandlerTests
         {
             UserId = userId,
             WorkoutId = workout.Id,
-            Scheduled = new DateTime(2026,6,26,9,0,0, DateTimeKind.Utc),
+            Scheduled = new DateTime(2026, 6, 26, 9, 0, 0, DateTimeKind.Utc),
             Status = ScheduleStatus.Completed
         };
         db.ScheduledEntries.Add(entryDone);
         await db.SaveChangesAsync();
 
-        var schedule = new DateTime(2026,6,27,11,0,0, DateTimeKind.Utc);
+        var schedule = new DateTime(2026, 6, 27, 11, 0, 0, DateTimeKind.Utc);
         var entrySched = new ScheduledEntry
         {
             UserId = userId,
@@ -220,9 +220,9 @@ public sealed class GetScheduleAnalyticsHandlerTests
         await db.SaveChangesAsync();
 
         var handler = new GetScheduleAnalyticsHandler(db);
-        var query = new GetScheduleAnalyticsQuery(userId, 
-            new DateTime(2026,6,25,0,0,0, DateTimeKind.Utc), 
-            new DateTime(2026,6,28,0,0,0, DateTimeKind.Utc), ScheduleStatus.Completed);
+        var query = new GetScheduleAnalyticsQuery(userId,
+            new DateTime(2026, 6, 25, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 6, 28, 0, 0, 0, DateTimeKind.Utc), ScheduleStatus.Completed);
 
         var result = await handler.Handle(query, CancellationToken.None);
 

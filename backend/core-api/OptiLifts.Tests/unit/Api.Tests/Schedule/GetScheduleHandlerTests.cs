@@ -2,10 +2,10 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.GetSchedule;
+using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Scheduling;
-using OptiLifts.Domain.Users;
 namespace OptiLifts.Tests.Api.Tests;
 
 public sealed class GetScheduleHandlerTests
@@ -105,7 +105,7 @@ public sealed class GetScheduleHandlerTests
         db.Sets.Add(set2);
         await db.SaveChangesAsync();
 
-        var schedule = new DateTime(2026,6,27,10,0,0, DateTimeKind.Utc);
+        var schedule = new DateTime(2026, 6, 27, 10, 0, 0, DateTimeKind.Utc);
         var entry = new ScheduledEntry
         {
             UserId = userId,
@@ -118,7 +118,7 @@ public sealed class GetScheduleHandlerTests
 
         var handler = new GetScheduleHandler(db);
         var result = await handler.Handle(
-            new GetScheduleQuery(userId, new DateTime(2026,6,25,0,0,0, DateTimeKind.Utc), new DateTime(2026,6,28,0,0,0, DateTimeKind.Utc)), CancellationToken.None);
+            new GetScheduleQuery(userId, new DateTime(2026, 6, 25, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 6, 28, 0, 0, 0, DateTimeKind.Utc)), CancellationToken.None);
 
         result.Should().HaveCount(1);
         var first = result[0];
@@ -170,7 +170,7 @@ public sealed class GetScheduleHandlerTests
         {
             UserId = userId,
             WorkoutId = workout.Id,
-            Scheduled = new DateTime(2026,6,20,10,0,0, DateTimeKind.Utc),
+            Scheduled = new DateTime(2026, 6, 20, 10, 0, 0, DateTimeKind.Utc),
             Status = ScheduleStatus.Scheduled
         };
         db.ScheduledEntries.Add(schedOutside);
@@ -180,13 +180,13 @@ public sealed class GetScheduleHandlerTests
         {
             UserId = userId,
             WorkoutId = workout.Id,
-            Scheduled = new DateTime(2026,6,27,10,0,0, DateTimeKind.Utc),
+            Scheduled = new DateTime(2026, 6, 27, 10, 0, 0, DateTimeKind.Utc),
         };
         db.ScheduledEntries.Add(schedInside);
         await db.SaveChangesAsync();
 
         var handler = new GetScheduleHandler(db);
-        var result = await handler.Handle(new GetScheduleQuery(userId, new DateTime(2026,6,25,10,0,0, DateTimeKind.Utc), new DateTime(2026,6,28,20,0,0, DateTimeKind.Utc)), CancellationToken.None);
+        var result = await handler.Handle(new GetScheduleQuery(userId, new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc), new DateTime(2026, 6, 28, 20, 0, 0, DateTimeKind.Utc)), CancellationToken.None);
 
         result.Should().HaveCount(1);
         result[0].Id.Should().Be(schedInside.Id);

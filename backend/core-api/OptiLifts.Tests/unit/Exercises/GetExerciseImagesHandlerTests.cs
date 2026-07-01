@@ -53,7 +53,7 @@ public class GetExerciseImagesHandlerTests
         {
             Id = Guid.NewGuid(),
             Name = "Deadlift",
-            ImageUrl = null, 
+            ImageUrl = null,
             ExerciseType = ExerciseType.WeightReps,
             PrimaryMuscleId = muscle.Id
         };
@@ -66,7 +66,7 @@ public class GetExerciseImagesHandlerTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.Should().HaveCount(2); 
+        result.Should().HaveCount(2);
         result.Should().ContainKey("Bench Press").WhoseValue.Should().Be("http://127.0.0.1:10000/images/bench.jpg");
         result.Should().ContainKey("Squat").WhoseValue.Should().Be("http://127.0.0.1:10000/images/squat.jpg");
         result.Should().NotContainKey("Deadlift");

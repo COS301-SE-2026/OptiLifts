@@ -48,13 +48,6 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
         }
         var workoutids = entries.Select(e => e.WorkoutId).Distinct().ToList();
 
-        var entryids = entries.Select(e => e.Id).ToList();
-
-        var logs = await _dbContext.WorkoutLogs.AsNoTracking()
-            .Where(log => log.EntryId.HasValue && entryids.Contains(log.EntryId.Value))
-            .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
-
-
         var workouts = await (
             from we in _dbContext.WorkoutExercises.AsNoTracking()
             where workoutids.Contains(we.WorkoutId)
@@ -104,6 +97,19 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
         var workoutNames = await _dbContext.Workouts.AsNoTracking()
             .Where(w => workoutids.Contains(w.Id))
             .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
+
+        var entryids = entries
+            .Where(e => e.Status == ScheduleStatus.Completed)
+            .Select(e => e.Id)
+            .ToList();
+        
+        var logs = new Dictionary<Guid, OptiLifts.Domain.Workouts.WorkoutLog>();
+        if (entryids.Count > 0)
+        {
+            logs = await _dbContext.WorkoutLogs.AsNoTracking()
+                .Where(l => l.EntryId.HasValue && entryids.Contains(l.EntryId.Value))
+                .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
+        }
         
         //will change once PR table is implemented
         var PRs= 1;
@@ -114,7 +120,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             workoutNames.TryGetValue(entry.WorkoutId, out var name);
 
             logs.TryGetValue(entry.Id, out var log);
-            
+
             return new ScheduledEntryDto(
                 entry.Id,
                 entry.WorkoutId,

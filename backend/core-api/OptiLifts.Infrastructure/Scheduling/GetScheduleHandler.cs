@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.GetSchedule;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Scheduling;
 
@@ -46,7 +47,6 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             return Array.Empty<ScheduledEntryDto>();
         }
         var workoutids = entries.Select(e => e.WorkoutId).Distinct().ToList();
-
 
         var workouts = await (
             from we in _dbContext.WorkoutExercises.AsNoTracking()
@@ -98,10 +98,29 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             .Where(w => workoutids.Contains(w.Id))
             .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
 
+        var entryids = entries
+            .Where(e => e.Status == ScheduleStatus.Completed)
+            .Select(e => e.Id)
+            .ToList();
+
+        var logs = new Dictionary<Guid, OptiLifts.Domain.Workouts.WorkoutLog>();
+        if (entryids.Count > 0)
+        {
+            logs = await _dbContext.WorkoutLogs.AsNoTracking()
+                .Where(l => l.EntryId.HasValue && entryids.Contains(l.EntryId.Value))
+                .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
+        }
+
+        //will change once PR table is implemented
+        var PRs = 1;
+
         var scheduledEntryDtos = entries.Select(entry =>
         {
             workoutStat.TryGetValue(entry.WorkoutId, out var stats);
             workoutNames.TryGetValue(entry.WorkoutId, out var name);
+
+            logs.TryGetValue(entry.Id, out var log);
+
             return new ScheduledEntryDto(
                 entry.Id,
                 entry.WorkoutId,
@@ -112,7 +131,10 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.ExerciseCount ?? 0,
                 stats?.ExercisePreview ?? Array.Empty<string>(),
                 stats?.Volume ?? 0f,
-                stats?.TotalSets ?? 0
+                stats?.TotalSets ?? 0,
+                log?.StartedAt,
+                log?.CompletedAt,
+                PRs
             );
         }).ToList();
         return scheduledEntryDtos;

@@ -10,6 +10,7 @@ import WorkoutsPage from '@/pages/workouts'
 import BrandStylePage from '@/pages/brand-style/brand-style'
 import ProfilePage from '@/pages/profile'
 import PastWorkoutsPage from '@/pages/past-workouts'
+import SchedulePage from './pages/schedule'
 
 function AppLayout() {
   return (
@@ -67,7 +68,7 @@ function App() {
           <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
-          <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
+          <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />

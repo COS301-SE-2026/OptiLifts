@@ -68,6 +68,7 @@ CREATE TEMP TABLE seed_constants (
     set_calf_id uuid NOT NULL,
     test_user_email text NOT NULL,
     demo_user_email text NOT NULL,
+    alex_user_email text NOT NULL,
     hex_enc text NOT NULL,
     set_type text NOT NULL,
     exercise_type text NOT NULL,
@@ -132,6 +133,7 @@ VALUES (
     '44444444-4444-4444-4444-444444444452',
     'test@optilifts.com',
     'demo2@optilifts.com',
+    'gymgoer@gmail.com',
     'hex',
     'Normal',
     'WeightReps',
@@ -354,7 +356,7 @@ ON CONFLICT (set_id) DO NOTHING;
 -- ===========================================================================
 DO $$
 DECLARE
-    alex_email constant text := 'gymgoer@gmail.com';
+    alex_email text;
     hex_enc constant text := 'hex';
     alex_id uuid;
     v_folder uuid;
@@ -367,6 +369,10 @@ DECLARE
     i int;
     rec record;
 BEGIN
+    SELECT c.alex_user_email INTO alex_email
+    FROM seed_constants c
+    LIMIT 1;
+
     SELECT user_id INTO alex_id FROM users
     WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
 
@@ -440,7 +446,7 @@ END $$;
 -- ===========================================================================
 DO $$
 DECLARE
-    alex_email constant text := 'gymgoer@gmail.com';
+    alex_email text;
     hex_enc constant text := 'hex';
     pull_name constant text := 'Pull';
     push_name constant text := 'Push';
@@ -450,6 +456,10 @@ DECLARE
     v_push uuid;
     rec record;
 BEGIN
+    SELECT c.alex_user_email INTO alex_email
+    FROM seed_constants c
+    LIMIT 1;
+
     SELECT user_id INTO alex_id
     FROM users
     WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
@@ -519,7 +529,7 @@ ON CONFLICT (name) DO NOTHING;
 INSERT INTO user_badges (user_badge_id, user_id, badge_id, earned_at)
 SELECT gen_random_uuid(), u.user_id, b.badge_id, NOW()
 FROM seed_constants c
-JOIN users u ON u.email_hash = encode(sha256('gymgoer@gmail.com'::bytea), c.hex_enc)
+JOIN users u ON u.email_hash = encode(sha256(c.alex_user_email::bytea), c.hex_enc)
 JOIN badges b ON b.name IN ('First Workout', '10 Workouts', '50 Workouts', 'Consistent')
 ON CONFLICT (user_id, badge_id) DO NOTHING;
 

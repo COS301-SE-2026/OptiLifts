@@ -32,6 +32,7 @@ interface AnalyticsResponse {
 }
 
 export default function SchedulePage() {
+    const [error, setError] = useState<string | null>(null)
     const [muscleValues, setMuscleValues] = useState<Record<string, number>>({
         Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
 
@@ -39,6 +40,7 @@ export default function SchedulePage() {
     useEffect(() => {
         async function fetchAnalytics() {
             try {
+                setError(null)
                 const resp = await customFetch('/api/users/me/schedule/analytics')
                 if (resp.ok) {
                     const data = (await resp.json()) as AnalyticsResponse
@@ -55,8 +57,8 @@ export default function SchedulePage() {
                     }
                     setMuscleValues(aggre)
                 }
-            } catch (err) {
-                console.error("Failed to fetch", err) //TODO: remove console
+            } catch (error) {
+                setError(error instanceof Error ? error.message : 'Could not load analytics')
             } finally {
                 // setIsLoading(false)
             }
@@ -71,7 +73,16 @@ export default function SchedulePage() {
             </div>
             <div className="p-6 max-w-md bg-card border border-border rounded-xl">
                 <h2 className="text-xl font-bold mb-4">Muscle Balance Chart</h2>
-                <SpiderGraph data={muscleValues} />
+                {error ? (
+                    <div
+                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                    role="alert"
+                >
+                    {error}
+                </div>
+                ) : (
+                    <SpiderGraph data={muscleValues} />
+                )}                
             </div>
         </section>
     )

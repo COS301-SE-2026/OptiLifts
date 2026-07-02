@@ -5,6 +5,8 @@ import { customFetch } from '@/lib/custom-fetch'
 import {X, Plus, ChevronDown, Calendar, Loader2, AlertCircle} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
+import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
+import type { Workout } from '@/types/workout'
 
 const MUSCLECAT_MAP: Record<string, string> = {
     Chest: 'Chest',
@@ -89,6 +91,12 @@ export default function SchedulePage() {
     const [error, setError] = useState<string | null>(null)
     const [muscleValues, setMuscleValues] = useState<Record<string, number>>({
         Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
+    // todo: add new state hooks
+    const [workouts, setWorkouts] = useState<Workout[]>([])
+    const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
+    const [selectedAddDate, setSelectedAddDate] = useState<Date | null>(null)
+    const [isScheduling, setIsScheduling] = useState(false)
+
 
     //calculate the dates
     const weekDates = useMemo(() => {
@@ -148,8 +156,23 @@ export default function SchedulePage() {
     }
 
     // const [ setIsLoading] = useState(true) //put isLoading in here, and add a loading icon
-    useEffect(() => {
+    useEffect(() => { //todo: replace this to also fetch workouts
         fetchScheduleAndAnalytics()
+        const fetchWorkouts = async () =>{
+            setIsFetchingWorkouts(true)
+            try {
+                const response = await customFetch('/api/workouts')
+                if(response.ok){
+                    const data = await response.json()
+                    setWorkouts(data)
+                } 
+            } catch(err) {
+                //todo: put nice error here
+            } finally {
+                setIsFetchingWorkouts(false)
+            }
+        }
+        fetchWorkouts()
     }, [weekDates])
 
     const handleDeletingSession = async (sessionId: string) => {
@@ -172,6 +195,35 @@ export default function SchedulePage() {
 
     const handleAddClick = (date: Date) => {
         //placeholder for adding workout implementation (needs a popup)
+        setSelectedAddDate(date)
+    }
+    const handleScheduleWorkout = async(workoutId:string)=> {
+        if (!selectedAddDate){
+            return
+        }
+        setIsScheduling(true)
+        setError(null)
+        try{
+            const scheduledAt =selectedAddDate.toISOString()
+            const response = await customFetch('/api/users/me/schedule/sessions',{
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    workoutId, scheduledAt, status: 0
+                })
+            })
+            if (!response.ok){
+                const errData = await response.json().catch(() => ({}))
+                throw new Error(errData.message || 'Could not schedule the workout')
+
+            }
+            setSelectedAddDate(null)
+            await fetchScheduleAndAnalytics()
+        }catch(err) {
+            setError(err instanceof Error ? err.message : 'Failed to schedule the workout')
+        } finally {
+            setIsScheduling(false)
+        }
     }
 
     const isSameDay = (date1: Date, date2: string) => {
@@ -226,7 +278,7 @@ export default function SchedulePage() {
                         <div className="md:col-span-7 space-y-2">
                             <h3 className="text-lg font-bold text-foreground leading-snug">{session.workoutName}</h3>
                             <p className={cardDETAIL}>
-                                <span className="font-semibold text-foreground">Primary Muscle Groups:</span>{session.primaryMuscleGroups.join(', ') || 'None'}
+                                <span className="font-semibold text-foreground">Primary Muscle Groups: </span>{session.primaryMuscleGroups.join(', ') || 'None'}
                             </p>
                             <p className={cardDETAIL}>
                                 <span className="font-semibold text-foreground">Exercises:</span> {session.exercisePreview.join(', ') || 'None'}
@@ -262,7 +314,6 @@ export default function SchedulePage() {
                         {isDeleting ? (
                             <Loader2 size={16} className="animate-spin text-destructive"/>
                         ): (
-                            //TODO: change to be X button?
                             <X size={16} />
                         )}
                     </Button>
@@ -362,7 +413,7 @@ export default function SchedulePage() {
                         ))
                     ) : (
                         weeklydays.map((day) => {
-                            const hasWorkouts = day.sessions.length < 0;
+                            const hasWorkouts = day.sessions.length > 0;
                             return (
                                 <div key={day.name} className="flex items-stretch gap-4 min-h-[110px]">
                                     <VerticalDayHeader name={day.name} date={day.formattedDate} />
@@ -412,6 +463,14 @@ export default function SchedulePage() {
                 </div>
                 
             </div>
+            {/* select workout popup comp */}
+            <SelectWorkoutDialog
+            isOpen={selectedAddDate !== null}
+            onClose={() => setSelectedAddDate(null)}
+            workouts={workouts}
+            isFetching={isFetchingWorkouts}
+            onSchedule={handleScheduleWorkout}
+            isScheduling={isScheduling}/>
         </section>
     )
 }

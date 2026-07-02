@@ -27,7 +27,7 @@ function formatDistanceValue(distance: number | null) {
     return ''
   }
 
-  return `${Number.isInteger(distance) ? distance : distance.toFixed(1)}m`
+  return `${Number.isInteger(distance) ? distance : distance.toFixed(1)}km`
 }
 
 function appendRestTime(text: string, restTime: string) {
@@ -44,41 +44,37 @@ export function formatPlannedExerciseSetText(
   const duration = formatDurationValue(set.duration)
   const distance = formatDistanceValue(set.distance)
 
-  let text = ''
-
   switch (exerciseType) {
     case 'bodyweight-reps':
-      text = reps ? `${reps} reps` : ''
-      break
+      return options?.includeRestTime === false ? (reps ? `${reps} reps` : '') : appendRestTime(reps ? `${reps} reps` : '', set.restTime)
     case 'weighted-bodyweight':
-      text = [reps ? `${reps} reps` : '', weight ? `(+${weight})` : ''].filter(Boolean).join(' ')
-      break
+      return options?.includeRestTime === false
+        ? [reps ? `${reps} reps` : '', weight ? `(+${weight})` : ''].filter(Boolean).join(' ')
+        : appendRestTime([reps ? `${reps} reps` : '', weight ? `(+${weight})` : ''].filter(Boolean).join(' '), set.restTime)
     case 'assisted-bodyweight':
-      text = [reps ? `${reps} reps` : '', weight ? `(-${weight})` : ''].filter(Boolean).join(' ')
-      break
+      return options?.includeRestTime === false
+        ? [reps ? `${reps} reps` : '', weight ? `(-${weight})` : ''].filter(Boolean).join(' ')
+        : appendRestTime([reps ? `${reps} reps` : '', weight ? `(-${weight})` : ''].filter(Boolean).join(' '), set.restTime)
     case 'duration':
-      text = duration
-      break
+      return options?.includeRestTime === false ? duration : appendRestTime(duration, set.restTime)
     case 'duration-weight':
-      text = [duration, weight ? `@ ${weight}` : ''].filter(Boolean).join(' ')
-      break
+      return options?.includeRestTime === false
+        ? [duration, weight ? `@ ${weight}` : ''].filter(Boolean).join(' ')
+        : appendRestTime([duration, weight ? `@ ${weight}` : ''].filter(Boolean).join(' '), set.restTime)
     case 'distance-duration':
-      text = [distance, duration ? `in ${duration}` : ''].filter(Boolean).join(' ')
-      break
+      return options?.includeRestTime === false
+        ? [distance, duration ? `in ${duration}` : ''].filter(Boolean).join(' ')
+        : appendRestTime([distance, duration ? `in ${duration}` : ''].filter(Boolean).join(' '), set.restTime)
     case 'weight-distance':
-      text = [weight, distance ? `for ${distance}` : ''].filter(Boolean).join(' ')
-      break
+      return options?.includeRestTime === false
+        ? [weight, distance ? `for ${distance}` : ''].filter(Boolean).join(' ')
+        : appendRestTime([weight, distance ? `for ${distance}` : ''].filter(Boolean).join(' '), set.restTime)
     case 'weight-reps':
     default:
-      text = [weight, reps ? `x ${reps} reps` : ''].filter(Boolean).join(' ')
-      break
+      return options?.includeRestTime === false
+        ? [weight, reps ? `x ${reps} reps` : ''].filter(Boolean).join(' ')
+        : appendRestTime([weight, reps ? `x ${reps} reps` : ''].filter(Boolean).join(' '), set.restTime)
   }
-
-  if (options?.includeRestTime === false) {
-    return text
-  }
-
-  return appendRestTime(text, set.restTime)
 }
 
 export function formatLoggedExerciseSetText(exerciseType: ExerciseTypeValue, set: LoggedExerciseSet) {
@@ -86,35 +82,23 @@ export function formatLoggedExerciseSetText(exerciseType: ExerciseTypeValue, set
   const weight = formatWeight(set.weight)
   const rpe = formatRpe(set.rpe)
 
-  let text = ''
-
   switch (exerciseType) {
     case 'bodyweight-reps':
-      text = `${reps} reps`
-      break
+      return `${reps} reps @ ${rpe} RPE`
     case 'weighted-bodyweight':
-      text = `${reps} reps (+${weight})`
-      break
+      return `${reps} reps (+${weight}) @ ${rpe} RPE`
     case 'assisted-bodyweight':
-      text = `${reps} reps (-${weight})`
-      break
+      return `${reps} reps (-${weight}) @ ${rpe} RPE`
     case 'duration':
-      text = `${reps}s`
-      break
+      return `${reps}s @ ${rpe} RPE`
     case 'duration-weight':
-      text = `${reps}s + ${weight}`
-      break
+      return `${reps}s + ${weight} @ ${rpe} RPE`
     case 'distance-duration':
-      text = `${reps}m`
-      break
+      return `${reps}m @ ${rpe} RPE`
     case 'weight-distance':
-      text = `${weight} for ${reps}m`
-      break
+      return `${weight} for ${reps}m @ ${rpe} RPE`
     case 'weight-reps':
     default:
-      text = `${weight} x ${reps} reps`
-      break
+      return `${weight} x ${reps} reps @ ${rpe} RPE`
   }
-
-  return `${text} @ ${rpe} RPE`
 }

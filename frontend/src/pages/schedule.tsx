@@ -2,11 +2,16 @@ import { useEffect, useState, useMemo } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
-import {X, Plus, ChevronDown, Calendar, Loader2, AlertCircle} from 'lucide-react'
+import {X, Plus, ChevronDown, Loader2, AlertCircle} from 'lucide-react'
 import {Button} from '@/components/ui/button'
-import {Card, CardContent} from '@/components/ui/card'
+import {Card} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
 import type { Workout } from '@/types/workout'
+
+//styling constants for same style aspects
+const statLABEL = "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block"
+const statVALUE = "text-sm font-bold text-foreground block"
+const cardDETAIL = "text-xs text-muted-foreground leading-normal"
 
 const MUSCLECAT_MAP: Record<string, string> = {
     Chest: 'Chest',
@@ -91,7 +96,6 @@ export default function SchedulePage() {
     const [error, setError] = useState<string | null>(null)
     const [muscleValues, setMuscleValues] = useState<Record<string, number>>({
         Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
-    // todo: add new state hooks
     const [workouts, setWorkouts] = useState<Workout[]>([])
     const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
     const [selectedAddDate, setSelectedAddDate] = useState<Date | null>(null)
@@ -155,8 +159,7 @@ export default function SchedulePage() {
         }
     }
 
-    // const [ setIsLoading] = useState(true) //put isLoading in here, and add a loading icon
-    useEffect(() => { //todo: replace this to also fetch workouts
+    useEffect(() => { 
         fetchScheduleAndAnalytics()
         const fetchWorkouts = async () =>{
             setIsFetchingWorkouts(true)
@@ -243,13 +246,111 @@ export default function SchedulePage() {
         }
     })
 
-    //styling constants for same style aspects
-    const statLABEL = "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block"
-    const statVALUE = "text-sm font-bold text-foreground block"
-    const cardDETAIL = "text-xs text-muted-foreground leading-normal"
+    return (
+        <section className="mx-auto max-w-6xl px-6 py-12">
+
+            {/* top row */}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <PageTitle title="Scheduler" />
+                <div className="relative inline-block self-end sm:self-auto">
+                    <select
+                        defaultValue="week"
+                        className="appearance-none bg-surface border border-border text-foreground px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer shadow-sm transition-all hover:bg-surface-2/40">
+                        <option value="week">Week View</option>
+                        <option value="month">Month View</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground border-l border-border/40 ml-1">
+                            <ChevronDown size={15}/>
+                        </div>
+                </div>
+            </div>
 
 
-    //COMPONENTS
+
+            {/* error msg */}
+            {error && (
+                <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3.5 text-sm text-destructive flex items-center gap-2.5 shadow-sm animate-fadeIn" role="alert">
+                    <AlertCircle size={18} />
+                    <span>{error}</span>
+                </div>
+            )}
+
+            <div className="grid grid-cols-12 gap-8 items-start">
+                {/* workout cards */}
+                <div className="col-span-12 lg:col-span-7 space-y-6">
+                    {isLoading ? (
+                        DAYS.map((day) => (
+                            <div key={`skeleton-${day.name}`} className="flex items-center gap-4 animate-pulse">
+                                <div className="w-12 h-14 border-r border-border flex flex-col items-center justify-center mr-1"/>    
+                                <div className="flex-1 h-28 bg-surface-2 border border-border rounded-xl"/>
+                                <div className="w-10 h-10"/>
+                            </div>
+                        ))
+                    ) : (
+                        weeklydays.map((day) => {
+                            const hasWorkouts = day.sessions.length > 0;
+                            return (
+                                <div key={day.name} className="flex items-stretch gap-4 min-h-[110px]">
+                                    <VerticalDayHeader name={day.name} date={day.formattedDate} />
+
+                                    {hasWorkouts ? (
+                                        <div className="flex-1 flex flex-col gap-4">
+                                            {day.sessions.map((session) => (
+                                                <WorkoutCard
+                                                    key={session.id}
+                                                    session={session}
+                                                    isDeleting={isDeleting === session.id}
+                                                    onDelete={handleDeletingSession}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <EmptyDayCard
+                                            fullName={day.fullName}
+                                            onClick={() => handleAddClick(day.date)}
+                                        />
+                                    )}
+                                </div>
+                            )
+                        })
+                    )}
+                </div>
+
+                {/* summary section */}
+                <div className="col-span-12 lg:col-span-5 space-y-6 lg:sticky lg:top-6">
+                    <SummaryCard
+                        totalWorkouts={analytics?.totalWorkouts ?? 0}
+                        totalVolume={analytics?.totalVolume ?? 0}
+                        totalSets={analytics?.totalSets ?? 0}
+                    />
+
+                    <div className="p-6 bg-card border border-border rounded-2xl shadow-sm">
+                        <h2 className="text-xl font-bold mb-4">Muscle Balance Chart</h2>
+                        {isLoading ? (
+                            <div className="h-64 flex items-center justify-center">
+                                <Loader2 className="animate-spin text-muted-foreground/60" size={24}/>
+                            </div>
+                        ) : (
+                            <SpiderGraph data={muscleValues} />
+                        )}
+                    </div>
+
+                </div>
+                
+            </div>
+            {/* select workout popup comp */}
+            <SelectWorkoutDialog
+            isOpen={selectedAddDate !== null}
+            onClose={() => setSelectedAddDate(null)}
+            workouts={workouts}
+            isFetching={isFetchingWorkouts}
+            onSchedule={handleScheduleWorkout}
+            isScheduling={isScheduling}/>
+        </section>
+    )
+}
+
+//COMPONENTS
     //vertical day headers
     interface VerticalDayHeaderProps{
         readonly name: string
@@ -320,158 +421,60 @@ export default function SchedulePage() {
             </div >
         )
     }
-    interface EmptyDayCardProps{
-        readonly fullName: string
-        readonly onClick: () => void
-    }
-    function EmptyDayCard({fullName, onClick}: EmptyDayCardProps){
-        return (
-            <div className="flex-1 flex items-stretch">
-                {/* TODO: make accessible */}
-                <div className="flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center hover:border-brand/40 hover:bg-surface-2/20 transition-all cursor-pointer group" onClick={onClick}>
-                        <div className="p-3 bg-surface border border-border group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground rounded-full transition-all shadow-sm"
-                            aria-label={`Add workout for ${fullName}`}>
-                                <Plus size={20} />
-                            </div>
-                    </div>
-                    <div className="w-14 flex-shrink-0"/>
-            </div>
-        )
-    }
-    // summary for week/month
-    interface SummaryCardProps{
-        readonly totalWorkouts: number
-        readonly totalVolume: number
-        readonly totalSets: number
-    }
-    function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
-        return (
-            <Card className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <div className="mb-4">
-                    <h3 className="font-display text-lg tracking-wider uppercase text-muted-foreground">Weekly Summary</h3>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-center sm:text-left">
-                    <div className="border-r border-border/60 last:border-0 pr-2">
-                        <span className={`${statLABEL} mb-1`}>Workouts</span>
-                        <span className="text-2xl sm:text-3xl font-bold text-foreground font-display">{totalWorkouts}</span>
-                    </div>
-                    <div className="border-r border-border/60 last:border-0 px-2">
-                        <span className={`${statLABEL} mb-1`}>Total Volume</span>
-                        <span className="text-2xl sm:text-3xl font-bold text-foreground font-display block truncate">
-                            {totalVolume.toLocaleString()}
-                            <span className="text-xs font-sans font-medium text-muted-foreground">kg</span>
-                        </span>
-                    </div>
-                    <div className="px-2">
-                        <span className={`${statLABEL} mb-1`}>Total Sets</span>
-                        <span className="text-2xl sm:text-3xl font-bold text-foreground font-display">{totalSets}</span>
-                    </div>
-                </div>
-            </Card>
-        )
-    }
-
+interface EmptyDayCardProps{
+    readonly fullName: string
+    readonly onClick: () => void
+}
+function EmptyDayCard({ fullName, onClick }: EmptyDayCardProps) {
     return (
-        <section className="mx-auto max-w-6xl px-6 py-12">
-
-            {/* TODO: top row */}
-            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <PageTitle title="Scheduler" />
-                <div className="relative inline-block self-end sm:self-auto">
-                    <select
-                        defaultValue="week"
-                        className="appearance-none bg-surface border border-border text-foreground px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer shadow-sm transition-all hover:bg-surface-2/40">
-                        <option value="week">Week View</option>
-                        <option value="month">Month View</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground border-l border-border/40 ml-1">
-                            <ChevronDown size={15}/>
-                        </div>
+        <div className="flex-1 flex items-stretch">
+            <button tabIndex={0}
+                className="flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center hover:border-brand/40 hover:bg-surface-2/20 transition-all cursor-pointer group"
+                onClick={onClick}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onClick();
+                    }
+                }} aria-label={`Add workout for ${fullName}`}>
+                <div className="p-3 bg-surface border border-border group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground rounded-full transition-all shadow-sm"
+                >
+                    <Plus size={20} />
                 </div>
-            </div>
-
-
-
-            {/* error msg */}
-            {error && (
-                <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3.5 text-sm text-destructive flex items-center gap-2.5 shadow-sm animate-fadeIn" role="alert">
-                    <AlertCircle size={18} />
-                    <span>{error}</span>
-                </div>
-            )}
-
-            <div className="grid grid-cols-12 gap-8 items-start">
-                {/* workout cards */}
-                <div className="col-span-12 lg:col-span-7 space-y-6">
-                    {isLoading ? (
-                        Array.from({length:7}).map((_,index) => (
-                            <div key={index} className="flex items-center gap-4 animate-pulse">
-                                <div className="w-12 h-14 border-r border-border flex flex-col items-center justify-center mr-1"/>    
-                                <div className="flex-1 h-28 bg-surface-2 border border-border rounded-xl"/>
-                                <div className="w-10 h-10"/>
-                            </div>
-                        ))
-                    ) : (
-                        weeklydays.map((day) => {
-                            const hasWorkouts = day.sessions.length > 0;
-                            return (
-                                <div key={day.name} className="flex items-stretch gap-4 min-h-[110px]">
-                                    <VerticalDayHeader name={day.name} date={day.formattedDate} />
-
-                                    {hasWorkouts ? (
-                                        <div className="flex-1 flex flex-col gap-4">
-                                            {day.sessions.map((session) => (
-                                                <WorkoutCard
-                                                    key={session.id}
-                                                    session={session}
-                                                    isDeleting={isDeleting === session.id}
-                                                    onDelete={handleDeletingSession}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyDayCard
-                                            fullName={day.fullName}
-                                            onClick={() => handleAddClick(day.date)}
-                                        />
-                                    )}
-                                </div>
-                            )
-                        })
-                    )}
-                </div>
-
-                {/* summary section */}
-                <div className="col-span-12 lg:col-span-5 space-y-6 lg:sticky lg:top-6">
-                    <SummaryCard
-                        totalWorkouts={analytics?.totalWorkouts ?? 0}
-                        totalVolume={analytics?.totalVolume ?? 0}
-                        totalSets={analytics?.totalSets ?? 0}
-                    />
-
-                    <div className="p-6 bg-card border border-border rounded-2xl shadow-sm">
-                        <h2 className="text-xl font-bold mb-4">Muscle Balance Chart</h2>
-                        {isLoading ? (
-                            <div className="h-64 flex items-center justify-center">
-                                <Loader2 className="animate-spin text-muted-foreground/60" size={24}/>
-                            </div>
-                        ) : (
-                            <SpiderGraph data={muscleValues} />
-                        )}
-                    </div>
-
-                </div>
-                
-            </div>
-            {/* select workout popup comp */}
-            <SelectWorkoutDialog
-            isOpen={selectedAddDate !== null}
-            onClose={() => setSelectedAddDate(null)}
-            workouts={workouts}
-            isFetching={isFetchingWorkouts}
-            onSchedule={handleScheduleWorkout}
-            isScheduling={isScheduling}/>
-        </section>
+            </button>
+            <div className="w-14 flex-shrink-0" />
+        </div>
     )
 }
-
+// summary for week/month
+interface SummaryCardProps{
+    readonly totalWorkouts: number
+    readonly totalVolume: number
+    readonly totalSets: number
+}
+function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
+    return (
+        <Card className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <div className="mb-4">
+                <h3 className="font-display text-lg tracking-wider uppercase text-muted-foreground">Weekly Summary</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center sm:text-left">
+                <div className="border-r border-border/60 last:border-0 pr-2">
+                    <span className={`${statLABEL} mb-1`}>Workouts</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-foreground font-display">{totalWorkouts}</span>
+                </div>
+                <div className="border-r border-border/60 last:border-0 px-2">
+                    <span className={`${statLABEL} mb-1`}>Total Volume</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-foreground font-display block truncate">
+                        {totalVolume.toLocaleString()}
+                        <span className="text-xs font-sans font-medium text-muted-foreground">kg</span>
+                    </span>
+                </div>
+                <div className="px-2">
+                    <span className={`${statLABEL} mb-1`}>Total Sets</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-foreground font-display">{totalSets}</span>
+                </div>
+            </div>
+        </Card>
+    )
+}

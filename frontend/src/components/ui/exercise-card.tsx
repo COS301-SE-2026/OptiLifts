@@ -134,7 +134,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
 
         {onRestTimeChange && (
           <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
-            Rest (seconds)
+            <span>Rest (seconds)</span>
             <input 
               type = "number"
               min = {0}

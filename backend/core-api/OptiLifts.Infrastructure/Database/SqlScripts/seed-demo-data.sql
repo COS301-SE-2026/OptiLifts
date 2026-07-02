@@ -342,17 +342,14 @@ CROSS JOIN LATERAL (VALUES
 ) AS v(group_id, workout_id, group_type, rounds, rest_time)
 ON CONFLICT (exercise_group_id) DO NOTHING;
 
+-- Link each exercise to its workout's group. Push Day A and Upper B are fully
+-- grouped (all their exercises belong to the superset/circuit); Pull/Lower have
+-- no group row, so their exercises stay ungrouped. Deriving group_id from the
+-- workout avoids repeating the group ids.
 UPDATE workout_exercises we
-SET group_id = g.group_id
-FROM seed_constants c
-CROSS JOIN LATERAL (VALUES
-    (c.we_bench_id,   '66666666-6666-6666-6666-666666666661'::uuid),
-    (c.we_squat_id,   '66666666-6666-6666-6666-666666666661'::uuid),
-    (c.we_incline_id, '66666666-6666-6666-6666-666666666662'::uuid),
-    (c.we_row_id,     '66666666-6666-6666-6666-666666666662'::uuid),
-    (c.we_ohp_id,     '66666666-6666-6666-6666-666666666662'::uuid)
-) AS g(we_id, group_id)
-WHERE we.workout_exercise_id = g.we_id;
+SET group_id = eg.exercise_group_id
+FROM exercise_groups eg
+WHERE eg.workout_id = we.workout_id;
 
 -- ---------------------------------------------------------------------------
 -- Sets (now attached to workout_exercises, not directly to workouts).

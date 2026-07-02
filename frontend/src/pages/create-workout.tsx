@@ -426,7 +426,7 @@ export default function CreateWorkoutPage() {
           <div className="max-h-[calc(100dvh-15rem)] overflow-y-auto pr-1">
           <div className="flex flex-col gap-3">
             {buildSegs(exercises).map((seg, si, segs) => {
-              const lastIndex = seg.kind === 'single' ? seg.index : seg.members[seg.members.length - 1].index
+              const lastIndex = seg.kind === 'single' ? seg.index : seg.members.at(-1)!.index
               const chainAfter = si < segs.length - 1
                 ? <ChainLink linked={false} onClick={() => toggleLink(lastIndex)} />
                 : null
@@ -451,7 +451,7 @@ export default function CreateWorkoutPage() {
                       <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <label className="flex items-center gap-1">
-                          Rounds
+                          <span>Rounds</span>
                           <input 
                             type = "number"
                             min = {1}
@@ -462,7 +462,7 @@ export default function CreateWorkoutPage() {
                           />
                         </label>
                         <label className="flex items-center gap-1">
-                          Rest (seconds)
+                          <span>Rest (seconds)</span>
                           <input 
                             type = "number"
                             min = {0}

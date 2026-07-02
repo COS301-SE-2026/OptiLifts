@@ -81,6 +81,8 @@ services:
       network: host
       args:
         - VITE_API_BASE=/api
+    environment:
+      - NGINX_BACKEND_URL=http://core-api:8080
     # so application is on 5173 externally 
     ports:
       - "${FRONTEND_PORT:-5173}:8080"

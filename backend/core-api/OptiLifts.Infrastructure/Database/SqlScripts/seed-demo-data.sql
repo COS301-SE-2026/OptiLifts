@@ -502,7 +502,7 @@ BEGIN
             (v_full_body, 'Assisted Pull Up',     4, 1,    8,   NULL::integer, 20::real,    NULL::real),
             (v_full_body, 'Plank',                5, 1, NULL::integer, 60,     NULL::real,  NULL::real),
             (v_full_body, 'Weighted Plank',       6, 1, NULL::integer, 45,     12::real,    NULL::real),
-            (v_full_body, 'Running',              7, 1, 1800,   900,          NULL::real,   NULL::real),
+            (v_full_body, 'Running',              7, 1, 1800,   900,          NULL::real,   5::real),
             (v_full_body, 'Suitcase Carry',       8, 1,   30,    NULL::integer, 40::real,    30::real)
         ) AS t(workout_id, ex_name, ord, n_sets, reps, duration, weight, distance)
     LOOP

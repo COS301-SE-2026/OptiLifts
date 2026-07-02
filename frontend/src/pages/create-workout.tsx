@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Dumbbell, Link2 } from 'lucide-react'
+import { Plus, Dumbbell, Link2, ArrowLeft} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExerciseCard } from '@/components/ui/exercise-card'
@@ -402,6 +402,15 @@ export default function CreateWorkoutPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2">
+              <Button 
+                variant="text"
+                size="sm"
+                onClick={() => navigate('/workouts')}
+                className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Workouts</span>
+              </Button>
               <PageTitle title="Create Workout" />
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1 w-80">

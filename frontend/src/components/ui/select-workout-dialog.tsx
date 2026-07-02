@@ -93,7 +93,7 @@ export function SelectWorkoutDialog({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
-            <dialog className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl mx-4 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200" 
+            <dialog className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl mx-4 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200 overflow-hidden z-50" 
             open aria-modal="true" 
                 aria-labelledby="select-workout-title">
                 <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-4">
@@ -112,21 +112,20 @@ export function SelectWorkoutDialog({
                 </div>
 
                 {/* list if workouts */}
-                <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-[250px] max-h-[400px]">
+                <div className="flex-1 overflow-y-auto px-2 py-1 space-y-3 min-h-[250px] max-h-[400px]">
                     {contentList}
         </div> 
 
         {/* buttons */}
         <div className="mt-6 flex justify-end gap-3 border-t border-border/60 pt-4">
                     <Button 
-                        variant="ghost"
+                        variant="secondary"
                         onClick={onClose}
                         disabled={isScheduling}
                         className ="text-xs uppercase tracking-wider">
                             Cancel
                     </Button>
                     <Button
-                    variant="secondary"
                     disabled={isScheduling || !selectedId}
                     onClick={handleConfirm}
                     className="text-xs uppercase tracking-wider px-6">

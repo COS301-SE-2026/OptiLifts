@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from './button'
 import { X, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './card'
 import { SearchInput } from './search-input'
+import type { Workout } from '@/types/workout'
 
 interface SelectWorkoutDialogProps {
     readonly isOpen: boolean
     readonly onClose: () => void
-    readonly workouts: any[]
+    readonly workouts: readonly Workout[]
     readonly isFetching: boolean
     readonly onSchedule: (workoutId: string) => Promise<void> | void
     readonly isScheduling: boolean
@@ -17,12 +18,6 @@ export function SelectWorkoutDialog({
 } : SelectWorkoutDialogProps) {
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
-    useEffect(() => {
-        if (isOpen) {
-            setSelectedId(null)
-            setSearchQuery('')
-        }
-    }, [isOpen])
 
     if (!isOpen) {
         return null

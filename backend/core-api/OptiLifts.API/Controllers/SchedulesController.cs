@@ -78,7 +78,7 @@ public sealed class SchedulesController : ControllerBase
         }
         var command = new CreateScheduledSessionCommand(userId, request.WorkoutId, request.ScheduledAt, request.Status);
         var result = await _sender.Send(command, cancellationToken);
-        if(result == null)
+        if (result == null)
         {
             return NotFound(new
             {
@@ -107,7 +107,7 @@ public sealed class SchedulesController : ControllerBase
             return Unauthorized();
         }
         var delete = await _sender.Send(new DeleteScheduledSessionCommand(userId, sessionId), cancellationToken);
-        if(!delete)
+        if (!delete)
         {
             return NotFound(new
             {
@@ -133,7 +133,7 @@ public sealed class SchedulesController : ControllerBase
 
         var command = new UpdateScheduledSessionStatusCommand(userId, sessionId, request.Status);
         var result = await _sender.Send(command, cancellationToken);
-        if(result == null)
+        if (result == null)
         {
             return NotFound(new
             {

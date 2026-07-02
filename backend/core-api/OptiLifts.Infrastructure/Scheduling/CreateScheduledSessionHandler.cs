@@ -19,7 +19,7 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
         {
             return null;
         }
-        
+
         //new entry to insert
         var entry = new ScheduledEntry
         {
@@ -27,7 +27,7 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
             UserId = request.UserId,
             WorkoutId = request.WorkoutId,
             Scheduled = request.ScheduledAt,
-            Status = request.Status?? ScheduleStatus.Scheduled
+            Status = request.Status ?? ScheduleStatus.Scheduled
         };
         _dbContext.ScheduledEntries.Add(entry);
         await _dbContext.SaveChangesAsync(cancellationToken);

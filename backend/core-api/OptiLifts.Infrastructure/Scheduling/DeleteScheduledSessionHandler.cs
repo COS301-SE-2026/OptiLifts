@@ -13,7 +13,7 @@ public sealed class DeleteScheduledSessionHandler : IRequestHandler<DeleteSchedu
     }
     public async Task<bool> Handle(DeleteScheduledSessionCommand request, CancellationToken cancellationToken)
     {
-        var entry = await _dbContext.ScheduledEntries.FirstOrDefaultAsync(e=> e.Id == request.SessionId && e.UserId == request.UserId, cancellationToken);
+        var entry = await _dbContext.ScheduledEntries.FirstOrDefaultAsync(e => e.Id == request.SessionId && e.UserId == request.UserId, cancellationToken);
         if (entry == null)
         {
             return false; //does not exist or doesnt belong to user

@@ -14,7 +14,7 @@ public sealed class UpdateScheduledSessionStatusHandler : IRequestHandler<Update
     }
     public async Task<UpdateScheduledSessionStatusResult?> Handle(UpdateScheduledSessionStatusCommand request, CancellationToken cancellationToken)
     {
-        var entry = await _dbContext.ScheduledEntries.FirstOrDefaultAsync(e=> e.Id == request.SessionId && e.UserId == request.UserId, cancellationToken);
+        var entry = await _dbContext.ScheduledEntries.FirstOrDefaultAsync(e => e.Id == request.SessionId && e.UserId == request.UserId, cancellationToken);
         if (entry == null)
         {
             return null; //does not exist or doesnt belong to user

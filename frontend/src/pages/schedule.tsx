@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
-import {X, Plus, ChevronDown, Loader2, AlertCircle} from 'lucide-react'
+import {X, Plus, Loader2, AlertCircle} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import {Card, CardTitle} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
@@ -130,6 +130,7 @@ export default function SchedulePage() {
     }, [])
 
     const fetchScheduleAndAnalytics =async () => {
+        await Promise.resolve()
         setIsLoading(true)
         setError(null)
         try {
@@ -169,8 +170,13 @@ export default function SchedulePage() {
     }
 
     useEffect(() => { 
-        fetchScheduleAndAnalytics()
+        const trigger = async () => {
+            await Promise.resolve()
+            await fetchScheduleAndAnalytics()
+        }
+        void trigger()
         const fetchWorkouts = async () =>{
+            await Promise.resolve()
             setIsFetchingWorkouts(true)
             try {
                 const response = await customFetch('/api/workouts')
@@ -179,12 +185,12 @@ export default function SchedulePage() {
                     setWorkouts(data)
                 } 
             } catch(err) {
-                //todo: put nice error here
+                setError(err instanceof Error ? err.message : 'Unexpected error occured while loading workouts.')
             } finally {
                 setIsFetchingWorkouts(false)
             }
         }
-        fetchWorkouts()
+        void fetchWorkouts()
     }, [weekDates])
 
     const handleDeletingSession = async (sessionId: string) => {
@@ -367,6 +373,7 @@ export default function SchedulePage() {
             </div>
             {/* select workout popup comp */}
             <SelectWorkoutDialog
+            key={selectedAddDate ? selectedAddDate.toISOString() : 'closed'}
             isOpen={selectedAddDate !== null}
             onClose={() => setSelectedAddDate(null)}
             workouts={workouts}

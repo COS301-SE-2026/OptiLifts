@@ -1,0 +1,71 @@
+name: Optilifts CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+  # a manual trigger
+  workflow_dispatch:
+
+env: 
+    ACR_NAME: acroptiliftse3077197
+
+jobs:
+    build-deploy:
+      runs-on: ubuntu-latest
+      
+      steps:
+        - name: Checkout Respository
+          uses: actions/checkout@v4
+
+        - name: Azure login
+          uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d
+          with: 
+            creds: ${{secrets.AZURE_CREDENTIALS}}
+
+        - name: Azure container regiistry login
+          run: az acr login --name ${{env.ACR_NAME}}
+
+        - name: Build and push frontend image
+          run: |
+            docker build --build-arg VITE_API_BASE=/api -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{ github.sha }} -f frontend/Dockerfile .
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{github.sha}}
+
+        - name: Build and push core-api image
+          run: |
+            docker build -t ${{env.ACR_NAME}}.azurecr.io/optilifts-core-api:${{github.sha}} -f backend/core-api/Dockerfile backend/core-api
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-core-api:${{github.sha}}
+
+        - name: Build and push ai-api image
+          run: |
+            docker build -t ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}} -f backend/ai-api/Dockerfile backend/ai-api
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}}
+
+        - name: Setup Node
+          uses: actions/setup-node@v4
+          with: 
+            node-version: '24'
+
+        - name: Install Pulumi
+          working-directory: infrastructure
+          run: npm install
+
+        - name: Deploy via Pulumi
+          uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f
+          with:
+            command: up
+            stack-name: prod
+            work-dir: infrastructure
+            config-map: |
+              imageTag: ${{github.sha}}
+          env:
+            PULUMI_ACCESS_TOKEN: ${{secrets.PULUMI_ACCESS_TOKEN}}
+
+
+        
+
+        
+
+    
+
+

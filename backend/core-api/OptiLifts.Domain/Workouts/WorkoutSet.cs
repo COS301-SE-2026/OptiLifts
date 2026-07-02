@@ -7,7 +7,8 @@ public enum SetType
     Normal,
     Superset,
     DropSet,
-    Circuit
+    Circuit,
+    Warmup
 }
 
 public class WorkoutSet

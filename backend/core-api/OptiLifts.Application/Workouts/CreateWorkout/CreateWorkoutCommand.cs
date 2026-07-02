@@ -22,7 +22,6 @@ public sealed record CreateWorkoutExerciseDto(
 public sealed record CreateWorkoutCommand(
     Guid? FolderId,
     string Name,
-    int? DayIndex,
     Guid CreatedBy,
     IReadOnlyList<CreateWorkoutExerciseDto> Exercises
 ) : IRequest<CreateWorkoutResult>;

@@ -11,6 +11,7 @@ import WorkoutDetailPage from '@/pages/workout-detail'
 import WorkoutLogDetailPage from '@/pages/workout-log-detail'
 import BrandStylePage from '@/pages/brand-style/brand-style'
 import ProfilePage from '@/pages/profile'
+import SchedulePage from './pages/schedule'
 
 function AppLayout() {
   return (
@@ -70,7 +71,7 @@ function App() {
           <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
-          <Route path="schedule" element={<PlaceholderPage title="Schedule" description="Schedule shell." />} />
+          <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>        

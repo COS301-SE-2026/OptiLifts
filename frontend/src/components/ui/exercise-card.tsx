@@ -59,7 +59,7 @@ function SetRow({
         />
       </div>
 
-      <div className="flex-1 text-center">
+      <div className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
         <NumericalUnderscoreInput
           value={set.kg === '' ? '' : String(set.kg)}
           onChange={e => onChange({ ...set, kg: e.target.value === '' ? '' : Number(e.target.value) })}
@@ -67,7 +67,7 @@ function SetRow({
         />
       </div>
 
-      <div className="flex-1 text-center">
+      <div className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
         <NumericalUnderscoreInput
           value={set.reps === '' ? '' : String(set.reps)}
           onChange={e => onChange({ ...set, reps: e.target.value === '' ? '' : Number(e.target.value) })}
@@ -146,7 +146,10 @@ export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardP
 
       <div className="px-4 py-3 flex flex-col gap-2">
         <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-[1px] text-muted-foreground font-sans px-3">
-          <span className="w-20 shrink-0">Set</span>
+          <div className='flex items-center w-20 shrink-0'>
+            <span className="w-4 shrink-0"/>
+            <span className="w-8 text-center">Set</span>
+          </div>
           <span className="flex-1 text-center">KG</span>
           <span className="flex-1 text-center">Reps</span>
           <span className="w-6 shrink-0" />

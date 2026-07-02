@@ -38,8 +38,12 @@ export function DatePagination({ currentDate, onChange, type = 'week', className
         const prev = new Date(currentDate)
         if (type === 'week') {
             prev.setDate(prev.getDate() - 7)
+            onChange(getWeekStart(prev))
         } else {
             prev.setMonth(prev.getMonth() - 1)
+            prev.setDate(1)
+            prev.setHours(0, 0, 0, 0)
+            onChange(prev)
         }
 
         onChange(prev)
@@ -49,8 +53,12 @@ export function DatePagination({ currentDate, onChange, type = 'week', className
         const next = new Date(currentDate)
         if (type === 'week') {
             next.setDate(next.getDate() + 7)
+            onChange(getWeekStart(next))
         } else {
             next.setMonth(next.getMonth() + 1)
+            next.setDate(1)
+            next.setHours(0, 0, 0, 0)
+            onChange(next)
         }
 
         onChange(next)

@@ -330,18 +330,18 @@ ON CONFLICT (workout_exercise_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
 -- Exercise groups (superset / circuit) for demo workouts.
---   Push Day A: bench + squat        -> Superset (3 rounds, 90s between rounds)
---   Upper B:    incline + row + ohp   -> Circuit  (4 rounds, 120s between rounds)
+--   Push Day A: bench + squat        -> Superset (90s rest between)
+--   Upper B:    incline + row + ohp   -> Circuit  (120s rest between)
 -- Members are linked below by setting workout_exercises.group_id.
--- (Per-round rest lives on the group; per-set rest stays on the sets.)
+-- (Group rest lives on the group; per-set rest stays on the sets.)
 -- ---------------------------------------------------------------------------
-INSERT INTO exercise_groups (exercise_group_id, workout_id, group_type, rounds, rest_time)
-SELECT v.group_id, v.workout_id, v.group_type, v.rounds, v.rest_time
+INSERT INTO exercise_groups (exercise_group_id, workout_id, group_type, rest_time)
+SELECT v.group_id, v.workout_id, v.group_type, v.rest_time
 FROM seed_constants c
 CROSS JOIN LATERAL (VALUES
-    ('66666666-6666-6666-6666-666666666661'::uuid, c.workout_push_id,    'Superset', 3, 90),
-    ('66666666-6666-6666-6666-666666666662'::uuid, c.workout_upper_b_id, 'Circuit',  4, 120)
-) AS v(group_id, workout_id, group_type, rounds, rest_time)
+    ('66666666-6666-6666-6666-666666666661'::uuid, c.workout_push_id,    'Superset', 90),
+    ('66666666-6666-6666-6666-666666666662'::uuid, c.workout_upper_b_id, 'Circuit',  120)
+) AS v(group_id, workout_id, group_type, rest_time)
 ON CONFLICT (exercise_group_id) DO NOTHING;
 
 -- Link each exercise to its workout's group. Push Day A and Upper B are fully

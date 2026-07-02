@@ -21,7 +21,6 @@ public sealed record CreateWorkoutExerciseRequest(
 public sealed record CreateWorkoutGroupRequest(
     string GroupKey,
     string Type,
-    int Rounds,
     int RestTime
 );
 

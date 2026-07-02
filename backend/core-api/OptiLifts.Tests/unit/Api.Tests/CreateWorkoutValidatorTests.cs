@@ -5,11 +5,12 @@ namespace OptiLifts.Tests.Unit.Workouts;
 
 public class CreateWorkoutValidatorTests
 {
-    private static CreateWorkoutExerciseRequest Exercise(int order, string? groupKey = null) =>
-        new(Guid.NewGuid(), order, groupKey, new List<CreateWorkoutSetRequest>());
+    private static CreateWorkoutExerciseRequest Exercise(int order, string? groupKey = null, int setCount = 0) =>
+        new(Guid.NewGuid(), order, groupKey, Enumerable.Range(0, setCount)
+        .Select(i => new CreateWorkoutSetRequest("Normal", 10, 60f, null, null, i, 60)).ToList());
 
-    private static CreateWorkoutGroupRequest Group(string key, string type, int rounds = 3, int restTime = 60) =>
-        new(key, type, rounds, restTime);
+    private static CreateWorkoutGroupRequest Group(string key, string type, int restTime = 60) =>
+        new(key, type, restTime);
 
     private static CreateWorkoutRequest Request(
         IReadOnlyList<CreateWorkoutExerciseRequest> exercises,
@@ -57,16 +58,6 @@ public class CreateWorkoutValidatorTests
     }
 
     [Fact]
-    public void Rounds_below_one_gets_rejected()
-    {
-        var request = Request(
-            new[] { Exercise(1, "g1"), Exercise(2, "g1") },
-            new[] { Group("g1", "Superset", rounds: 0) });
-
-        CreateWorkoutValidator.Validate(request).Should().ContainSingle(e => e.Contains("at least 1 round"));
-    }
-
-    [Fact]
     public void Duplicate_group_key_gets_rejected()
     {
         var request = Request(
@@ -105,4 +96,26 @@ public class CreateWorkoutValidatorTests
 
         CreateWorkoutValidator.Validate(request).Should().BeEmpty();
     }
+
+    [Fact]
+    public void Group_with_mismatched_set_counts_gets_rejected()
+    {
+        var request = Request(
+            new[] { Exercise(1, "g1", setCount: 4), Exercise(2, "g1", setCount: 3) },
+            new[] { Group("g1", "Superset") });
+
+        CreateWorkoutValidator.Validate(request)
+            .Should().Contain(e => e.Contains("same number of sets"));
+    }
+
+    [Fact]
+    public void Group_with_equal_set_counts_has_no_errors()
+    {
+        var request = Request(
+            new[] { Exercise(1, "g1", setCount: 5), Exercise(2, "g1", setCount: 5) },
+            new[] { Group("g1", "Superset") });
+
+        CreateWorkoutValidator.Validate(request).Should().BeEmpty();
+    }
+
 }

@@ -23,7 +23,6 @@ public sealed record CreateWorkoutExerciseDto(
 public sealed record CreateWorkoutGroupDto(
     string GroupKey,
     string Type,
-    int Rounds,
     int RestTime
 );
 

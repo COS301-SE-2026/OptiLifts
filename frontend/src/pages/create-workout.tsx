@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Dumbbell, Link2, ArrowLeft} from 'lucide-react'
+import { Plus, Dumbbell, Link2, ArrowLeft, AlertCircle} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExerciseCard } from '@/components/ui/exercise-card'
@@ -62,7 +62,6 @@ type CreateWorkoutExercisePayload = {
 type CreateWorkoutGroupPayload = {
   groupKey: string
   type: string
-  rounds: number
   restTime: number
 }
 
@@ -79,7 +78,6 @@ type SelectedWorkoutExercise = WorkoutExercise & {
   restTime?: number
 }
 
-const DEFAULT_ROUNDS = 3
 const DEFAULT_REST = 60
 
 type WorkoutSegment = 
@@ -176,14 +174,14 @@ export default function CreateWorkoutPage() {
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { isAuthenticated } = useAuth()
-  const [groupSettings, setGroupSettings] = useState<Record<string, { rounds: number; restTime: number }>>({})
+  const [groupSettings, setGroupSettings] = useState<Record<string, { restTime: number }>>({})
 
   const toggleLink = (index: number) =>
     setExercises(prev => prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e)))
 
-  const setGroupSetting = (anchorId: string, field: 'rounds' | 'restTime', value: number) =>
+  const setGroupSetting = (anchorId: string, field: 'restTime', value: number) =>
     setGroupSettings(prev => {
-      const current = prev[anchorId] ?? { rounds: DEFAULT_ROUNDS, restTime: DEFAULT_REST }
+      const current = prev[anchorId] ?? { restTime: DEFAULT_REST }
       return { ...prev, [anchorId]: { ...current, [field]: value } }
     })
 
@@ -284,11 +282,10 @@ export default function CreateWorkoutPage() {
 
     const groups: CreateWorkoutGroupPayload[] = segments.flatMap(seg => {
       if (seg.kind !== 'group') return []
-      const settings = groupSettings[seg.anchorId] ?? { rounds: DEFAULT_ROUNDS, restTime: DEFAULT_REST }
+      const settings = groupSettings[seg.anchorId] ?? { restTime: DEFAULT_REST }
       return [{
         groupKey: seg.anchorId,
         type: seg.members.length === 2 ? 'Superset' : 'Circuit',
-        rounds: settings.rounds,
         restTime: settings.restTime,
       }]
     })
@@ -450,26 +447,29 @@ export default function CreateWorkoutPage() {
                 )
               }
 
-              const settings = groupSettings[seg.anchorId] ?? { rounds: DEFAULT_ROUNDS, restTime: DEFAULT_REST }
+              const settings = groupSettings[seg.anchorId] ?? { restTime: DEFAULT_REST }
               const type = seg.members.length ===  2 ? 'Superset' : 'Circuit'
+              const unequalSets = new Set(seg.members.map(m => m.exercise.sets.length)).size > 1
 
               return(
                 <Fragment key={seg.anchorId}>
                   <div className="flex flex-col gap-2 rounded-xl border-2 border-brand/60 bg-brand/5 p-2">
                     <div className="flex items-center justify-between px-2 pt-1">
-                      <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
+                        {unequalSets && (
+                          <span className="group relative flex cursor-pointer">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden 
+                              w-52 rounded-md border border-border bg-surface px-2 py-1 text-xs font-normal 
+                              normal-case leading-snug tracking-normal text-foreground shadow-md group-hover:block"
+                              >
+                              Exercises in a Superset or Circuit must have equal number of sets
+                            </span>
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <label className="flex items-center gap-1">
-                          <span>Rounds</span>
-                          <input 
-                            type = "number"
-                            min = {1}
-                            value = {settings.rounds || ''}
-                            placeholder="1"
-                            onChange = {e => setGroupSetting(seg.anchorId, 'rounds', Number(e.target.value))}
-                            className="w-14 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </label>
                         <label className="flex items-center gap-1">
                           <span>Rest (seconds)</span>
                           <input 

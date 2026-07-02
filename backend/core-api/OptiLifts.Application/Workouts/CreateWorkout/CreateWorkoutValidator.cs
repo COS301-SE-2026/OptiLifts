@@ -26,17 +26,13 @@ public static class CreateWorkoutValidator
                 continue;
             }
 
-            if (group.Rounds < 1)
-            {
-                errors.Add($"Group '{group.GroupKey}' must have at least 1 round.");
-            }
-
             if (group.RestTime < 0)
             {
                 errors.Add($"Group '{group.GroupKey}' must be a positive number.");
             }
 
             var memberCount = exercises.Count(e => e.GroupKey == group.GroupKey);
+            var members = exercises.Where(e => e.GroupKey == group.GroupKey).ToList();
 
             if (type == ExerciseGroupType.Superset && memberCount != 2)
             {
@@ -46,6 +42,11 @@ public static class CreateWorkoutValidator
             if (type == ExerciseGroupType.Circuit && memberCount < 3)
             {
                 errors.Add($"Circuits must have atleast 3 exercises (found {memberCount}).");
+            }
+
+            if (members.Select(e => e.Sets?.Count ?? 0).Distinct().Count() > 1)
+            {
+                errors.Add($"All exercises in group '{group.GroupKey}' must have the same number of sets for supersets and circuits.");
             }
         }
 

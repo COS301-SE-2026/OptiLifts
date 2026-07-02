@@ -63,7 +63,7 @@ public sealed class WorkoutsController : ControllerBase
             .ToList();
 
         var groups = (request.Groups ?? [])
-            .Select(g => new CreateWorkoutGroupDto(g.GroupKey, g.Type, g.Rounds, g.RestTime))
+            .Select(g => new CreateWorkoutGroupDto(g.GroupKey, g.Type, g.RestTime))
             .ToList();
 
         var command = new CreateWorkoutCommand(request.FolderId, request.Name, userId, exercises, groups);

@@ -33,7 +33,6 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
             {
                 WorkoutId = workout.Id,
                 Type = ParseGroupType(group.Type),
-                Rounds = group.Rounds,
                 RestTime = group.RestTime
             };
             _dbContext.ExerciseGroups.Add(exerciseGroup);

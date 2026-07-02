@@ -80,7 +80,7 @@ export default function PastWorkoutsPage() {
         void fetchWorkouts()
     }, [selectedWeek])
 
-    let out = null;
+    let out;
 
     if (loading) {
         out = (
@@ -105,7 +105,7 @@ export default function PastWorkoutsPage() {
 
                     const exerImages = allImages.slice(0, 8);
                     const extraExercises = allImages.length > 8;
-                    let workoutDate = null
+                    let workoutDate;
                     if (workout.startedAt) {
                         workoutDate = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(workout.startedAt))
                     } else {

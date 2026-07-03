@@ -13,8 +13,10 @@ import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-worko
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
+  restTime?: number
   onRemove: (id: string) => void
   onSetsChange: (id: string, sets: ExerciseSet[]) => void
+  onRestTimeChange?: (id: string, value: number) => void
 }>
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
@@ -84,7 +86,7 @@ function SetRow({
 
 let nextSetId = 0
 
-export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
   const updateSets = (updated: ExerciseSet[]) => {
@@ -130,6 +132,20 @@ export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardP
           </span>
         </div>
 
+        {onRestTimeChange && (
+          <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+            <span>Rest (seconds)</span>
+            <input 
+              type = "number"
+              min = {0}
+              value = {restTime || ''}
+              placeholder="0"
+              onChange = {e => onRestTimeChange(exercise.id, Number(e.target.value))}
+              className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+          </label>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain" className="p-1">
             <MoreHorizontal className="w-4 h-4" />
@@ -167,15 +183,12 @@ export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardP
           )
         })}
       </div>
-
-      <div className="border-t border-border" />
-
-      <div className="px-4 py-3">
+        <div className="px-4 py-3">
         <Button variant="outline" size="sm" className="w-full" onClick={addSet}>
           + Add Set
         </Button>
       </div>
-
+      <div className="border-t border-border" />
     </div>
   )
 }

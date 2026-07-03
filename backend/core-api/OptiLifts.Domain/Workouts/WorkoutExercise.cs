@@ -6,4 +6,5 @@ public class WorkoutExercise
     public Guid WorkoutId { get; set; }
     public Guid ExerciseId { get; set; }
     public int OrderIndex { get; set; }
+    public Guid? GroupId { get; set; }
 }

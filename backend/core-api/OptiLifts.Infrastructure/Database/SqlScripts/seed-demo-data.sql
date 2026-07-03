@@ -42,6 +42,8 @@ CREATE TEMP TABLE seed_constants (
     exercise_lunge_id uuid NOT NULL,
     exercise_ohp_id uuid NOT NULL,
     exercise_calf_id uuid NOT NULL,
+    exercise_bench_press_name text NOT NULL,
+    exercise_pull_up_name text NOT NULL,
     folder_push_id uuid NOT NULL,
     folder_pull_id uuid NOT NULL,
     workout_push_id uuid NOT NULL,
@@ -107,6 +109,8 @@ VALUES (
     '11111111-1111-1111-1111-111111111117',
     '11111111-1111-1111-1111-111111111118',
     '11111111-1111-1111-1111-111111111119',
+    'Barbell Bench Press',
+    'Pull Up',
     '22222222-2222-2222-2222-222222222222',
     '22222222-2222-2222-2222-222222222223',
     '33333333-3333-3333-3333-333333333333',
@@ -166,7 +170,7 @@ VALUES (
 -- required FK into muscles, resolved by name.
 -- ---------------------------------------------------------------------------
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_bench_id, 'Barbell Bench Press', c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
+SELECT c.exercise_bench_id, c.exercise_bench_press_name, c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
 FROM seed_constants c JOIN muscles m ON m.name = c.muscle_chest
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
@@ -229,9 +233,9 @@ SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.mu
 FROM seed_constants c
 CROSS JOIN exercise_types t
 CROSS JOIN LATERAL (VALUES
-    ('Pull Up',             c.mechanic_compound, c.equipment_bodyweight, t.bodyweight_reps,   c.muscle_lats),
-    ('Weighted Pull Up',    c.mechanic_compound, c.equipment_bodyweight, t.weighted_bodyweight, c.muscle_lats),
-    ('Assisted Pull Up',    c.mechanic_compound, c.equipment_machine,    t.assisted_weight_reps, c.muscle_lats),
+    (c.exercise_pull_up_name, c.mechanic_compound, c.equipment_bodyweight, t.bodyweight_reps,   c.muscle_lats),
+    (concat('Weighted ', c.exercise_pull_up_name), c.mechanic_compound, c.equipment_bodyweight, t.weighted_bodyweight, c.muscle_lats),
+    (concat('Assisted ', c.exercise_pull_up_name), c.mechanic_compound, c.equipment_machine,    t.assisted_weight_reps, c.muscle_lats),
     ('Deadlift',            c.mechanic_compound, c.equipment_barbell,    c.exercise_type,    c.muscle_hamstrings),
     ('Dumbbell Bicep Curl', c.mechanic_isolated, c.equipment_dumbbell,   c.exercise_type,    c.muscle_biceps),
     ('Tricep Pushdown',     c.mechanic_isolated, c.equipment_cable,      c.exercise_type,    c.muscle_triceps),
@@ -522,12 +526,13 @@ BEGIN
 
     -- exercises + sets for each recent-workout card (volume = weight*reps, count = #sets)
     FOR rec IN
-        SELECT * FROM (VALUES
+        SELECT t.* FROM seed_constants c
+        CROSS JOIN LATERAL (VALUES
             (v_pull, 'Lat Pulldown',            1, 5, 12, 45::real),
             (v_pull, 'Seated Cable Row',        2, 4, 10, 50::real),
-            (v_pull, 'Pull Up',                 3, 4, 8,   0::real),
+            (v_pull, c.exercise_pull_up_name,   3, 4, 8,   0::real),
             (v_pull, 'Dumbbell Bicep Curl',     4, 3, 12, 14::real),
-            (v_push, 'Barbell Bench Press',     1, 4, 8,  60::real),
+            (v_push, c.exercise_bench_press_name, 1, 4, 8,  60::real),
             (v_push, 'Overhead Press',          2, 4, 8,  40::real),
             (v_push, 'Incline Dumbbell Press',   3, 4, 10, 30::real),
             (v_push, 'Tricep Pushdown',          4, 4, 12, 25::real)
@@ -548,11 +553,12 @@ BEGIN
     END LOOP;
 
     FOR rec IN
-        SELECT * FROM (VALUES
-            (v_full_body, 'Barbell Bench Press',  1, 1,    8,   NULL::integer, 60::real,   NULL::real),
-            (v_full_body, 'Pull Up',              2, 1,   10,   NULL::integer, NULL::real,  0::real),
-            (v_full_body, 'Weighted Pull Up',     3, 1,    6,   NULL::integer, 10::real,    NULL::real),
-            (v_full_body, 'Assisted Pull Up',     4, 1,    8,   NULL::integer, 20::real,    NULL::real),
+        SELECT t.* FROM seed_constants c
+        CROSS JOIN LATERAL (VALUES
+            (v_full_body, c.exercise_bench_press_name,  1, 1,    8,   NULL::integer, 60::real,   NULL::real),
+            (v_full_body, c.exercise_pull_up_name,      2, 1,   10,   NULL::integer, NULL::real,  0::real),
+            (v_full_body, concat('Weighted ', c.exercise_pull_up_name), 3, 1,    6,   NULL::integer, 10::real,    NULL::real),
+            (v_full_body, concat('Assisted ', c.exercise_pull_up_name), 4, 1,    8,   NULL::integer, 20::real,    NULL::real),
             (v_full_body, 'Plank',                5, 1, NULL::integer, 60,     NULL::real,  NULL::real),
             (v_full_body, 'Weighted Plank',       6, 1, NULL::integer, 45,     12::real,    NULL::real),
             (v_full_body, 'Running',              7, 1, 1800,   900,          NULL::real,   5::real),

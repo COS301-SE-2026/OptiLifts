@@ -29,7 +29,7 @@ export function SpiderGraph({data}: SpiderGraphProps) {
     const labelColor = getcssVariables('--muted-text', '#71717A')
     const textColor = getcssVariables('--foreground', '#1A1A1A')
     const fontSans = getcssVariables('--font-sans', 'Barlow, sans-serif')
-    const brandFill = `${brandColor}26`
+    const brandFill = getcssVariables('--brand-fill', '#CC002226')
 
     const chartValues = Array.isArray(data) ? data : SPIDER_CATS.map((cat) => data[cat] ?? 0)
 

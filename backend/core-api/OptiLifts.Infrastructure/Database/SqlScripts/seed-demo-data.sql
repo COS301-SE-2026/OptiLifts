@@ -219,6 +219,7 @@ WITH exercise_types AS (
         'BodyweightReps'::text AS bodyweight_reps,
         'WeightedBodyweight'::text AS weighted_bodyweight,
         'AssistedWeightReps'::text AS assisted_weight_reps,
+    'Duration'::text AS duration_type,
         'DurationWeight'::text AS duration_weight,
         'DistanceDuration'::text AS distance_duration,
         'WeightDistance'::text AS weight_distance
@@ -234,7 +235,7 @@ CROSS JOIN LATERAL (VALUES
     ('Deadlift',            c.mechanic_compound, c.equipment_barbell,    c.exercise_type,    c.muscle_hamstrings),
     ('Dumbbell Bicep Curl', c.mechanic_isolated, c.equipment_dumbbell,   c.exercise_type,    c.muscle_biceps),
     ('Tricep Pushdown',     c.mechanic_isolated, c.equipment_cable,      c.exercise_type,    c.muscle_triceps),
-    ('Plank',               c.mechanic_isolated, c.equipment_bodyweight, 'Duration',         c.muscle_abdominals),
+    ('Plank',               c.mechanic_isolated, c.equipment_bodyweight, t.duration_type,    c.muscle_abdominals),
     ('Weighted Plank',      c.mechanic_isolated, c.equipment_dumbbell,   t.duration_weight,   c.muscle_abdominals),
     ('Running',             c.mechanic_compound, c.equipment_bodyweight, t.distance_duration, c.muscle_quadriceps),
     ('Suitcase Carry',      c.mechanic_compound, c.equipment_dumbbell,   t.weight_distance,   c.muscle_lower_back)
@@ -396,7 +397,8 @@ ON CONFLICT (set_id) DO NOTHING;
 DO $$
 DECLARE
     alex_email text;
-    hex_enc constant text := 'hex';
+    hex_enc text;
+    normal_set_type text;
     pull_name constant text := 'Pull';
     push_name constant text := 'Push';
     full_body_name constant text := 'Full Body';
@@ -416,6 +418,11 @@ DECLARE
     rec record;
 BEGIN
     SELECT c.alex_user_email INTO alex_email
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT c.hex_enc, c.set_type
+    INTO hex_enc, normal_set_type
     FROM seed_constants c
     LIMIT 1;
 
@@ -536,7 +543,7 @@ BEGIN
         RETURNING workout_exercise_id INTO v_we;
 
         INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, NULL, NULL, gs, 90
+        SELECT gen_random_uuid(), v_we, normal_set_type, rec.reps, rec.weight, NULL, NULL, gs, 90
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
@@ -562,7 +569,7 @@ BEGIN
         RETURNING workout_exercise_id INTO v_we;
 
         INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-        SELECT gen_random_uuid(), v_we, 'Normal', rec.reps, rec.weight, rec.duration, rec.distance, gs, 90
+        SELECT gen_random_uuid(), v_we, normal_set_type, rec.reps, rec.weight, rec.duration, rec.distance, gs, 90
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
@@ -642,7 +649,9 @@ END $$;
 DO $$
 DECLARE
     alex_email text;
-    hex_enc constant text := 'hex';
+    hex_enc text;
+    pull_name constant text := 'Pull';
+    push_name constant text := 'Push';
     scheduled_status constant text := 'Scheduled';
     alex_id uuid;
     v_pull uuid;
@@ -650,6 +659,10 @@ DECLARE
     rec record;
 BEGIN
     SELECT c.alex_user_email INTO alex_email
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT c.hex_enc INTO hex_enc
     FROM seed_constants c
     LIMIT 1;
 

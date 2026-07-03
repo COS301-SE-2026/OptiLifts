@@ -63,7 +63,15 @@ export default function MusclesSummary({ exercises, className }: MusclesSummaryP
 
       <div className="space-y-2">
         {rows.length > 0 ? rows.map(({ muscle, sets }) => {
-          const width = maxSets > 0 ? Math.max((sets / maxSets) * 100, sets > 0 ? 8 : 0) : 0
+          let minimumWidth = 0
+          if (sets > 0) {
+            minimumWidth = 8
+          }
+
+          let width = 0
+          if (maxSets > 0) {
+            width = Math.max((sets / maxSets) * 100, minimumWidth)
+          }
 
           return (
             <div key={muscle} className="grid grid-cols-[minmax(7.5rem,0.85fr)_minmax(0,1.55fr)_3rem] items-center gap-0">

@@ -3,8 +3,11 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OptiLifts.Application.Scheduling.CreateScheduledSession;
+using OptiLifts.Application.Scheduling.DeleteScheduledSession;
 using OptiLifts.Application.Scheduling.GetSchedule;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Application.Scheduling.UpdateScheduledSessionStatus;
 using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.API.Controllers;
@@ -58,4 +61,88 @@ public sealed class SchedulesController : ControllerBase
         var result = await _sender.Send(query, cancellationToken);
         return Ok(result);
     }
+
+    public sealed record CreateScheduledSessionRequest(
+        Guid WorkoutId,
+        DateTime ScheduledAt,
+        ScheduleStatus Status
+    );
+    [HttpPost("me/schedule/sessions")]
+    public async Task<ActionResult<CreateScheduledSessionResult>> CreateScheduledSession(
+        [FromBody] CreateScheduledSessionRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new CreateScheduledSessionCommand(userId, request.WorkoutId, request.ScheduledAt, request.Status);
+        var result = await _sender.Send(command, cancellationToken);
+        if (result == null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "The workout was not found or not owned by the user."
+            });
+        }
+        return CreatedAtAction(
+            nameof(GetSchedule),
+            new
+            {
+                status = result.Status
+            },
+            result
+        );
+    }
+
+    [HttpDelete("me/schedule/sessions/{sessionId:guid}")]
+    public async Task<IActionResult> DeleteScheduledSession(
+        [FromRoute] Guid sessionId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var delete = await _sender.Send(new DeleteScheduledSessionCommand(userId, sessionId), cancellationToken);
+        if (!delete)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "The session to delete was not found or not owned by the user."
+            });
+        }
+        return Ok(new { message = "Scheduled session deleted successfully." });
+    }
+
+    public sealed record UpdateScheduledSessionStatusRequest(ScheduleStatus Status);
+    [HttpPatch("me/schedule/sessions/{sessionId:guid}")]
+    public async Task<ActionResult<UpdateScheduledSessionStatusResult>> UpdateScheduledSessionStatus(
+        [FromRoute] Guid sessionId,
+        [FromBody] UpdateScheduledSessionStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var command = new UpdateScheduledSessionStatusCommand(userId, sessionId, request.Status);
+        var result = await _sender.Send(command, cancellationToken);
+        if (result == null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Scheduled session not found or not owned by user"
+            });
+        }
+        return Ok(result);
+    }
+
 }

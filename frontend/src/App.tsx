@@ -11,6 +11,7 @@ import WorkoutDetailPage from '@/pages/workout-detail'
 import WorkoutLogDetailPage from '@/pages/workout-log-detail'
 import BrandStylePage from '@/pages/brand-style/brand-style'
 import ProfilePage from '@/pages/profile'
+import PastWorkoutsPage from '@/pages/past-workouts'
 import SchedulePage from './pages/schedule'
 
 function AppLayout() {
@@ -74,6 +75,7 @@ function App() {
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="past-workouts" element={<PastWorkoutsPage />} />
         </Route>        
       </Route>
       <Route path="brand-style" element={<BrandStylePage />} />

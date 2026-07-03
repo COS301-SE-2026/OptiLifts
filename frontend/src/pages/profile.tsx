@@ -7,7 +7,10 @@ import { ProfileOverview } from '@/components/ui/profile-overview'
 import { WorkoutOverview } from '@/components/ui/workout-overview'
 import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
-import type { ProfileCalendarEntry, ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
+import { Button } from '@/components/ui/button'
+import { useNavigate } from 'react-router-dom'
+import type { ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
+import type { CalendarProps } from '@/types/calendar'
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
@@ -173,8 +176,19 @@ export default function ProfilePage() {
       </div>
 
       <div className="mb-8">
-        <div className="mb-3 flex items-start justify-between gap-4">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.9fr)]">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="font-semibold uppercase tracking-wider text-xs scale-[0.85] origin-right"
+              onClick={() => navigate('/past-workouts')}
+            >
+              View All 
+            </Button>
+          </div>
+          <div className="hidden lg:block"></div>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.9fr)] lg:items-stretch">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:h-full lg:items-stretch">

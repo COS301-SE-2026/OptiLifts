@@ -51,7 +51,7 @@ public class CreateWorkoutHandlerTests
         var (userId, folderId) = await SeedUserAndFolder(db, "a@example.com");
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Push Day A", userId, []);
+        var command = new CreateWorkoutCommand(folderId, "Push Day A", userId, [], []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -86,7 +86,7 @@ public class CreateWorkoutHandlerTests
 
         var exercises = new List<CreateWorkoutExerciseDto>
         {
-            new(exercise.Id, 0, new List<CreateWorkoutSetDto>
+            new(exercise.Id, 0, null, new List<CreateWorkoutSetDto>
             {
                 new("Normal", 10, 60f, null, null, 0, 90),
                 new("Normal", 8,  70f, null, null, 1, 90),
@@ -94,7 +94,7 @@ public class CreateWorkoutHandlerTests
         };
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Push Day B", userId, exercises);
+        var command = new CreateWorkoutCommand(folderId, "Push Day B", userId, exercises, []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -120,7 +120,7 @@ public class CreateWorkoutHandlerTests
         var (userId, folderId) = await SeedUserAndFolder(db, "c@example.com");
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Leg Day", userId, []);
+        var command = new CreateWorkoutCommand(folderId, "Leg Day", userId, [], []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 

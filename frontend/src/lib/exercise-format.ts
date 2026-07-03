@@ -1,4 +1,4 @@
-import type { ExerciseTypeValue, LoggedExerciseSet, PlannedExerciseSet } from '@/types/exercise-format'
+import type { LoggedExerciseSet, PlannedExerciseSet } from '@/types/exercise-format'
 
 function formatWeight(weight: number) {
   return `${Number.isInteger(weight) ? weight : weight.toFixed(1)}kg`
@@ -8,76 +8,110 @@ function formatRpe(rpe: number) {
   return Number.isInteger(rpe) ? `${rpe}` : rpe.toFixed(1)
 }
 
-function formatDurationValue(durationSeconds: number | null) {
-  if (durationSeconds === null) {
+function formatRepsValue(reps: number | null) {
+  if (reps === null) {
     return ''
   }
 
-  if (durationSeconds < 60) {
-    return `${durationSeconds}s`
+  return `${reps}`
+}
+
+function formatWeightValue(weight: number | null) {
+  if (weight === null) {
+    return ''
   }
 
-  const minutes = Math.floor(durationSeconds / 60)
-  const seconds = durationSeconds % 60
-  return seconds === 0 ? `${minutes}m` : `${minutes}:${String(seconds).padStart(2, '0')}`
+  return formatWeight(weight)
+}
+
+function formatDurationValue(durationSeconds: number | null) {
+  if (durationSeconds !== null) {
+    if (durationSeconds < 60) {
+      return `${durationSeconds}s`
+    }
+
+    const minutes = Math.floor(durationSeconds / 60)
+    const seconds = durationSeconds % 60
+    return seconds === 0 ? `${minutes}m` : `${minutes}:${String(seconds).padStart(2, '0')}`
+  }
+
+  return ''
 }
 
 function formatDistanceValue(distance: number | null) {
-  if (distance === null) {
-    return ''
+  if (distance !== null) {
+    return `${Number.isInteger(distance) ? distance : distance.toFixed(1)}km`
   }
 
-  return `${Number.isInteger(distance) ? distance : distance.toFixed(1)}km`
+  return ''
 }
 
-function appendRestTime(text: string, restTime: string) {
+function joinDefinedParts(parts: readonly string[]) {
+  return parts.filter(Boolean).join(' ')
+}
+
+function appendRestTime(text: string, restTime: string, includeRestTime = true) {
+  if (!includeRestTime || text === '') {
+    return text
+  }
+
   return restTime ? `${text} (${restTime})` : text
 }
 
+function formatPlannedWeightReps(set: PlannedExerciseSet, includeRestTime: boolean) {
+  const text = joinDefinedParts([formatWeightValue(set.weight), formatRepsValue(set.reps) ? `x ${formatRepsValue(set.reps)} reps` : ''])
+  return appendRestTime(text, set.restTime, includeRestTime)
+}
+
+function formatPlannedBodyweightReps(set: PlannedExerciseSet, includeRestTime: boolean) {
+  const reps = formatRepsValue(set.reps)
+  const text = reps ? `${reps} reps` : ''
+  return appendRestTime(text, set.restTime, includeRestTime)
+}
+
+function formatPlannedWeightedBodyweight(set: PlannedExerciseSet, includeRestTime: boolean, sign: '+' | '-') {
+  const weight = formatWeightValue(set.weight)
+  const reps = formatRepsValue(set.reps)
+  const text = joinDefinedParts([reps ? `${reps} reps` : '', weight ? `(${sign}${weight})` : ''])
+  return appendRestTime(text, set.restTime, includeRestTime)
+}
+
+function formatPlannedDurationWeight(set: PlannedExerciseSet, includeRestTime: boolean) {
+  const text = joinDefinedParts([formatDurationValue(set.duration), formatWeightValue(set.weight) ? `@ ${formatWeightValue(set.weight)}` : ''])
+  return appendRestTime(text, set.restTime, includeRestTime)
+}
+
+function formatPlannedDistanceDuration(set: PlannedExerciseSet, includeRestTime: boolean) {
+  const text = joinDefinedParts([formatDistanceValue(set.distance), formatDurationValue(set.duration) ? `in ${formatDurationValue(set.duration)}` : ''])
+  return appendRestTime(text, set.restTime, includeRestTime)
+}
+
+function formatPlannedWeightDistance(set: PlannedExerciseSet, includeRestTime: boolean) {
+  const text = joinDefinedParts([formatWeightValue(set.weight), formatDistanceValue(set.distance) ? `for ${formatDistanceValue(set.distance)}` : ''])
+  return appendRestTime(text, set.restTime, includeRestTime)
+}
+
+const PLANNED_EXERCISE_FORMATTERS: Record<string, (set: PlannedExerciseSet, includeRestTime: boolean) => string> = {
+  'bodyweight-reps': (set, includeRestTime) => formatPlannedBodyweightReps(set, includeRestTime),
+  'weighted-bodyweight': (set, includeRestTime) => formatPlannedWeightedBodyweight(set, includeRestTime, '+'),
+  'assisted-bodyweight': (set, includeRestTime) => formatPlannedWeightedBodyweight(set, includeRestTime, '-'),
+  duration: (set, includeRestTime) => appendRestTime(formatDurationValue(set.duration), set.restTime, includeRestTime),
+  'duration-weight': (set, includeRestTime) => formatPlannedDurationWeight(set, includeRestTime),
+  'distance-duration': (set, includeRestTime) => formatPlannedDistanceDuration(set, includeRestTime),
+  'weight-distance': (set, includeRestTime) => formatPlannedWeightDistance(set, includeRestTime),
+  'weight-reps': (set, includeRestTime) => formatPlannedWeightReps(set, includeRestTime),
+}
+
 export function formatPlannedExerciseSetText(
-  exerciseType: ExerciseTypeValue,
+  exerciseType: string,
   set: PlannedExerciseSet,
   options?: Readonly<{ includeRestTime?: boolean }>,
 ) {
-  const reps = set.reps !== null ? `${set.reps}` : ''
-  const weight = set.weight !== null ? formatWeight(set.weight) : ''
-  const duration = formatDurationValue(set.duration)
-  const distance = formatDistanceValue(set.distance)
-
-  switch (exerciseType) {
-    case 'bodyweight-reps':
-      return options?.includeRestTime === false ? (reps ? `${reps} reps` : '') : appendRestTime(reps ? `${reps} reps` : '', set.restTime)
-    case 'weighted-bodyweight':
-      return options?.includeRestTime === false
-        ? [reps ? `${reps} reps` : '', weight ? `(+${weight})` : ''].filter(Boolean).join(' ')
-        : appendRestTime([reps ? `${reps} reps` : '', weight ? `(+${weight})` : ''].filter(Boolean).join(' '), set.restTime)
-    case 'assisted-bodyweight':
-      return options?.includeRestTime === false
-        ? [reps ? `${reps} reps` : '', weight ? `(-${weight})` : ''].filter(Boolean).join(' ')
-        : appendRestTime([reps ? `${reps} reps` : '', weight ? `(-${weight})` : ''].filter(Boolean).join(' '), set.restTime)
-    case 'duration':
-      return options?.includeRestTime === false ? duration : appendRestTime(duration, set.restTime)
-    case 'duration-weight':
-      return options?.includeRestTime === false
-        ? [duration, weight ? `@ ${weight}` : ''].filter(Boolean).join(' ')
-        : appendRestTime([duration, weight ? `@ ${weight}` : ''].filter(Boolean).join(' '), set.restTime)
-    case 'distance-duration':
-      return options?.includeRestTime === false
-        ? [distance, duration ? `in ${duration}` : ''].filter(Boolean).join(' ')
-        : appendRestTime([distance, duration ? `in ${duration}` : ''].filter(Boolean).join(' '), set.restTime)
-    case 'weight-distance':
-      return options?.includeRestTime === false
-        ? [weight, distance ? `for ${distance}` : ''].filter(Boolean).join(' ')
-        : appendRestTime([weight, distance ? `for ${distance}` : ''].filter(Boolean).join(' '), set.restTime)
-    case 'weight-reps':
-    default:
-      return options?.includeRestTime === false
-        ? [weight, reps ? `x ${reps} reps` : ''].filter(Boolean).join(' ')
-        : appendRestTime([weight, reps ? `x ${reps} reps` : ''].filter(Boolean).join(' '), set.restTime)
-  }
+  const formatter = PLANNED_EXERCISE_FORMATTERS[exerciseType] ?? PLANNED_EXERCISE_FORMATTERS['weight-reps']
+  return formatter(set, options?.includeRestTime !== false)
 }
 
-export function formatLoggedExerciseSetText(exerciseType: ExerciseTypeValue, set: LoggedExerciseSet) {
+export function formatLoggedExerciseSetText(exerciseType: string, set: LoggedExerciseSet) {
   const reps = `${set.reps}`
   const weight = formatWeight(set.weight)
   const rpe = formatRpe(set.rpe)

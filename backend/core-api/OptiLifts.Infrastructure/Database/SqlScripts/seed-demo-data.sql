@@ -214,20 +214,30 @@ ON CONFLICT (exercise_dict_id) DO NOTHING;
 -- Additional global library exercises (not referenced by the demo workouts).
 -- Idempotent via an anti-join on (name, user_id IS NULL).
 -- ---------------------------------------------------------------------------
+WITH exercise_types AS (
+    SELECT
+        'BodyweightReps'::text AS bodyweight_reps,
+        'WeightedBodyweight'::text AS weighted_bodyweight,
+        'AssistedWeightReps'::text AS assisted_weight_reps,
+        'DurationWeight'::text AS duration_weight,
+        'DistanceDuration'::text AS distance_duration,
+        'WeightDistance'::text AS weight_distance
+)
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
 SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.muscle_id, NULL, NULL
 FROM seed_constants c
+CROSS JOIN exercise_types t
 CROSS JOIN LATERAL (VALUES
-    ('Pull Up',             c.mechanic_compound, c.equipment_bodyweight, 'BodyweightReps',   c.muscle_lats),
-    ('Weighted Pull Up',    c.mechanic_compound, c.equipment_bodyweight, 'WeightedBodyweight', c.muscle_lats),
-    ('Assisted Pull Up',    c.mechanic_compound, c.equipment_machine,    'AssistedWeightReps', c.muscle_lats),
+    ('Pull Up',             c.mechanic_compound, c.equipment_bodyweight, t.bodyweight_reps,   c.muscle_lats),
+    ('Weighted Pull Up',    c.mechanic_compound, c.equipment_bodyweight, t.weighted_bodyweight, c.muscle_lats),
+    ('Assisted Pull Up',    c.mechanic_compound, c.equipment_machine,    t.assisted_weight_reps, c.muscle_lats),
     ('Deadlift',            c.mechanic_compound, c.equipment_barbell,    c.exercise_type,    c.muscle_hamstrings),
     ('Dumbbell Bicep Curl', c.mechanic_isolated, c.equipment_dumbbell,   c.exercise_type,    c.muscle_biceps),
     ('Tricep Pushdown',     c.mechanic_isolated, c.equipment_cable,      c.exercise_type,    c.muscle_triceps),
     ('Plank',               c.mechanic_isolated, c.equipment_bodyweight, 'Duration',         c.muscle_abdominals),
-    ('Weighted Plank',      c.mechanic_isolated, c.equipment_dumbbell,   'DurationWeight',   c.muscle_abdominals),
-    ('Running',             c.mechanic_compound, c.equipment_bodyweight, 'DistanceDuration', c.muscle_quadriceps),
-    ('Suitcase Carry',      c.mechanic_compound, c.equipment_dumbbell,   'WeightDistance',   c.muscle_lower_back)
+    ('Weighted Plank',      c.mechanic_isolated, c.equipment_dumbbell,   t.duration_weight,   c.muscle_abdominals),
+    ('Running',             c.mechanic_compound, c.equipment_bodyweight, t.distance_duration, c.muscle_quadriceps),
+    ('Suitcase Carry',      c.mechanic_compound, c.equipment_dumbbell,   t.weight_distance,   c.muscle_lower_back)
 ) AS v(name, mechanic, equipment, exercise_type, muscle_name)
 JOIN muscles m ON m.name = v.muscle_name
 LEFT JOIN exercise_dictionary e ON e.name = v.name AND e.user_id IS NULL
@@ -387,6 +397,11 @@ DO $$
 DECLARE
     alex_email text;
     hex_enc constant text := 'hex';
+    pull_name constant text := 'Pull';
+    push_name constant text := 'Push';
+    full_body_name constant text := 'Full Body';
+    my_split_name constant text := 'My Split';
+    completed_status constant text := 'Completed';
     alex_id uuid;
     v_folder uuid;
     v_pull uuid;
@@ -440,7 +455,7 @@ BEGIN
         WHERE workout_id IN (
             SELECT workout_id
             FROM workouts
-            WHERE user_id = alex_id AND name IN ('Pull', 'Push')
+            WHERE user_id = alex_id AND name IN (pull_name, push_name)
         )
     );
 
@@ -448,53 +463,53 @@ BEGIN
     WHERE workout_id IN (
         SELECT workout_id
         FROM workouts
-        WHERE user_id = alex_id AND name IN ('Pull', 'Push', 'Full Body')
+        WHERE user_id = alex_id AND name IN (pull_name, push_name, full_body_name)
     );
 
     DELETE FROM workouts
-    WHERE user_id = alex_id AND name = 'Full Body';
+    WHERE user_id = alex_id AND name = full_body_name;
 
     SELECT folder_id INTO v_folder
     FROM folders
-    WHERE user_id = alex_id AND name = 'My Split'
+    WHERE user_id = alex_id AND name = my_split_name
     LIMIT 1;
 
     IF v_folder IS NULL THEN
         INSERT INTO folders (folder_id, user_id, name, description, created_at)
-        VALUES (gen_random_uuid(), alex_id, 'My Split', 'Demo training split', NOW())
+        VALUES (gen_random_uuid(), alex_id, my_split_name, 'Demo training split', NOW())
         RETURNING folder_id INTO v_folder;
     END IF;
 
     SELECT workout_id INTO v_pull
     FROM workouts
-    WHERE user_id = alex_id AND name = 'Pull'
+    WHERE user_id = alex_id AND name = pull_name
     LIMIT 1;
 
     IF v_pull IS NULL THEN
         INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, 'Pull', alex_id, NOW())
+        VALUES (gen_random_uuid(), v_folder, pull_name, alex_id, NOW())
         RETURNING workout_id INTO v_pull;
     END IF;
 
     SELECT workout_id INTO v_push
     FROM workouts
-    WHERE user_id = alex_id AND name = 'Push'
+    WHERE user_id = alex_id AND name = push_name
     LIMIT 1;
 
     IF v_push IS NULL THEN
         INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, 'Push', alex_id, NOW())
+        VALUES (gen_random_uuid(), v_folder, push_name, alex_id, NOW())
         RETURNING workout_id INTO v_push;
     END IF;
 
     SELECT workout_id INTO v_full_body
     FROM workouts
-    WHERE user_id = alex_id AND name = 'Full Body'
+    WHERE user_id = alex_id AND name = full_body_name
     LIMIT 1;
 
     IF v_full_body IS NULL THEN
         INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, 'Full Body', alex_id, NOW())
+        VALUES (gen_random_uuid(), v_folder, full_body_name, alex_id, NOW())
         RETURNING workout_id INTO v_full_body;
     END IF;
 
@@ -556,7 +571,7 @@ BEGIN
         v_day := TIMESTAMP '2026-03-23 17:00:00' + (i * INTERVAL '41 hours');
 
         INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-        VALUES (gen_random_uuid(), alex_id, CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END, v_day, 'Completed')
+        VALUES (gen_random_uuid(), alex_id, CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END, v_day, completed_status)
         RETURNING entry_id INTO v_entry;
 
         INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
@@ -594,7 +609,7 @@ BEGIN
     v_day := TIMESTAMP '2026-03-23 17:00:00' + (51 * INTERVAL '41 hours');
 
     INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-    VALUES (gen_random_uuid(), alex_id, v_full_body, v_day, 'Completed')
+    VALUES (gen_random_uuid(), alex_id, v_full_body, v_day, completed_status)
     RETURNING entry_id INTO v_entry;
 
     INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
@@ -628,8 +643,6 @@ DO $$
 DECLARE
     alex_email text;
     hex_enc constant text := 'hex';
-    pull_name constant text := 'Pull';
-    push_name constant text := 'Push';
     scheduled_status constant text := 'Scheduled';
     alex_id uuid;
     v_pull uuid;

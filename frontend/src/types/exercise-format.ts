@@ -1,4 +1,4 @@
-export type ExerciseTypeValue =
+export type KnownExerciseTypeValue =
   | 'weight-reps'
   | 'bodyweight-reps'
   | 'weighted-bodyweight'
@@ -7,7 +7,7 @@ export type ExerciseTypeValue =
   | 'duration-weight'
   | 'distance-duration'
   | 'weight-distance'
-  | string
+
 
 export type PlannedExerciseSet = Readonly<{
   reps: number | null

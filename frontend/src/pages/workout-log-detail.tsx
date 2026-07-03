@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
+import WorkoutDetailShell from '@/components/ui/workout-detail-shell'
 import WorkoutLogExercisePlan from '@/components/ui/workout-log-exercise-plan'
 import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
@@ -160,54 +160,31 @@ export default function WorkoutLogDetailPage() {
         </div>
       </div>
 
-      {isLoading && (
-        <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
-          Loading workout log...
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-red-500">
-          {error}
-        </div>
-      )}
-
-      {!isLoading && !error && !workout && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Workout log not found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">The workout log you selected could not be found.</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!isLoading && !error && workout && (
-        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(360px,1.05fr)]">
-          <div className="flex min-h-0 flex-col gap-4">
+      <WorkoutDetailShell
+        isLoading={isLoading}
+        loadingMessage="Loading workout log..."
+        error={error}
+        hasContent={workout !== null}
+        notFoundTitle="Workout log not found"
+        notFoundDescription="The workout log you selected could not be found."
+        mainContent={
+          workout ? (
             <WorkoutLogExercisePlan
               exercises={workout.exercises}
               subtitle={workout.primaryMuscleGroups.join(', ')}
               className="min-h-0"
             />
-          </div>
-
-          <aside className="min-h-0">
-            <Card className="flex min-h-0 h-full flex-col">
-              <CardHeader>
-                <CardTitle className="text-[1.05rem] font-bold">Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="flex min-h-0 flex-1 flex-col">
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-2 text-sm text-muted-foreground">
-                  <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
-                  <MusclesSummary exercises={workout.exercises} />
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
-        </div>
-      )}
+          ) : null
+        }
+        summaryContent={
+          workout ? (
+            <>
+              <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+              <MusclesSummary exercises={workout.exercises} />
+            </>
+          ) : null
+        }
+      />
     </section>
   )
 }

@@ -471,8 +471,8 @@ BEGIN
     LIMIT 1;
 
     IF v_pull IS NULL THEN
-        INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, 'Pull', 1, alex_id, NOW())
+        INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, 'Pull', alex_id, NOW())
         RETURNING workout_id INTO v_pull;
     END IF;
 
@@ -482,8 +482,8 @@ BEGIN
     LIMIT 1;
 
     IF v_push IS NULL THEN
-        INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, 'Push', 2, alex_id, NOW())
+        INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, 'Push', alex_id, NOW())
         RETURNING workout_id INTO v_push;
     END IF;
 
@@ -493,8 +493,8 @@ BEGIN
     LIMIT 1;
 
     IF v_full_body IS NULL THEN
-        INSERT INTO workouts (workout_id, folder_id, name, day_index, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, 'Full Body', 3, alex_id, NOW())
+        INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, 'Full Body', alex_id, NOW())
         RETURNING workout_id INTO v_full_body;
     END IF;
 

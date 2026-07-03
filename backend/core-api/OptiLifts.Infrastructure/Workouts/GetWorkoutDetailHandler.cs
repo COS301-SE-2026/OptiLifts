@@ -113,7 +113,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             workout.Id,
             workout.Name,
             workout.FolderId,
-            workout.DayIndex,
+            null,
             workout.CreatedAt,
             primaryMuscleGroups,
             exercisePreview,

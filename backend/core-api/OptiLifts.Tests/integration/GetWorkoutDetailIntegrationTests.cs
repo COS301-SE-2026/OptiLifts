@@ -130,7 +130,7 @@ public class GetWorkoutDetailIntegrationTests : IClassFixture<GetWorkoutDetailFi
         _fixture = fixture;
     }
 
-    private string GenerateToken(Guid userId)
+    private static string GenerateToken(Guid userId)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(GetWorkoutDetailFixture.JwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -154,11 +154,12 @@ public class GetWorkoutDetailIntegrationTests : IClassFixture<GetWorkoutDetailFi
         var createBody = new CreateWorkoutRequest(
             null,
             "Push Day",
-            1,
             [new CreateWorkoutExerciseRequest(
                 exerciseId,
                 1,
-                [new CreateWorkoutSetRequest("Normal", 8, 80, null, null, 1, 90)])]);
+                null,
+                [new CreateWorkoutSetRequest("Normal", 8, 80, null, null, 1, 90)])],
+            []);
 
         var createResp = await client.PostAsJsonAsync("/api/workouts", createBody);
         createResp.EnsureSuccessStatusCode();

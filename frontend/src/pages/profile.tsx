@@ -7,10 +7,8 @@ import { ProfileOverview } from '@/components/ui/profile-overview'
 import { WorkoutOverview } from '@/components/ui/workout-overview'
 import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
+import type { ProfileCalendarEntry, ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
 import { Button } from '@/components/ui/button'
-import { useNavigate } from 'react-router-dom'
-import type { ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
-import type { CalendarProps } from '@/types/calendar'
 
 const pad = (value: number) => String(value).padStart(2, '0')
 

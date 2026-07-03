@@ -119,7 +119,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             log.Id,
             workout.Name,
             workout.FolderId,
-            workout.DayIndex,
+            null,
             workout.CreatedAt,
             log.CompletedAt,
             log.CompletedAt is null ? null : FormatDuration(log.CompletedAt.Value - log.StartedAt),

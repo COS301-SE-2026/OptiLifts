@@ -16,7 +16,7 @@ const monthLabel = (date: Date) =>
   new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date)
 
 export function Calendar(props: Readonly<CalendarProps>) {
-  const { className, highlightedDates = [], month, onMonthChange } = props
+  const { className, highlightedDates = [], month, onMonthChange, onHighlightedDateClick } = props
   const [internalMonth, setInternalMonth] = useState(() => startOfMonth(month ?? new Date()))
   const activeMonth = month === undefined ? internalMonth : startOfMonth(month)
 
@@ -120,12 +120,18 @@ export function Calendar(props: Readonly<CalendarProps>) {
                   className={[
                     "flex size-9 items-center justify-center rounded-full text-sm font-semibold transition-colors sm:size-10",
                     circleClassName,
+                    day.isHighlighted && onHighlightedDateClick ? "cursor-pointer hover:brightness-95" : "",
                     hoverClassName,
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  aria-label={day.date.toDateString()}
+                  aria-label={`${day.date.toDateString()}${day.isHighlighted ? ' workout completed' : ''}`}
                   disabled={day.isOtherMonth}
+                  onClick={() => {
+                    if (day.isHighlighted) {
+                      onHighlightedDateClick?.(day.dateKey)
+                    }
+                  }}
                 >
                   {day.dayNumber}
                 </button>

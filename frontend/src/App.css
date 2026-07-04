@@ -182,3 +182,25 @@
     border-right-color: var(--border);
   }
 }
+
+.exercise-summary-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(82, 82, 82, 0.9) rgba(0, 0, 0, 0.08);
+}
+
+.exercise-summary-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.exercise-summary-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+}
+
+.exercise-summary-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(82, 82, 82, 0.9);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background-clip: padding-box;
+}

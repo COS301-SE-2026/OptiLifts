@@ -1,4 +1,4 @@
-import CreateWorkoutPage from '@/pages/create-workout'
+import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
@@ -6,20 +6,34 @@ import { PageTitle } from '@/components/ui/page-title'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
-import WorkoutsPage from '@/pages/workouts'
-import WorkoutDetailPage from '@/pages/workout-detail'
-import WorkoutLogDetailPage from '@/pages/workout-log-detail'
-import BrandStylePage from '@/pages/brand-style/brand-style'
-import ProfilePage from '@/pages/profile'
-import PastWorkoutsPage from '@/pages/past-workouts'
-import SchedulePage from './pages/schedule'
+import { Loader2 } from 'lucide-react'
+
+const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
+const WorkoutsPage = lazy(() => import('@/pages/workouts'))
+const WorkoutDetailPage = lazy(() => import('@/pages/workout-detail'))
+const BrandStylePage = lazy(() => import('@/pages/brand-style/brand-style'))
+const WorkoutLogDetailPage = lazy(() => import('@/pages/workout-log-detail'))
+const ProfilePage = lazy(() => import('@/pages/profile'))
+const PastWorkoutsPage = lazy(() => import('@/pages/past-workouts'))
+const SchedulePage = lazy(() => import('@/pages/schedule'))
 
 function AppLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <Navbar />
       <main>
-        <Outlet />
+        <Suspense fallback={
+          <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-brand" />
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
+                Loading...
+              </p>
+            </div>
+          </section>
+        }>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   )
@@ -76,9 +90,19 @@ function App() {
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />
-        </Route>        
+        </Route>
       </Route>
-      <Route path="brand-style" element={<BrandStylePage />} />
+
+
+      <Route path="brand-style" element={
+        <Suspense fallback={
+          <div className="flex min-h-dvh items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+          </div>
+        }>
+          <BrandStylePage />
+        </Suspense>
+      } />
     </Routes>
   )
 }

@@ -131,13 +131,28 @@ export default function SchedulePage() {
         return dates
     }, [currentWeekDate])
 
+    const fetchRange = useMemo(() => {
+        if (viewMode === 'week'){
+            const start = new Date(Date.UTC(weekDates[0].getFullYear(), weekDates[0].getMonth(), weekDates[0].getDate()))
+            const end = new Date(Date.UTC(weekDates[6].getFullYear(), weekDates[6].getMonth(), weekDates[6].getDate(), 23,59,59,999))
+            return{start,end}
+        } else {
+            const firstDay = new Date(currentWeekDate.getFullYear(), currentWeekDate.getMonth(), 1)
+            const leadingDays = firstDay.getDay() === 0 ? 6: firstDay.getDay() -1
+            const firstCell = new Date(currentWeekDate.getFullYear(), currentWeekDate.getMonth(), 1- leadingDays)
+            const lastCell = new Date(currentWeekDate.getFullYear(), currentWeekDate.getMonth(), 42 - leadingDays)
+            const start = new Date(Date.UTC(firstCell.getFullYear(), firstCell.getMonth(), firstCell.getDate()))
+            const end = new Date(Date.UTC(lastCell.getFullYear(), lastCell.getMonth(), lastCell.getDate(), 23,59,59,999))
+            return{start,end}
+        }
+    }, [currentWeekDate, weekDates, viewMode])
+
     const fetchScheduleAndAnalytics =async () => {
         await Promise.resolve()
         setIsLoading(true)
         setError(null)
         try {
-            const start = new Date(Date.UTC(weekDates[0].getFullYear(), weekDates[0].getMonth(), weekDates[0].getDate()))
-            const end = new Date(Date.UTC(weekDates[6].getFullYear(), weekDates[6].getMonth(), weekDates[6].getDate(), 23,59,59,999))
+            const {start, end} = fetchRange
             const [scheduleResp, analyticsResp] = await Promise.all([
                 customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
                 customFetch(`/api/users/me/schedule/analytics?startDate=${start.toISOString()}&endDate=${end.toISOString()}`)
@@ -195,7 +210,7 @@ export default function SchedulePage() {
             }
         }
         void fetchWorkouts()
-    }, [weekDates])
+    }, [fetchRange])
 
     const handleDeletingSession = async (sessionId: string) => {
         if (isDeleting) return
@@ -285,10 +300,11 @@ export default function SchedulePage() {
             {/* top row */}
             <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <PageTitle title="Scheduler" />
+                <div className="flex items-center gap-4">
                 <DatePagination
                     currentDate={currentWeekDate}
                     onChange={setCurrentWeekDate}
-                    type="week"
+                    type={viewMode}
                 />
                 
                 <DropdownMenu>
@@ -304,6 +320,7 @@ export default function SchedulePage() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+            </div>
 
 
 
@@ -315,6 +332,7 @@ export default function SchedulePage() {
                 </div>
             )}
 
+            {viewMode === 'week' ? (
             <div className="grid grid-cols-12 gap-8 items-start">
                 {/* workout cards */}
                 <div className="col-span-12 lg:col-span-8 space-y-6">
@@ -378,7 +396,7 @@ export default function SchedulePage() {
                         <h2 className="text-xl font-bold mb-4">Muscle Balance Chart</h2>
                         {isLoading ? (
                             <div className="h-64 flex items-center justify-center">
-                                <Loader2 className="animate-spin text-muted-foreground/60" size={24}/>
+                                <Loader2 className="animate-spin text-muted-foreground/60" size={24} />
                             </div>
                         ) : (
                             <SpiderGraph data={muscleValues} />
@@ -388,6 +406,16 @@ export default function SchedulePage() {
                 </div>
                 
             </div>
+            ) : (
+                //month view
+                <MonthViewCalendar
+                currentDate={currentWeekDate}
+                scheduleEntries={scheduleEntries}
+                isLoading={isLoading}
+                onAddClick={handleAddClick}
+                onDeleteSession={(id) => setDeleteTargetId(id)}/>
+            )}
+
             {/* select workout popup comp */}
             <SelectWorkoutDialog
             key={selectedAddDate ? selectedAddDate.toISOString() : 'closed'}
@@ -560,4 +588,142 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
             </div>
         </Card>
     )
+}
+
+// month view calendar comp
+interface MonthViewCalendarProps{
+    readonly currentDate: Date
+    readonly scheduleEntries: readonly ScheduledEntryDto[]
+    readonly isLoading: boolean
+    readonly onAddClick: (date: Date) => void
+    readonly onDeleteSession: (id: string) => void
+}
+function MonthViewCalendar({
+    currentDate, 
+    scheduleEntries,
+    isLoading,
+    onAddClick,
+    onDeleteSession,
+}: MonthViewCalendarProps){
+    const WEEKDAYS=["MON","TUE", "WED", "THU","FRI","SAT", "SUN"]
+    const gridDays = useMemo(() => {
+        const first = new Date(currentDate.getFullYear(), currentDate.getMonth(),1)
+        const leadingDays = first.getDay() ===0 ? 6 : first.getDay() -1
+        const totalCells = 42
+        const cells: Array<{
+            date: Date
+            dayNumber: number
+            isToday: boolean
+            isOtherMonth: boolean //visually different
+            key: string
+        }> = []
+
+        const today = new Date()
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+
+        for(let cellIndex = 0; cellIndex < totalCells; cellIndex += 1){
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), cellIndex - leadingDays + 1)
+            const cellDateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+            const isOtherMonth = date.getMonth() !== currentDate.getMonth() || date.getFullYear() !== currentDate.getFullYear()
+            cells.push({
+                date, dayNumber: date.getDate(), isToday: cellDateStart === todayStart, isOtherMonth, key: `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
+                
+            })
+        }
+        return cells
+
+    }, [currentDate])
+
+    const isSameDay = (date1: Date, date2: string) =>{
+        const d1 = new Date(date1)
+        const d2 = new Date(date2)
+        return d1.getFullYear() === d2.getUTCFullYear() && d1.getMonth() === d2.getUTCMonth() && d1.getDate() === d2.getUTCDate()
+    }
+
+    //frontend
+    return (
+        <div className="relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden animate-fadeIn w-full">
+            {isLoading && (
+                <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl">
+                    <Loader2 className="animate-spin text-brand" size={32}/> 
+                </div>                   
+            )}
+            {/* weekdays */}
+            <div className="grid grid-cols-7 text-center text-xs font-extrabold uppercase tracking-wider text-foreground py-3 bg-surface/40 border-b border-border">
+                {WEEKDAYS.map((day) => (
+                    <div key={day}>{day}</div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-px bg-border">
+                {gridDays.map((cell) => {
+                    const sessionsOnDay = scheduleEntries.filter((entry) => isSameDay(cell.date, entry.scheduled))
+                    const isCompleted = sessionsOnDay.some((s) => s.status === 'Completed' || s.status === '1')
+                    const isMissed = sessionsOnDay.some((s) => s.status === 'Missed')
+                    const isScheduled = sessionsOnDay.length > 0 && !isCompleted && !isMissed
+
+                    const today = new Date()
+                    today.setHours(0,0,0,0)
+                    const cellDateStart = new Date(cell.date)
+                    cellDateStart.setHours(0,0,0,0)
+                    const isBeforeToday = cellDateStart < today //ensure cannot schedule
+
+                    let circleClass = "flex size-9 items-center justify-center rounded-full text-sm font-bold transition-all"
+                    if (isCompleted) {
+                        circleClass += " bg-brand text-background shadow-md shadow-brand/20"
+                    } else if (isScheduled){
+                        circleClass += " border-2 border-brand text-brand bg-transparent"
+                    } else if (isMissed){
+                        circleClass += " border-2 border-dotted border-brand text-brand bg-transparent"
+                    } else if (cell.isToday){
+                        circleClass += " bg-surface-2 border border-border text-foreground font-extrabold"
+                    } else if (cell.isOtherMonth){
+                        circleClass += " text-muted-foreground/35"
+                    } else {
+                        circleClass += " text-foreground hover:bg-surface-2"
+                    }
+
+                    return (
+                        <div key={cell.key}
+                        className={`min-h-[120px] p-2.5 flex flex-col items-center justify-between bg-card transition-all ${cell.isOtherMonth ? '!bg-surface-2/10 opacity-60' : ''}`}>
+                            <div className="flex justify-center w-full mb-1">
+                                <span className={circleClass}>
+                                    {cell.dayNumber}
+                                </span>
+                            </div>
+
+                            <div className="flex-1 flex flex-col gap-1.5 items-stretch justify-center w-full min-h-[48px]">
+                                {sessionsOnDay.map((session) => (
+                                    <div key={session.id}
+                                    className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 shadow-sm">
+                                        <span className="truncate flex-1 text-left" title={session.workoutName}>
+                                            {session.workoutName}
+                                        </span>
+                                        <button type="button" className="opacity-0 group-hover/item:opacity-100 size-4 flex items-center justify-center rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all flex-shrink-0 cursor-pointer"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onDeleteSession(session.id)
+                                        }}
+                                        aria-label={`Delete ${session.workoutName}`}>
+                                            <X size={10} />
+                                        </button>
+                                    </div>
+
+                    ))}
+                    {sessionsOnDay.length === 0 && (
+                        <div className="flex justify-center py-1">
+                            <button type="button" 
+                            tabIndex={isBeforeToday ? -1 : 0}
+                            disabled={isBeforeToday}
+                            onClick={() => onAddClick(cell.date)}
+                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={isBeforeToday ? "Cannot schedule in the past" : "Add workout"}>
+                                <Plus size={14} />
+                            </button>
+                        </div>
+                    )}
+            </div>
+        </div>
+    )
+})} </div> </div>)
 }

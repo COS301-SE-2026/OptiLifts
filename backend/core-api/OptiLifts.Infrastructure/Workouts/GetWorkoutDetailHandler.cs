@@ -46,8 +46,8 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 ExerciseName = exercise.Name,
                 PrimaryMuscleName = muscle.Name,
                 ExerciseType = exercise.ExerciseType,
-                GroupType = exerciseGroup != null ? exerciseGroup.Type.ToString() :null,
-                GroupRestTime = (int?) (exerciseGroup!= null ? exerciseGroup.RestTime: null)
+                GroupType = exerciseGroup != null ? exerciseGroup.Type.ToString() : null,
+                GroupRestTime = (int?)(exerciseGroup != null ? exerciseGroup.RestTime : null)
             })
             .ToListAsync(cancellationToken);
 

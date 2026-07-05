@@ -36,6 +36,24 @@ public sealed class DuplicateWorkoutHandler : IRequestHandler<DuplicateWorkoutCo
         };
         _dbContext.Workouts.Add(duplicateWorkout);
 
+        var sourceGroups = await _dbContext.ExerciseGroups
+            .AsNoTracking()
+            .Where(eg => eg.WorkoutId == sourceWork.Id)
+            .ToListAsync(cancellationToken);
+        var groupIdMap = new Dictionary<Guid, Guid>();
+        foreach (var sourcegroup in sourceGroups)
+        {
+            var dupeGroup = new ExerciseGroup
+            {
+                Id = Guid.NewGuid(),
+                WorkoutId = duplicateWorkout.Id,
+                Type = sourcegroup.Type,
+                RestTime = sourcegroup.RestTime
+            };
+            _dbContext.ExerciseGroups.Add(dupeGroup);
+            groupIdMap[sourcegroup.Id] = dupeGroup.Id;
+        }
+
         var sourceExercises = await _dbContext.WorkoutExercises
             .AsNoTracking()
             .Where(we => we.WorkoutId == sourceWork.Id)
@@ -57,7 +75,8 @@ public sealed class DuplicateWorkoutHandler : IRequestHandler<DuplicateWorkoutCo
                     Id = Guid.NewGuid(),
                     WorkoutId = duplicateWorkout.Id,
                     ExerciseId = sourceExercise.ExerciseId,
-                    OrderIndex = sourceExercise.OrderIndex
+                    OrderIndex = sourceExercise.OrderIndex,
+                    GroupId = sourceExercise.GroupId.HasValue && groupIdMap.TryGetValue(sourceExercise.GroupId.Value, out var newGroupId) ? newGroupId : null
                 };
                 _dbContext.WorkoutExercises.Add(dupeExercise);
 

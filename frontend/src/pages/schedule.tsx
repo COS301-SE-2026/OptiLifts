@@ -8,6 +8,7 @@ import {Card, CardTitle} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
 import type { Workout } from '@/types/workout'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useNavigate } from 'react-router-dom'
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -95,6 +96,12 @@ const DAYS = [
     },
 ]
 
+const isSameDay = (date1: Date, date2: string) => {
+        const d1 = new Date(date1)
+        const d2 = new Date(date2)
+        return d1.getFullYear() === d2.getUTCFullYear() && d1.getMonth() === d2.getUTCMonth() && d1.getDate() === d2.getUTCDate()
+}
+
 export default function SchedulePage() {
     const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
     const [currentWeekDate, setCurrentWeekDate] = useState(() => new Date())
@@ -111,6 +118,26 @@ export default function SchedulePage() {
     const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
     const [selectedAddDate, setSelectedAddDate] = useState<Date | null>(null)
     const [isScheduling, setIsScheduling] = useState(false)
+
+    const navigate = useNavigate()
+    const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
+    const handleWorkoutClick = (session: ScheduledEntryDto) => {
+        const isCompleted = session.status === 'Completed' || session.status === '1'
+        if (isCompleted) {
+            const d2 = new Date(session.scheduled)
+            const dateKey = `${d2.getUTCFullYear()}-${String(d2.getUTCMonth() + 1).padStart(2, '0')}-${String(d2.getUTCDate()).padStart(2, '0')}`
+            const key = `${session.workoutId}-${dateKey}`
+            const logId = completedLogs[key]
+
+            if(logId) {
+                navigate(`/workouts/${session.workoutId}/logs/${logId}`)
+            } else {
+                navigate(`/workouts/${session.workoutId}`)
+            }
+        } else {
+            navigate(`/workouts/${session.workoutId}`)
+        }
+    }
 
 
     //calculate the dates
@@ -168,6 +195,22 @@ export default function SchedulePage() {
 
             setScheduleEntries(scheduleData)
             setAnalytics(analyticsData)
+
+            try{
+                const year = currentWeekDate.getFullYear()
+                const month = currentWeekDate.getMonth() + 1
+                const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
+                if (calendarRes.ok){
+                    const calendarData = await calendarRes.json()
+                    const mapping: Record<string, string> = {}
+                    calendarData.entries.forEach((entry: any) => {
+                        mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
+                    })
+                    setCompletedLogs(mapping)
+                }
+            } catch(e){
+                console.error('Error fetching calendar logs:', e)
+            }
 
             const aggre: Record<string, number> = {
                     Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
@@ -277,11 +320,6 @@ export default function SchedulePage() {
         }
     }
 
-    const isSameDay = (date1: Date, date2: string) => {
-        const d1 = new Date(date1)
-        const d2 = new Date(date2)
-        return d1.getFullYear() === d2.getUTCFullYear() && d1.getMonth() === d2.getUTCMonth() && d1.getDate() === d2.getUTCDate()
-    }
     const weeklydays = weekDates.map((dayDate, index) => {
         const dayM = DAYS[index]
         const sessionsOnDay = scheduleEntries.filter(entry => isSameDay(dayDate, entry.scheduled))
@@ -368,6 +406,7 @@ export default function SchedulePage() {
                                                     session={session}
                                                     isDeleting={isDeleting === session.id}
                                                     onDelete={(id) =>setDeleteTargetId(id)}
+                                                    onClick={handleWorkoutClick}
                                                 />
                                             ))}
                                         </div>
@@ -413,7 +452,8 @@ export default function SchedulePage() {
                 scheduleEntries={scheduleEntries}
                 isLoading={isLoading}
                 onAddClick={handleAddClick}
-                onDeleteSession={(id) => setDeleteTargetId(id)}/>
+                onDeleteSession={(id) => setDeleteTargetId(id)}
+                onWorkoutClick={handleWorkoutClick}/>
             )}
 
             {/* select workout popup comp */}
@@ -471,11 +511,22 @@ export default function SchedulePage() {
         readonly session: ScheduledEntryDto
         readonly isDeleting: boolean
         readonly onDelete: (id:string) => void
+        readonly onClick: (session: ScheduledEntryDto) => void
     }
-    function WorkoutCard({session, isDeleting, onDelete}: WorkoutCardProps){
+    function WorkoutCard({session, isDeleting, onDelete, onClick}: WorkoutCardProps){
         return (
             <div className="flex items-center gap-4 group flex-1">
-                <Card className="flex-1 bg-card border border-border rounded-xl p-5 hover:border-brand/40 transition-all shadow-sm">
+                <Card
+                role="button"
+                tabIndex={0}
+                onClick={() => onClick(session)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' '){
+                        e.preventDefault()
+                        onClick(session)
+                    }
+                }} 
+                className="flex-1 bg-card border border-border rounded-xl p-5 hover:border-brand/40 transition-all shadow-sm cursor-pointer hover:ring-2 hover:ring-brand/45 focus-visible:ring-2 focus-visible:ring-brand/45 outline-none">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                         <div className="md:col-span-7 space-y-2">
                             <CardTitle className="text-lg font-bold text-foreground leading-snug">{session.workoutName}</CardTitle>
@@ -597,6 +648,7 @@ interface MonthViewCalendarProps{
     readonly isLoading: boolean
     readonly onAddClick: (date: Date) => void
     readonly onDeleteSession: (id: string) => void
+    readonly onWorkoutClick: (session: ScheduledEntryDto) => void
 }
 function MonthViewCalendar({
     currentDate, 
@@ -604,6 +656,7 @@ function MonthViewCalendar({
     isLoading,
     onAddClick,
     onDeleteSession,
+    onWorkoutClick
 }: MonthViewCalendarProps){
     const WEEKDAYS=["MON","TUE", "WED", "THU","FRI","SAT", "SUN"]
     const gridDays = useMemo(() => {
@@ -633,12 +686,6 @@ function MonthViewCalendar({
         return cells
 
     }, [currentDate])
-
-    const isSameDay = (date1: Date, date2: string) =>{
-        const d1 = new Date(date1)
-        const d2 = new Date(date2)
-        return d1.getFullYear() === d2.getUTCFullYear() && d1.getMonth() === d2.getUTCMonth() && d1.getDate() === d2.getUTCDate()
-    }
 
     //frontend
     return (
@@ -694,8 +741,16 @@ function MonthViewCalendar({
 
                             <div className="flex-1 flex flex-col gap-1.5 items-stretch justify-center w-full min-h-[48px]">
                                 {sessionsOnDay.map((session) => (
-                                    <div key={session.id}
-                                    className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 shadow-sm">
+                                    <button key={session.id}
+                                    tabIndex={0}
+                                    onClick={() => onWorkoutClick(session)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault()
+                                            onWorkoutClick(session)
+                                        }
+                                    }} 
+                                    className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 hover:ring-2 hover:ring-brand/45 focus-visible:ring-2 focus-visible:ring-brand/45 outline-none cursor-pointer shadow-sm">
                                         <span className="truncate flex-1 text-left" title={session.workoutName}>
                                             {session.workoutName}
                                         </span>
@@ -707,7 +762,7 @@ function MonthViewCalendar({
                                         aria-label={`Delete ${session.workoutName}`}>
                                             <X size={10} />
                                         </button>
-                                    </div>
+                                    </button>
 
                     ))}
                     {sessionsOnDay.length === 0 && (

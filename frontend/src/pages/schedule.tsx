@@ -26,7 +26,7 @@ const MUSCLECAT_MAP: Record<string, string> = {
     'Lower Back': 'Back',
     'Middle Back': 'Back',
     Trapezius: 'Back',
-    Shoulders: 'Arms',
+    Shoulders: 'Shoulders',
     Biceps: 'Arms',
     Forearms: 'Arms',
     Quadriceps:'Legs',
@@ -215,7 +215,7 @@ export default function SchedulePage() {
         //placeholder for adding workout implementation (needs a popup)
         setSelectedAddDate(date)
     }
-    const handleScheduleWorkout = async(workoutId:string)=> {
+    const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
         }
@@ -226,13 +226,24 @@ export default function SchedulePage() {
                 selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate()
             ))
             const scheduledAt =utcDate.toISOString()
+
+            const bodyPayload: Record<string, any> ={
+                workoutId,
+                scheduledAt,
+                status: 0
+            }
+            if(repeat &&interval && until) {
+                bodyPayload.repeat = repeat.toLowerCase()
+                bodyPayload.interval = interval
+                const udate = new Date(until)
+                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate()))
+                bodyPayload.until = utcUntil.toISOString()
+            }
             const response = await customFetch('/api/users/me/schedule/sessions',{
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    workoutId, scheduledAt, status: 0
+                body: JSON.stringify(bodyPayload)
                 })
-            })
             if (!response.ok){
                 const errData = await response.json().catch(() => ({}))
                 throw new Error(errData.message || 'Could not schedule the workout')
@@ -322,6 +333,12 @@ export default function SchedulePage() {
                             const today = new Date();
                             const isToday = day.date.getFullYear() === today.getFullYear() && day.date.getMonth() === today.getMonth() && day.date.getDate() === today.getDate();
 
+                            const todayStart = new Date()
+                            todayStart.setHours(0,0,0,0)
+                            const dayStart = new Date(day.date)
+                            dayStart.setHours(0,0,0,0)
+                            const isBeforeToday = dayStart < todayStart
+
                             return (
                                 <div key={day.name} className="flex items-stretch gap-4 min-h-[110px]">
                                     <VerticalDayHeader name={day.name} date={day.formattedDate} isToday={isToday} />
@@ -341,6 +358,7 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
+                                            disabled={isBeforeToday}
                                         />
                                     )}
                                 </div>
@@ -379,7 +397,8 @@ export default function SchedulePage() {
             workouts={workouts}
             isFetching={isFetchingWorkouts}
             onSchedule={handleScheduleWorkout}
-            isScheduling={isScheduling}/>
+            isScheduling={isScheduling}
+            scheduledDate={selectedAddDate}/>
 
             <ConfirmDialog
             isOpen={deleteTargetId !== null}
@@ -480,20 +499,29 @@ export default function SchedulePage() {
 interface EmptyDayCardProps{
     readonly fullName: string
     readonly onClick: () => void
+    readonly disabled?:boolean
 }
-function EmptyDayCard({ fullName, onClick }: EmptyDayCardProps) {
+function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
     return (
         <div className="flex-1 flex items-stretch">
-            <button tabIndex={0}
-                className="flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center hover:border-brand/40 hover:bg-surface-2/20 transition-all cursor-pointer group"
-                onClick={onClick}
+            <button tabIndex={disabled? -1:0}
+            disabled={disabled}
+            title={disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`}
+                className={`flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center transition-all ${ 
+                    disabled
+                    ? 'opacity-40 cursor-not-allowed border-border/40 bg-surface/5'
+                    : 'hover:border-brand/40 hover:bg-surface-2/20 cursor-pointer group'}`}
+                onClick={disabled ? undefined :onClick}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
                         onClick();
                     }
-                }} aria-label={`Add workout for ${fullName}`}>
-                <div className="p-3 bg-surface border border-border group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground rounded-full transition-all shadow-sm"
+                }} aria-label={disabled ? `Cannot add workout for ${fullName} before today`: `Add workout for ${fullName}`}>
+                <div className={`p-3 bg-surface border border-border rounded-full transition-all shadow-sm ${
+                    disabled ? 'text-muted-foreground/40 border-border/40'
+                    : 'group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground'
+                }`}
                 >
                     <Plus size={20} />
                 </div>

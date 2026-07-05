@@ -79,8 +79,7 @@ public sealed class SchedulesController : ControllerBase
         {
             return Unauthorized();
         }
-        var command = new CreateScheduledSessionCommand(userId, request.WorkoutId, request.ScheduledAt, request.Status,
-            request.Repeat, request.Interval, request.Until);
+        var command = new CreateScheduledSessionCommand(userId, request.WorkoutId, request.ScheduledAt, request.Status, request.Repeat, request.Interval, request.Until);
         var result = await _sender.Send(command, cancellationToken);
         if (result == null)
         {

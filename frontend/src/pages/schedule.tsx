@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent
 } from '@/components/ui/dropdown-menu'
+import { DatePagination } from '@/components/ui/date-pagination'
 
 //styling constants for same style aspects
 const statLABEL = "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -96,6 +97,7 @@ const DAYS = [
 
 export default function SchedulePage() {
     const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
+    const [currentWeekDate, setCurrentWeekDate] = useState(() => new Date())
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
     const [scheduleEntries, setScheduleEntries] = useState<ScheduledEntryDto[]>([])
     const [analytics, setAnalytics] = useState<AnalyticsResponse| null>(null)
@@ -113,12 +115,12 @@ export default function SchedulePage() {
 
     //calculate the dates
     const weekDates = useMemo(() => {
-        const now = new Date()
-        const currentDay = now.getDay()
+        // const now = new Date()
+        const currentDay = currentWeekDate.getDay()
         const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay
 
-        const monday = new Date(now)
-        monday.setDate(now.getDate() + diffToMonday)
+        const monday = new Date(currentWeekDate)
+        monday.setDate(currentWeekDate.getDate() + diffToMonday)
         monday.setHours(0,0,0,0)
         const dates: Date[] = []
         for (let i = 0; i <7; i++){
@@ -127,16 +129,18 @@ export default function SchedulePage() {
             dates.push(d)
         }
         return dates
-    }, [])
+    }, [currentWeekDate])
 
     const fetchScheduleAndAnalytics =async () => {
         await Promise.resolve()
         setIsLoading(true)
         setError(null)
         try {
+            const start = new Date(Date.UTC(weekDates[0].getFullYear(), weekDates[0].getMonth(), weekDates[0].getDate()))
+            const end = new Date(Date.UTC(weekDates[6].getFullYear(), weekDates[6].getMonth(), weekDates[6].getDate(), 23,59,59,999))
             const [scheduleResp, analyticsResp] = await Promise.all([
-                customFetch('/api/users/me/schedule'),
-                customFetch('/api/users/me/schedule/analytics')
+                customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
+                customFetch(`/api/users/me/schedule/analytics?startDate=${start.toISOString()}&endDate=${end.toISOString()}`)
             ])
             if (!scheduleResp.ok) {
                 throw new Error(`Failed to load schedules (${scheduleResp.status})`)
@@ -281,17 +285,12 @@ export default function SchedulePage() {
             {/* top row */}
             <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <PageTitle title="Scheduler" />
-                {/* <div className="relative inline-block self-end sm:self-auto">
-                    <select
-                        defaultValue="week"
-                        className="appearance-none bg-surface border border-border text-foreground px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer shadow-sm transition-all hover:bg-surface-2/40">
-                        <option value="week">Week View</option>
-                        <option value="month">Month View</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground border-l border-border/40 ml-1">
-                        <ChevronDown size={15} />
-                    </div>
-                </div> */}
+                <DatePagination
+                    currentDate={currentWeekDate}
+                    onChange={setCurrentWeekDate}
+                    type="week"
+                />
+                
                 <DropdownMenu>
                     <DropdownMenuTrigger
                     variant="filter"

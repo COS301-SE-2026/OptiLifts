@@ -61,7 +61,7 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
                 Id = Guid.NewGuid(),
                 UserId = request.UserId,
                 WorkoutId = request.WorkoutId,
-                Scheduled = request.ScheduledAt,
+                Scheduled = schedule,
                 Status = request.Status ?? ScheduleStatus.Scheduled
             };
             _dbContext.ScheduledEntries.Add(entry);

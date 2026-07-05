@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
@@ -174,7 +174,7 @@ export default function SchedulePage() {
         }
     }, [currentWeekDate, weekDates, viewMode])
 
-    const fetchScheduleAndAnalytics =async () => {
+    const fetchScheduleAndAnalytics = useCallback(async () => {
         await Promise.resolve()
         setIsLoading(true)
         setError(null)
@@ -203,13 +203,13 @@ export default function SchedulePage() {
                 if (calendarRes.ok){
                     const calendarData = await calendarRes.json()
                     const mapping: Record<string, string> = {}
-                    calendarData.entries.forEach((entry: any) => {
+                    calendarData.entries.forEach((entry: {workoutId:string, date:string, logId:string}) => {
                         mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
                     })
                     setCompletedLogs(mapping)
                 }
             } catch(e){
-                console.error('Error fetching calendar logs:', e)
+                setError(e instanceof Error ? e.message : 'Error fetching calendar logs')
             }
 
             const aggre: Record<string, number> = {
@@ -229,7 +229,7 @@ export default function SchedulePage() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [fetchRange, currentWeekDate])
 
     useEffect(() => { 
         const trigger = async () => {
@@ -253,7 +253,7 @@ export default function SchedulePage() {
             }
         }
         void fetchWorkouts()
-    }, [fetchRange])
+    }, [fetchScheduleAndAnalytics])
 
     const handleDeletingSession = async (sessionId: string) => {
         if (isDeleting) return
@@ -289,10 +289,17 @@ export default function SchedulePage() {
             ))
             const scheduledAt =utcDate.toISOString()
 
-            const bodyPayload: Record<string, any> ={
+            const bodyPayload: {
+                workoutId: string
+                scheduledAt: string
+                status: number
+                repeat?: string
+                interval?: number
+                until?: string
+            } = {
                 workoutId,
                 scheduledAt,
-                status: 0
+                status:0
             }
             if(repeat &&interval && until) {
                 bodyPayload.repeat = repeat.toLowerCase()

@@ -11,6 +11,56 @@ import {
   DropdownMenuContent
 } from './dropdown-menu'
 
+const formatDateToYMD = (date: Date) =>{
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2,'0')
+    const day = String(date.getDate()).padStart(2,'0')
+    return `${year}-${month}-${day}`
+}
+
+//trynna reduce complexity
+function getRepeatDateConstraints(
+    scheduledDate: Date | null,
+    repeatType: 'Day' | 'Week' | 'Month',
+    repeatInterval: number,
+    isRepeating: boolean,
+    repeatUntil: string
+){
+    let minDatestr = ''
+    let maxDatestr = ''
+    let showWarn = false
+    if(!scheduledDate) {
+        return {minDatestr, maxDatestr, showWarn}
+        
+    }
+    const minDate = new Date(scheduledDate);
+    minDate.setDate(minDate.getDate() + 1)
+    minDatestr = formatDateToYMD(minDate)
+    const maxDate = new Date(scheduledDate)
+    maxDate.setFullYear(maxDate.getFullYear() + 1)
+    maxDatestr = formatDateToYMD(maxDate)
+
+    const first = new Date(scheduledDate)
+    if(repeatType === 'Day') {
+        first.setDate(first.getDate() + repeatInterval)
+    } else if(repeatType === 'Week'){
+        first.setDate(first.getDate() + repeatInterval*7);
+    } else if(repeatType === 'Month'){
+        first.setMonth(first.getMonth() + repeatInterval)
+    }
+
+    if(isRepeating&& repeatUntil){
+        const untilDate = new Date(repeatUntil)
+        untilDate.setHours(0,0,0,0)
+        const firstOcc = new Date(first)
+        firstOcc.setHours(0,0,0,0)
+        if(untilDate < firstOcc){
+            showWarn = true;
+        }
+    }
+    return {minDatestr, maxDatestr, showWarn}
+}
+
 interface SelectWorkoutDialogProps {
     readonly isOpen: boolean
     readonly onClose: () => void
@@ -63,47 +113,10 @@ export function SelectWorkoutDialog({
             
         }
     }
-    const formatDateToYMD = (date: Date) =>{
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2,'0')
-        const day = String(date.getDate()).padStart(2,'0')
-        return `${year}-${month}-${day}`
-    }
-    let minDatestr = ''
-    let maxDatestr = ''
-    let firstRepeat: Date | null= null
-    let showWarn = false
-    if(scheduledDate) {
-        const minDate = new Date(scheduledDate);
-        minDate.setDate(minDate.getDate() + 1)
-        minDatestr = formatDateToYMD(minDate)
-        const maxDate = new Date(scheduledDate)
-        maxDate.setFullYear(maxDate.getFullYear() + 1)
-        maxDatestr = formatDateToYMD(maxDate)
-
-        const first = new Date(scheduledDate)
-        if(repeatType === 'Day') {
-            first.setDate(first.getDate() + repeatInterval)
-        } else if(repeatType === 'Week'){
-            first.setDate(first.getDate() + repeatInterval*7);
-        } else if(repeatType === 'Month'){
-            first.setMonth(first.getMonth() + repeatInterval)
-        }
-        firstRepeat = first;
-
-        if(isRepeating&& repeatUntil){
-            const untilDate = new Date(repeatUntil)
-            untilDate.setHours(0,0,0,0)
-            const firstOcc = new Date(firstRepeat)
-            firstOcc.setHours(0,0,0,0)
-            if(untilDate < firstOcc){
-                showWarn = true;
-            }
-        }
-    }
+    const {minDatestr, maxDatestr, showWarn} = getRepeatDateConstraints(scheduledDate, repeatType, repeatInterval, isRepeating, repeatUntil)
+    
     const isScheduleDisabled = isScheduling || !selectedId || (isRepeating && !repeatUntil)
     
-
     let contentList;
     if (isFetching) {
         contentList = (

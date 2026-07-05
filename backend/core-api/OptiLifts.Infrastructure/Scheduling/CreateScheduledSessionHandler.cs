@@ -29,7 +29,7 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
         if (!string.IsNullOrEmpty(request.Repeat) && request.Interval.HasValue && request.Until.HasValue)
         {
             var repeattype = request.Repeat.ToLowerInvariant();
-            var interval = request.Interval.Value; 
+            var interval = request.Interval.Value;
             var until = request.Until.Value;
             bool valid = repeattype == "day" || repeattype == "week" || repeattype == "month";
             if (interval > 0 && valid && until <= request.ScheduledAt.AddYears(1))
@@ -37,14 +37,15 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
                 var currentDate = request.ScheduledAt;
                 while (true)
                 {
-                    if (repeattype == "day")currentDate = currentDate.AddDays(interval);
-                    else if (repeattype == "week") currentDate = currentDate.AddDays(interval*7);
-                    else if(repeattype == "month") currentDate = currentDate.AddMonths(interval);
+                    if (repeattype == "day") currentDate = currentDate.AddDays(interval);
+                    else if (repeattype == "week") currentDate = currentDate.AddDays(interval * 7);
+                    else if (repeattype == "month") currentDate = currentDate.AddMonths(interval);
 
                     if (currentDate.Date <= until.Date)
                     {
                         datesToSchedule.Add(currentDate);
-                    } else
+                    }
+                    else
                     {
                         break;
                     }
@@ -67,7 +68,7 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
             _dbContext.ScheduledEntries.Add(entry);
             lastEntry = entry;
         }
-        
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateScheduledSessionResult(

@@ -809,6 +809,61 @@ HTTP/1.1 204 No Content
 
 ## Exercise Management
 
+### GET /api/exercises
+**Service Name:** Exercise Catalog Service
+
+**Description:**
+Returns the authenticated user's exercise catalog, including built-in and custom exercises.
+
+**Inputs:**
+
+- None in the request body.
+
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `exercises`: array of `ExerciseDto` - The list of exercises available to the user.
+
+ExerciseDto fields:
+
+- `id`: Guid - Unique exercise identifier.
+- `name`: string - Exercise name.
+- `mechanic`: string | null - Exercise mechanic, if defined.
+- `equipment`: string | null - Equipment required, if defined.
+- `category`: string - Exercise category.
+- `primaryMuscles`: array of string - Primary muscles trained.
+- `secondaryMuscles`: array of string - Secondary muscles assisted.
+- `isCustom`: boolean - Indicates whether the exercise was created by the user.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/exercises` with a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The response is a JSON object containing an `exercises` array of exercise objects.
+
+**Example Response:**
+
+```json
+{
+	"exercises": [
+		{
+			"id": "string",
+			"name": "string",
+			"description": "string",
+			"equipment": ["string"],
+			"muscles": ["string"],
+			"isCustom": false
+		}
+	],
+	"total": 0,
+	"page": 1,
+	"limit": 25
+}
+```
+
+---
+
 ### GET /api/exercises/allImages
 **Service Name:** Exercise Images Dictionary Service
 

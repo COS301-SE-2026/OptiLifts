@@ -57,7 +57,9 @@ jobs:
             stack-name: prod
             work-dir: infrastructure
             config-map: |
-              infrastructure:imageTag: ${{github.sha}}
+              {
+                "infrastructure:imageTag": "${{github.sha}}"
+              }
           env:
             PULUMI_ACCESS_TOKEN: ${{secrets.PULUMI_ACCESS_TOKEN}}
 

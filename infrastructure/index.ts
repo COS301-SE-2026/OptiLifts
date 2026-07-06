@@ -22,7 +22,7 @@ const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
-const imageTag = config.get("imageTag") ?? stackName;
+const imageTag = process.env.IMAGE_TAG;
 
 const resourceGroup = new resources.ResourceGroup("rgoptilifts", {
     location: "SouthAfricaNorth"

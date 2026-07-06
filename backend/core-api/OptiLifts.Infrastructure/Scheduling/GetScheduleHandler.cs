@@ -134,7 +134,8 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.TotalSets ?? 0,
                 log?.StartedAt,
                 log?.CompletedAt,
-                PRs
+                PRs,
+                log?.Id
             );
         }).ToList();
         return scheduledEntryDtos;

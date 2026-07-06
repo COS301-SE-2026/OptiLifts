@@ -13,5 +13,6 @@ public sealed record ScheduledEntryDto(
     int TotalSets,
     DateTime? StartedAt,
     DateTime? CompletedAt,
-    int? RecordCount
+    int? RecordCount,
+    Guid? LogId
 );

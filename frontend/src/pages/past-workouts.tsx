@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { DatePagination } from '@/components/ui/date-pagination'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { customFetch } from '@/lib/custom-fetch'
+import { useNavigate } from 'react-router-dom'
 
 
 type ScheduledEntryDto = {
@@ -21,6 +22,7 @@ type ScheduledEntryDto = {
     startedAt?: string
     completedAt?: string
     recordsCount?: number
+    logId?: string
 }
 
 const formatDuration = (start: string, end: string) => {
@@ -42,6 +44,7 @@ export default function PastWorkoutsPage() {
     const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
+    const navigate = useNavigate()
 
     useEffect(() => {
         const getImages = async () => {
@@ -117,11 +120,11 @@ export default function PastWorkoutsPage() {
                             key={workout.id}
                             role="button"
                             tabIndex={0}
-                            onClick={() => { /* to go to specific workout page */ }}
+                            onClick={() => { navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}`); }}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
-                                    /* to go to specific workout page */
+                                    navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}`);
                                 }
                             }}
                             className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between border-border cursor-pointer transition-shadow hover:ring-2 hover:ring-brand focus-visible:ring-2 focus-visible:ring-brand"

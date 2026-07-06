@@ -17,6 +17,9 @@ export type WorkoutDetailExercise = Readonly<{
   exerciseType: string
   orderIndex: number
   sets: WorkoutDetailSet[]
+  groupId?: string |null
+  groupType?: string | null
+  groupRestTime? : number | null
 }>
 
 export type WorkoutDetailResponse = Readonly<{

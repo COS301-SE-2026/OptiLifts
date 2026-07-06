@@ -18,7 +18,10 @@ public sealed record WorkoutExerciseDetailDto(
     string PrimaryMuscle,
     string ExerciseType,
     int OrderIndex,
-    WorkoutSetDto[] Sets
+    WorkoutSetDto[] Sets,
+    Guid? GroupId = null,
+    string? GroupType = null,
+    int? GroupRestTime = null
 );
 
 public sealed record WorkoutDetailDto(

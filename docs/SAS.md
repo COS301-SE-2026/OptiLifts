@@ -13,6 +13,7 @@ SAS introduction
 - [Technology Requirements](#technology-requirements)
 - [API Service Contracts](#api-service-contracts)
 	- [Authentication and User Management](#authentication-and-user-management)
+	- [Exercise Management](#exercise-management)
 	- [Workouts](#workouts)
 	- [Workout Exercises & Sets](#workout-exercises-and-sets)
 	- [Global & Custom Exercises](#global-and-custom-exercises)
@@ -805,6 +806,34 @@ HTTP/1.1 204 No Content
 
 **Example Response:**
 HTTP/1.1 204 No Content
+
+## Exercise Management
+
+### GET /api/exercises/allImages
+**Service Name:** Exercise Images Dictionary Service
+
+**Description:** Retrieves a dictionary mapping all exercise names to their corresponding Azure Blob Storage image URLs. Can be used across the frontend to display exercise images without multiple API calls.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- A JSON dictionary (`Record<string, string>`) where:
+  - Key: string - The exercise name.
+  - Value: string - The image URL in the database.
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/exercises/allImages`.
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
+
+**Example Response:**
+```json
+{
+	"Bench Press": "http://127.0.0.1:10000/devstoreaccount1/exercises/bench-press.png",
+	"Squat": "http://127.0.0.1:10000/devstoreaccount1/exercises/squat.png",
+	"Deadlift": "http://127.0.0.1:10000/devstoreaccount1/exercises/deadlift.png"
+}
 
 ## Workouts
 

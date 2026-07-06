@@ -35,6 +35,9 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
       distance: set.distance,
       restTime: formatRestTime(set.restTime),
     })),
+      groupId: exercise.groupId,
+      groupType: exercise.groupType,
+      groupRestTime: exercise.groupRestTime,
   }))
 }
 

@@ -208,7 +208,7 @@ export default function WorkoutsPage() {
                       {w.name}
                     </CardTitle>
                   </Link>
-                  <CardAction>
+                  <CardAction onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>

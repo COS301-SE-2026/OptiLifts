@@ -48,5 +48,11 @@ jobs:
     - name: Run Tests
       run: pnpm test
 
-    - name: Build Applications
-      run: pnpm build
+    - name: Build frontend image
+      run: docker build --build-arg VITE_API_BASE=/api -f frontend/Dockerfile .
+
+    - name: Build core-api image
+      run: docker build -f backend/core-api/Dockerfile backend/core-api
+
+    - name: Build ai-api image
+      run: docker build -f backend/ai-api/Dockerfile backend/ai-api

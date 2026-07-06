@@ -4,10 +4,12 @@ on:
   push:
     branches: [ "main", "dev" ]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [ "main", "dev" ]
 
 jobs:
   lint-test-build:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +19,7 @@ jobs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v3
       with:
-        version: 8
+        version: 9
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -40,7 +42,7 @@ jobs:
         cache-dependency-path: 'backend/ai-api/requirements.txt'
 
     - name: Install Dependencies
-      run: pnpm run setup
+      run: pnpm install --frozen-lockfile && pnpm run setup
 
     - name: Lint Code
       run: pnpm lint
@@ -48,5 +50,11 @@ jobs:
     - name: Run Tests
       run: pnpm test
 
-    - name: Build Applications
-      run: pnpm build
+    - name: Build frontend image
+      run: docker build --build-arg VITE_API_BASE=/api -f frontend/Dockerfile .
+
+    - name: Build core-api image
+      run: docker build -f backend/core-api/Dockerfile backend/core-api
+
+    - name: Build ai-api image
+      run: docker build -f backend/ai-api/Dockerfile backend/ai-api

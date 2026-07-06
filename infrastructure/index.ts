@@ -22,7 +22,7 @@ const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
-const imageTag = config.get("imageTag") ?? stackName;
+const imageTag = process.env.IMAGE_TAG;
 
 const resourceGroup = new resources.ResourceGroup("rgoptilifts", {
     location: "SouthAfricaNorth"
@@ -150,10 +150,6 @@ const frontendApp = new app.ContainerApp("frontend", {
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
-            customDomains: [{
-                name: frontendDomain,
-                bindingType: "SniEnabled",
-            }],
         },
         registries: [{
             server: acrServer,
@@ -185,10 +181,6 @@ const coreApiApp = new app.ContainerApp("core-api", {
         ingress: {
             external: true, //give public url
             targetPort: 8080,
-            customDomains: [{
-                name: backendDomain,
-                bindingType: "SniEnabled",
-            }],
             
         },
 

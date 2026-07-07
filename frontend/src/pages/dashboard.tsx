@@ -97,3 +97,41 @@ function formatDayLabel(date: Date) {
 function formatMonthLabel(date: Date) {
     return date.toLocaleDateString('en-US', { month: 'short' })
 }
+
+function buildChartBuckets(period: VolumeChartPeriod): ChartBucket[] {
+    const currentWeekStart = startOfWeek(new Date())
+
+    if (period === 'Week'){
+        return Array.from({ length: 7 }, (_, index) => {
+            const day = addDays(currentWeekStart, index)
+            return {
+                label: formatDayLabel(day),
+                start: day,
+                end: day,
+            }
+        })
+    }
+
+    if (period === 'Month'){
+        return Array.from({ length: 4 }, (_, index) => {
+            const start = addDays(currentWeekStart, -(3 - index) * 7)
+            return {
+                label: `Week ${index + 1}`,
+                start,
+                end: addDays(start, 6),
+            }
+        })
+    }
+
+    const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+
+    return Array.from({ length: 12 }, (_, index) => {
+        const start = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() - (11 - index), 1)
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 0)
+        return {
+            label: formatMonthLabel(start),
+            start,
+            end,
+        }
+    })
+}

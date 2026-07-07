@@ -13,6 +13,7 @@ import BrandStylePage from '@/pages/brand-style/brand-style'
 import ProfilePage from '@/pages/profile'
 import PastWorkoutsPage from '@/pages/past-workouts'
 import SchedulePage from './pages/schedule'
+import DashboardPage from './pages/dashboard'
 
 function AppLayout() {
   return (
@@ -67,7 +68,7 @@ function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
-          <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />

@@ -164,3 +164,27 @@ function buildVolumeChartData(entries: readonly ScheduledEntry[], period: Volume
     })
 }
 
+function getDayPillClass(index: number) {
+    const palette = [
+        'bg-brand/15 text-brand border-brand/30',
+        'bg-foreground/10 text-foreground border-border',
+        'bg-surface-2 text-foreground border-border',
+    ]
+
+    return palette[index % palette.length]
+}
+
+function formatUpcomingDate(dateString: string) {
+    const today = startOfDay(new Date())
+    const scheduledDate = startOfDay(new Date(dateString))
+    const diffDays = Math.round((scheduledDate.getTime() - today.getTime()) / 86400000)
+
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Tomorrow'
+    if (diffDays < 7) {
+        return scheduledDate.toLocaleDateString('en-US', { weekday: 'long' })
+    }
+
+    return scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+

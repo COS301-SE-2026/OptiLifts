@@ -229,7 +229,53 @@ export default function DashboardPage() {
                 ])
 
 
-    return (            
+    return (
+        <section className="mx-auto max-w-6xl px-6 py-12">
+            {isFetching && !profileData && (
+                <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+                    Loading dashboard data...
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                    {error}
+                </div>
+            )}
+
+            <div className="border-l-[5px] border-brand pl-5 py-1 mb-8">
+                <h1 className="text-4xl font-extrabold uppercase tracking-tight text-foreground">
+                    Good Day, {displayProfile?.name ?? 'Guest'}
+                </h1>
+                
+                <p className="mt-2 text-lg text-muted-foreground">
+                    Today&apos;s Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                    <button 
+                        disabled={!upcomingWorkouts[0]}
+                        onClick={() => {
+                            if (upcomingWorkouts[0]){
+                                window.location.href = `/workouts/${upcomingWorkouts[0].workoutId}`
+                            }
+                        }}
+                        className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
+                        View Workout
+                    </button>
+                    <button 
+                        disabled={!upcomingWorkouts[0]}
+                        onClick={() => {
+                            if (upcomingWorkouts[0]){
+                                window.location.href = `/session/${upcomingWorkouts[0].id}`
+                            }
+                        }}
+                        className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
+                        Start Session
+                    </button>
+                </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">        
                 {/*Volume chart*/}
                 <div className="md:col-span-2 h-full">

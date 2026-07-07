@@ -228,6 +228,19 @@ export default function DashboardPage() {
                     customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                 ])
 
+                if (!profileResponse.ok){
+                    throw new Error(`Failed to load profile (${profileResponse.status})`)
+                }
+                if (!scheduleResponse.ok){
+                    throw new Error(`Failed to load schedule (${scheduleResponse.status})`)
+                }
+                if (!completedResponse.ok){
+                    throw new Error(`Failed to load completed workouts (${completedResponse.status})`)
+                }
+                if (!analyticsResponse.ok){
+                    throw new Error(`Failed to load schedule analytics (${analyticsResponse.status})`)
+                }
+
                 const profileJson = (await profileResponse.json()) as ProfilePageResponse
                 const upcomingJson = (await scheduleResponse.json()) as ScheduledEntry[]
                 const completedJson = (await completedResponse.json()) as ScheduledEntry[]
@@ -275,6 +288,30 @@ export default function DashboardPage() {
     const displayChartTitle = 'Completed Workout Volume'
     const displayChartData = useMemo(() => buildVolumeChartData(completedEntries, volumePeriod, volumeMuscleGroup), [completedEntries, volumePeriod, volumeMuscleGroup])
 
+    const upcomingWorkouts = useMemo(() => {
+        const todayStart = startOfDay(new Date())
+        return [...scheduleEntries]
+            .filter((entry) => entry.status === 'Scheduled' && startOfDay(new Date(entry.scheduled)) >= todayStart)
+            .sort((left, right) => new Date(left.scheduled).getTime() - new Date(right.scheduled).getTime())
+            .slice(0, 3)
+            .map((entry, index) => ({
+                id: entry.id,
+                workoutId: entry.workoutId,
+                name: entry.workoutName,
+                details: `${formatUpcomingDate(entry.scheduled)} - ${entry.exerciseCount} exercises`,
+                highlight: index === 0,
+            }))}, [scheduleEntries])
+
+    const streakDays = useMemo(() => {
+        const currentWeekStart = startOfWeek(new Date())
+        const currentWeekEnd = addDays(currentWeekStart, 6)
+
+        return [...new Set(
+            completedEntries
+                .map((entry) => getEntryDate(entry))
+                .filter((date) => date >= currentWeekStart && date <= currentWeekEnd)
+                .map((date) => date.toISOString().slice(0, 10)),
+        )].sort().map((dateKey) => formatDayLabel(new Date(dateKey)))}, [completedEntries])
     const muscleValues = useMemo(() => {
         const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
             Chest: 0,

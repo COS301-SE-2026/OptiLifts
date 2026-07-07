@@ -111,8 +111,18 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
         }
 
-        //will change once PR table is implemented
-        var PRs = 1;
+        var logIds = logs.Values.Select(log => log.Id).Distinct().ToArray();
+        var prCountsByLogId = new Dictionary<Guid, int>();
+        if (logIds.Length > 0)
+        {
+            prCountsByLogId = await _dbContext.WorkoutLogSets.AsNoTracking()
+                .Where(logSet => logIds.Contains(logSet.LogId))
+                .GroupBy(logSet => logSet.LogId)
+                .ToDictionaryAsync(
+                    group => group.Key,
+                    group => group.Select(logSet => logSet.ExerciseId).Distinct().Count(),
+                    cancellationToken);
+        }
 
         var scheduledEntryDtos = entries.Select(entry =>
         {
@@ -134,7 +144,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.TotalSets ?? 0,
                 log?.StartedAt,
                 log?.CompletedAt,
-                PRs
+                log != null && prCountsByLogId.TryGetValue(log.Id, out var prCount) ? prCount : 0
             );
         }).ToList();
         return scheduledEntryDtos;

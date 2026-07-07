@@ -12,6 +12,12 @@ SAS introduction
 
 - [Technology Requirements](#technology-requirements)
 - [API Service Contracts](#api-service-contracts)
+	- [Authentication and User Management](#authentication-and-user-management)
+	- [Exercise Management](#exercise-management)
+	- [Workouts](#workouts)
+	- [Workout Exercises & Sets](#workout-exercises-and-sets)
+	- [Global & Custom Exercises](#global-and-custom-exercises)
+	- [Scheduling](#scheduling)
 - [Deployment](#Deployment)
 
 
@@ -289,63 +295,9 @@ Testing begins at the low level modules of the architecture. specifically starti
 
 Once the persistence and data access layers are fully validated, integration testing moves up to the business logic handlers, followed by the API controllers, and ultimately concludes at the frontend presentation layer. This method allows us to catch fundamental data-handling defects early and allows the commonly used shared modules to be thoroughly tested befor they are used in higher-level logic.
 
-## API Service Contracts
+# API Service Contracts
 
-
-### GET /api/exercises
-**Service Name:** Exercise Catalog Service
-
-**Description:**
-Returns the authenticated user's exercise catalog, including built-in and custom exercises.
-
-**Inputs:**
-
-- None in the request body.
-
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- `exercises`: array of `ExerciseDto` - The list of exercises available to the user.
-
-ExerciseDto fields:
-
-- `id`: Guid - Unique exercise identifier.
-- `name`: string - Exercise name.
-- `mechanic`: string | null - Exercise mechanic, if defined.
-- `equipment`: string | null - Equipment required, if defined.
-- `category`: string - Exercise category.
-- `primaryMuscles`: array of string - Primary muscles trained.
-- `secondaryMuscles`: array of string - Secondary muscles assisted.
-- `isCustom`: boolean - Indicates whether the exercise was created by the user.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a GET request to `/api/exercises` with a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The response is a JSON object containing an `exercises` array of exercise objects.
-
-**Example Response:**
-
-```json
-{
-	"exercises": [
-		{
-			"id": "string",
-			"name": "string",
-			"description": "string",
-			"equipment": ["string"],
-			"muscles": ["string"],
-			"isCustom": false
-		}
-	],
-	"total": 0,
-	"page": 1,
-	"limit": 25
-}
-```
-
----
+## Authentication and User Management
 
 ### POST /api/exercises/custom
 **Service Name:** Custom Exercise Creation Service
@@ -530,6 +482,7 @@ Body
 	"createdAt": "2026-06-19T10:00:00Z"
 }
 ```
+---
 
 ### POST /api/auth/login
 **Service Name:** User Login Service
@@ -583,6 +536,8 @@ Body
 }
 ```
 
+---
+
 ### GET /api/auth/me
 **Service Name:** Current user service.
 
@@ -590,7 +545,7 @@ Body
 Gets the details of the currently logged in, authenticated user to hydrate the auth context.
 
 **Inputs:**
-- access_token cookie - passed by the browser.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
 
 **Outputs:**
 
@@ -622,6 +577,8 @@ AuthUserDto fields:
 }
 ```
 
+---
+
 ### POST /api/auth/refresh
 **Service Name:** Refresh token service. 
 
@@ -629,7 +586,7 @@ AuthUserDto fields:
 Exchanges a valid HTTP-Only refresh cookie for a new access and refresh cookie.
 
 **Inputs:**
-- refresh_token cookie - passed by the browser.
+- `refresh_token` cookie: string - HTTP-only cookie passed by the browser.
 
 **Outputs:**
 
@@ -653,6 +610,8 @@ Set-Cookie: access_token=eyJhbG...; HttpOnly; Path=/; SameSite=Strict
 Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Strict
 ```
 
+---
+
 ### POST /api/auth/logout
 **Service Name:** User logout service
 
@@ -660,8 +619,7 @@ Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Strict
 Logs out the user and ends their session. 
 
 **Inputs:**
-
-- Set-Cookie: access_token
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
 
 **Outputs:**
 - 200 OK
@@ -670,5 +628,276 @@ Logs out the user and ends their session.
 
 - Clients must send a POST request to `/api/auth/logout`
 
+---
 
-## Deployment
+### GET /api/users/me/settings
+**Service Name:** User Settings Query Service
+
+**Description:** Retrieves all user settings for the authenticated user.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:** 
+- `profile`: `ProfileDto` - The user's profile details.
+- `preferences`: `PreferencesDto` - The user's application preferences.
+
+`ProfileDto` fields:
+- `displayName`: string - The user's display name.
+- `bio`: string - The user's biography description.
+- `sex`: string - The user's sex ("Male", "Female", "Other", or "PreferNotToSay").
+- `dateOfBirth`: datetime | null - The user's birthdate.
+- `weight`: double | null - The user's body weight.
+- `height`: double | null - The user's height.
+- `profilePictureUrl`: string | null - The storage URL of the user's uploaded profile image.
+
+`PreferencesDto` fields:
+- `theme`: string - The application UI theme ("light" or "dark").
+- `units`: string - The default units of measurement ("metric" or "imperial").
+
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/users/me/settings`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- If the user database record cannot be found, it returns `404`.
+
+**Example Response:**
+```json
+{
+	"profile": {
+		"displayName": "Jordan",
+		"bio": "Example",
+		"sex": "Male",
+		"dateOfBirth": "2005-11-22T00:00:00Z",
+		"weight": 10.5,
+		"height": 194.2,
+		"profilePictureUrl": "https://storage.optilifts.com/profile-pictures/goat.jpg"
+	},
+	"preferences": {
+		"theme": "dark",
+		"units": "metric"
+	}
+}
+```
+---
+
+### PATCH /api/users/me/profileDetails
+**Service Name:** User Profile Update Service
+
+**Description:** Updates the display name, bio, sex, birthdate, weight, and height of the authenticated user if they are changed.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+- `displayName`: string - The user's display name.
+- `bio`: string | null - Optional biography text.
+- `sex`: string | null - Optional sex designation.
+- `dateOfBirth`: string | null - Optional birthdate.
+- `weight`: double | null - Optional body weight.
+- `height`: double | null - Optional height.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a PATCH request to `/api/users/me/profileDetails` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if the user does not exist in the database.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
+
+### PATCH /api/users/me/profilePicture
+**Service Name:** Profile Picture Upload Service
+
+**Description:** Uploads the updated user profile image.
+
+**Inputs:**
+- `profilePicture`: file - The image binary file sent as multipart form-data.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- `profilePictureUrl`: string - The newly generated storage URL of the profile image.
+
+**Usage / Interaction Rules:**
+- Clients must send a PATCH request to `/api/users/me/profilePicture` with `multipart/form-data` encoding.
+- The browser automatically attaches the `access_token` cookie.
+- The request must contain a valid, non-empty image file. Non-image files or missing payloads return `400 Bad Request`.
+- Returns `401` if the cookie is missing or invalid.
+
+**Example Response:**
+```json
+{
+	"profilePictureUrl": "https://storage.optilifts.com/profile-pictures/example.png"
+}
+```
+
+---
+
+### DELETE /api/users/me/deleteProfilePicture
+**Service Name:** Profile Picture Removal Service
+
+**Description:** Removes the current user's profile picture.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a DELETE request to `/api/users/me/deleteProfilePicture`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if the user record does not exist.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
+
+### PATCH /api/users/me/preferences
+**Service Name:** User Preferences Update Service
+
+**Description:** Updates the theme and units of the authenticated user.
+
+**Inputs:**
+- `theme`: string - The theme preference ("light" or "dark", required).
+- `units`: string - The units preference ("metric" or "imperial", required).
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a PATCH request to `/api/users/me/preferences` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Both input fields are required; empty or missing fields return `400 Bad Request`.
+- Returns `401` if the cookie is missing or invalid.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
+
+### POST /api/users/me/updatePassword
+**Service Name:** User Password Update Service
+
+**Description:** Updates the password of the authenticated user.
+
+**Inputs:**
+- `currentPassword`: string - The user's current password (required).
+- `newPassword`: string - The user's new password (required).
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/updatePassword` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Empty passwords return `400 Bad Request`.
+- Providing an incorrect current password returns `400 Bad Request`.
+- The `newPassword` must meet complexity requirements otherwise it will return `400 Bad Request`.
+- Returns `401` if the cookie is missing or invalid.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+## Exercise Management
+
+### GET /api/exercises
+**Service Name:** Exercise Catalog Service
+
+**Description:**
+Returns the authenticated user's exercise catalog, including built-in and custom exercises.
+
+**Inputs:**
+
+- None in the request body.
+
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `exercises`: array of `ExerciseDto` - The list of exercises available to the user.
+
+ExerciseDto fields:
+
+- `id`: Guid - Unique exercise identifier.
+- `name`: string - Exercise name.
+- `mechanic`: string | null - Exercise mechanic, if defined.
+- `equipment`: string | null - Equipment required, if defined.
+- `category`: string - Exercise category.
+- `primaryMuscles`: array of string - Primary muscles trained.
+- `secondaryMuscles`: array of string - Secondary muscles assisted.
+- `isCustom`: boolean - Indicates whether the exercise was created by the user.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/exercises` with a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The response is a JSON object containing an `exercises` array of exercise objects.
+
+**Example Response:**
+
+```json
+{
+	"exercises": [
+		{
+			"id": "string",
+			"name": "string",
+			"description": "string",
+			"equipment": ["string"],
+			"muscles": ["string"],
+			"isCustom": false
+		}
+	],
+	"total": 0,
+	"page": 1,
+	"limit": 25
+}
+```
+
+---
+
+### GET /api/exercises/allImages
+**Service Name:** Exercise Images Dictionary Service
+
+**Description:** Retrieves a dictionary mapping all exercise names to their corresponding Azure Blob Storage image URLs. Can be used across the frontend to display exercise images without multiple API calls.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- A JSON dictionary (`Record<string, string>`) where:
+  - Key: string - The exercise name.
+  - Value: string - The image URL in the database.
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/exercises/allImages`.
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
+
+**Example Response:**
+```json
+{
+	"Bench Press": "http://127.0.0.1:10000/devstoreaccount1/exercises/bench-press.png",
+	"Squat": "http://127.0.0.1:10000/devstoreaccount1/exercises/squat.png",
+	"Deadlift": "http://127.0.0.1:10000/devstoreaccount1/exercises/deadlift.png"
+}
+
+## Workouts
+
+
+## Workout Exercises and Sets
+
+
+## Global and custom exercises
+
+## Scheduling
+
+# Deployment

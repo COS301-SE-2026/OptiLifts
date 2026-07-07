@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
@@ -189,18 +189,26 @@ export default function WorkoutsPage() {
                 tabIndex={0}
                 aria-pressed={w.id === selectedId}
                 className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}
-                onClick={() => setSelectedId(w.id)}
+                onClick={() => {
+                  setSelectedId(w.id)
+                  navigate(`/workouts/${w.id}`)
+                }}
                 onFocus={() => setSelectedId(w.id)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
                     setSelectedId(w.id)
+                    navigate(`/workouts/${w.id}`)
                   }
                 }}
               >
-                <CardHeader className="flex items-start justify-between">
-                  <CardTitle className="font-bold">{w.name}</CardTitle>
-                  <CardAction>
+                <CardHeader>
+                  <Link to={`/workouts/${w.id}`} className="min-w-0">
+                    <CardTitle className="font-bold transition-colors hover:text-brand">
+                      {w.name}
+                    </CardTitle>
+                  </Link>
+                  <CardAction onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>
@@ -217,10 +225,12 @@ export default function WorkoutsPage() {
                     <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
                     <p className="mt-1 text-sm text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
                   </div>
-                  <Button size="sm" onClick={() => navigate('/active-session', { state: { workout: w } })}>
+                  <Button size="sm" onClick={(e) =>  { 
+                    e.stopPropagation() 
+                    navigate('/active-session', { state: { workout: w } })}}>
                     Start Workout
                   </Button>
-                </CardContent>
+                </CardContent>  
               </Card>
             ))}
           </div>

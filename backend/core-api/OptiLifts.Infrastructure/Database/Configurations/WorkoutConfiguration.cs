@@ -16,7 +16,6 @@ public class WorkoutConfiguration : IEntityTypeConfiguration<Workout>
 
         builder.Property(w => w.FolderId).HasColumnName("folder_id").IsRequired(false);
         builder.Property(w => w.Name).HasColumnName("name").IsRequired().HasMaxLength(150);
-        builder.Property(w => w.DayIndex).HasColumnName("day_index");
         builder.Property(w => w.CreatedBy).HasColumnName("user_id").IsRequired();
         builder.Property(w => w.CreatedAt).HasColumnName("created_at").IsRequired();
 

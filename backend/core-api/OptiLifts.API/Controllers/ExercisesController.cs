@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Exercises.GetExerciseImages;
 using OptiLifts.Application.Exercises.GetExercises;
 
 namespace OptiLifts.API.Controllers;
@@ -21,13 +22,17 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetExercises(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetExercises(
+        [FromQuery] string? search,
+        [FromQuery] string? muscle,
+        [FromQuery] string? equipment,
+        CancellationToken cancellationToken)
     {
         var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
             return Unauthorized();
 
-        var query = new GetExercisesQuery(userId);
+        var query = new GetExercisesQuery(userId, search, muscle, equipment);
         var exercises = await _mediator.Send(query, cancellationToken);
         return Ok(exercises);
     }
@@ -75,6 +80,13 @@ public class ExercisesController : ControllerBase
         {
             return StatusCode(500, new { error = "An unexpected error occurred while creating the exercise.", details = ex.Message });
         }
+    }
+
+    [HttpGet("allImages")]
+    public async Task<ActionResult<Dictionary<string, string>>> GetExerciseImages(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetExerciseImagesQuery(), cancellationToken);
+        return Ok(result);
     }
 }
 

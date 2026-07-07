@@ -13,8 +13,10 @@ import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-worko
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
+  restTime?: number
   onRemove: (id: string) => void
   onSetsChange: (id: string, sets: ExerciseSet[]) => void
+  onRestTimeChange?: (id: string, value: number) => void
 }>
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
@@ -59,7 +61,7 @@ function SetRow({
         />
       </div>
 
-      <div className="flex-1 text-center">
+      <div className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
         <NumericalUnderscoreInput
           value={set.kg === '' ? '' : String(set.kg)}
           onChange={e => onChange({ ...set, kg: e.target.value === '' ? '' : Number(e.target.value) })}
@@ -67,7 +69,7 @@ function SetRow({
         />
       </div>
 
-      <div className="flex-1 text-center">
+      <div className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
         <NumericalUnderscoreInput
           value={set.reps === '' ? '' : String(set.reps)}
           onChange={e => onChange({ ...set, reps: e.target.value === '' ? '' : Number(e.target.value) })}
@@ -84,7 +86,7 @@ function SetRow({
 
 let nextSetId = 0
 
-export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
   const updateSets = (updated: ExerciseSet[]) => {
@@ -130,6 +132,20 @@ export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardP
           </span>
         </div>
 
+        {onRestTimeChange && (
+          <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+            <span>Rest (seconds)</span>
+            <input 
+              type = "number"
+              min = {0}
+              value = {restTime || ''}
+              placeholder="0"
+              onChange = {e => onRestTimeChange(exercise.id, Number(e.target.value))}
+              className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+          </label>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain" className="p-1">
             <MoreHorizontal className="w-4 h-4" />
@@ -146,7 +162,10 @@ export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardP
 
       <div className="px-4 py-3 flex flex-col gap-2">
         <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-[1px] text-muted-foreground font-sans px-3">
-          <span className="w-20 shrink-0">Set</span>
+          <div className='flex items-center w-20 shrink-0'>
+            <span className="w-4 shrink-0"/>
+            <span className="w-8 text-center">Set</span>
+          </div>
           <span className="flex-1 text-center">KG</span>
           <span className="flex-1 text-center">Reps</span>
           <span className="w-6 shrink-0" />
@@ -164,15 +183,12 @@ export function ExerciseCard({ exercise, onRemove, onSetsChange }: ExerciseCardP
           )
         })}
       </div>
-
-      <div className="border-t border-border" />
-
-      <div className="px-4 py-3">
+        <div className="px-4 py-3">
         <Button variant="outline" size="sm" className="w-full" onClick={addSet}>
           + Add Set
         </Button>
       </div>
-
+      <div className="border-t border-border" />
     </div>
   )
 }

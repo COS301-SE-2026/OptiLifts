@@ -4,44 +4,57 @@ on:
   push:
     branches: [ "main", "dev" ]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [ "main", "dev" ]
 
 jobs:
-  lint-build-test:
+  lint-test-build:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 9
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 8
+        cache: 'pnpm'
 
     - name: Setup .NET 8.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+        cache: true 
+        cache-dependency-path: '**/OptiLifts*.csproj'
 
     - name: Setup Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        cache: 'pip' 
+        cache-dependency-path: 'backend/ai-api/requirements.txt'
 
     - name: Install Dependencies
-      run: pnpm run setup
+      run: pnpm install --frozen-lockfile && pnpm run setup
 
     - name: Lint Code
       run: pnpm lint
 
-    - name: Build Applications
-      run: pnpm build
-
     - name: Run Tests
       run: pnpm test
+
+    - name: Build frontend image
+      run: docker build --build-arg VITE_API_BASE=/api -f frontend/Dockerfile .
+
+    - name: Build core-api image
+      run: docker build -f backend/core-api/Dockerfile backend/core-api
+
+    - name: Build ai-api image
+      run: docker build -f backend/ai-api/Dockerfile backend/ai-api

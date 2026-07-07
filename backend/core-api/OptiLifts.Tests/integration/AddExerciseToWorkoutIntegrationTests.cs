@@ -164,7 +164,7 @@ public class AddExerciseToWorkoutIntegrationTests : IClassFixture<AddExerciseToW
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateToken(userId));
 
-        var createBody = new CreateWorkoutRequest(null, "Chest Day", 1, []);
+        var createBody = new CreateWorkoutRequest(null, "Chest Day", [], []);
         var createResp = await client.PostAsJsonAsync("/api/workouts", createBody);
         createResp.EnsureSuccessStatusCode();
         var created = await createResp.Content.ReadFromJsonAsync<CreateWorkoutResult>();
@@ -188,7 +188,7 @@ public class AddExerciseToWorkoutIntegrationTests : IClassFixture<AddExerciseToW
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateToken(userId));
 
-        var createBody = new CreateWorkoutRequest(null, "Back Day", 1, []);
+        var createBody = new CreateWorkoutRequest(null, "Back Day", [], []);
         var createResp = await client.PostAsJsonAsync("/api/workouts", createBody);
         createResp.EnsureSuccessStatusCode();
         var created = await createResp.Content.ReadFromJsonAsync<CreateWorkoutResult>();

@@ -4,10 +4,9 @@ namespace OptiLifts.Domain.Workouts;
 
 public enum SetType
 {
+    Warmup,
     Normal,
-    Superset,
-    DropSet,
-    Circuit
+    DropSet
 }
 
 public class WorkoutSet

@@ -68,3 +68,32 @@ const MUSCLE_CATEGORY_MAP: Record<string, 'Chest' | 'Core' | 'Shoulders' | 'Arms
     Abdominals: 'Core',
 }
 
+const MUSCLE_KEYS = ['Chest', 'Core', 'Shoulders', 'Arms', 'Legs', 'Back'] as const
+type MuscleFilter = 'All' | (typeof MUSCLE_KEYS)[number]
+
+function startOfDay(date: Date) {
+    const next = new Date(date)
+    next.setHours(0, 0, 0, 0)
+    return next
+}
+
+function startOfWeek(date: Date) {
+    const day = startOfDay(date)
+    const offset = (day.getDay() + 6) % 7
+    day.setDate(day.getDate() - offset)
+    return day
+}
+
+function addDays(date: Date, days: number) {
+    const next = new Date(date)
+    next.setDate(next.getDate() + days)
+    return next
+}
+
+function formatDayLabel(date: Date) {
+    return date.toLocaleDateString('en-US', { weekday: 'short' })
+}
+
+function formatMonthLabel(date: Date) {
+    return date.toLocaleDateString('en-US', { month: 'short' })
+}

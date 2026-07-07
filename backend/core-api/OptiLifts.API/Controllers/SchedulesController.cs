@@ -65,7 +65,10 @@ public sealed class SchedulesController : ControllerBase
     public sealed record CreateScheduledSessionRequest(
         Guid WorkoutId,
         DateTime ScheduledAt,
-        ScheduleStatus Status
+        ScheduleStatus Status,
+        string? Repeat = null,
+        int? Interval = null,
+        DateTime? Until = null
     );
     [HttpPost("me/schedule/sessions")]
     public async Task<ActionResult<CreateScheduledSessionResult>> CreateScheduledSession(
@@ -76,7 +79,7 @@ public sealed class SchedulesController : ControllerBase
         {
             return Unauthorized();
         }
-        var command = new CreateScheduledSessionCommand(userId, request.WorkoutId, request.ScheduledAt, request.Status);
+        var command = new CreateScheduledSessionCommand(userId, request.WorkoutId, request.ScheduledAt, request.Status, request.Repeat, request.Interval, request.Until);
         var result = await _sender.Send(command, cancellationToken);
         if (result == null)
         {

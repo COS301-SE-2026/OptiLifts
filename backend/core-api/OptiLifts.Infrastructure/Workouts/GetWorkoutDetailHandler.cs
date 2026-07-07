@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Workouts;
@@ -32,15 +33,21 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 on workoutExercise.ExerciseId equals exercise.Id
             join muscle in _dbContext.Muscles.AsNoTracking()
                 on exercise.PrimaryMuscleId equals muscle.Id
+            join eg in _dbContext.ExerciseGroups.AsNoTracking()
+                on workoutExercise.GroupId equals eg.Id into egJoin
+            from exerciseGroup in egJoin.DefaultIfEmpty()
             orderby workoutExercise.OrderIndex, exercise.Name
             select new
             {
                 workoutExercise.Id,
                 workoutExercise.ExerciseId,
                 workoutExercise.OrderIndex,
+                workoutExercise.GroupId,
                 ExerciseName = exercise.Name,
                 PrimaryMuscleName = muscle.Name,
-                ExerciseType = exercise.ExerciseType
+                ExerciseType = exercise.ExerciseType,
+                GroupType = exerciseGroup != null ? exerciseGroup.Type.ToString() : null,
+                GroupRestTime = (int?)(exerciseGroup != null ? exerciseGroup.RestTime : null)
             })
             .ToListAsync(cancellationToken);
 
@@ -96,7 +103,10 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             entry.OrderIndex,
             setsByWorkoutExerciseId.TryGetValue(entry.Id, out var workoutSets)
                 ? workoutSets.ToArray()
-                : [])).ToArray();
+                : [],
+            entry.GroupId,
+            entry.GroupType,
+            entry.GroupRestTime)).ToArray();
 
         var primaryMuscleGroups = exercises
             .Select(exercise => exercise.PrimaryMuscle)

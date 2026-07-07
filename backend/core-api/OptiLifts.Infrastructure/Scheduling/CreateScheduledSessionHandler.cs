@@ -1,3 +1,4 @@
+using Azure.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.CreateScheduledSession;
@@ -20,23 +21,61 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
             return null;
         }
 
-        //new entry to insert
-        var entry = new ScheduledEntry
+        //repeat configuration
+        var datesToSchedule = new List<DateTime>
         {
-            Id = Guid.NewGuid(),
-            UserId = request.UserId,
-            WorkoutId = request.WorkoutId,
-            Scheduled = request.ScheduledAt,
-            Status = request.Status ?? ScheduleStatus.Scheduled
+            request.ScheduledAt
         };
-        _dbContext.ScheduledEntries.Add(entry);
+        if (!string.IsNullOrEmpty(request.Repeat) && request.Interval.HasValue && request.Until.HasValue)
+        {
+            var repeattype = request.Repeat.ToLowerInvariant();
+            var interval = request.Interval.Value;
+            var until = request.Until.Value;
+            bool valid = repeattype == "day" || repeattype == "week" || repeattype == "month";
+            if (interval > 0 && valid && until <= request.ScheduledAt.AddYears(1))
+            {
+                var currentDate = request.ScheduledAt;
+                while (true)
+                {
+                    if (repeattype == "day") currentDate = currentDate.AddDays(interval);
+                    else if (repeattype == "week") currentDate = currentDate.AddDays(interval * 7);
+                    else if (repeattype == "month") currentDate = currentDate.AddMonths(interval);
+
+                    if (currentDate.Date <= until.Date)
+                    {
+                        datesToSchedule.Add(currentDate);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        ScheduledEntry lastEntry = null!;
+        foreach (var schedule in datesToSchedule)
+        {
+            var entry = new ScheduledEntry
+            {
+                Id = Guid.NewGuid(),
+                UserId = request.UserId,
+                WorkoutId = request.WorkoutId,
+                Scheduled = schedule,
+                Status = request.Status ?? ScheduleStatus.Scheduled
+            };
+            _dbContext.ScheduledEntries.Add(entry);
+            lastEntry = entry;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateScheduledSessionResult(
-            entry.Id,
-            entry.WorkoutId,
-            entry.Scheduled,
-            entry.Status
+            lastEntry.Id,
+            lastEntry.WorkoutId,
+            lastEntry.Scheduled,
+            lastEntry.Status
         );
     }
 }

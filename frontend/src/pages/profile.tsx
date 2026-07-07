@@ -178,7 +178,7 @@ export default function ProfilePage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
             <Button 
-              variant="default" 
+              variant="secondary" 
               size="sm" 
               className="font-semibold uppercase tracking-wider text-xs scale-[0.85] origin-right"
               onClick={() => navigate('/past-workouts')}

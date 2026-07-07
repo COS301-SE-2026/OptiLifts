@@ -12,6 +12,9 @@ export type ExercisePlanItem = Readonly<{
   subtitle?: string
   exerciseType?: string
   sets?: ExercisePlanSet[]
+  groupId?: string |null
+  groupType?: string | null
+  groupRestTime? : number | null
 }>
 
 export type ExercisePlanProps = Readonly<{

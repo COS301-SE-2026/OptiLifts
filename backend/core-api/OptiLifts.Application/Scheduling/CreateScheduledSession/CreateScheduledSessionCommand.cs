@@ -6,7 +6,10 @@ public sealed record CreateScheduledSessionCommand(
     Guid UserId,
     Guid WorkoutId,
     DateTime ScheduledAt,
-    ScheduleStatus? Status
+    ScheduleStatus? Status,
+    string? Repeat = null,
+    int? Interval = null,
+    DateTime? Until = null
 ) : IRequest<CreateScheduledSessionResult?>;
 
 public sealed record CreateScheduledSessionResult(

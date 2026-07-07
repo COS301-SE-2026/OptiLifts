@@ -145,6 +145,8 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 log?.StartedAt,
                 log?.CompletedAt,
                 log != null && prCountsByLogId.TryGetValue(log.Id, out var prCount) ? prCount : 0
+                PRs,
+                log?.Id
             );
         }).ToList();
         return scheduledEntryDtos;

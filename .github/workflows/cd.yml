@@ -48,7 +48,7 @@ jobs:
 
         - name: Install Pulumi
           working-directory: infrastructure
-          run: npm install
+          run: npm ci
 
         - name: Deploy via Pulumi
           uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f
@@ -56,10 +56,11 @@ jobs:
             command: up
             stack-name: prod
             work-dir: infrastructure
-            config-map: |
-              imageTag: ${{github.sha}}
+            refresh: true
+            
           env:
             PULUMI_ACCESS_TOKEN: ${{secrets.PULUMI_ACCESS_TOKEN}}
+            IMAGE_TAG: ${{github.sha}}
 
 
         

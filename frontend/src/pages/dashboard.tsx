@@ -188,6 +188,47 @@ function formatUpcomingDate(dateString: string) {
     return scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+export default function DashboardPage() {
+    const { isAuthenticated, isHydrated } = useAuth()
+    const [volumePeriod, setVolumePeriod] = useState<VolumeChartPeriod>('Week')
+    const [volumeMuscleGroup, setVolumeMuscleGroup] = useState<MuscleFilter>('All')
+    const [profileData, setProfileData] = useState<ProfilePageResponse | null>(null)
+    const [scheduleEntries, setScheduleEntries] = useState<readonly ScheduledEntry[]>([])
+    const [completedEntries, setCompletedEntries] = useState<readonly ScheduledEntry[]>([])
+    const [completedWorkoutDetails, setCompletedWorkoutDetails] = useState<readonly WorkoutDetailResponse[]>([])
+    const [analytics, setAnalytics] = useState<ScheduleAnalyticsResponse | null>(null)
+    const [isFetching, setIsFetching] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!isHydrated || !isAuthenticated){
+            return
+        }
+
+        let isActive = true
+
+        async function loadDashboard() {
+            setIsFetching(true)
+            setError(null)
+
+            try {
+                const today = startOfDay(new Date())
+                const endDate = new Date(today)
+                endDate.setDate(endDate.getDate() + 30)
+                const completedRangeStart = new Date(today)
+                completedRangeStart.setFullYear(completedRangeStart.getFullYear() - 1)
+                completedRangeStart.setDate(1)
+                completedRangeStart.setHours(0, 0, 0, 0)
+                const completedRangeEnd = today
+
+                const [profileResponse, scheduleResponse, completedResponse, analyticsResponse] = await Promise.all([
+                    customFetch('/api/profile/overview', { headers: { Accept: 'application/json' }}),
+                    customFetch(`/api/users/me/schedule?startDate=${today.toISOString()}&endDate=${endDate.toISOString()}` , { headers: { Accept: 'application/json' }}),
+                    customFetch(`/api/users/me/schedule?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
+                    customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
+                ])
+
+
     return (            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">        
                 {/*Volume chart*/}

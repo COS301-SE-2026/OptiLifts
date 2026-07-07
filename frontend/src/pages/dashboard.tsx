@@ -33,7 +33,7 @@ type ScheduledEntry = Readonly<{
     exercisePreview: string[]
     totalVolume: number
     totalSets: number
-    recordCount?: number | null
+    prCount?: number | null
     startedAt?: string | null
     completedAt?: string | null
 }>
@@ -312,6 +312,45 @@ export default function DashboardPage() {
                 .filter((date) => date >= currentWeekStart && date <= currentWeekEnd)
                 .map((date) => date.toISOString().slice(0, 10)),
         )].sort().map((dateKey) => formatDayLabel(new Date(dateKey)))}, [completedEntries])
+
+    const prsThisWeek = useMemo(() => {
+        const currentWeekStart = startOfWeek(new Date())
+        const currentWeekEnd = addDays(currentWeekStart, 6)
+
+        return completedEntries
+            .filter((entry) => {
+                const entryDate = getEntryDate(entry)
+                return entryDate >= currentWeekStart && entryDate <= currentWeekEnd
+            })
+            .reduce((total, entry) => total + (entry.prCount ?? 0), 0)}, [completedEntries])
+
+    const favoriteExercise = useMemo(() => {
+        if (completedWorkoutDetails.length === 0 || completedEntries.length === 0) {
+            return { name: 'No workouts yet', count: 0 }
+        }
+
+        const completionCountsByWorkoutId = completedEntries.reduce((counts, entry) => {
+            counts.set(entry.workoutId, (counts.get(entry.workoutId) ?? 0) + 1)
+            return counts
+        }, new Map<string, number>())
+
+        const workoutById = new Map(completedWorkoutDetails.map((workout) => [workout.id, workout]))
+        const exerciseCounts = new Map<string, number>()
+
+        completionCountsByWorkoutId.forEach((completionCount, workoutId) => {
+            const workout = workoutById.get(workoutId)
+            if (!workout){
+                return
+            }
+
+            workout.exercises.forEach((exercise) => {
+                exerciseCounts.set(exercise.name, (exerciseCounts.get(exercise.name) ?? 0) + completionCount)
+            })
+        })
+
+        const [name, count] = [...exerciseCounts.entries()].sort((left, right) => right[1] - left[1])[0] ?? ['No workouts yet', 0]
+        return { name, count }}, [completedWorkoutDetails, completedEntries])
+
     const muscleValues = useMemo(() => {
         const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
             Chest: 0,
@@ -464,7 +503,7 @@ export default function DashboardPage() {
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img src={badgeIcon} alt="Personal records badge" className="h-10 w-10 object-contain" />
-                                <span className="text-4xl font-bold text-foreground">{recordsThisWeek}</span>
+                                <span className="text-4xl font-bold text-foreground">{prsThisWeek}</span>
                             </div>
                         </div>
                     </CardContent>

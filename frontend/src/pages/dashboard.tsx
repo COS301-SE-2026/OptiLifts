@@ -135,3 +135,32 @@ function buildChartBuckets(period: VolumeChartPeriod): ChartBucket[] {
         }
     })
 }
+
+function getEntryDate(entry: ScheduledEntry) {
+    return new Date(entry.completedAt ?? entry.startedAt ?? entry.scheduled)
+}
+
+function buildVolumeChartData(entries: readonly ScheduledEntry[], period: VolumeChartPeriod, muscleFilter: MuscleFilter): ChartPoint[] {
+    const buckets = buildChartBuckets(period)
+
+    return buckets.map((bucket) => {
+        const total = entries.reduce((sum, entry) => {
+            const entryDate = getEntryDate(entry)
+            const withinBucket = entryDate >= bucket.start && entryDate <= bucket.end
+
+            if (!withinBucket) return sum
+            if (muscleFilter !== 'All'){
+                const entryMuscles = entry.primaryMuscleGroups.map((m) => MUSCLE_CATEGORY_MAP[m] || m)
+                if (!entryMuscles.includes(muscleFilter)) return sum
+            }
+
+            return sum + entry.totalVolume
+        }, 0)
+
+        return {
+            label: bucket.label,
+            value: total,
+        }
+    })
+}
+

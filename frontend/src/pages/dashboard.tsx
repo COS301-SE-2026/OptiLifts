@@ -227,7 +227,53 @@ export default function DashboardPage() {
                     customFetch(`/api/users/me/schedule?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                     customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                 ])
+
+                const profileJson = (await profileResponse.json()) as ProfilePageResponse
+                const upcomingJson = (await scheduleResponse.json()) as ScheduledEntry[]
+                const completedJson = (await completedResponse.json()) as ScheduledEntry[]
+                const analyticsJson = (await analyticsResponse.json()) as ScheduleAnalyticsResponse
+
+                const workoutIds = [...new Set(completedJson.map((entry) => entry.workoutId))]
+                const workoutDetailResponses = await Promise.all(
+                    workoutIds.map(async (workoutId) => {
+                        const response = await customFetch(`/api/workouts/${workoutId}`, { headers: { Accept: 'application/json' }})
+                        if (!response.ok){
+                            return null
+                        }
+
+                        return (await response.json()) as WorkoutDetailResponse
+                    }),
+                )
+
+                if (!isActive){
+                    return
+                }
+
+                setProfileData(profileJson)
+                setScheduleEntries(upcomingJson)
+                setCompletedEntries(completedJson)
+                setCompletedWorkoutDetails(workoutDetailResponses.filter((detail): detail is WorkoutDetailResponse => detail !== null))
+                setAnalytics(analyticsJson)
+            } catch (loadError){
+                if (isActive){
+                    setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
+                }
+            } finally{
+                if (isActive){
+                    setIsFetching(false)
+                }
+            }
         }
+
+        void loadDashboard()
+
+        return () => {
+            isActive = false
+        }}, [isAuthenticated, isHydrated])
+
+    const displayProfile = profileData?.profile
+    const displayChartTitle = 'Completed Workout Volume'
+    const displayChartData = useMemo(() => buildVolumeChartData(completedEntries, volumePeriod, volumeMuscleGroup), [completedEntries, volumePeriod, volumeMuscleGroup])
 
     const muscleValues = useMemo(() => {
         const values: Record<(typeof MUSCLE_KEYS)[number], number> = {

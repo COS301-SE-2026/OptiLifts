@@ -188,3 +188,97 @@ function formatUpcomingDate(dateString: string) {
     return scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+    return (            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">        
+                {/*Volume chart*/}
+                <div className="md:col-span-2 h-full">
+                    <VolumeChart
+                        title={displayChartTitle}
+                        data={displayChartData}
+                        period={volumePeriod}
+                        onPeriodChange={setVolumePeriod}
+                        muscleFilter={volumeMuscleGroup}
+                        muscleOptions={['All', ...MUSCLE_KEYS]}
+                        onMuscleFilterChange={(nextValue) => setVolumeMuscleGroup(nextValue as MuscleFilter)}
+                        showFilters
+                        className="h-full"
+                    />
+                </div>
+
+                {/*Upcoming workouts panel*/}
+                <div className="h-full">
+                    <UpcomingWorkoutsCard workouts={upcomingWorkouts} className="h-full" />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                
+                {/*Favorite exercise*/}
+                <Card className="flex min-h-[120px] flex-col p-4">
+                    <CardContent className="flex h-full w-full flex-col px-0">
+                        <h3 className="text-[18px] font-medium text-foreground text-center">Favorite exercise</h3>
+                        <span className="mt-1 text-xs font-medium text-muted-foreground text-center">
+                            {favoriteExercise.count > 0 ? `${favoriteExercise.count} completed sessions` : 'No completed workouts yet'}
+                        </span>
+                        <div className="flex-1 flex items-center justify-center mt-2">
+                            <div className="flex items-center justify-center gap-3">
+                                <div className="h-8 w-8 shrink-0 rounded-full border border-border bg-background"></div>
+                                <span className="text-md font-bold leading-tight text-foreground">
+                                    {favoriteExercise.name}
+                                </span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/*Exercise streak*/}
+                <Card className="flex min-h-[120px] flex-col p-4">
+                    <CardContent className="flex h-full w-full flex-col px-0">
+                        <h3 className="text-[18px] font-medium text-foreground text-center">Days exercised this week</h3>
+                        <div className="mt-1 flex flex-wrap justify-center gap-2">
+                            {streakDays.length > 0 ? (
+                                streakDays.map((day, index) => (
+                                    <span
+                                        key={day}
+                                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getDayPillClass(index)}`}
+                                    >
+                                        {day}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-sm text-muted-foreground">No completed workouts this week</span>
+                            )}
+                        </div>
+                        <div className="flex-1 flex items-center justify-center mt-2">
+                            <div className="flex items-center justify-center gap-1">
+                                <img src={streakFlame} alt="Exercise streak" className="h-12 w-12 object-contain" />
+                                <span className="text-4xl font-bold text-foreground">{streakDays.length}</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/*num PRs*/}
+                <Card className="flex min-h-[120px] flex-col p-4">
+                    <CardContent className="flex h-full w-full flex-col px-0">
+                        <h3 className="text-[18px] font-medium text-foreground text-center">Personal records hit this week</h3>
+                        <div className="flex-1 flex items-center justify-center mt-2">
+                            <div className="flex items-center justify-center gap-1">
+                                <img src={badgeIcon} alt="Personal records badge" className="h-10 w-10 object-contain" />
+                                <span className="text-4xl font-bold text-foreground">{recordsThisWeek}</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/*Spider graphh*/}  
+                <Card className="flex min-h-[120px] flex-col p-4">
+                    <CardContent className="flex h-full flex-col px-0">
+                        <h3 className="mb-2 w-full text-center text-[15px] font-medium text-foreground">Muscle Balance</h3>
+                        <SpiderGraph data={muscleValues} className="h-[170px]"/>
+                    </CardContent>
+                </Card>
+            </div>
+        </section>
+    )
+}

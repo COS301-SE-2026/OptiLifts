@@ -19,6 +19,111 @@ type VolumeChartPeriod = 'Week' | 'Month' | 'Year'
 
 export type { VolumeChartPeriod }
 
+type ChartPoint = Readonly<{
+  label: string
+  value: number
+}>
+
+type VolumeChartProps = Readonly<{
+  title?: string
+  unit?: string
+  data?: readonly ChartPoint[]
+  initialPeriod?: VolumeChartPeriod
+  period?: VolumeChartPeriod
+  onPeriodChange?: (period: VolumeChartPeriod) => void
+  initialMuscleFilter?: string
+  muscleFilter?: string
+  muscleOptions?: readonly string[]
+  onMuscleFilterChange?: (muscleFilter: string) => void
+  showFilters?: boolean
+  className?: string
+}>
+
+const PERIOD_OPTIONS: VolumeChartPeriod[] = ['Week', 'Month', 'Year']
+
+export function VolumeChart({
+  title = 'Volume',
+  unit = 'KG',
+  data,
+  initialPeriod = 'Week',
+  period,
+  onPeriodChange,
+  initialMuscleFilter = 'All',
+  muscleFilter,
+  muscleOptions,
+  onMuscleFilterChange,
+  showFilters = true,
+  className,
+}: VolumeChartProps) {
+  const [internalPeriod, setInternalPeriod] = useState<VolumeChartPeriod>(initialPeriod)
+  const [internalMuscleFilter, setInternalMuscleFilter] = useState(initialMuscleFilter)
+  const resolvedPeriod = period ?? internalPeriod
+  const resolvedMuscleFilter = muscleFilter ?? internalMuscleFilter
+  const chartPoints = useMemo(() => (data ? [...data] : []), [data])
+
+  const chartData: ChartData<'line'> = {
+    labels: chartPoints.map((p) => p.label),
+    datasets: [
+      {
+        data: chartPoints.map((p) => p.value),
+        borderColor: 'black',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: 'black',
+        tension: 0,
+      },
+    ],
+  }
+
+  const options: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        displayColors: false,
+        backgroundColor: 'white',
+        titleColor: '#1A1A1A',
+        bodyColor: '#1A1A1A',
+        borderColor: '#E5E7EB',
+        borderWidth: 1,
+        padding: 8,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+        grid: {
+          display: false,
+        },
+        border: {
+          display: true,
+          color: '#CC0022',
+        },
+        ticks: {
+          color: '#71717A',
+          font: { size: 11, family: 'sans-serif' },
+          maxTicksLimit: 6,
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+        border: {
+          display: true,
+          color: '#CC0022',
+        },
+        ticks: {
+          color: '#71717A',
+          font: { size: 11, family: 'sans-serif' },
+        },
+      },
+    },
+  }
+
   return (
     <section className={cn('flex flex-col rounded-xl bg-card p-5 text-card-foreground ring-1 ring-foreground/10 shadow-sm', className)}>
       <div className="flex justify-between w-full mb-8">

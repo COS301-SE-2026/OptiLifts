@@ -227,7 +227,36 @@ export default function DashboardPage() {
                     customFetch(`/api/users/me/schedule?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                     customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                 ])
+        }
 
+    const muscleValues = useMemo(() => {
+        const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
+            Chest: 0,
+            Core: 0,
+            Shoulders: 0,
+            Arms: 0,
+            Legs: 0,
+            Back: 0,
+        }
+
+        let totalSetsAll = 0
+
+        analytics?.muscleDistribution.forEach((item) => {
+            const mapped = MUSCLE_CATEGORY_MAP[item.muscleGroup]
+            if (mapped) {
+                values[mapped] += item.setCount
+            }
+            totalSetsAll += item.setCount
+        })
+
+        if (totalSetsAll > 0){
+            MUSCLE_KEYS.forEach((key) => {
+                values[key] = Math.round((values[key] / totalSetsAll) * 100)
+            })
+        }
+
+        return values
+    }, [analytics])
 
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">

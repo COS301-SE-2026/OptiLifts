@@ -75,7 +75,7 @@ export function VolumeChart({
     labels: chartPoints.map((p) => p.label),
     datasets: [
       {
-        data: chartPoints.map((p) => p.value),
+        data: chartPoints.map((p) => Math.max(0, p.value)),
         borderColor: brandColor,
         fill: true,
         backgroundColor: brandFill,
@@ -106,7 +106,8 @@ export function VolumeChart({
     },
     scales: {
       y: {
-        beginAtZero: false,
+        beginAtZero: true,
+        min: 0,
         grid: {
           display: false,
         },

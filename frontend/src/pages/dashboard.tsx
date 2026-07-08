@@ -33,6 +33,7 @@ type ScheduledEntry = Readonly<{
     exercisePreview: string[]
     totalVolume: number
     totalSets: number
+    recordCount?: number | null
     prCount?: number | null
     startedAt?: string | null
     completedAt?: string | null
@@ -322,7 +323,7 @@ export default function DashboardPage() {
                 const entryDate = getEntryDate(entry)
                 return entryDate >= currentWeekStart && entryDate <= currentWeekEnd
             })
-            .reduce((total, entry) => total + (entry.prCount ?? 0), 0)}, [completedEntries])
+            .reduce((total, entry) => total + (entry.recordCount ?? entry.prCount ?? 0), 0)}, [completedEntries])
 
     const favoriteExercise = useMemo(() => {
         if (completedWorkoutDetails.length === 0 || completedEntries.length === 0) {
@@ -454,14 +455,14 @@ export default function DashboardPage() {
                 {/*Favorite exercise*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[18px] font-medium text-foreground text-center">Favorite exercise</h3>
-                        <span className="mt-1 text-xs font-medium text-muted-foreground text-center">
+                        <h3 className="text-[30px] font-medium text-foreground text-center">Favorite exercise</h3>
+                        <span className="mt-1 text-s font-medium text-muted-foreground text-center">
                             {favoriteExercise.count > 0 ? `${favoriteExercise.count} completed sessions` : 'No completed workouts yet'}
                         </span>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-3">
                                 <div className="h-8 w-8 shrink-0 rounded-full border border-border bg-background"></div>
-                                <span className="text-md font-bold leading-tight text-foreground">
+                                <span className="text-lg font-bold leading-tight text-foreground">
                                     {favoriteExercise.name}
                                 </span>
                             </div>
@@ -472,9 +473,9 @@ export default function DashboardPage() {
                 {/*Exercise streak*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[18px] font-medium text-foreground text-center">Days exercised this week</h3>
+                        <h3 className="text-[30px] font-medium text-foreground text-center">Days exercised this week</h3>
                         <div className="mt-1 flex flex-wrap justify-center gap-2">
-                            {streakDays.length > 0 ? (
+                            {streakDays.length > 0 &&
                                 streakDays.map((day, index) => (
                                     <span
                                         key={day}
@@ -482,10 +483,7 @@ export default function DashboardPage() {
                                     >
                                         {day}
                                     </span>
-                                ))
-                            ) : (
-                                <span className="text-sm text-muted-foreground">No completed workouts this week</span>
-                            )}
+                                ))}
                         </div>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
@@ -499,7 +497,7 @@ export default function DashboardPage() {
                 {/*num PRs*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[18px] font-medium text-foreground text-center">Personal records hit this week</h3>
+                        <h3 className="text-[30px] font-medium text-foreground text-center">Personal records hit this week</h3>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img src={badgeIcon} alt="Personal records badge" className="h-10 w-10 object-contain" />

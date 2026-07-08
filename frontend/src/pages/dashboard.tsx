@@ -312,7 +312,8 @@ export default function DashboardPage() {
                 .map((entry) => getEntryDate(entry))
                 .filter((date) => date >= currentWeekStart && date <= currentWeekEnd)
                 .map((date) => date.toISOString().slice(0, 10)),
-        )].sort().map((dateKey) => formatDayLabel(new Date(dateKey)))}, [completedEntries])
+        )]
+            .sort((left, right) => left.localeCompare(right)).map((dateKey) => formatDayLabel(new Date(dateKey)))}, [completedEntries])
 
     const prsThisWeek = useMemo(() => {
         const currentWeekStart = startOfWeek(new Date())

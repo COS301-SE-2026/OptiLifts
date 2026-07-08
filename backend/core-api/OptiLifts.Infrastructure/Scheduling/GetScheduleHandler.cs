@@ -124,6 +124,9 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                     cancellationToken);
         }
 
+        //Will change once PR table is implemented
+        var PRs = 1;
+
         var scheduledEntryDtos = entries.Select(entry =>
         {
             workoutStat.TryGetValue(entry.WorkoutId, out var stats);
@@ -144,8 +147,8 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.TotalSets ?? 0,
                 log?.StartedAt,
                 log?.CompletedAt,
-                log != null && prCountsByLogId.TryGetValue(log.Id, out var prCount) ? prCount : 0
-                PRs,
+                log != null && prCountsByLogId.TryGetValue(log.Id, out var prCount) ? prCount : 0,
+                //PRs,
                 log?.Id
             );
         }).ToList();

@@ -7,13 +7,21 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  Filler,
   Tooltip,
   type ChartOptions,
   type ChartData,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
+
+// Chart.js renders on canvas, so CSS variables need to be read at runtime.
+function getcssVariables(name: string, fallback: string): string {
+  if (typeof globalThis === 'undefined' || !('window' in globalThis)) return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
 
 type VolumeChartPeriod = 'Week' | 'Month' | 'Year'
 
@@ -60,17 +68,21 @@ export function VolumeChart({
   const resolvedPeriod = period ?? internalPeriod
   const resolvedMuscleFilter = muscleFilter ?? internalMuscleFilter
   const chartPoints = useMemo(() => (data ? [...data] : []), [data])
+  const brandColor = getcssVariables('--brand', '#CC0022')
+  const brandFill = getcssVariables('--brand-fill', '#CC002226')
 
   const chartData: ChartData<'line'> = {
     labels: chartPoints.map((p) => p.label),
     datasets: [
       {
         data: chartPoints.map((p) => p.value),
-        borderColor: 'black',
+        borderColor: brandColor,
+        fill: true,
+        backgroundColor: brandFill,
         borderWidth: 1.5,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointBackgroundColor: 'black',
+        pointBackgroundColor: brandColor,
         tension: 0,
       },
     ],
@@ -85,8 +97,8 @@ export function VolumeChart({
         enabled: true,
         displayColors: false,
         backgroundColor: 'white',
-        titleColor: '#1A1A1A',
-        bodyColor: '#1A1A1A',
+        titleColor: '#CC0022',
+        bodyColor: '#CC0022',
         borderColor: '#E5E7EB',
         borderWidth: 1,
         padding: 8,
@@ -100,7 +112,7 @@ export function VolumeChart({
         },
         border: {
           display: true,
-          color: '#CC0022',
+          color: 'black',
         },
         ticks: {
           color: '#71717A',
@@ -114,7 +126,7 @@ export function VolumeChart({
         },
         border: {
           display: true,
-          color: '#CC0022',
+          color: 'black',
         },
         ticks: {
           color: '#71717A',
@@ -126,8 +138,8 @@ export function VolumeChart({
 
   return (
     <section className={cn('flex flex-col rounded-xl bg-card p-5 text-card-foreground ring-1 ring-foreground/10 shadow-sm', className)}>
-      <div className="flex justify-between w-full mb-8">
-        <div className="text-xs font-medium text-muted-foreground pt-2">{unit}</div>   
+      <div className="flex justify-between w-full mb-2">
+        <div className="text-xs font-medium text-muted-foreground pt-10">{unit}</div>   
         <div className="flex-1 text-center pr-12">
           <h2 className="text-3xl font-black uppercase tracking-wider text-foreground">{title}</h2>
         </div>

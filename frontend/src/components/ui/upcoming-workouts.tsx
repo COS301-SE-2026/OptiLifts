@@ -41,16 +41,15 @@ export function UpcomingWorkoutsCard({
             </div>
           ))}
         </div>
-      ) : (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+      ):(
+      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
           No upcoming workouts scheduled.
         </div>
       )}
 
       <Link
         to={seeAllHref}
-        className="mt-6 inline-flex w-full justify-center rounded-md border border-border bg-surface-2 py-2 text-sm font-medium text-foreground transition-colors hover:border-brand hover:text-brand"
-      >
+        className="mt-6 inline-flex w-full justify-center rounded-md border border-border bg-surface-2 py-2 text-sm font-medium text-foreground transition-colors hover:border-brand hover:text-brand">
         See all
       </Link>
     </aside>

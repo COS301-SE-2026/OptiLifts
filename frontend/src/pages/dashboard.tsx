@@ -385,7 +385,7 @@ export default function DashboardPage() {
         <section className="mx-auto max-w-6xl px-6 py-12">
             {isFetching && !profileData && (
                 <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                    Loading dashboard data...
+                    Loading dashboard data
                 </div>
             )}
 
@@ -510,7 +510,7 @@ export default function DashboardPage() {
                 {/*Spider graphh*/}  
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full flex-col px-0">
-                        <h3 className="mb-2 w-full text-center text-[15px] font-medium text-foreground">Muscle Balance</h3>
+                        <h3 className="mb-2 w-full text-center text-[20px] font-medium text-foreground">Muscle Balance</h3>
                         <SpiderGraph data={muscleValues} className="h-[170px]"/>
                     </CardContent>
                 </Card>

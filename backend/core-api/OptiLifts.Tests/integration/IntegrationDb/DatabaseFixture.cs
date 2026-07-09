@@ -12,12 +12,12 @@ namespace OptiLifts.Tests.Integration.IntegrationDb;
 
 public sealed class DatabaseFixture : IAsyncLifetime
 {
-    public const string JwtSecret = "tessting_key";
+    public const string JwtSecret = "test_secret_key_for_integration_tests_only";
 
     private readonly PostgreSqlContainer _pg;
     //can only assign these once docker container is done setting up so it cannot be done in constructor
     private DbConnection _dbConnection = null!;
-    private Respawner _respawner = null!; 
+    private Respawner _respawner = null!;
 
     public WebApplicationFactory<Program> Factory { get; private set; } = null!;
 

@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
-using OptiLifts.Tests.Integration.IntegrationDb; 
-using OptiLifts.Domain.Workouts;
+using OptiLifts.Tests.Integration.IntegrationDb;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -20,7 +20,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected IntegrationTestBase(DatabaseFixture fixture)
     {
         Fixture = fixture;
-        
+
         //each test class gets own httpclient but same factory and db
         Client = Fixture.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {

@@ -8,12 +8,14 @@ import {
     type ChartOptions, type ChartData,
 } from 'chart.js'
 import { Radar } from 'react-chartjs-2'
+import { cn } from '@/lib/utils'
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip)
 
 export const SPIDER_CATS = ['Chest', 'Core', 'Shoulders', 'Arms', 'Legs','Back'] as const
 export interface SpiderGraphProps {
     readonly data: Record<string, number> | number[]
+    readonly className?: string
 }
 
 //needed because of the way chart.js renders (creates html5 canvas tag)
@@ -23,7 +25,7 @@ function getcssVariables(name : string, fallback:string):string {
     return value || fallback
 }
 
-export function SpiderGraph({data}: SpiderGraphProps) {
+export function SpiderGraph({data, className}: SpiderGraphProps) {
     const brandColor = getcssVariables('--brand', '#CC0022')
     const borderColor = getcssVariables('--border', '#E5E7EB')
     const labelColor = getcssVariables('--muted-text', '#71717A')
@@ -97,7 +99,7 @@ export function SpiderGraph({data}: SpiderGraphProps) {
     },
 }
 return (
-    <div className="relative h-[280px] w-full flex items-center justify-center">   
+    <div className={cn('relative h-[280px] w-full flex items-center justify-center', className)}>   
         <Radar data={chartData} options={options} />                                 
     </div>
 )

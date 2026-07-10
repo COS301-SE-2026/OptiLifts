@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -19,7 +18,7 @@ public sealed class DuplicateWorkoutHandler : IRequestHandler<DuplicateWorkoutCo
     public async Task<DuplicateWorkoutResult?> Handle(DuplicateWorkoutCommand request, CancellationToken cancellationToken)
     {
         var sourceWork = await _dbContext.Workouts
-            .FirstOrDefaultAsync(w => w.Id == request.SourceWorkoutId && w.CreatedBy == request.UserId, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == request.SourceWorkoutId && w.CreatedBy == request.UserId && !w.IsDeleted, cancellationToken);
 
         if (sourceWork == null)
         {

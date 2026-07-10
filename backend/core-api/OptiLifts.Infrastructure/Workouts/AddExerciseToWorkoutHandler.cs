@@ -19,7 +19,7 @@ public sealed class AddExerciseToWorkoutHandler : IRequestHandler<AddExerciseToW
     {
         var workoutExists = await _dbContext.Workouts
             .AsNoTracking()
-            .AnyAsync(workout => workout.Id == request.WorkoutId && workout.CreatedBy == request.UserId, cancellationToken);
+            .AnyAsync(workout => workout.Id == request.WorkoutId && workout.CreatedBy == request.UserId && !workout.IsDeleted, cancellationToken);
 
         if (!workoutExists)
         {

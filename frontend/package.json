@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "cov": "vitest run --coverage"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
@@ -50,6 +51,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.10",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.5"
   }
 }

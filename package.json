@@ -28,6 +28,12 @@
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd backend/core-api && dotnet test",
     "test:ai": "cd backend/ai-api && ./venv/bin/pytest",
+
+    "cov": "concurrently \"pnpm cov:frontend\" \"pnpm cov:backend\" \"pnpm cov:ai\"",
+    "cov:frontend": "pnpm --filter frontend cov",
+    "cov:backend": "cd backend/core-api && dotnet test /p:CollectCoverage=true",
+    "cov:ai": "cd backend/ai-api && ./venv/bin/pytest --cov=. --cov-report=term",
+
     
     "build:frontend": "pnpm --filter frontend build",
     "build:backend": "cd backend/core-api && dotnet build -c Release",
@@ -48,7 +54,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "concurrently": "^9.2.1"
   }

@@ -16,7 +16,7 @@ const WorkoutLogDetailPage = lazy(() => import('@/pages/workout-log-detail'))
 const ProfilePage = lazy(() => import('@/pages/profile'))
 const PastWorkoutsPage = lazy(() => import('@/pages/past-workouts'))
 const SchedulePage = lazy(() => import('@/pages/schedule'))
-
+const DashboardPage = lazy(() => import('@/pages/dashboard'))
 function AppLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -81,7 +81,7 @@ function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
-          <Route path="dashboard" element={<PlaceholderPage title="Dashboard" description="Dashboard shell." />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />

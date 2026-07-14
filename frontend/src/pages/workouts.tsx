@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
@@ -189,17 +189,25 @@ export default function WorkoutsPage() {
                 tabIndex={0}
                 aria-pressed={w.id === selectedId}
                 className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}
-                onClick={() => setSelectedId(w.id)}
+                onClick={() => {
+                  setSelectedId(w.id)
+                  navigate(`/workouts/${w.id}`)
+                }}
                 onFocus={() => setSelectedId(w.id)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
                     setSelectedId(w.id)
+                    navigate(`/workouts/${w.id}`)
                   }
                 }}
               >
                 <CardHeader>
-                  <CardTitle className="font-bold">{w.name}</CardTitle>
+                  <Link to={`/workouts/${w.id}`} className="min-w-0">
+                    <CardTitle className="font-bold transition-colors hover:text-brand">
+                      {w.name}
+                    </CardTitle>
+                  </Link>
                   <CardAction>
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
@@ -213,8 +221,10 @@ export default function WorkoutsPage() {
                 </CardHeader>
 
                 <CardContent>
-                  <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
-                  <p className="text-sm mt-1 text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
+                  <Link to={`/workouts/${w.id}`} className="block text-left">
+                    <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
+                    <p className="text-sm mt-1 text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
+                  </Link>
                 </CardContent>
               </Card>
             ))}

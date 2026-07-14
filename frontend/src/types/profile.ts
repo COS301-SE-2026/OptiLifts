@@ -21,6 +21,8 @@ export type ProfileBadge = Readonly<{
 }>
 
 export type ProfileWorkoutSummary = Readonly<{
+  workoutId: string
+  logId: string | null
   name: string
   exercises: string[]
   prs: string
@@ -39,5 +41,11 @@ export type ProfilePageResponse = Readonly<{
 }>
 
 export type ProfileCalendarResponse = Readonly<{
-  highlightedDates: readonly string[]
+  entries: readonly ProfileCalendarEntry[]
+}>
+
+export type ProfileCalendarEntry = Readonly<{
+  date: string
+  workoutId: string
+  logId: string
 }>

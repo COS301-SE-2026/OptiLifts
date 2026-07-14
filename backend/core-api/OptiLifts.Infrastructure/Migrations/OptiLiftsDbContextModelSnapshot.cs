@@ -300,6 +300,33 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.ToTable("exercise_dictionary", (string)null);
                 });
 
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExerciseGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_group_id");
+
+                    b.Property<int>("RestTime")
+                        .HasColumnType("integer")
+                        .HasColumnName("rest_time");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("group_type");
+
+                    b.Property<Guid>("WorkoutId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workout_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkoutId");
+
+                    b.ToTable("exercise_groups", (string)null);
+                });
+
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Folder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -453,6 +480,10 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("exercise_dict_id");
 
+                    b.Property<Guid?>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
                     b.Property<int>("OrderIndex")
                         .HasColumnType("integer")
                         .HasColumnName("order_index");
@@ -464,6 +495,8 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExerciseId");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("WorkoutId");
 
@@ -663,6 +696,15 @@ namespace OptiLifts.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExerciseGroup", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Workouts.Workout", null)
+                        .WithMany()
+                        .HasForeignKey("WorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Folder", b =>
                 {
                     b.HasOne("OptiLifts.Domain.Users.User", null)
@@ -723,6 +765,11 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasForeignKey("ExerciseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Workouts.ExerciseGroup", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("OptiLifts.Domain.Workouts.Workout", null)
                         .WithMany()

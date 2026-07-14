@@ -67,6 +67,7 @@ export type MuscleDigramProps = Readonly<{
 }>
 
 export type WorkoutOverviewProps = Readonly<{
+  href?: string
   name: string
   exercises: string[]
   prs: string

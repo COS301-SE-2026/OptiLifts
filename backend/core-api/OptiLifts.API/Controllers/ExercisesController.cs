@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Exercises.GetExerciseImages;
 using OptiLifts.Application.Exercises.GetExercises;
 
 namespace OptiLifts.API.Controllers;
@@ -79,6 +80,13 @@ public class ExercisesController : ControllerBase
         {
             return StatusCode(500, new { error = "An unexpected error occurred while creating the exercise.", details = ex.Message });
         }
+    }
+
+    [HttpGet("allImages")]
+    public async Task<ActionResult<Dictionary<string, string>>> GetExerciseImages(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetExerciseImagesQuery(), cancellationToken);
+        return Ok(result);
     }
 }
 

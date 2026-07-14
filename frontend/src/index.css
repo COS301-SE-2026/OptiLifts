@@ -12,6 +12,7 @@
   --border: #E8DEDE;
   --brand: #CC0022;
   --brand-2: #AA0018;
+  --brand-fill: #CC002226;
   --foreground: #1A1A1A;
   --muted-text: #666666;
   --success: #1B6E1F;
@@ -52,6 +53,7 @@
   --border: #3A3A42;
   --brand: #CC0022;
   --brand-2: #D94060;
+  --brand-fill: #CC002226;
   --foreground: #E8E8EC;
   --muted-text: #9A9AA8;
   --success: #4CAF50;

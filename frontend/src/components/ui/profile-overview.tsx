@@ -10,7 +10,7 @@ export function ProfileOverview({ name, email, bio, profileImageUrl }: ProfileOv
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   return (
     <section className="relative rounded-lg border border-border bg-card p-3 sm:p-4">
-      <Button variant="default" size="sm" className="absolute right-3 top-3 sm:right-4 sm:top-4"
+      <Button variant="ghost" size="sm" className="absolute right-3 top-3 sm:right-4 sm:top-4"
         onClick={() => setIsSettingsOpen(true)}
       >
         <span>Settings</span>

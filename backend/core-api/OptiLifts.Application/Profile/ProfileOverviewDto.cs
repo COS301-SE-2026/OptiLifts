@@ -26,6 +26,8 @@ public sealed record ProfileBadgeDto(
     DateTime EarnedAt);
 
 public sealed record ProfileWorkoutDto(
+    Guid WorkoutId,
+    Guid? LogId,
     string Name,
     IReadOnlyList<string> Exercises,
     string Prs,

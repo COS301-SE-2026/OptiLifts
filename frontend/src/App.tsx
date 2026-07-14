@@ -6,6 +6,7 @@ import { PageTitle } from '@/components/ui/page-title'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import ActiveSessionPage from '@/pages/active-session'
 import { Loader2 } from 'lucide-react'
 
 const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
@@ -86,6 +87,7 @@ function App() {
           <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
+          <Route path="active-session" element={<ActiveSessionPage />} />
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />

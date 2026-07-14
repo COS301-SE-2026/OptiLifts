@@ -247,6 +247,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             document.documentElement.classList.remove("dark");
         }
 
+        localStorage.setItem("theme", preferences.theme);
+        localStorage.setItem("metric", preferences.units);
     };
 
     const savePassword = async () => {

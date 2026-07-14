@@ -6,6 +6,8 @@ export type AuthUser = {
     name: string
     email: string
     avatarUrl?: string
+    metric: boolean
+    lightTheme: boolean
 }
 
 export type AuthSession = {
@@ -33,33 +35,50 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
 
     const logout = React.useCallback(() => {
         setSession(null)
-        customFetch('/api/auth/logout', {method: 'POST'}).catch(() => {
+        customFetch('/api/auth/logout', { method: 'POST' }).catch(() => {
             //error handled in backend    
         })
     }, [])
 
     React.useEffect(() => {
         async function hydrateSession() {
-            try{
+            try {
                 const loggedin = await customFetch('/api/auth/me')
                 if (loggedin.ok) {
                     const user = await loggedin.json() as {
                         id: string;
                         name: string;
                         email: string;
+                        avatarUrl?: string;
+                        metric: boolean;
+                        lightTheme: boolean;
                     };
 
-                    login({ user: {
+                    const theme = user.lightTheme ? 'light' : 'dark';
+                    localStorage.setItem('theme', theme);
+                    if (user.lightTheme) {
+                        document.documentElement.classList.remove('dark');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                    }
+
+                    localStorage.setItem('metric', user.metric.toString());
+
+                    login({
+                        user: {
                             id: user.id,
                             name: user.name,
                             email: user.email,
-                    }});
-                } else{
+                            metric: user.metric,
+                            lightTheme: user.lightTheme,
+                        }
+                    });
+                } else {
                     setSession(null);
                 }
-            } catch{
+            } catch {
                 setSession(null);
-            } finally{
+            } finally {
                 setIsHydrated(true);
             }
         }

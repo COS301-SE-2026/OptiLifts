@@ -24,3 +24,8 @@ Thumbs.db
 
 # vs code
 .vscode/
+
+# test coverage
+coverage/
+.coverage
+coverage.json

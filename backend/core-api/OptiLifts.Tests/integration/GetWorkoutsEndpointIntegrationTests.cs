@@ -1,44 +1,34 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application.Workouts.GetWorkouts;
-using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
-using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
-using OptiLifts.Infrastructure.Security;
-using Testcontainers.PostgreSql;
-using Xunit;
+using OptiLifts.Tests.Integration.IntegrationDb;
 
 namespace OptiLifts.Tests.Integration;
 
-public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorkoutsApiFixture>
+[Collection("SharedDatabase")]
+public sealed class GetWorkoutsEndpointIntegrationTests : IntegrationTestBase
 {
-    private readonly GetWorkoutsApiFixture _fixture;
-    public GetWorkoutsEndpointIntegrationTests(GetWorkoutsApiFixture fixture)
+    public GetWorkoutsEndpointIntegrationTests(DatabaseFixture fixture) : base(fixture)
     {
-        _fixture = fixture;
     }
 
     [Fact]
     public async Task GetWorkouts_ReturnsSeededWorkoutsForAuthenticatedUser()
     {
-        var user = await _fixture.SeedUserAsync("integration-user-1@optilifts.com", "Integration User One");
-        await _fixture.SeedWorkoutAsync(
-            user.Id,
+        var user = await SeedUserAsync("integration-user-1@optilifts.com");
+        await SeedWorkoutAsync(
+            user,
             new DateTime(2026, 05, 19, 10, 0, 0, DateTimeKind.Utc),
             "Push Day A",
             ("Bench Press", new[] { "Chest" }),
             ("Overhead Press", new[] { "Shoulders" }));
 
-        var response = await _fixture.GetAuthenticatedClient(user).GetAsync("/api/workouts");
+        Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(user)}");
+        var response = await Client.GetAsync("/api/workouts");
         response.EnsureSuccessStatusCode();
 
         var workouts = await response.Content.ReadFromJsonAsync<WorkoutCardDto[]>();
@@ -56,26 +46,27 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
     [Fact]
     public async Task GetWorkouts_ReturnsOnlyAuthenticatedUsersWorkoutsOrderedNewestFirst()
     {
-        var userOne = await _fixture.SeedUserAsync("integration-user-2@optilifts.com", "Integration User Two");
-        var otherUser = await _fixture.SeedUserAsync("integration-user-3@optilifts.com", "Integration User Three");
+        var userOne = await SeedUserAsync("integration-user-2@optilifts.com");
+        var otherUser = await SeedUserAsync("integration-user-3@optilifts.com");
 
-        await _fixture.SeedWorkoutAsync(
-            userOne.Id,
+        await SeedWorkoutAsync(
+            userOne,
             new DateTime(2026, 05, 19, 9, 0, 0, DateTimeKind.Utc),
             "Old Workout",
             ("Row", new[] { "Back" }));
-        await _fixture.SeedWorkoutAsync(
-            userOne.Id,
+        await SeedWorkoutAsync(
+            userOne,
             new DateTime(2026, 05, 19, 11, 0, 0, DateTimeKind.Utc),
             "New Workout",
             ("Squat", new[] { "Quadriceps", "Glutes" }));
-        await _fixture.SeedWorkoutAsync(
-            otherUser.Id,
+        await SeedWorkoutAsync(
+            otherUser,
             new DateTime(2026, 05, 19, 12, 0, 0, DateTimeKind.Utc),
             "Other User Workout",
             ("Bench Press", new[] { "Chest" }));
 
-        var response = await _fixture.GetAuthenticatedClient(userOne).GetAsync("/api/workouts");
+        Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userOne)}");
+        var response = await Client.GetAsync("/api/workouts");
 
         response.EnsureSuccessStatusCode();
 
@@ -86,101 +77,14 @@ public sealed class GetWorkoutsEndpointIntegrationTests : IClassFixture<GetWorko
         workouts[1].Name.Should().Be("Old Workout");
         workouts.Select(workout => workout.Name).Should().NotContain("Other User Workout");
     }
-}
 
-public sealed class GetWorkoutsApiFixture : IAsyncLifetime
-{
-    private readonly string _dbName = $"optilifts_integration_tests_{Guid.NewGuid():N}";
-    private const string JwtSecret = "integration-test-secret-integration-test-secret";
-    private readonly PostgreSqlContainer _postgres;
-
-    private WebApplicationFactory<Program> _factory = null!;
-
-    public GetWorkoutsApiFixture()
-    {
-        _postgres = new PostgreSqlBuilder("postgres:16-alpine")
-            .WithDatabase(_dbName)
-            .WithUsername("postgres")
-            .WithPassword("postgres")
-            .Build();
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _postgres.StartAsync();
-
-        var dbOptions = new DbContextOptionsBuilder<OptiLiftsDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
-            .Options;
-
-        await using (var db = new OptiLiftsDbContext(dbOptions))
-        {
-            await db.Database.MigrateAsync();
-        }
-
-        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.UseSetting("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString() + ";Pooling=false");
-            builder.UseSetting("JWT_SECRET", JwtSecret);
-            builder.UseSetting("JWT_EXP_MINUTES", "60");
-            builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
-            builder.UseSetting("RUN_MIGRATIONS", "false");
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigureAll<JwtBearerOptions>(options =>
-                {
-                    options.TokenValidationParameters.IssuerSigningKey =
-                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecret));
-                });
-            });
-        });
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _factory.DisposeAsync();
-        await _postgres.DisposeAsync();
-    }
-
-    public HttpClient GetAuthenticatedClient(User user)
-    {
-        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false,
-        });
-
-        var tokenService = new JwtTokenService(JwtSecret, 60);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateToken(user));
-        return client;
-    }
-
-    public async Task<User> SeedUserAsync(string email, string displayName)
-    {
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-
-        var user = new User
-        {
-            Email = email,
-            EmailHash = EmailHasher.HashEmail(email),
-            DisplayName = displayName,
-            PasswordHash = "integration-hash"
-        };
-
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
-        return user;
-    }
-
-    public async Task SeedWorkoutAsync(
+    private async Task SeedWorkoutAsync(
         Guid userId,
         DateTime createdAt,
         string workoutName,
         params (string ExerciseName, string[] PrimaryMuscles)[] exercises)
     {
-        await using var scope = _factory.Services.CreateAsyncScope();
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
 
         var folder = new Folder

@@ -5,7 +5,7 @@ using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
-using OptiLifts.Tests.Integration.IntegrationDb; 
+using OptiLifts.Tests.Integration.IntegrationDb;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -77,9 +77,9 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
     public async Task Login_Succeeds_ReturnsTokenAndUser()
     {
         var email = "jordanLogin@optilifts.com";
-        var password = "Password123!";        
+        var password = "Password123!";
         await SeedAuthUserAsync(email, "Jordan", password);
-        
+
         var response = await Client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
 
         response.EnsureSuccessStatusCode();

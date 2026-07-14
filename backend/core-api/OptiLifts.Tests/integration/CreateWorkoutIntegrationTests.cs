@@ -48,7 +48,7 @@ public class CreateWorkoutIntegrationTests : IntegrationTestBase
         var body = new CreateWorkoutRequest(null, "Leg Day", [], []);
         await Client.PostAsJsonAsync("/api/workouts", body);
         var response = await Client.GetAsync("/api/workouts");
-        
+
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var workouts = await response.Content.ReadFromJsonAsync<List<WorkoutCardDto>>();

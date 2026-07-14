@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
+
+const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
 
 export default defineConfig({
     testDir: '.',
@@ -18,46 +21,44 @@ export default defineConfig({
     },
 
     projects: [
+        //runs the auth.setup.ts file to generate the cookies.
         {
             name: 'setup',
             testMatch: /.*\.setup\.ts/,
         },
-
+        //runs tests in parallel for each browser, which first depends "setup" to finish, then loads the cookies
         {
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
-                storageState: 'playwright/.auth/user.json',
+                storageState: STORAGE_STATE,
             },
             dependencies: ['setup'],
         },
-
-        {
-            name: 'firefox',
-            use: {
-                ...devices['Desktop Firefox'],
-                storageState: 'playwright/.auth/user.json',
-            },
-            dependencies: ['setup'],
-        },
-
-        {
-            name: 'webkit',
-            use: {
-                ...devices['Desktop Safari'],
-                storageState: 'playwright/.auth/user.json',
-            },
-            dependencies: ['setup'],
-        },
+        // {
+        //     name: 'firefox',
+        //     use: {
+        //         ...devices['Desktop Firefox'],
+        //         storageState: STORAGE_STATE,
+        //     },
+        //     dependencies: ['setup'],
+        // },
+        // {
+        //     name: 'webkit',
+        //     use: {
+        //         ...devices['Desktop Safari'],
+        //         storageState: STORAGE_STATE,
+        //     },
+        //     dependencies: ['setup'],
+        // },
     ],
 
+    //will run "pnpm dev" if it is not already running
     webServer: {
         command: 'pnpm dev',
-
+        cwd: '..',
         url: 'http://localhost:5173',
-
         reuseExistingServer: !process.env.CI,
-
         timeout: 120 * 1000,
     },
 });

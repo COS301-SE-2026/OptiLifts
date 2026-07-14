@@ -28,12 +28,14 @@
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd backend/core-api && dotnet test",
     "test:ai": "cd backend/ai-api && ./venv/bin/pytest",
+    
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config=e2e/playwright.config.ts --ui",
 
     "cov": "concurrently \"pnpm cov:frontend\" \"pnpm cov:backend\" \"pnpm cov:ai\"",
     "cov:frontend": "pnpm --filter frontend cov",
     "cov:backend": "cd backend/core-api && dotnet test /p:CollectCoverage=true",
     "cov:ai": "cd backend/ai-api && ./venv/bin/pytest --cov=. --cov-report=term",
-
     
     "build:frontend": "pnpm --filter frontend build",
     "build:backend": "cd backend/core-api && dotnet build -c Release",
@@ -56,6 +58,8 @@
   "license": "ISC",
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1",
     "concurrently": "^9.2.1"
   }
 }

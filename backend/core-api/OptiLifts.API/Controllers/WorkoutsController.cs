@@ -203,27 +203,6 @@ public sealed class WorkoutsController : ControllerBase
 
     }
 
-    [HttpGet("{workoutId:guid}")]
-    public async Task<ActionResult<WorkoutDetailsDto>> GetWorkoutDetails(
-        [FromRoute] Guid workoutId,
-        CancellationToken cancellationToken)
-    {
-        if (!TryGetUserId(out var userId))
-        {
-            return Unauthorized();
-        }
-        var result = await _sender.Send(new GetWorkoutDetailsQuery(workoutId, userId), cancellationToken);
-        if (result == null)
-        {
-            return NotFound(new
-            {
-                status = 404,
-                title = NotFoundTitle,
-                message = "Workout was not found."
-            });
-        }
-        return Ok(result);
-    }
 
     [HttpPut("{workoutId:guid}")]
     public async Task<IActionResult> UpdateWorkout(
@@ -240,7 +219,8 @@ public sealed class WorkoutsController : ControllerBase
             userId,
             request.FolderId,
             request.Name,
-            request.Exercises);
+            request.Exercises,
+            request.Groups);
         var success = await _sender.Send(command, cancellationToken);
         if (!success)
         {

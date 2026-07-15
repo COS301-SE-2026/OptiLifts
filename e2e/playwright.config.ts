@@ -5,10 +5,10 @@ const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
 
 export default defineConfig({
     testDir: '.',
-    fullyParallel: true,
+    fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    workers: 1, //didn't allow for concurrency because my tests would fail then (might just be my laptop being slow lol ~E)
 
     reporter: [
         ['html', { outputFolder: './playwright-report' }]
@@ -26,7 +26,7 @@ export default defineConfig({
             name: 'setup',
             testMatch: /.*\.setup\.ts/,
         },
-        //runs tests in parallel for each browser, which first depends "setup" to finish, then loads the cookies
+        //runs tests for each browser, which first depends "setup" to finish, then loads the cookies
         {
             name: 'chromium',
             use: {
@@ -35,22 +35,22 @@ export default defineConfig({
             },
             dependencies: ['setup'],
         },
-        // {
-        //     name: 'firefox',
-        //     use: {
-        //         ...devices['Desktop Firefox'],
-        //         storageState: STORAGE_STATE,
-        //     },
-        //     dependencies: ['setup'],
-        // },
-        // {
-        //     name: 'webkit',
-        //     use: {
-        //         ...devices['Desktop Safari'],
-        //         storageState: STORAGE_STATE,
-        //     },
-        //     dependencies: ['setup'],
-        // },
+        {
+            name: 'firefox',
+            use: {
+                ...devices['Desktop Firefox'],
+                storageState: STORAGE_STATE,
+            },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'webkit',
+            use: {
+                ...devices['Desktop Safari'],
+                storageState: STORAGE_STATE,
+            },
+            dependencies: ['setup'],
+        },
     ],
 
     //will run "pnpm dev" if it is not already running

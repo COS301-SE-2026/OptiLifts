@@ -8,7 +8,6 @@ using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
-using OptiLifts.Application.Workouts.GetWorkoutDetails;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;

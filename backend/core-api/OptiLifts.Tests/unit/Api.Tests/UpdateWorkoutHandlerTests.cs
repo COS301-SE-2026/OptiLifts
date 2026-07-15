@@ -26,7 +26,7 @@ public class UpdateWorkoutHandlerTests
         var handler = new UpdateWorkoutHandler(db);
 
         var result = await handler.Handle(
-            new UpdateWorkoutCommand(Guid.NewGuid(), Guid.NewGuid(), null, "NewName", []),
+            new UpdateWorkoutCommand(Guid.NewGuid(), Guid.NewGuid(), null, "NewName", [], []),
             CancellationToken.None);
 
         result.Should().BeFalse();

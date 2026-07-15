@@ -14,9 +14,9 @@ public sealed record UpdateWorkoutSetDto(
 
 public sealed record UpdateWorkoutExerciseDto(
     Guid ExerciseId,
-    int OrderIndex,
-    string? GroupKey,
-    IReadOnlyList<UpdateWorkoutSetDto> Sets
+    int OrderIndex,    
+    IReadOnlyList<UpdateWorkoutSetDto> Sets,
+    string? GroupKey = null
 );
 
 public sealed record UpdateWorkoutGroupDto(
@@ -31,12 +31,12 @@ public sealed record UpdateWorkoutCommand(
     Guid? FolderId,
     string Name,
     IReadOnlyList<UpdateWorkoutExerciseDto> Exercises,
-    IReadOnlyList<UpdateWorkoutGroupDto> Groups
+    IReadOnlyList<UpdateWorkoutGroupDto>? Groups = null
 ) : IRequest<bool>;
 
 public sealed record UpdateWorkoutRequest(
     Guid? FolderId,
     string Name,
     IReadOnlyList<UpdateWorkoutExerciseDto> Exercises,
-    IReadOnlyList<UpdateWorkoutGroupDto> Groups
+    IReadOnlyList<UpdateWorkoutGroupDto>? Groups = null
 );

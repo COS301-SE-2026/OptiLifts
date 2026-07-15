@@ -44,7 +44,8 @@ public sealed class UpdateWorkoutHandler : IRequestHandler<UpdateWorkoutCommand,
         }
 
         var groupKeyToId = new Dictionary<string, Guid>();
-        foreach(var group in request.Groups)
+        var groups = request.Groups ?? Array.Empty<UpdateWorkoutGroupDto>();
+        foreach(var group in groups)
         {
             var exerciseGroup = new ExerciseGroup
             {

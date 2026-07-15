@@ -117,6 +117,20 @@ export function CreateExercise({
     return MUSCLE_GROUPS.filter((m) => m.toLowerCase().includes(query))
   }, [muscleSearchQuery])
 
+  const availableMuscles = useMemo(() => {
+    const excludedMuscles = new Set<string>()
+
+    if (activeMusclePicker === "primary") {
+      secondaryMuscles.forEach((muscle) => excludedMuscles.add(muscle))
+    }
+
+    if (activeMusclePicker === "secondary" && primaryMuscle) {
+      excludedMuscles.add(primaryMuscle)
+    }
+
+    return filteredMuscles.filter((muscle) => !excludedMuscles.has(muscle))
+  }, [activeMusclePicker, filteredMuscles, primaryMuscle, secondaryMuscles])
+
   const resolveExercisesEndpoint = () => {
     const apiBase = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "/api" : "http://localhost:5036")
     const normalizedBase = apiBase.replace(/\/$/, "")
@@ -239,6 +253,8 @@ export function CreateExercise({
   }
 
   const toggleSecondaryMuscle = (muscle: string) => {
+    if (muscle === primaryMuscle) return
+
     setSecondaryMuscles((prev) =>
       prev.includes(muscle) ? prev.filter((m) => m !== muscle) : [...prev, muscle]
     )
@@ -481,7 +497,7 @@ export function CreateExercise({
             </div>
 
             <div className="overflow-y-auto px-4 py-2">
-              {filteredMuscles.map((muscle) => {
+              {availableMuscles.map((muscle) => {
                 const isSelected = activeMusclePicker === "primary" ? primaryMuscle === muscle : secondaryMuscles.includes(muscle)
                 return (
                   <button
@@ -489,8 +505,8 @@ export function CreateExercise({
                     type="button"
                     onClick={() => {
                       if (activeMusclePicker === "primary") {
+                        setSecondaryMuscles((prev) => prev.filter((secondaryMuscle) => secondaryMuscle !== muscle))
                         setPrimaryMuscle(muscle)
-                        // If it's already in secondary, optionally we might want to remove it, but fine for now
                         setActiveMusclePicker(null)
                       } else {
                         toggleSecondaryMuscle(muscle)
@@ -509,7 +525,7 @@ export function CreateExercise({
                   </button>
                 )
               })}
-              {filteredMuscles.length === 0 && (
+              {availableMuscles.length === 0 && (
                 <p className="text-center text-sm text-muted-foreground py-8">No muscles found.</p>
               )}
             </div>

@@ -62,7 +62,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
                         document.documentElement.classList.add('dark');
                     }
 
-                    localStorage.setItem('metric', user.metric.toString());
+                    localStorage.setItem('units', (user.metric)? 'metric' : 'imperial')
 
                     login({
                         user: {

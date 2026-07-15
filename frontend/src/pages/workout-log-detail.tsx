@@ -9,9 +9,10 @@ import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 import type { MuscleName } from '@/types/workout'
 import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
+import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 function formatVolume(totalVolume: number) {
-  return `${new Intl.NumberFormat('en-US').format(Math.round(totalVolume))} kg`
+  return `${outputWeight(totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${(metricCheck())? 'KG' : 'LB'}`
 }
 
 function formatDurationAsHours(duration: string | null) {

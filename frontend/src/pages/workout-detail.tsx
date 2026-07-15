@@ -10,6 +10,7 @@ import { customFetch } from '@/lib/custom-fetch'
 import type { ExercisePlanItem } from '@/types/exercise-plan'
 import type { MuscleName } from '@/types/workout'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
+import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -42,7 +43,7 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
 }
 
 function formatVolume(totalVolume: number) {
-  return `${new Intl.NumberFormat('en-US').format(Math.round(totalVolume))} kg`
+  return `${outputWeight(totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${(metricCheck())? 'KG' : 'LB'}`
 }
 
 export default function WorkoutDetailPage() {

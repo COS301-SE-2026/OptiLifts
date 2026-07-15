@@ -33,7 +33,7 @@ export function mapBackendUserToAuthUser(user: BackendUserDto): AuthUser {
     document.documentElement.classList.add('dark')
   }
 
-  localStorage.setItem('metric', user.metric ? 'metric' : 'imperial')
+  localStorage.setItem('units', user.metric ? 'metric' : 'imperial')
 
   return { id: user.id, name: user.displayName, email: user.email, metric: user.metric, lightTheme: user.lightTheme }
 }

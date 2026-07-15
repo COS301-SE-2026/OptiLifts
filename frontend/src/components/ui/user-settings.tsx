@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { metricCheck, outputWeight, inputWeight } from "@/lib/weight-utils";
 
 type UserSettingsPopupProps = Readonly<{
     isOpen: boolean;
@@ -174,13 +175,22 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
                 const data: UserSettingsDto = await response.json();
 
+                let formattedHeight= 0;
+                if (data.profile.height) {
+                    if (metricCheck()) {
+                        formattedHeight = data.profile.height;
+                    }else{
+                        formattedHeight = Math.round(data.profile.height * 0.393701 * 100) / 100
+                    }
+                }
+
                 setProfile({
                     displayName: data.profile.displayName,
                     bio: data.profile.bio || "",
                     sex: data.profile.sex || "PreferNotToSay",
                     dateOfBirth: data.profile.dateOfBirth ? data.profile.dateOfBirth.split('T')[0] : "",
-                    weight: (data.profile.weight) ? data.profile.weight.toString() : "",
-                    height: (data.profile.height) ? data.profile.height.toString() : ""
+                    weight: (data.profile.weight) ? outputWeight(data.profile.weight).toString() : "",
+                    height: (data.profile.height) ? formattedHeight.toString() : ""
                 });
 
                 setSelectedImgUrl(data.profile.profilePictureUrl);
@@ -215,13 +225,20 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     }, [isOpen, user]);
 
     const saveProfileDetails = async () => {
+
+        let unitHeight = null;
+        if (profile.height !== "") {
+            const parsedHeight = Number.parseFloat(profile.height);
+            unitHeight = (metricCheck())? parsedHeight : Math.round(parsedHeight * 2.54);
+        }
+
         const res = await customFetch("/api/users/me/profileDetails", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 ...profile,
-                weight: (profile.weight == "") ? null : Number.parseFloat(profile.weight),
-                height: (profile.height == "") ? null : Number.parseFloat(profile.height)
+                weight: (profile.weight == "")? null : inputWeight(Number.parseFloat(profile.weight)),
+                height: unitHeight
             })
         });
 
@@ -248,7 +265,9 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
 
         localStorage.setItem("theme", preferences.theme);
-        localStorage.setItem("metric", preferences.units);
+        localStorage.setItem("units", preferences.units);
+
+        window.location.reload();
     };
 
     const savePassword = async () => {
@@ -496,11 +515,11 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-xs font-bold text-muted-foreground">Weight</span>
+                    <span className="text-xs font-bold text-muted-foreground">Weight ({metricCheck()? 'KG' : 'LB'})</span>
                     <Input type="number" step="0.1" value={profile.weight} onChange={(e) => updateProfile("weight", e.target.value)} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-xs font-bold text-muted-foreground">Height</span>
+                    <span className="text-xs font-bold text-muted-foreground">Height ({metricCheck()? 'CM' : 'IN'})</span>
                     <Input type="number" step="0.1" value={profile.height} onChange={(e) => updateProfile("height", e.target.value)} />
                 </div>
             </div>

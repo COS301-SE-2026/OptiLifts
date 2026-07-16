@@ -13,7 +13,7 @@ test.describe('Dashboard Page', () => {
     });
 
     test('displays the main user greeting and workout status', async ({ page }) => {
-        await expect(page.getByRole('heading', { name: /Good Day,/i })).toBeVisible();
+        await expect(page.getByRole('heading', { name: /Good Day, Test Athlete/i })).toBeVisible();
         await expect(page.getByText(/Today's Workout:/i)).toBeVisible();
     });
 

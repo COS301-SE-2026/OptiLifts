@@ -8,15 +8,15 @@ test.describe('Profile Page', () => {
   });
 
   test.afterEach(async ({ request }) => {
-    //reset Alex's account after the test has completed
+    //reset Test Athlete's account after the test has completed
     const response = await request.patch('http://localhost:5036/api/users/me/profileDetails', {
       data: {
-        displayName: "Alex",
-        bio: "Loves to gym every day all day. This is their favourite app ever.",
+        displayName: "Test Athlete",
+        bio: "Powerlifting enthusiast and OptiLifts demo account.",
         sex: "Male",
-        dateOfBirth: "1999-02-14",
-        weight: 78,
-        height: 182
+        dateOfBirth: "1998-04-23",
+        weight: 82.5,
+        height: 180
       }
     });
     
@@ -24,17 +24,17 @@ test.describe('Profile Page', () => {
   });
 
   test('can view and edit profile details', async ({ page }) => {
-    await expect(page.getByText('Alex', { exact: true })).toBeVisible();
-    await expect(page.getByText('Email: gymgoer@gmail.com')).toBeVisible();
-    await expect(page.getByText('Bio: Loves to gym every day')).toBeVisible();
+    await expect(page.getByText('Test Athlete', { exact: true })).toBeVisible();
+    await expect(page.getByText('Email: test@optilifts.com')).toBeVisible();
+    await expect(page.getByText('Bio: Powerlifting enthusiast and OptiLifts demo account.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Settings' }).click();
 
     const nameInput = page.getByRole('textbox').first();
     const bioTextarea = page.locator('textarea');
     
-    await expect(nameInput).toHaveValue('Alex');
-    await expect(bioTextarea).toHaveValue('Loves to gym every day all day. This is their favourite app ever.');
+    await expect(nameInput).toHaveValue('Test Athlete');
+    await expect(bioTextarea).toHaveValue('Powerlifting enthusiast and OptiLifts demo account.');
 
     //change name to Axel
     await nameInput.click();

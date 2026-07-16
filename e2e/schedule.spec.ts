@@ -25,17 +25,17 @@ test.describe('Schedule Page', () => {
 
         await page.getByRole('button', { name: dynamicAddButtonName }).click();
 
-        await page.getByRole('button', { name: 'Full Body' }).first().click();
+        await page.getByRole('button', { name: 'Push Day A' }).first().click();
 
         await page.getByRole('checkbox', { name: 'Repeat' }).check();
         await page.locator('input[type="date"]').fill(formattedFutureDate);
 
         await page.getByRole('button', { name: 'Schedule Workout' }).click();
 
-        const scheduledWorkoutCard = page.getByRole('button', { name: 'Full Body' }).first();
+        const scheduledWorkoutCard = page.getByRole('button', { name: 'Push Day A' }).first();
         await expect(scheduledWorkoutCard).toBeVisible();
         
-        await page.getByRole('button', { name: 'Delete Full Body from schedule' }).click();
+        await page.getByRole('button', { name: 'Delete Push Day A from schedule' }).click();
         await page.getByRole('button', { name: 'Delete', exact: true }).click();
     });
 });

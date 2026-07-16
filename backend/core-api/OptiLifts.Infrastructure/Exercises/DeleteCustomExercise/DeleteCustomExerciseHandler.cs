@@ -26,6 +26,11 @@ public sealed class DeleteCustomExerciseHandler : IRequestHandler<DeleteCustomEx
         if (exercise == null)
             return false;
 
+        var isUsedInWorkout = await _dbContext.WorkoutExercises.AnyAsync(we => we.ExerciseId == exercise.Id, cancellationToken);
+
+        if (isUsedInWorkout)
+            throw new InvalidOperationException("This exercise is already used in a workout and cannot be deleted.");
+
         if (!string.IsNullOrWhiteSpace(exercise.ImageUrl))
             await _blobStorageService.DeleteFileAsync(exercise.ImageUrl, ExerciseContainerName, cancellationToken);
 

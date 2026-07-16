@@ -111,7 +111,7 @@ public sealed class DeleteScheduledSessionHandlerTests
         {
             Id = Guid.NewGuid(),
             Name = "Arms+Upper",
-            CreatedBy = userId 
+            CreatedBy = userId
         };
         db.Workouts.Add(workout);
         await db.SaveChangesAsync();
@@ -135,7 +135,7 @@ public sealed class DeleteScheduledSessionHandlerTests
         result.Should().BeTrue();
         var notdeleted = await db.ScheduledEntries.AnyAsync(e => e.Id == entry.Id);
         notdeleted.Should().BeFalse();
-        
+
     }
 
 }

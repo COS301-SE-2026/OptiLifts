@@ -14,7 +14,7 @@ public sealed record UpdateWorkoutSetDto(
 
 public sealed record UpdateWorkoutExerciseDto(
     Guid ExerciseId,
-    int OrderIndex,    
+    int OrderIndex,
     IReadOnlyList<UpdateWorkoutSetDto> Sets,
     string? GroupKey = null
 );

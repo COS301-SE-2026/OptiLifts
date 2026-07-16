@@ -45,7 +45,7 @@ public sealed class UpdateWorkoutHandler : IRequestHandler<UpdateWorkoutCommand,
 
         var groupKeyToId = new Dictionary<string, Guid>();
         var groups = request.Groups ?? Array.Empty<UpdateWorkoutGroupDto>();
-        foreach(var group in groups)
+        foreach (var group in groups)
         {
             var exerciseGroup = new ExerciseGroup
             {
@@ -95,6 +95,6 @@ public sealed class UpdateWorkoutHandler : IRequestHandler<UpdateWorkoutCommand,
         "I" => SetType.Normal,
         _ => Enum.TryParse<SetType>(type, true, out var parsed) ? parsed : SetType.Normal
     };
-    private static ExerciseGroupType ParseGroupType(string value) 
+    private static ExerciseGroupType ParseGroupType(string value)
     => Enum.TryParse<ExerciseGroupType>(value, ignoreCase: true, out var type) ? type : ExerciseGroupType.Circuit;
 }

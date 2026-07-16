@@ -98,7 +98,7 @@ public sealed class CreateScheduledSessionHandlerTests
         db.Workouts.Add(workout);
         await db.SaveChangesAsync();
 
-        var scheduledDate = new DateTime(2026, 12,1,9,30,0, DateTimeKind.Utc);
+        var scheduledDate = new DateTime(2026, 12, 1, 9, 30, 0, DateTimeKind.Utc);
         var handler = new CreateScheduledSessionHandler(db);
         var command = new CreateScheduledSessionCommand(
             UserId: userId,
@@ -137,13 +137,13 @@ public sealed class CreateScheduledSessionHandlerTests
         {
             Id = Guid.NewGuid(),
             Name = "Pushing",
-            CreatedBy = userId 
+            CreatedBy = userId
         };
         db.Workouts.Add(workout);
         await db.SaveChangesAsync();
 
-        var start = new DateTime(2026,7,5,10,0,0, DateTimeKind.Utc);
-        var end = new DateTime(2026,7,19,10,0,0, DateTimeKind.Utc);
+        var start = new DateTime(2026, 7, 5, 10, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2026, 7, 19, 10, 0, 0, DateTimeKind.Utc);
 
         var handler = new CreateScheduledSessionHandler(db);
         var command = new CreateScheduledSessionCommand(
@@ -169,4 +169,3 @@ public sealed class CreateScheduledSessionHandlerTests
     }
 
 }
-        

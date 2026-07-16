@@ -59,12 +59,12 @@ public sealed class UpdateScheduledSessionStatusHandlerTests
         };
         db.Users.Add(user2);
         await db.SaveChangesAsync();
-        
+
         var workout = new Workout
         {
             Id = Guid.NewGuid(),
             Name = "notmylegs",
-            CreatedBy = userId 
+            CreatedBy = userId
         };
         db.Workouts.Add(workout);
         await db.SaveChangesAsync();
@@ -105,7 +105,7 @@ public sealed class UpdateScheduledSessionStatusHandlerTests
         {
             Id = Guid.NewGuid(),
             Name = "Arms+Upper",
-            CreatedBy = userId 
+            CreatedBy = userId
         };
         db.Workouts.Add(workout);
         await db.SaveChangesAsync();

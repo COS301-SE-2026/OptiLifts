@@ -260,6 +260,17 @@ export function CreateExercise({
     )
   }
 
+  const handleMuscleSelect = (muscle: string) => {
+    if (activeMusclePicker === "primary") {
+      setSecondaryMuscles((prev) => prev.filter((secondaryMuscle) => secondaryMuscle !== muscle))
+      setPrimaryMuscle(muscle)
+      setActiveMusclePicker(null)
+      return
+    }
+
+    toggleSecondaryMuscle(muscle)
+  }
+
   const handleSave = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -503,15 +514,7 @@ export function CreateExercise({
                   <button
                     key={muscle}
                     type="button"
-                    onClick={() => {
-                      if (activeMusclePicker === "primary") {
-                        setSecondaryMuscles((prev) => prev.filter((secondaryMuscle) => secondaryMuscle !== muscle))
-                        setPrimaryMuscle(muscle)
-                        setActiveMusclePicker(null)
-                      } else {
-                        toggleSecondaryMuscle(muscle)
-                      }
-                    }}
+                    onClick={() => handleMuscleSelect(muscle)}
                     className="w-full flex items-center justify-between py-4 border-b border-border/50 last:border-0 hover:bg-surface-2 px-2 rounded-md transition-colors"
                   >
                     <div className="flex items-center gap-4">

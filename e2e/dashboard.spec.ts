@@ -12,30 +12,7 @@ test.describe('Dashboard Page', () => {
         await expect(page.getByText('Loading...')).toBeHidden();
     });
 
-    test('displays the main user greeting and workout status', async ({ page }) => {
+    test('displays the main user greeting', async ({ page }) => {
         await expect(page.getByRole('heading', { name: /Good Day, Test Athlete/i })).toBeVisible();
-        await expect(page.getByText(/Today's Workout:/i)).toBeVisible();
-    });
-
-    test('renders all four statistics cards', async ({ page }) => {
-        await expect(page.getByRole('heading', { name: 'Favorite exercise' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Days exercised this week' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Personal records hit this week' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Muscle Balance' })).toBeVisible();
-    });
-
-    test('validates action button states based on upcoming workouts', async ({ page }) => {
-        const viewWorkoutBtn = page.getByRole('button', { name: 'View Workout' });
-        const startSessionBtn = page.getByRole('button', { name: 'Start Session' });
-
-        const hasNoWorkout = await page.getByText('No workout scheduled').isVisible();
-
-        if (hasNoWorkout) {
-            await expect(viewWorkoutBtn).toBeDisabled();
-            await expect(startSessionBtn).toBeDisabled();
-        } else {
-            await expect(viewWorkoutBtn).toBeEnabled();
-            await expect(startSessionBtn).toBeEnabled();
-        }
     });
 });

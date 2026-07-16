@@ -40,7 +40,7 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, A
         return new AuthResponseDto(
             newAccessT,
             newRefreshT,
-            new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt)
+            new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme)
         );
     }
 }

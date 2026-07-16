@@ -9,6 +9,7 @@ import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 import type { ProfileCalendarEntry, ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
 import { Button } from '@/components/ui/button'
+import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
@@ -133,6 +134,17 @@ export default function ProfilePage() {
   const isLoading = !isHydrated || isFetching
   const hasWorkouts = displayWorkouts.length > 0
 
+  const formatVol = (volume: string): string => {
+    const vol = outputWeight(Number.parseInt(volume.replace(/\D/g, ''), 10));
+    const unit = (metricCheck())? 'KG' : 'LB';
+
+    const outNum = vol.toLocaleString('en-ZA', {
+      maximumFractionDigits: 0
+    });
+
+    return `${outNum} ${unit}`;
+  };
+
   return (
     <section className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-8 w-full max-w-[1144px]">
@@ -177,13 +189,13 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.9fr)]">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            <Button
+              variant="secondary"
+              size="sm"
               className="font-semibold uppercase tracking-wider text-xs scale-[0.85] origin-right"
               onClick={() => navigate('/past-workouts')}
             >
-              View All 
+              View All
             </Button>
           </div>
           <div className="hidden lg:block"></div>
@@ -195,6 +207,7 @@ export default function ProfilePage() {
                 <WorkoutOverview
                   key={`${workout.workoutId}-${workout.logId ?? 'planned'}`}
                   {...workout}
+                  volume={formatVol(workout.volume)} 
                   href={workout.logId ? `/workouts/${workout.workoutId}/logs/${workout.logId}` : undefined}
                   className="h-full"
                 />

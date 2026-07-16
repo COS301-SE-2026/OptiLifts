@@ -76,7 +76,7 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
         var dto = new AuthResponseDto(
             token,
             refreshToken,
-            new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt)
+            new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme)
         );
 
         return dto;

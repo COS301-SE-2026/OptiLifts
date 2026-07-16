@@ -6,6 +6,7 @@ import { DatePagination } from '@/components/ui/date-pagination'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { customFetch } from '@/lib/custom-fetch'
 import { useNavigate } from 'react-router-dom'
+import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 
 type ScheduledEntryDto = {
@@ -161,7 +162,7 @@ export default function PastWorkoutsPage() {
                                 </div>
                             </div>
                             {/*right side */}
-                            <div className="grid grid-cols-4 gap-6 sm:gap-8 pt-3 sm:pt-0">
+                            <div className="grid grid-cols-4 gap-6 sm:gap-8 pt-3 sm:pt-0 shrink-0 sm:w-96 md:w-[24rem]">
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">Duration</span>
                                     <span className="text-lg font-bold text-foreground">
@@ -171,7 +172,7 @@ export default function PastWorkoutsPage() {
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">Volume</span>
                                     <span className="text-lg font-bold text-foreground">
-                                        {workout.totalVolume.toLocaleString()} kg
+                                        {outputWeight(workout.totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} {(metricCheck())? 'KG' : 'LB'}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-center gap-1.5">

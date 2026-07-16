@@ -16,6 +16,7 @@ import {
   DropdownMenuContent
 } from '@/components/ui/dropdown-menu'
 import { DatePagination } from '@/components/ui/date-pagination'
+import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 //styling constants for same style aspects
 const statLABEL = "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -521,6 +522,7 @@ export default function SchedulePage() {
         readonly onClick: (session: ScheduledEntryDto) => void
     }
     function WorkoutCard({session, isDeleting, onDelete, onClick}: WorkoutCardProps){
+        const units = (metricCheck())? 'KG' : 'LB'
         return (
             <div className="flex items-center gap-4 group flex-1">
                 <Card
@@ -548,7 +550,7 @@ export default function SchedulePage() {
                             <div className="space-y-0.5">
                                 <span className={statLABEL}>Volume</span>
                                 <span className={`${statVALUE} truncate`}>
-                                    {session.totalVolume > 0 ? `${session.totalVolume.toLocaleString()} kg` : '-'}
+                                    {session.totalVolume > 0 ? `${outputWeight(session.totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${units}` : '-'}
                                 </span>
                             </div>
                             <div className="space-y-0.5">
@@ -622,6 +624,7 @@ interface SummaryCardProps{
     readonly totalSets: number
 }
 function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
+    const units = (metricCheck())? 'KG' : 'LB'
     return (
         <Card className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="mb-4">
@@ -635,8 +638,8 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
                 <div className="px-1">
                     <span className={`${statLABEL} mb-1`}>Total Volume</span>
                     <span className="text-xl sm:text-2xl font-bold text-foreground font-display block truncate">
-                        {totalVolume.toLocaleString()}
-                        <span className="text-xs font-sans font-medium text-muted-foreground">kg</span>
+                        {outputWeight(totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <span className="text-xs font-sans font-medium text-muted-foreground"> {units}</span>
                     </span>
                 </div>
                 <div className="px-1">

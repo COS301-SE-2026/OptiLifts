@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import * as path from 'path';
+import * as path from 'node:path';
 
 const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
 
@@ -24,7 +24,7 @@ export default defineConfig({
         //runs the auth.setup.ts file to generate the cookies.
         {
             name: 'setup',
-            testMatch: /.*\.setup\.ts/,
+            testMatch: 'auth.setup.ts'
         },
         //runs tests for each browser, which first depends "setup" to finish, then loads the cookies
         {
@@ -53,12 +53,11 @@ export default defineConfig({
         },
     ],
 
-    //will run "pnpm dev" if it is not already running
     webServer: {
-        command: 'pnpm dev',
+        command: 'pnpm e2e:services:up',
         cwd: '..',
-        url: 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
+        url: 'http://localhost:5173/api/healthCheck',
+        reuseExistingServer: !process.env.CI, //if pnpm dev/prod is running it will just use that one, otherwise it spins up a containerised prod stack
+        timeout: 10 * 60 * 1000,
     },
 });

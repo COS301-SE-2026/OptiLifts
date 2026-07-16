@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-workout'
+import { metricCheck } from '@/lib/weight-utils'
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
@@ -28,27 +29,33 @@ type ColumnDef = {
   field: FieldKey
 }
 
+export function getColumns(exerciseType: string): ColumnDef[] {
+  const isMetric = metricCheck()
+  const weightUnit = isMetric? 'KG':'LB'
+  const plus = isMetric ? '+KG': '+LB'
+  const minus = isMetric ? '-KG': '-LB'
+
 const COLUMNSTYPE: Record<string, ColumnDef[]> = {
   'weight-reps': [
-    {label: 'KG', field: 'kg'},
+    {label: weightUnit, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
   'bodyweight-reps': [
     { label: 'Reps', field: 'reps'},
   ],
   'weighted-bodyweight': [
-    {label: '+KG', field: 'kg'},
+    {label: plus, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
   'assisted-bodyweight': [
-    {label: '-KG', field: 'kg'},
+    {label: minus, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
   'duration': [
     { label: 'Time(s)', field: 'time'},
   ],
   'duration-weight': [
-    {label: 'KG', field: 'kg'},
+    {label: weightUnit, field: 'kg'},
     { label: 'Time(s)', field: 'time'},
   ],
   'distance-duration': [
@@ -56,9 +63,11 @@ const COLUMNSTYPE: Record<string, ColumnDef[]> = {
     { label: 'Time(s)', field: 'time'},
   ],
   'weight-distance': [
-    {label: 'KG', field: 'kg'},
+    {label: weightUnit, field: 'kg'},
     { label: 'KM', field: 'distance'},
   ],
+}
+return COLUMNSTYPE[exerciseType] ?? COLUMNSTYPE['weight-reps']
 }
 
 function SetRow({
@@ -128,8 +137,7 @@ let nextSetId = 0
 export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
-  const typeKey = exercise.exerciseType ?? 'weight-reps'
-  const columns = COLUMNSTYPE[typeKey] ?? COLUMNSTYPE['weight-reps']
+  const columns = getColumns(exercise.exerciseType ?? 'weight-reps')
 
   const updateSets = (updated: ExerciseSet[]) => {
     setSets(updated)

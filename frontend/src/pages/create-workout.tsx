@@ -25,6 +25,7 @@ import {
 import type { WorkoutExercise, SetType, ExerciseSet } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
+import { inputWeight, outputWeight } from '@/lib/weight-utils'
 
 type CatalogExercise = {
   id: string
@@ -177,7 +178,7 @@ function mapApiSetsToExercise(apiSets: Array<{id: string; type:string; weight:nu
     return {
       id: s.id,
       type: setType,
-      kg: (s.weight ?? '') as number | '',
+      kg: (s.weight === null ? '' : outputWeight(s.weight)) as number | '',
       reps: (s.reps ?? '') as number | '',
       time: (s.duration ?? '') as number | '',
       distance: (s.distance ?? '') as number | ''
@@ -435,7 +436,7 @@ export default function CreateWorkoutPage() {
           sets: e.sets.map((s, setIndex) => ({
             type: SET_TYPE_MAP[s.type] ?? 'Normal',
             reps: s.reps === '' ? null : Number(s.reps),
-            weight: s.kg === '' ? null : Number(s.kg),
+            weight: s.kg === '' ? null : inputWeight(Number(s.kg)),
             duration: s.time === undefined || s.time === '' ? null : Number(s.time),
             distance: s.distance === undefined || s.distance === '' ? null : Number(s.distance),
             orderIndex: setIndex,

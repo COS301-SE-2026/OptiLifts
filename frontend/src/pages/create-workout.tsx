@@ -32,6 +32,7 @@ type CatalogExercise = {
   muscleGroup: MuscleName
   equipment?: string
   imageUrl?: string
+  exerciseType?: string
 }
 
 type ExerciseApiResponse = {
@@ -40,6 +41,7 @@ type ExerciseApiResponse = {
   primaryMuscles?: string[]
   equipment?: string
   imageUrl?: string
+  exerciseType?: string
 }
 
 type CreateWorkoutSetPayload = {
@@ -161,7 +163,10 @@ async function getErrorMessage(res: Response, fallback: string): Promise<string>
 }
 
 //sonarqube nesting restrictions
-function mapApiSetsToExercise(apiSets: Array<{id: string; type:string; weight:number | null; reps: number | null}>): ExerciseSet[]{
+function mapApiSetsToExercise(apiSets: Array<{id: string; type:string; weight:number | null; reps: number | null 
+  duration?: number | null
+  distance?: number | null
+}>): ExerciseSet[]{
   return apiSets.map(s => {
     let setType: SetType = 'I'
     if (s.type === 'Warmup'){
@@ -173,7 +178,9 @@ function mapApiSetsToExercise(apiSets: Array<{id: string; type:string; weight:nu
       id: s.id,
       type: setType,
       kg: (s.weight ?? '') as number | '',
-      reps: (s.reps ?? '') as number | ''
+      reps: (s.reps ?? '') as number | '',
+      time: (s.duration ?? '') as number | '',
+      distance: (s.distance ?? '') as number | ''
     }
   })
 }
@@ -190,6 +197,8 @@ function mapApiExercises(
       weight: number | null
       reps: number | null
       restTime: number
+      duration?: number | null
+      distance?: number | null
     }>
     groupId?: string | null
     imageUrl?:string | null
@@ -206,7 +215,8 @@ function mapApiExercises(
     sets,
     exerciseCatalogId: ex.exerciseId,
     linkedToNext,
-    restTime: ex.sets[0]?.restTime ?? 60
+    restTime: ex.sets[0]?.restTime ?? 60,
+    exerciseType: ex.exerciseType
   }
 })
 }
@@ -318,7 +328,8 @@ export default function CreateWorkoutPage() {
       name: ex.name,
       muscleGroup: (ex.primaryMuscles?.[0] || 'Other') as MuscleName,
       equipment: ex.equipment,
-      imageUrl: ex.imageUrl
+      imageUrl: ex.imageUrl,
+      exerciseType: ex.exerciseType
     })) as CatalogExercise[]
   }, [])
 
@@ -362,6 +373,7 @@ export default function CreateWorkoutPage() {
         muscle: exercise.muscleGroup,
         sets: [],
         exerciseCatalogId: exercise.id,
+        exerciseType: exercise.exerciseType
       },
     ])
 
@@ -424,8 +436,8 @@ export default function CreateWorkoutPage() {
             type: SET_TYPE_MAP[s.type] ?? 'Normal',
             reps: s.reps === '' ? null : Number(s.reps),
             weight: s.kg === '' ? null : Number(s.kg),
-            duration: null,
-            distance: null,
+            duration: s.time === undefined || s.time === '' ? null : Number(s.time),
+            distance: s.distance === undefined || s.distance === '' ? null : Number(s.distance),
             orderIndex: setIndex,
             restTime: e.restTime ?? 0,
           })),

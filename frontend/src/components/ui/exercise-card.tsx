@@ -21,14 +21,56 @@ type ExerciseCardProps = Readonly<{
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
 
+//add functionality for different types of exercises
+type FieldKey = 'kg'|'reps'|'time'|'distance'
+type ColumnDef = {
+  label: string
+  field: FieldKey
+}
+
+const COLUMNSTYPE: Record<string, ColumnDef[]> = {
+  'weight-reps': [
+    {label: 'KG', field: 'kg'},
+    { label: 'Reps', field: 'reps'},
+  ],
+  'bodyweight-reps': [
+    { label: 'Reps', field: 'reps'},
+  ],
+  'weighted-bodyweight': [
+    {label: '+KG', field: 'kg'},
+    { label: 'Reps', field: 'reps'},
+  ],
+  'assisted-bodyweight': [
+    {label: '-KG', field: 'kg'},
+    { label: 'Reps', field: 'reps'},
+  ],
+  'duration': [
+    { label: 'Time(s)', field: 'time'},
+  ],
+  'duration-weight': [
+    {label: 'KG', field: 'kg'},
+    { label: 'Time(s)', field: 'time'},
+  ],
+  'distance-duration': [
+    {label: 'KM', field: 'distance'},
+    { label: 'Time(s)', field: 'time'},
+  ],
+  'weight-distance': [
+    {label: 'KG', field: 'kg'},
+    { label: 'KM', field: 'distance'},
+  ],
+}
+
 function SetRow({
   set,
   workingIndex,
+  columns,
   onChange,
   onRemove,
 }: Readonly<{
   set: ExerciseSet
   workingIndex: number
+  columns: ColumnDef[]
   onChange: (updated: ExerciseSet) => void
   onRemove: () => void
 }>) {
@@ -61,21 +103,18 @@ function SetRow({
         />
       </div>
 
-      <div className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
-        <NumericalUnderscoreInput
-          value={set.kg === '' ? '' : String(set.kg)}
-          onChange={e => onChange({ ...set, kg: e.target.value === '' ? '' : Number(e.target.value) })}
-          className="text-xl text-center mx-auto"
-        />
-      </div>
-
-      <div className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
-        <NumericalUnderscoreInput
-          value={set.reps === '' ? '' : String(set.reps)}
-          onChange={e => onChange({ ...set, reps: e.target.value === '' ? '' : Number(e.target.value) })}
-          className="text-xl text-center mx-auto"
-        />
-      </div>
+      {columns.map(col => {
+        const val = set[col.field] === undefined || set[col.field] === '' ? '': String(set[col.field])
+        return (
+          <div key={col.field} className="flex-1 flex justify-center [&>div]:flex [&>div]:justify-center">
+            <NumericalUnderscoreInput value={val} onChange={e => {
+              const newVal = e.target.value === ''? '': Number(e.target.value)
+              onChange({...set, [col.field]: newVal})
+            }}
+            className="text-xl text-center mx-auto"/>
+            </div>
+        )
+      })}
 
       <Button variant="icon" size="icon" aria-label="Remove set" onClick={onRemove} className="border-0 bg-transparent w-6 h-6 shrink-0">
         <X className="w-4 h-4 text-muted-foreground" />
@@ -89,6 +128,9 @@ let nextSetId = 0
 export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
+  const typeKey = exercise.exerciseType ?? 'weight-reps'
+  const columns = COLUMNSTYPE[typeKey] ?? COLUMNSTYPE['weight-reps']
+
   const updateSets = (updated: ExerciseSet[]) => {
     setSets(updated)
     onSetsChange(exercise.id, updated)
@@ -100,6 +142,8 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
       type: 'I',
       kg: '',
       reps: '',
+      time: '',
+      distance: '',
     }
     updateSets([...sets, newSet])
   }
@@ -166,8 +210,9 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
             <span className="w-4 shrink-0"/>
             <span className="w-8 text-center">Set</span>
           </div>
-          <span className="flex-1 text-center">KG</span>
-          <span className="flex-1 text-center">Reps</span>
+          {columns.map(col => (
+            <span key={col.field} className="flex-1 text-center">{col.label}</span>
+          ))}
           <span className="w-6 shrink-0" />
         </div>
         {sets.map((set, i) => {
@@ -177,6 +222,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
               key={set.id}
               set={set}
               workingIndex={workingIndex}
+              columns={columns}
               onChange={updated => updateSet(i, updated)}
               onRemove={() => removeSet(i)}
             />

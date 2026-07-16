@@ -44,11 +44,24 @@ jobs:
     - name: Install Dependencies
       run: pnpm install --frozen-lockfile && pnpm run setup
 
+    - name: Install Playwright Browsers
+      run: pnpm exec playwright install --with-deps
+
     - name: Lint Code
       run: pnpm lint
 
     - name: Run Tests
       run: pnpm test
+
+    - name: Run Playwright Tests
+      run: pnpm test:e2e
+
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: e2e/playwright-report/
+        retention-days: 30
 
     - name: Build frontend image
       run: docker build --build-arg VITE_API_BASE=/api -f frontend/Dockerfile .

@@ -43,6 +43,7 @@ type ExerciseApiResponse = {
   equipment?: string
   imageUrl?: string
   exerciseType?: string
+  category?: string
 }
 
 type CreateWorkoutSetPayload = {
@@ -330,7 +331,7 @@ export default function CreateWorkoutPage() {
       muscleGroup: (ex.primaryMuscles?.[0] || 'Other') as MuscleName,
       equipment: ex.equipment,
       imageUrl: ex.imageUrl,
-      exerciseType: ex.exerciseType
+      exerciseType: ex.exerciseType ?? ex.category
     })) as CatalogExercise[]
   }, [])
 

@@ -56,7 +56,9 @@ jobs:
       run: pnpm e2e:services:up:detached
 
     - name: Wait for E2E App
-      run: curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5173/api/healthCheck
+      run: |
+        curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5036/api/healthCheck
+        curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5173/api/healthCheck
 
     - name: Lint Code
       run: pnpm lint
@@ -64,7 +66,7 @@ jobs:
     - name: Run Tests
       run: pnpm test
 
-    - name: Run Playwright Tests
+    - name: Run End-to-End Tests
       env:
         E2E_USE_EXISTING_SERVICES: '1'
         AUTH_COOKIE_SECURE: 'false'

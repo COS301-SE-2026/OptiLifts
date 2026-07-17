@@ -23,7 +23,9 @@ test.describe('Schedule Page', () => {
         await expect(addWorkoutButton).toBeVisible();
         await addWorkoutButton.click();
 
-        await page.getByRole('button', { name: 'Push Day A' }).first().click();
+        const selectWorkoutDialog = page.getByRole('dialog', { name: 'Select Workout' });
+        await expect(selectWorkoutDialog).toBeVisible();
+        await selectWorkoutDialog.getByRole('button', { name: 'Push Day A' }).first().click();
 
         await page.getByRole('checkbox', { name: 'Repeat' }).check();
         await page.locator('input[type="date"]').fill(formattedFutureDate);
@@ -33,7 +35,8 @@ test.describe('Schedule Page', () => {
         const scheduledWorkoutCard = page.getByRole('button', { name: 'Push Day A' }).first();
         await expect(scheduledWorkoutCard).toBeVisible();
         
-        await page.getByRole('button', { name: 'Delete Push Day A from schedule' }).click();
+        const scheduledWorkoutRow = scheduledWorkoutCard.locator('xpath=..');
+        await scheduledWorkoutRow.getByRole('button', { name: 'Delete Push Day A from schedule' }).click();
         await page.getByRole('button', { name: 'Delete', exact: true }).click();
     });
 });

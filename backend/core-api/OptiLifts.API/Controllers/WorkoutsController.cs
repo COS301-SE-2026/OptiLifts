@@ -11,6 +11,7 @@ using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.UpdateWorkout;
 
 namespace OptiLifts.API.Controllers;
 
@@ -20,6 +21,7 @@ namespace OptiLifts.API.Controllers;
 [Authorize]
 public sealed class WorkoutsController : ControllerBase
 {
+    private const string NotFoundTitle = "Not Found";
     private readonly ISender _sender;
 
     public sealed record AddExerciseToWorkoutRequest(Guid ExerciseId);
@@ -167,7 +169,7 @@ public sealed class WorkoutsController : ControllerBase
             return NotFound(new
             {
                 status = 404,
-                title = "Not Found",
+                title = NotFoundTitle,
                 message = "Workout was not found for this user."
             });
 
@@ -192,7 +194,7 @@ public sealed class WorkoutsController : ControllerBase
             return NotFound(new
             {
                 status = 404,
-                title = "Not Found",
+                title = NotFoundTitle,
                 message = "Source workout was not found for this user."
             });
         }
@@ -200,5 +202,35 @@ public sealed class WorkoutsController : ControllerBase
 
     }
 
+
+    [HttpPut("{workoutId:guid}")]
+    public async Task<IActionResult> UpdateWorkout(
+        [FromRoute] Guid workoutId,
+        [FromBody] UpdateWorkoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new UpdateWorkoutCommand(
+            workoutId,
+            userId,
+            request.FolderId,
+            request.Name,
+            request.Exercises,
+            request.Groups);
+        var success = await _sender.Send(command, cancellationToken);
+        if (!success)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout not found or unable to update."
+            });
+        }
+        return Ok(new { message = "Workout updated successfully." });
+    }
 
 }

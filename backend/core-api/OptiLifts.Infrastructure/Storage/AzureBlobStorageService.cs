@@ -20,7 +20,7 @@ public class AzureBlobStorageService : IBlobStorageService
         if (string.IsNullOrWhiteSpace(_connectionString))
         {
             // Support alternative env var names that users may set in .env
-            _connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__AzureStorage")
+            _connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
                                 ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING")
                                 ?? string.Empty;
         }

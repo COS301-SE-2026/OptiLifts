@@ -1,12 +1,13 @@
 import { submitAuthRequest } from "@/pages/auth/auth-request";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';
+import type { ReactNode } from 'react';
 
 const mockNavigate = vi.fn(); //mock trackin function (spies on nav calls)
 vi.mock('react-router-dom', async() => {
-    const actual = await vi.importActual<any>('react-router-dom');
+    const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
     return {
         ...actual,
         useNavigate: () => mockNavigate, //inject trackable spy func
@@ -17,8 +18,8 @@ vi.mock('react-router-dom', async() => {
         }),
         Link: ({
             children, to
-        }: any) => <a href={to}>{children}</a>,
-        Navigate: ({to}: any) => <div data-testid="navigate" data-to={to}/>,
+        }: Readonly<{ children: ReactNode; to: string }>) => <a href={to}>{children}</a>,
+        Navigate: ({to}: Readonly<{ to: string }>) => <div data-testid="navigate" data-to={to}/>,
     };
 });
  
@@ -35,7 +36,7 @@ vi.mock('@/pages/auth/auth-request', () => ({
 
 //'describe' defines suite of related tests
 describe('RegisterPage', () => {
-    const mockAuth = useAuth as any;
+    const mockAuth = useAuth as unknown as Mock;
 
     afterEach(() => {
         cleanup();

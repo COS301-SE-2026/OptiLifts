@@ -1,5 +1,5 @@
 import WorkoutDetailPage from '@/pages/workout-detail';
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';
 import { customFetch } from '@/lib/custom-fetch';
@@ -25,9 +25,9 @@ vi.mock('@/lib/custom-fetch', () => ({
 
 //mock barchart comp (simplified tho)
 vi.mock('@/components/ui/exercise-plan', () => ({
-    default: ({exercises}:any) => (
+    default: ({exercises}:Readonly<{ exercises: readonly { name: string }[] }>) => (
     <div data-testid="exercise-plan">
-        {exercises.map((e: any) => (
+        {exercises.map((e) => (
             <div key={e.name}>{e.name}</div>
         ))}
     </div>
@@ -40,8 +40,8 @@ vi.mock('@/components/ui/muscle-diagram', () => ({
 
 //'describe' defines suite of related tests
 describe('WorkoutDetailPage', () => {
-    const mockAuth = useAuth as any;
-    const mockFetch = customFetch as any;
+    const mockAuth = useAuth as unknown as Mock;
+    const mockFetch = customFetch as unknown as Mock;
 
     afterEach(() => {
         cleanup();

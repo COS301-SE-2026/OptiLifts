@@ -1,18 +1,19 @@
 import ProfilePage from '@/pages/profile';
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';
 import { customFetch } from '@/lib/custom-fetch';
+import type { ReactNode } from 'react';
 
 //mocking dependencies -> prevents network requests + isolates component
 
 const mockNavigate = vi.fn(); //mock trackin function (spies on nav calls)
 vi.mock('react-router-dom', async() => {
-    const actual = await vi.importActual<any>('react-router-dom');
+    const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
     return {
         ...actual,
         useNavigate: () => mockNavigate, //inject trackable spy func
-        Link: ({children, to}: any) => <a href={to}>{children}</a>,
+        Link: ({children, to}: Readonly<{ children: ReactNode; to: string }>) => <a href={to}>{children}</a>,
     };
 });
 
@@ -27,24 +28,24 @@ vi.mock('@/lib/custom-fetch', () => ({
 
 //mock barchart comp (simplified tho)
 vi.mock('@/components/ui/barchart', () => ({
-    default: ({title}:any) => <div data-testid="barchart">{title}</div>,
-    BarChart: ({title}: any) => <div data-testid="barchart">{title}</div>,
+    default: ({title}:Readonly<{ title: string }>) => <div data-testid="barchart">{title}</div>,
+    BarChart: ({title}: Readonly<{ title: string }>) => <div data-testid="barchart">{title}</div>,
 }));
 
 vi.mock('@/components/ui/calendar', () => ({
-    default: ({onHighlightedDateClick } :any) => 
+    default: ({onHighlightedDateClick }: Readonly<{ onHighlightedDateClick: (date: string)  => void }>) => 
     (<button data-testid="calendar-date" onClick={() => onHighlightedDateClick('2026-07-17')}>
         Calendar
     </button>),
-    Calendar: ({ onHighlightedDateClick } :any)=> (
+    Calendar: ({ onHighlightedDateClick } :Readonly<{ onHighlightedDateClick: (date: string) => void }>)=> (
         <button data-testid="calendar-date" onClick={() => onHighlightedDateClick('2026-07-17')}>Calendar</button>
     ),        
 }));
 
 //'describe' defines suite of related tests
 describe('ProfilePage', () => {
-    const mockAuth = useAuth as any;
-    const mockFetch = customFetch as any;
+    const mockAuth = useAuth as unknown as Mock;
+    const mockFetch = customFetch as unknown as Mock;
 
     afterEach(() => {
         cleanup();

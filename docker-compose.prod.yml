@@ -34,26 +34,28 @@ services:
       context: ./backend/core-api
       dockerfile: Dockerfile
       network: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
       
     ports:
       - "5036:8080"
       
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - POSTGRES_CONNECTION_STRING=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXP_MINUTES=${JWT_EXP_MINUTES}
-      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY}
+      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING:-Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}}
+      - JWT_SECRET=${JWT_SECRET:-test_secret_key_for_integration_tests_only}
+      - JWT_EXP_MINUTES=${JWT_EXP_MINUTES:-60}
+      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-+8bGaoOpx4CEfxnMcX1RG2qrcJaT+RZO/0IIpSePZQA=}
 
       - FRONTEND_ORIGIN=http://localhost
       - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
     
-      - ConnectionStrings__AzureStorage=${ConnectionStrings__AzureStorage}
+      - ConnectionStrings__AzureStorage=${ConnectionStrings__AzureStorage:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;}
     
       - AiApiBaseUrl=http://ai-api:8000
       
       - RUN_MIGRATIONS=true
-      - DEV_SEEDING=${DEV_SEEDING}
+      - DEV_SEEDING=${DEV_SEEDING:-true}
 
     depends_on:
       db:

@@ -48,24 +48,10 @@ jobs:
       run: pnpm exec playwright install --with-deps
 
     - name: Start E2E Services
-      env:
-        COMPOSE_PROJECT_NAME: optilifts-e2e-ci
-        AUTH_COOKIE_SECURE: 'false'
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: test
-        POSTGRES_DB: optilifts_test
-      run: |
-        set -a
-        . ./.env
-        set +a
-        pnpm e2e:services:up:detached
+      run: bash ./scripts/e2e-ci.sh start
 
     - name: Wait for E2E App
-      env:
-        COMPOSE_PROJECT_NAME: optilifts-e2e-ci
-      run: |
-        curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5036/api/healthCheck
-        curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5173/api/healthCheck
+      run: bash ./scripts/e2e-ci.sh wait
 
     - name: Lint Code
       run: pnpm lint
@@ -74,16 +60,11 @@ jobs:
       run: pnpm test
 
     - name: Run End-to-End Tests
-      env:
-        COMPOSE_PROJECT_NAME: optilifts-e2e-ci
-        E2E_USE_EXISTING_SERVICES: '1'
-        AUTH_COOKIE_SECURE: 'false'
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: test
-        POSTGRES_DB: optilifts_test
-      run: |
-        trap 'docker compose -f docker-compose.prod.yml down -v --remove-orphans' EXIT
-        pnpm test:e2e
+      run: bash ./scripts/e2e-ci.sh test
+
+    - name: Tear Down E2E Services
+      if: always()
+      run: bash ./scripts/e2e-ci.sh down
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.UpdateWorkout;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -9,10 +9,10 @@ using OptiLifts.Infrastructure.Workouts;
 
 namespace OptiLifts.Tests.Api.Tests;
 
-public class DuplicateWorkoutsHandlerTests
+public class UpdateWorkoutHandlerTests
 {
     [Fact]
-    public async Task Handle_ReturnsNull_WhenSourceWorkoutDoesNotExist()
+    public async Task Handle_ReturnsFalse_WhenWOrkoutDoesNotExist()
     {
         using var conn = new SqliteConnection("DataSource=:memory:");
         await conn.OpenAsync();
@@ -23,19 +23,19 @@ public class DuplicateWorkoutsHandlerTests
         using var db = new OptiLiftsDbContext(options);
         await db.Database.EnsureCreatedAsync();
 
-        var handler = new DuplicateWorkoutHandler(db);
+        var handler = new UpdateWorkoutHandler(db);
 
         var result = await handler.Handle(
-            new DuplicateWorkoutCommand(Guid.NewGuid(), Guid.NewGuid()),
+            new UpdateWorkoutCommand(Guid.NewGuid(), Guid.NewGuid(), null, "NewName", [], []),
             CancellationToken.None);
 
-        result.Should().BeNull();
+        result.Should().BeFalse();
     }
 
     [Fact]
-    public async Task Handle_DupeWorkoutAndData_WhenOwnedWorkoutExists()
+    public async Task Handle_UpdateWorkout_WhenWorkoutExists()
     {
-        var userid = Guid.NewGuid();
+        var userId = Guid.NewGuid();
         using var conn = new SqliteConnection("DataSource=:memory:");
         await conn.OpenAsync();
         var options = new DbContextOptionsBuilder<OptiLiftsDbContext>()
@@ -47,7 +47,7 @@ public class DuplicateWorkoutsHandlerTests
 
         var user = new User
         {
-            Id = userid,
+            Id = userId,
             Email = "test@example.com",
             PasswordHash = "x",
             DisplayName = "Test person"
@@ -58,7 +58,7 @@ public class DuplicateWorkoutsHandlerTests
         var folder = new Folder
         {
             Name = "My stuff",
-            UserId = userid
+            UserId = userId
         };
         db.Folders.Add(folder);
         await db.SaveChangesAsync();
@@ -66,7 +66,7 @@ public class DuplicateWorkoutsHandlerTests
         var workout = new Workout
         {
             Name = "Leg Day",
-            CreatedBy = userid,
+            CreatedBy = userId,
             FolderId = folder.Id
         };
         db.Workouts.Add(workout);
@@ -107,41 +107,28 @@ public class DuplicateWorkoutsHandlerTests
         db.Sets.Add(set);
         await db.SaveChangesAsync();
 
-        var handler = new DuplicateWorkoutHandler(db);
+        var handler = new UpdateWorkoutHandler(db);
+        var setsToSave = new List<UpdateWorkoutSetDto>
+        {
+            new UpdateWorkoutSetDto("W", 12, 40.0f, null, null , 0, 60),
+            new UpdateWorkoutSetDto("I", 8, 80.0f, null, null , 1, 90)
+        };
+        var exercisesToSave = new List<UpdateWorkoutExerciseDto>
+        {
+            new UpdateWorkoutExerciseDto(exercise.Id, 0, setsToSave)
+        };
 
-        var result = await handler.Handle(
-            new DuplicateWorkoutCommand(workout.Id, userid),
-            CancellationToken.None);
-        result.Should().NotBeNull();
-        result!.WorkoutId.Should().NotBe(workout.Id);
-        result.Name.Should().Be("Leg Day");
-        result.FolderId.Should().Be(folder.Id);
+        var command = new UpdateWorkoutCommand(
+            workout.Id,
+            user.Id,
+            null,
+            "Updated Name",
+            exercisesToSave);
+        var result = await handler.Handle(command, CancellationToken.None);
+        result.Should().BeTrue();
+        var updated = await db.Workouts.FindAsync(workout.Id);
+        updated!.Name.Should().Be("Updated Name");
 
-        var dupe = await db.Workouts.FindAsync(result.WorkoutId);
-        dupe.Should().NotBeNull();
-        dupe.CreatedBy.Should().Be(userid);
-        var dupeExercises = await db.WorkoutExercises
-            .Where(we => we.WorkoutId == result.WorkoutId)
-            .ToListAsync();
-        dupeExercises.Should().HaveCount(1);
-
-        var dupeExercise = dupeExercises[0];
-        dupeExercise.Id.Should().NotBe(workoutExer.Id);
-        dupeExercise.ExerciseId.Should().Be(exercise.Id);
-        dupeExercise.OrderIndex.Should().Be(1);
-
-        var dupeSets = await db.Sets
-            .Where(s => s.WorkoutExerciseId == dupeExercise.Id)
-            .ToListAsync();
-        dupeSets.Should().HaveCount(1);
-
-        var dupeSet = dupeSets[0];
-        dupeSet.Id.Should().NotBe(set.Id);
-        dupeSet.OrderIndex.Should().Be(0);
-        dupeSet.Reps.Should().Be(10);
-        dupeSet.Weight.Should().Be(100);
-        dupeSet.RestTime.Should().Be(120);
 
     }
-
 }

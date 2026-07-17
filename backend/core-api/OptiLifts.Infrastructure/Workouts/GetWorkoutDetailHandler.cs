@@ -47,7 +47,8 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 PrimaryMuscleName = muscle.Name,
                 ExerciseType = exercise.ExerciseType,
                 GroupType = exerciseGroup != null ? exerciseGroup.Type.ToString() : null,
-                GroupRestTime = (int?)(exerciseGroup != null ? exerciseGroup.RestTime : null)
+                GroupRestTime = (int?)(exerciseGroup != null ? exerciseGroup.RestTime : null),
+                ImageUrl = exercise.ImageUrl
             })
             .ToListAsync(cancellationToken);
 
@@ -106,7 +107,8 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 : [],
             entry.GroupId,
             entry.GroupType,
-            entry.GroupRestTime)).ToArray();
+            entry.GroupRestTime,
+            entry.ImageUrl)).ToArray();
 
         var primaryMuscleGroups = exercises
             .Select(exercise => exercise.PrimaryMuscle)

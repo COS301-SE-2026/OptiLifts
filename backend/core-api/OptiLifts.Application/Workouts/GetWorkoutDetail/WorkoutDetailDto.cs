@@ -21,7 +21,8 @@ public sealed record WorkoutExerciseDetailDto(
     WorkoutSetDto[] Sets,
     Guid? GroupId = null,
     string? GroupType = null,
-    int? GroupRestTime = null
+    int? GroupRestTime = null,
+    string? ImageUrl = null
 );
 
 public sealed record WorkoutDetailDto(

@@ -488,7 +488,28 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
-                                <img src={streakFlame} alt="Exercise streak" className="h-12 w-12 object-contain" />
+                                <img
+                                    src={streakFlame}
+                                    alt="Exercise streak"
+                                    className="h-12 w-12 select-none object-contain opacity-85 dark:hidden"
+                                    draggable={false}
+                                />
+
+                                <span
+                                    aria-hidden="true"
+                                    className="hidden h-12 w-12 bg-white/90 dark:block"
+                                    style={{
+                                        WebkitMaskImage: `url(${streakFlame})`,
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        WebkitMaskPosition: 'center',
+                                        WebkitMaskSize: 'contain',
+                                        maskImage: `url(${streakFlame})`,
+                                        maskRepeat: 'no-repeat',
+                                        maskPosition: 'center',
+                                        maskSize: 'contain',
+                                    }}
+                                />
+
                                 <span className="text-4xl font-bold text-foreground">{streakDays.length}</span>
                             </div>
                         </div>

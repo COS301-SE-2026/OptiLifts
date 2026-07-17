@@ -34,7 +34,7 @@ export function UpcomingWorkoutsCard({
         <div className="flex flex-col gap-5 flex-1">
           {workouts.map((workout) => (
             <div key={workout.name} className="border-l-[3px] border-brand pl-3 border-b border-border pb-2">
-              <h3 className={cn('text-md font-semibold', workout.highlight ? 'text-black' : 'text-gray-700')}>
+              <h3 className={cn('text-md font-semibold', workout.highlight ? 'text-foreground' : 'text-muted-foreground')}>
                 {workout.name}
               </h3>
               <p className="text-xs text-muted-foreground">{workout.details}</p>

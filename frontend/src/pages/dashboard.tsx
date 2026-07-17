@@ -522,7 +522,28 @@ export default function DashboardPage() {
                         <h3 className="text-[30px] font-medium text-foreground text-center">Personal records hit this week</h3>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
-                                <img src={badgeIcon} alt="Personal records badge" className="h-10 w-10 object-contain" />
+                                <img
+                                    src={badgeIcon}
+                                    alt="Personal records badge"
+                                    className="h-10 w-10 select-none object-contain opacity-85 dark:hidden"
+                                    draggable={false}
+                                />
+
+                                <span
+                                    aria-hidden="true"
+                                    className="hidden h-10 w-10 bg-white/90 dark:block"
+                                    style={{
+                                        WebkitMaskImage: `url(${badgeIcon})`,
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        WebkitMaskPosition: 'center',
+                                        WebkitMaskSize: 'contain',
+                                        maskImage: `url(${badgeIcon})`,
+                                        maskRepeat: 'no-repeat',
+                                        maskPosition: 'center',
+                                        maskSize: 'contain',
+                                    }}
+                                />
+
                                 <span className="text-4xl font-bold text-foreground">{prsThisWeek}</span>
                             </div>
                         </div>

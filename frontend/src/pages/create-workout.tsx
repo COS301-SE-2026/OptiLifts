@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useAuth } from '@/context/auth-context'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Dumbbell, Link2, ArrowLeft, AlertCircle} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,9 +22,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { WorkoutExercise, SetType } from '@/types/create-workout'
+import type { WorkoutExercise, SetType, ExerciseSet } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
+import { inputWeight, outputWeight } from '@/lib/weight-utils'
 
 type CatalogExercise = {
   id: string
@@ -32,6 +33,7 @@ type CatalogExercise = {
   muscleGroup: MuscleName
   equipment?: string
   imageUrl?: string
+  exerciseType?: string
 }
 
 type ExerciseApiResponse = {
@@ -40,6 +42,8 @@ type ExerciseApiResponse = {
   primaryMuscles?: string[]
   equipment?: string
   imageUrl?: string
+  exerciseType?: string
+  category?: string
 }
 
 type CreateWorkoutSetPayload = {
@@ -78,7 +82,7 @@ type SelectedWorkoutExercise = WorkoutExercise & {
   restTime?: number
 }
 
-const DEFAULT_REST = 60
+const DEFAULT_REST = 0
 
 type WorkoutSegment = 
   | { kind: 'single'; exercise: SelectedWorkoutExercise; index: number }
@@ -160,6 +164,65 @@ async function getErrorMessage(res: Response, fallback: string): Promise<string>
   }
 }
 
+//sonarqube nesting restrictions
+function mapApiSetsToExercise(apiSets: Array<{id: string; type:string; weight:number | null; reps: number | null 
+  duration?: number | null
+  distance?: number | null
+}>): ExerciseSet[]{
+  return apiSets.map(s => {
+    let setType: SetType = 'I'
+    if (s.type === 'Warmup'){
+      setType = 'W'
+    } else if (s.type === 'DropSet' || s.type === 'Dropset'){
+      setType = 'D';
+    }
+    return {
+      id: s.id,
+      type: setType,
+      kg: (s.weight === null ? '' : outputWeight(s.weight)) as number | '',
+      reps: (s.reps ?? '') as number | '',
+      time: (s.duration ?? '') as number | '',
+      distance: (s.distance ?? '') as number | ''
+    }
+  })
+}
+function mapApiExercises(
+  apiExercises: Array<{
+    id: string
+    exerciseId: string
+    name: string
+    primaryMuscle: string
+    exerciseType: string
+    sets: Array<{
+      id: string
+      type: string
+      weight: number | null
+      reps: number | null
+      restTime: number
+      duration?: number | null
+      distance?: number | null
+    }>
+    groupId?: string | null
+    imageUrl?:string | null
+  }>
+): SelectedWorkoutExercise[] {
+  return apiExercises.map((ex,idx,arr) => {
+    const linkedToNext = idx < arr.length-1 && !!ex.groupId && ex.groupId === arr[idx+1].groupId
+    const sets = mapApiSetsToExercise(ex.sets)
+  return {
+    id: ex.id,
+    name: ex.name,
+    muscle: ex.primaryMuscle as MuscleName,
+    imageUrl: ex.imageUrl ?? undefined,
+    sets,
+    exerciseCatalogId: ex.exerciseId,
+    linkedToNext,
+    restTime: ex.sets[0]?.restTime ?? 60,
+    exerciseType: ex.exerciseType
+  }
+})
+}
+
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
   const [workoutName, setWorkoutName] = useState('')
@@ -175,6 +238,69 @@ export default function CreateWorkoutPage() {
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { isAuthenticated } = useAuth()
   const [groupSettings, setGroupSettings] = useState<Record<string, { restTime: number }>>({})
+
+  //edit workout
+  const {id: workoutId} = useParams<{id: string}>()
+  const isEdit = !!workoutId
+  const [loadingWorkout, setLoadingWorkout] = useState(isEdit)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  useEffect(()=>{
+    if (!isEdit || !workoutId) return
+    const loadWorkoutDetails = async () => {
+      setLoadingWorkout(true)
+      setLoadError(null)
+      try {
+        const res = await customFetch(`/api/workouts/${workoutId}`)
+        if(!res.ok){
+          if (res.status === 404) {
+            throw new Error('Workout not found')
+          }
+          throw new Error(`Failed to load workout details (${res.status})`)
+        }
+        const workout = (await res.json()) as {
+          id: string
+          name: string
+          exercises: Array<{
+            id: string
+            exerciseId: string
+            name: string
+            primaryMuscle: string
+            exerciseType: string
+            sets: Array<{
+              id: string
+              type: string
+              weight: number | null
+              reps: number | null
+              restTime: number
+            }>
+            groupId?:string | null
+            groupType?:string | null
+            groupRestTime?: number | null
+            imageUrl?:string | null
+          }>
+        }
+        setWorkoutName(workout.name)
+
+        const newGroupSettings: Record<string, {restTime: number}> = {}
+        workout.exercises.forEach((ex,idx,arr) => {
+          if (ex.groupId){
+            if (idx === 0 || arr[idx-1].groupId !== ex.groupId){ //the anchor
+              newGroupSettings[ex.id] = {restTime: ex.groupRestTime ?? DEFAULT_REST}
+            }
+          }
+        })
+        setGroupSettings(newGroupSettings)
+
+        const mappedExercises = mapApiExercises(workout.exercises)
+        setExercises(mappedExercises)
+      } catch (err){
+        setLoadError(err instanceof Error ? err.message : 'Failed to load details of workout')
+      } finally {
+        setLoadingWorkout(false)
+      }
+    }
+    void loadWorkoutDetails()
+  }, [isEdit, workoutId])
 
   const toggleLink = (index: number) =>
     setExercises(prev => prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e)))
@@ -204,7 +330,8 @@ export default function CreateWorkoutPage() {
       name: ex.name,
       muscleGroup: (ex.primaryMuscles?.[0] || 'Other') as MuscleName,
       equipment: ex.equipment,
-      imageUrl: ex.imageUrl
+      imageUrl: ex.imageUrl,
+      exerciseType: ex.exerciseType ?? ex.category
     })) as CatalogExercise[]
   }, [])
 
@@ -248,6 +375,7 @@ export default function CreateWorkoutPage() {
         muscle: exercise.muscleGroup,
         sets: [],
         exerciseCatalogId: exercise.id,
+        exerciseType: exercise.exerciseType
       },
     ])
 
@@ -309,9 +437,9 @@ export default function CreateWorkoutPage() {
           sets: e.sets.map((s, setIndex) => ({
             type: SET_TYPE_MAP[s.type] ?? 'Normal',
             reps: s.reps === '' ? null : Number(s.reps),
-            weight: s.kg === '' ? null : Number(s.kg),
-            duration: null,
-            distance: null,
+            weight: s.kg === '' ? null : inputWeight(Number(s.kg)),
+            duration: s.time === undefined || s.time === '' ? null : Number(s.time),
+            distance: s.distance === undefined || s.distance === '' ? null : Number(s.distance),
             orderIndex: setIndex,
             restTime: e.restTime ?? 0,
           })),
@@ -323,8 +451,11 @@ export default function CreateWorkoutPage() {
     setSaveError(null)
     
     try {
-      const res = await customFetch('/api/workouts', {
-        method: 'POST',
+      const url = isEdit ? `/api/workouts/${workoutId}` : '/api/workouts'
+      const method = isEdit ? 'PUT' : 'POST'
+
+      const res = await customFetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify(payload),
       })
@@ -392,6 +523,23 @@ export default function CreateWorkoutPage() {
     ))
   })()
 
+  if (isEdit && loadingWorkout) {//edit page check   
+    return (
+      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl items-center justify-center px-6 py-16">
+        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground animate-pulse">Loading workout details</p>
+      </section>
+    )
+  }
+  if (!isEdit && loadError){
+    return (
+      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col items-center justify-center px-6 py-16 gap-4">
+        <p className="text-sm uppercase tracking-[0.2em] text-destructive font-semibold">Failed to load workout</p>
+        <p className="text-muted-foreground">{loadError}</p>
+        <Button onClick={() => navigate('/workouts')}>Back to Workouts</Button>
+      </section>
+    )
+  }
+
   return (
     <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
       <div className="grid grid-cols-12 gap-6 lg:h-full lg:min-h-0">
@@ -408,7 +556,7 @@ export default function CreateWorkoutPage() {
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back to Workouts</span>
               </Button>
-              <PageTitle title="Create Workout" />
+              <PageTitle title={isEdit ? "Edit Workout" : "Create Workout"}/>
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1 w-80">
                   <label htmlFor="workout-name" className="text-xs font-semibold uppercase tracking-[1px] text-muted-foreground font-sans">

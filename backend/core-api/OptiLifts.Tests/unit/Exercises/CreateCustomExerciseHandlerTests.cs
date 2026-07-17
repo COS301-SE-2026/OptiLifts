@@ -2,7 +2,9 @@ using System.Text;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Storage;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -22,7 +24,7 @@ public class CreateCustomExerciseHandlerTests
     }
 
     [Fact]
-    public async Task Handle_PersistsImageAsDataUrl_WithoutBlobStorage()
+    public async Task Handle_UploadsImageToBlobStorage_AndPersistsReturnedUrl()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         await connection.OpenAsync();
@@ -42,7 +44,17 @@ public class CreateCustomExerciseHandlerTests
         await context.SaveChangesAsync();
 
         await using var imageStream = new MemoryStream(Encoding.UTF8.GetBytes("fake-image-bytes"));
-        var handler = new CreateCustomExerciseHandler(context);
+        var blobMock = new Mock<IBlobStorageService>();
+        blobMock
+            .Setup(b => b.UploadFileAsync(
+                imageStream,
+                "curl.png",
+                "image/png",
+                "exercises",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://example.blob.core.windows.net/exercises/curl.png");
+
+        var handler = new CreateCustomExerciseHandler(context, blobMock.Object);
 
         var exerciseId = await handler.Handle(
             new CreateCustomExerciseCommand(
@@ -60,7 +72,7 @@ public class CreateCustomExerciseHandlerTests
 
         var exercise = await context.Exercises.SingleAsync(e => e.Id == exerciseId);
 
-        exercise.ImageUrl.Should().StartWith("data:image/png;base64,");
-        exercise.ImageUrl.Should().Contain(Convert.ToBase64String(Encoding.UTF8.GetBytes("fake-image-bytes")));
+        exercise.ImageUrl.Should().Be("https://example.blob.core.windows.net/exercises/curl.png");
+        blobMock.VerifyAll();
     }
 }

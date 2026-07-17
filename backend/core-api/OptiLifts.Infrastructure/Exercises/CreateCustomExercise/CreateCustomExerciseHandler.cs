@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Storage;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
@@ -13,11 +14,15 @@ namespace OptiLifts.Infrastructure.Exercises.CreateCustomExercise;
 
 public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseCommand, Guid>
 {
-    private readonly OptiLiftsDbContext _dbContext;
+    private const string ExerciseContainerName = "exercises";
 
-    public CreateCustomExerciseHandler(OptiLiftsDbContext dbContext)
+    private readonly OptiLiftsDbContext _dbContext;
+    private readonly IBlobStorageService _blobStorageService;
+
+    public CreateCustomExerciseHandler(OptiLiftsDbContext dbContext, IBlobStorageService blobStorageService)
     {
         _dbContext = dbContext;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Guid> Handle(CreateCustomExerciseCommand request, CancellationToken cancellationToken)
@@ -30,7 +35,12 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
 
         if (request.ImageStream != null && !string.IsNullOrEmpty(request.ImageFileName))
         {
-            imageUrl = await BuildImageDataUrlAsync(request.ImageStream, request.ImageContentType ?? "application/octet-stream", cancellationToken);
+            imageUrl = await _blobStorageService.UploadFileAsync(
+                request.ImageStream,
+                request.ImageFileName,
+                request.ImageContentType ?? "application/octet-stream",
+                ExerciseContainerName,
+                cancellationToken);
         }
 
         var exercise = new Exercise
@@ -58,20 +68,6 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return exercise.Id;
-    }
-
-    private static async Task<string> BuildImageDataUrlAsync(Stream stream, string contentType, CancellationToken cancellationToken)
-    {
-        if (stream.CanSeek)
-        {
-            stream.Position = 0;
-        }
-
-        await using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream, cancellationToken);
-
-        var base64 = Convert.ToBase64String(memoryStream.ToArray());
-        return $"data:{contentType};base64,{base64}";
     }
 
     private async Task<Guid> ResolveMuscleIdAsync(IEnumerable<string> values, string fieldName, CancellationToken cancellationToken)

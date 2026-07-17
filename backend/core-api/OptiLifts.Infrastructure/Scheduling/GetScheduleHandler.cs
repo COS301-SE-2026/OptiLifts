@@ -111,7 +111,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
         }
 
-        //will change once PR table is implemented
+        //Will change once PR table is implemented
         var PRs = 1;
 
         var scheduledEntryDtos = entries.Select(entry =>

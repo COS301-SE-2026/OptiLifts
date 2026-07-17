@@ -1,7 +1,13 @@
 import type { LoggedExerciseSet, PlannedExerciseSet } from '@/types/exercise-format'
+import { metricCheck, outputWeight } from './weight-utils'
 
 function formatWeight(weight: number) {
-  return `${Number.isInteger(weight) ? weight : weight.toFixed(1)}kg`
+  if (metricCheck()) {
+    return `${Number.isInteger(weight) ? weight : weight.toFixed(1)} KG`
+  }
+  else {
+    return `${Number.isInteger(outputWeight(weight)) ? outputWeight(weight) : outputWeight(weight).toFixed(1)} LB`
+  }
 }
 
 function formatRpe(rpe: number) {
@@ -40,7 +46,12 @@ function formatDurationValue(durationSeconds: number | null) {
 
 function formatDistanceValue(distance: number | null) {
   if (distance !== null) {
-    return `${Number.isInteger(distance) ? distance : distance.toFixed(1)}km`
+    if (metricCheck()) {
+      return `${Number.isInteger(distance) ? distance : distance.toFixed(1)} KM`
+    }else{
+      const miles = distance * 0.621371
+      return `${Number.isInteger(miles) ? miles : miles.toFixed(1)} MI`
+    }
   }
 
   return ''

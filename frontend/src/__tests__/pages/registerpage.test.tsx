@@ -81,21 +81,21 @@ describe('RegisterPage', () => {
                 value: 'a'.repeat(31) //beyond char limit ie invalid
             }
         });
-        expect(screen.queryByText(/Username must be 1-30 characters/i)).not.toBeNull();
+        expect(screen.getByText(/Username must be 1-30 characters/i)).toBeDefined();
 
         fireEvent.change(emailIn, {
             target: {
                 value: 'invalid'
             }
         });
-        expect(screen.queryByText(/Please enter a valid email address/i)).not.toBeNull();
+        expect(screen.getByText(/Please enter a valid email address/i)).toBeDefined();
 
         fireEvent.change(passIn, {
             target: {
                 value: 'short' //weak password
             }
         });
-        expect(screen.queryByText(/Password does not meet complexity requirements/i)).not.toBeNull();
+        expect(screen.getByText(/Password does not meet complexity requirements/i)).toBeDefined();
 
         fireEvent.change(passIn, {
             target: {
@@ -107,7 +107,7 @@ describe('RegisterPage', () => {
                 value: 'DiffPass123!'
             }
         });
-        expect(screen.queryByText(/Passwords do not match/i)).not.toBeNull();
+        expect(screen.getByText(/Passwords do not match/i)).toBeDefined();
         
     });
     

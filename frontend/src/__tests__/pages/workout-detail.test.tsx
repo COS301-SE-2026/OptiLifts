@@ -82,9 +82,9 @@ describe('WorkoutDetailPage', () => {
         });
         render(<WorkoutDetailPage />);
         await waitFor(() => {
-            expect(screen.queryByText('Hypertrophy Upper')).not.toBeNull();
+            expect(screen.getByText('Hypertrophy Upper')).toBeDefined();
         });
-        expect(screen.queryByText('Incline Bench Press')).not.toBeNull();
+        expect(screen.getByText('Incline Bench Press')).toBeDefined();
     });
 
     it('handles 404 workout not found', async () => {
@@ -99,7 +99,7 @@ describe('WorkoutDetailPage', () => {
         render(<WorkoutDetailPage />);
 
         await waitFor(() => {
-            expect(screen.queryByText(/Workout not found/i)).not.toBeNull();
+            expect(screen.getByText(/Workout not found/i)).toBeDefined();
         });
     });
 
@@ -115,7 +115,7 @@ describe('WorkoutDetailPage', () => {
         render(<WorkoutDetailPage />);
 
         await waitFor(() => {
-            expect(screen.queryByText(/Failed to load workout \(500\)/i)).not.toBeNull();
+            expect(screen.getByText(/Failed to load workout \(500\)/i)).toBeDefined();
         });
     });
 

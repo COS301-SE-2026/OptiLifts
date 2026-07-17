@@ -62,7 +62,7 @@ describe('ProfilePage', () => {
         });
         render(<ProfilePage />)
 
-        expect(screen.queryByText(/Loading profile.../i)).not.toBeNull();
+        expect(screen.getByText(/Loading profile.../i)).toBeDefined();
     });
 
     it('fetches and renders profile data, recent workouts and badges', async () => {
@@ -129,13 +129,13 @@ describe('ProfilePage', () => {
         render(<ProfilePage />)
         
         await waitFor(() => {
-            expect(screen.queryByText('John Doe')).not.toBeNull();
+            expect(screen.getByText('John Doe')).toBeDefined();
         });
 
         //check that all stuff rendered correctly
-        expect(screen.queryByText('Gym Enthus')).not.toBeNull();
-        expect(screen.queryByText('Iron Lifter')).not.toBeNull();
-        expect(screen.queryByText('Morning Push')).not.toBeNull();
+        expect(screen.getByText('Gym Enthus')).toBeDefined();
+        expect(screen.getByText('Iron Lifter')).toBeDefined();
+        expect(screen.getByText('Morning Push')).toBeDefined();
 
         const calendarDateBtn = screen.getByTestId('calendar-date');
         fireEvent.click(calendarDateBtn);
@@ -155,7 +155,7 @@ describe('ProfilePage', () => {
         render(<ProfilePage />);
 
         await waitFor(() => {
-            expect(screen.queryByText(/Failed to load profile \(500\)/i)).not.toBeNull();
+            expect(screen.getByText(/Failed to load profile \(500\)/i)).toBeDefined();
         });
     });
 });

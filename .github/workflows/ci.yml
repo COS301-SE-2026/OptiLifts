@@ -49,13 +49,20 @@ jobs:
 
     - name: Start E2E Services
       env:
+        COMPOSE_PROJECT_NAME: optilifts-e2e-ci
         AUTH_COOKIE_SECURE: 'false'
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: test
         POSTGRES_DB: optilifts_test
-      run: pnpm e2e:services:up:detached
+      run: |
+        set -a
+        . ./.env
+        set +a
+        pnpm e2e:services:up:detached
 
     - name: Wait for E2E App
+      env:
+        COMPOSE_PROJECT_NAME: optilifts-e2e-ci
       run: |
         curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5036/api/healthCheck
         curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5173/api/healthCheck
@@ -68,6 +75,7 @@ jobs:
 
     - name: Run End-to-End Tests
       env:
+        COMPOSE_PROJECT_NAME: optilifts-e2e-ci
         E2E_USE_EXISTING_SERVICES: '1'
         AUTH_COOKIE_SECURE: 'false'
         POSTGRES_USER: postgres

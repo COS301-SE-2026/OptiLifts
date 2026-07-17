@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import * as path from 'node:path';
 
 const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
+const useExistingServices = process.env.E2E_USE_EXISTING_SERVICES === '1';
 
 export default defineConfig({
     testDir: '.',
@@ -53,7 +54,7 @@ export default defineConfig({
         },
     ],
 
-    webServer: {
+    webServer: useExistingServices ? undefined : {
         command: 'pnpm e2e:services:webserver',
         cwd: '..',
         url: 'http://localhost:5173/api/healthCheck', //prevents tests from starting if the backend and frontend isn'r ready yet

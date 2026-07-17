@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test}
-      POSTGRES_DB: ${POSTGRES_DB:-optilifts_test}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -41,11 +41,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - POSTGRES_CONNECTION_STRING=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET:-test-jwt-secret} //uses fallback value if not set in environment, so for the e2e tests
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXP_MINUTES=${JWT_EXP_MINUTES}
-      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-+8bGaoOpx4CEfxnMcX1RG2qrcJaT+RZO/0IIpSePZQA=}
+      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY}
 
       - FRONTEND_ORIGIN=http://localhost
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
     
       - ConnectionStrings__AzureStorage=${ConnectionStrings__AzureStorage}
     

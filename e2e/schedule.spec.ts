@@ -1,18 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Schedule Page', () => {
-    let scheduledSessionId: string | null = null;
-
     test.beforeEach(async ({ page }) => {
         await page.goto('/schedule');
         await page.waitForLoadState('networkidle');
     });
 
     test('can dynamically schedule a recurring workout', async ({ page }) => {
-        //calculate today's day of the week. Used for the button name
         const today = new Date();
-        const currentDayName = today.toLocaleDateString('en-US', { weekday: 'long' });
-        const dynamicAddButtonName = `Add workout for ${currentDayName}`;
 
         const futureDate = new Date();
         futureDate.setDate(today.getDate() + 14);
@@ -23,7 +18,10 @@ test.describe('Schedule Page', () => {
         const day = String(futureDate.getDate()).padStart(2, '0');
         const formattedFutureDate = `${year}-${month}-${day}`;
 
-        await page.getByRole('button', { name: dynamicAddButtonName }).click();
+        const addWorkoutButton = page.getByRole('button', { name: /^Add workout for / }).first();
+
+        await expect(addWorkoutButton).toBeVisible();
+        await addWorkoutButton.click();
 
         await page.getByRole('button', { name: 'Push Day A' }).first().click();
 

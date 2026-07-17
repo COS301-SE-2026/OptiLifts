@@ -47,6 +47,12 @@ jobs:
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
 
+    - name: Start E2E Services
+      run: pnpm e2e:services:up:detached
+
+    - name: Wait for E2E App
+      run: curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5173/api/healthCheck
+
     - name: Lint Code
       run: pnpm lint
 
@@ -55,14 +61,14 @@ jobs:
 
     - name: Run Playwright Tests
       env:
+        E2E_USE_EXISTING_SERVICES: '1'
+        AUTH_COOKIE_SECURE: 'false'
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: test
         POSTGRES_DB: optilifts_test
-      run: pnpm test:e2e
-
-    - name: Tear Down E2E Services
-      if: always()
-      run: docker compose -f docker-compose.prod.yml down -v --remove-orphans
+      run: |
+        trap 'docker compose -f docker-compose.prod.yml down -v --remove-orphans' EXIT
+        pnpm test:e2e
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

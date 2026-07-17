@@ -37,6 +37,7 @@
     "e2e:services:up:detached": "docker compose -f docker-compose.prod.yml up -d",
     "e2e:services:down": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
     "e2e:services:rebuild": "pnpm e2e:services:build && pnpm e2e:services:up:detached",
+    "e2e:ci": "bash -lc 'set -euo pipefail; trap \"pnpm e2e:services:down\" EXIT; pnpm e2e:services:down >/dev/null 2>&1 || true; AUTH_COOKIE_SECURE=false POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=optilifts_test pnpm e2e:services:up:detached; curl --fail --retry 60 --retry-connrefused --retry-all-errors --retry-delay 1 http://localhost:5173/api/healthCheck; E2E_USE_EXISTING_SERVICES=1 AUTH_COOKIE_SECURE=false POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=optilifts_test pnpm test:e2e'",
 
     "cov": "concurrently \"pnpm cov:frontend\" \"pnpm cov:backend\" \"pnpm cov:ai\"",
     "cov:frontend": "pnpm --filter frontend cov",

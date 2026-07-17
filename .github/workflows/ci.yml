@@ -48,6 +48,11 @@ jobs:
       run: pnpm exec playwright install --with-deps
 
     - name: Start E2E Services
+      env:
+        AUTH_COOKIE_SECURE: 'false'
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: test
+        POSTGRES_DB: optilifts_test
       run: pnpm e2e:services:up:detached
 
     - name: Wait for E2E App

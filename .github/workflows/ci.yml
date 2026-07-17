@@ -54,11 +54,15 @@ jobs:
       run: pnpm test
 
     - name: Run Playwright Tests
+      env:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: test
+        POSTGRES_DB: optilifts_test
       run: pnpm test:e2e
 
     - name: Tear Down E2E Services
       if: always()
-      run: docker compose -f docker-compose.prod.yml down --remove-orphans
+      run: docker compose -f docker-compose.prod.yml down -v --remove-orphans
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

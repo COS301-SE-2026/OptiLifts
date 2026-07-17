@@ -54,9 +54,9 @@ export default defineConfig({
     ],
 
     webServer: {
-        command: 'pnpm e2e:services:up',
+        command: 'pnpm e2e:services:webserver',
         cwd: '..',
-        url: 'http://localhost:5173/api/healthCheck',
+        url: 'http://localhost:5173/api/healthCheck', //prevents tests from starting if the backend and frontend isn'r ready yet
         reuseExistingServer: !process.env.CI, //if pnpm dev/prod is running it will just use that one, otherwise it spins up a containerised prod stack
         timeout: 10 * 60 * 1000,
     },

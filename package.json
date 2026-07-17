@@ -33,8 +33,9 @@
     "test:e2e:ui": "playwright test --config=e2e/playwright.config.ts --ui",
     "e2e:services:build": "docker compose -f docker-compose.prod.yml build",
     "e2e:services:up": "docker compose -f docker-compose.prod.yml up",
+    "e2e:services:webserver": "bash -lc 'trap \"docker compose -f docker-compose.prod.yml down -v --remove-orphans\" EXIT; docker compose -f docker-compose.prod.yml up'",
     "e2e:services:up:detached": "docker compose -f docker-compose.prod.yml up -d",
-    "e2e:services:down": "docker compose -f docker-compose.prod.yml down --remove-orphans",
+    "e2e:services:down": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
     "e2e:services:rebuild": "pnpm e2e:services:build && pnpm e2e:services:up:detached",
 
     "cov": "concurrently \"pnpm cov:frontend\" \"pnpm cov:backend\" \"pnpm cov:ai\"",

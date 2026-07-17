@@ -26,6 +26,6 @@ public sealed class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery,
             throw new KeyNotFoundException();
         }
 
-        return new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt);
+        return new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme);
     }
 }

@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-workout'
+import { metricCheck } from '@/lib/weight-utils'
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
@@ -166,7 +167,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
             <span className="w-4 shrink-0"/>
             <span className="w-8 text-center">Set</span>
           </div>
-          <span className="flex-1 text-center">KG</span>
+          <span className="flex-1 text-center">{(metricCheck())? "KG" : "LB"}</span>
           <span className="flex-1 text-center">Reps</span>
           <span className="w-6 shrink-0" />
         </div>

@@ -13,6 +13,7 @@ import {
   type ChartData,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
 
@@ -51,7 +52,7 @@ const PERIOD_OPTIONS: VolumeChartPeriod[] = ['Week', 'Month', 'Year']
 
 export function VolumeChart({
   title = 'Volume',
-  unit = 'KG',
+  unit = (metricCheck())? 'KG' : 'LB',
   data,
   initialPeriod = 'Week',
   period,
@@ -75,7 +76,7 @@ export function VolumeChart({
     labels: chartPoints.map((p) => p.label),
     datasets: [
       {
-        data: chartPoints.map((p) => Math.max(0, p.value)),
+        data: chartPoints.map((p) => outputWeight(Math.max(0, p.value))),
         borderColor: brandColor,
         fill: true,
         backgroundColor: brandFill,

@@ -889,9 +889,107 @@ ExerciseDto fields:
 	"Squat": "http://127.0.0.1:10000/devstoreaccount1/exercises/squat.png",
 	"Deadlift": "http://127.0.0.1:10000/devstoreaccount1/exercises/deadlift.png"
 }
+```
+---
 
 ## Workouts
 
+### DELETE /api/workouts/{workoutId}
+**Service Name:** Workout Deletion Service
+
+**Description:**
+Deletes an existing workout owned by the authenticated user
+
+**Inputs:**
+- `workoutId`: Guid - the workout to delete
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `200 OK` on success
+- Returns `404` if the workout does not exist or is not owned by the user
+
+**Usage / Interaction Rules:**
+- Clients must send a DELETE request to `/api/workouts/{workoutId}`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"message": "Workout deleted successfully."
+}
+```
+
+---
+
+### POST /api/workouts/{workoutId}/duplicate
+**Service Name:** Workout Duplication Service
+
+**Description:**
+Creates a duplicate of an existing workout owned by the authenticated user
+
+**Inputs:**
+- `workoutId`: Guid - the workout to duplicate
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `workout`: `DuplicateWorkoutResult` - the duplicated workout summary
+
+`DuplicateWorkoutResult` fields:
+- `workoutId`: Guid - Newly created duplicated workout identifier.
+- `name`: string - Workout name.
+- `folderId`: Guid | null - Folder identifier, if any.
+- `createdAt`: datetime - Creation timestamp.
+
+**Usage / Interaction Rules:**
+- Clients must send a POST request to `/api/workouts/{workoutId}/duplicate`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+- Returns `404` if the workout does not exist or is not owned by the user
+
+**Example Response:**
+```json
+{
+	"workout": {
+		"workoutId": "string",
+		"name": "Push Day Copy",
+		"folderId": "string",
+		"createdAt": "2026-07-16T10:00:00Z"
+	}
+}
+```
+
+---
+
+### PUT /api/workouts/{workoutId}
+**Service Name:** Workout Update Service
+
+**Description:**
+Updates an existing workout owned by the authenticated user
+
+**Inputs:**
+- `workoutId`: Guid - the workout to update
+- `folderId`: Guid | null - Optional folder identifier
+- `name`: string - workout name
+- `exercises`: array of workout exercise objects - The updated exercise list
+- `groups`: array of workout group objects | null - Optional grouped exercise structure
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- No content on success
+- Returns `404` if the workout does not exist or is not owned by the user
+
+**Usage / Interaction Rules:**
+- Clients must send a PUT request to `/api/workouts/{workoutId}` with JSON data
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+
+**Example Response:**
+```http
+HTTP/1.1 200 OK
+```
+
+---
 
 ## Workout Exercises and Sets
 
@@ -899,5 +997,226 @@ ExerciseDto fields:
 ## Global and custom exercises
 
 ## Scheduling
+
+### GET /api/users/me/schedule
+**Service Name:** User Schedule Query Service
+
+**Description:**
+Returns the user's scheduled workout entries between a date range
+
+**Inputs:**
+- `startDate`: datetime | null - Optional start of schedule range
+- `endDate`: datetime | null - Optional end of the schedule range
+- `status`: string | null - Optional schedule status filter
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `schedule`: array of `ScheduledEntryDto` - The user's scheduled workout entries:
+    - `id`: Guid - Scheduled entry identifier
+    - `workoutId`: Guid - Linked workout identifier
+    - `workoutName`: string - Workout name
+    - `scheduled`: datetime - Scheduled date and time
+    - `status`: string - Entry status
+    - `primaryMuscleGroups`: array of string - Primary muscle groups
+    - `exerciseCount`: integer - Number of exercises in the workout
+    - `exercisePreview`: array of string - Preview of exercise names
+    - `totalVolume`: float - Total volume for the workout
+    - `totalSets`: integer Total
+	- `startedAt`: datetime | null - Start timestamp if session has started
+	- `completedAt`: datetime | null - Completion teimstamp is the session has been finished
+	- `recordCount`: integer | null - Number of personal records for the session
+	- `logId`: Guid | null - Linked workout log identifer
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/users/me/schedule`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+
+**Example Response:**
+
+```json
+{
+    "schedule": [
+		{
+			"id": "string",
+			"workoutId": "string",
+			"workoutName": "Push Day",
+			"scheduled": "2026-07-16T10:00:00Z",
+			"status": "Scheduled",
+			"primaryMuscleGroups": ["Chest", "Triceps"],
+			"exerciseCount": 5,
+			"exercisePreview": ["Bench Press", "Incline Press"],
+			"totalVolume": 10250,
+			"totalSets": 18,
+			"startedAt": null,
+			"completedAt": null,
+			"recordCount": 0,
+			"logId": null
+		}
+	]
+}
+```
+
+---
+
+### GET /api/users/me/schedule/analytics
+**Service Name:** Schedule Analytics Query Service
+
+**Description:**
+Returns summary analytics for the user's scheduled workouts over a date range
+
+**Inputs:**
+- `startsDate`: datetime | null - Optional start of analytics range
+- `endDate`: datetime | null - Optional end of the analytics range
+- `status`: string | null - Optional schedule status filtering
+- `access_token` cookie: string - HTTP-only cookie for current user 
+
+**Outputs:**
+- `analytics`: `ScheduleAnalyticsDto` - Summary analytics for the filtered schedule
+
+`ScheduleAnalyticsDto` fields:
+- `totalWorkouts`: integer - Total number of workouts in the result set.
+- `totalVolume`: float - Total training volume.
+- `totalSets`: integer - Total number of sets.
+- `muscleDistribution`: array of `MuscleDistributionDto` - Muscle group breakdown.
+
+`MuscleDistributionDto` fields:
+- `muscleGroup`: string - Muscle group name.
+- `setCount`: integer - Number of sets for the muscle group.
+- `percentage`: float - Percentage share of total sets.
+
+**Usage / Interaction Rules:**
+- Client must send GET request to `/api/users/me/schedule/analytics`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"analytics": {
+		"totalWorkouts": 12,
+		"totalVolume": 45230,
+		"totalSets": 188,
+		"muscleDistribution": [
+			{
+				"muscleGroup": "Chest",
+				"setCount": 42,
+				"percentage": 22.3
+			}
+		]
+	}
+}
+```
+
+---
+
+### POST /api/users/me/schedule/sessions
+**Service Name:** Scheduled Session Creation Service
+
+**Description:**
+Creates a scheduled workout session for the authenticated user
+
+**Inputs:**
+- `workoutId`: Guid - The workout to schedule
+- `scheduledAt`: datetime - The scheduled date for the session
+- `status`: string - The initial schedule status
+- `repeat`: string | null - Optional repeat field
+- `interval`: integer | null - Optional repeat interval
+- `until`: datetime | null - Optional repeat end date
+- `access_token` cookie: string - HTTP-only cookie for current user 
+
+**Outputs:**
+- `session`: `CreateScheduledSessionResult` - The created scheduled session
+
+`CreateScheduledSessionResult` fields:
+- `id`: Guid - Scheduled session identifier.
+- `workoutId`: Guid - Linked workout identifier.
+- `scheduledAt`: datetime - Scheduled date and time.
+- `status`: string - Session status.
+
+**Usage / Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/schedule/sessions` with JSON data
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+- Returns `404` if the workout does not exist or is not owned by the user
+
+**Example Response:**
+```json
+{
+	"session": {
+		"id": "string",
+		"workoutId": "string",
+		"scheduledAt": "2026-07-16T10:00:00Z",
+		"status": "Scheduled"
+	}
+}
+```
+
+---
+
+### DELETE /api/users/me/schedule/sessions/{sessionId}
+**Service Name:** Scheduled Session Removal Service
+
+**Description:**
+Deletes a scheduled workout session for the authenticated user
+
+**Inputs:**
+- `sessionId`: Guid - The scheduled workout session to delete
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- No content on success
+- Returns `404` if the workout does not exist or is not owned by the user
+
+**Usage / Interaction Rules:**
+- Clients must send a DELETE request to `/api/users/me/schedule/sessions/{sessionId}`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+
+**Example Response:**
+```http
+HTTP/1.1 204 No Content
+```
+
+---
+
+### PATCH /api/users/me/schedule/sessions/{sessionId}
+**Service Name:** Scheduled Session Status Update Service
+
+**Description:**
+Update the status of an existing scheduled workout session
+
+**Inputs:**
+- `sessionId`: Guid - the scheduled session to update
+- `status`: string - The new schedule status
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `session`: `UpdateScheduledSessionStatusResult` - The updated scheduled session
+`UpdateScheduledSessionStatusResult` fields:
+- `id`: Guid - Scheduled session identifier.
+- `workoutId`: Guid - Linked workout identifier.
+- `scheduledAt`: datetime - Scheduled date and time.
+- `status`: string - Updated session status.
+
+**Usage / Interaction Rules:**
+- Clients must send a PATCH request to `/api/users/me/schedule/sessions/{sessionId}` with JSON data
+- The browser automatically attaches the `access_token` cookie
+- Returns `401` if the cookie is missing or it is invalid
+- Returns `404` if the workout does not exist or is not owned by the user
+
+**Example Response:**
+```json
+{
+	"session": {
+		"id": "string",
+		"workoutId": "string",
+		"scheduledAt": "2026-07-16T10:00:00Z",
+		"status": "Completed"
+	}
+}
+```
+
+---
 
 # Deployment

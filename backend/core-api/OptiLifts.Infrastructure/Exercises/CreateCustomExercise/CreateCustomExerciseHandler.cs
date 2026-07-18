@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ namespace OptiLifts.Infrastructure.Exercises.CreateCustomExercise;
 
 public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseCommand, Guid>
 {
+    private const string ExerciseContainerName = "exercises";
+
     private readonly OptiLiftsDbContext _dbContext;
     private readonly IBlobStorageService _blobStorageService;
 
@@ -36,7 +39,7 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
                 request.ImageStream,
                 request.ImageFileName,
                 request.ImageContentType ?? "application/octet-stream",
-                "exercises",
+                ExerciseContainerName,
                 cancellationToken);
         }
 

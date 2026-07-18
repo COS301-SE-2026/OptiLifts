@@ -156,6 +156,6 @@ public class GetProfileOverviewHandlerTests
         result.RecentWorkouts.Should().HaveCount(1);
         result.RecentWorkouts[0].Name.Should().Be("Push Day");
         result.ChartData.Should().HaveCount(12);
-        result.ChartTitle.Should().Be("Workout activity");
+        result.ChartTitle.Should().Be("Workout volume");
     }
 }

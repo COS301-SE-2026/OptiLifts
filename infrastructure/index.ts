@@ -224,7 +224,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "JWT_EXP_MINUTES", value: jwtExpMin },
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
-                { name: "ConnectionStrings__AzureStorage", secretRef: "storage-connection-string" },
+                { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
             ],
         }],
     },

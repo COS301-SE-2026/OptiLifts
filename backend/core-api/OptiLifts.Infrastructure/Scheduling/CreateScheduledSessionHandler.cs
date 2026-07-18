@@ -1,4 +1,3 @@
-using Azure.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.CreateScheduledSession;
@@ -15,7 +14,7 @@ public sealed class CreateScheduledSessionHandler : IRequestHandler<CreateSchedu
     }
     public async Task<CreateScheduledSessionResult?> Handle(CreateScheduledSessionCommand request, CancellationToken cancellationToken)
     {
-        var workoutExist = await _dbContext.Workouts.AnyAsync(w => w.Id == request.WorkoutId && w.CreatedBy == request.UserId, cancellationToken);
+        var workoutExist = await _dbContext.Workouts.AnyAsync(w => w.Id == request.WorkoutId && w.CreatedBy == request.UserId && !w.IsDeleted, cancellationToken);
         if (!workoutExist)
         {
             return null;

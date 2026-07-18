@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using OptiLifts.API.Controllers;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Exercises.DeleteCustomExercise;
 using OptiLifts.Application.Exercises.GetExercises;
 using Xunit;
 
@@ -68,5 +69,23 @@ public class ExercisesControllerTests
         result.Should().BeOfType<OkObjectResult>();
         var ok = result as OkObjectResult;
         ok!.Value.Should().BeEquivalentTo(new { Id = createdId });
+    }
+
+    [Fact]
+    public async Task DeleteCustomExercise_ReturnsNoContent_WhenSuccessful()
+    {
+        var userId = Guid.NewGuid();
+        var exerciseId = Guid.NewGuid();
+
+        var mediatorMock = new Mock<IMediator>();
+        mediatorMock.Setup(m => m.Send(It.Is<DeleteCustomExerciseCommand>(c => c.ExerciseId == exerciseId && c.UserId == userId), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var controller = new ExercisesController(mediatorMock.Object);
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) }));
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } };
+
+        var result = await controller.DeleteCustomExercise(exerciseId, CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
     }
 }

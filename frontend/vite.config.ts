@@ -43,6 +43,9 @@ export default defineConfig(({ mode }) => {
       }) : null,
 
     ],
+    test: {
+      environment: 'jsdom',
+    },
     server: {
       port: frontendPort,
       proxy: {

@@ -25,10 +25,14 @@ public sealed class AuthController : ControllerBase
     private void SetTokenCookies(string accessToken, string refreshToken)
     {
         var env = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var cookieSecureSetting = Environment.GetEnvironmentVariable("AUTH_COOKIE_SECURE");
+        var secureCookies = bool.TryParse(cookieSecureSetting, out var parsedSecureCookies)
+            ? parsedSecureCookies
+            : env.IsProduction();
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = env.IsProduction(),
+            Secure = secureCookies,
             SameSite = SameSiteMode.Lax, //should send cookies with cross site requests for top navigation
             Path = "/",
             Expires = DateTime.UtcNow.AddHours(2)
@@ -41,10 +45,14 @@ public sealed class AuthController : ControllerBase
     private void ClearTokenCookies()
     {
         var env = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var cookieSecureSetting = Environment.GetEnvironmentVariable("AUTH_COOKIE_SECURE");
+        var secureCookies = bool.TryParse(cookieSecureSetting, out var parsedSecureCookies)
+            ? parsedSecureCookies
+            : env.IsProduction();
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = env.IsProduction(),
+            Secure = secureCookies,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             Expires = DateTime.UtcNow.AddDays(-1) //setting expiration date to yesterdya deletes cookie

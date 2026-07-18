@@ -33,7 +33,7 @@ public class DeleteWorkoutHandlertests
     }
 
     [Fact]
-    public async Task Handle_DeletesWorkoutAndCascades_WhenOwnedWorkoutExists()
+    public async Task Handle_SoftDeletesWorkoutAndKeepsRelatedEntities_WhenOwnedWorkoutExists()
     {
         var userId = Guid.NewGuid();
         using var conn = new SqliteConnection("DataSource=:memory:");
@@ -106,18 +106,20 @@ public class DeleteWorkoutHandlertests
             CancellationToken.None);
         result.Should().BeTrue();
 
-        //check cascading
+        //check soft delete
         var deleted = await db.Workouts.FindAsync(workout.Id);
-        deleted.Should().BeNull();
+        deleted.Should().NotBeNull();
+        deleted!.IsDeleted.Should().BeTrue();
+        deleted.DeletedAt.Should().NotBeNull();
 
         var delExercises = await db.WorkoutExercises
             .Where(we => we.WorkoutId == workout.Id)
             .ToListAsync();
-        delExercises.Should().BeEmpty();
+        delExercises.Should().NotBeEmpty();
 
         var deleSets = await db.Sets
             .Where(s => s.WorkoutExerciseId == workoutExer.Id)
             .ToListAsync();
-        deleSets.Should().BeEmpty();
+        deleSets.Should().NotBeEmpty();
     }
 }

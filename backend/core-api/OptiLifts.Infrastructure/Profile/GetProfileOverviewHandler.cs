@@ -91,7 +91,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var chartData = BuildWeeklyChartData(
             sessions.Select(session => session.CompletedAt),
             ChartWindowWeeks,
-            "Workout activity");
+            "Workout volume");
 
         return new ProfileOverviewDto(
             new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),
@@ -152,7 +152,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var chartData = BuildWeeklyChartData(
             workouts.Select(workout => workout.CreatedAt),
             ChartWindowWeeks,
-            "Workout creation");
+            "Workout volume");
 
         return new ProfileOverviewDto(
             new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),

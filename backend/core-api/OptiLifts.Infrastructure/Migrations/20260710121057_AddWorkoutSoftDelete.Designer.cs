@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710121057_AddWorkoutSoftDelete")]
+    partial class AddWorkoutSoftDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -605,21 +608,9 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("ai_suggested");
 
-                    b.Property<float?>("Distance")
-                        .HasColumnType("real")
-                        .HasColumnName("distance");
-
-                    b.Property<int?>("Duration")
-                        .HasColumnType("integer")
-                        .HasColumnName("duration");
-
                     b.Property<Guid>("ExerciseId")
                         .HasColumnType("uuid")
                         .HasColumnName("exercise_id");
-
-                    b.Property<int>("GroupNumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("group_number");
 
                     b.Property<Guid>("LogId")
                         .HasColumnType("uuid")
@@ -636,10 +627,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.Property<int>("Reps")
                         .HasColumnType("integer")
                         .HasColumnName("reps");
-
-                    b.Property<int>("RestTime")
-                        .HasColumnType("integer")
-                        .HasColumnName("rest_time");
 
                     b.Property<float>("Rpe")
                         .HasColumnType("real")
@@ -658,15 +645,13 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("real")
                         .HasColumnName("weight");
 
-                    b.Property<Guid?>("WorkoutExerciseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("workout_exercise_id");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ExerciseId");
 
                     b.HasIndex("LogId");
+
+                    b.HasIndex("SetId");
 
                     b.ToTable("workout_log_sets", (string)null);
                 });
@@ -836,6 +821,11 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasForeignKey("LogId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Workouts.WorkoutSet", null)
+                        .WithMany()
+                        .HasForeignKey("SetId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

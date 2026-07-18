@@ -59,10 +59,21 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             })
             .ToListAsync(cancellationToken);
 
-        var workoutExerciseById = workoutExercises.ToDictionary(exercise => exercise.Id);
-        var workoutExercisesByExerciseId = workoutExercises
-            .GroupBy(exercise => exercise.ExerciseId)
-            .ToDictionary(group => group.Key, group => group.OrderBy(exercise => exercise.OrderIndex).ToArray());
+        var logExercises = await (
+            from workoutLogExercise in _dbContext.WorkoutLogExercises.AsNoTracking()
+            where workoutLogExercise.LogId == log.Id
+            join exercise in _dbContext.Exercises.AsNoTracking() on workoutLogExercise.ExerciseId equals exercise.Id
+            join muscle in _dbContext.Muscles.AsNoTracking() on exercise.PrimaryMuscleId equals muscle.Id
+            orderby workoutLogExercise.OrderIndex, workoutLogExercise.Id
+            select new WorkoutLogExerciseRow(
+                workoutLogExercise.Id,
+                workoutLogExercise.ExerciseId,
+                workoutLogExercise.WorkoutExerciseId,
+                workoutLogExercise.OrderIndex,
+                exercise.Name,
+                muscle.Name,
+                exercise.ExerciseType))
+            .ToListAsync(cancellationToken);
 
         var logSetRows = await _dbContext.WorkoutLogSets
             .AsNoTracking()
@@ -81,81 +92,89 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                 workoutSetLog.Rpe))
             .ToListAsync(cancellationToken);
 
-        var resolvedLogSetRows = logSetRows
-            .Select(logSetRow =>
-            {
-                if (logSetRow.WorkoutExerciseId is not null
-                    && workoutExerciseById.TryGetValue(logSetRow.WorkoutExerciseId.Value, out var exactExercise))
+        ExerciseProjection[] exercises;
+
+        if (logExercises.Count > 0)
+        {
+            var orderedExercises = logExercises
+                .Select(row => new ExerciseProjection(
+                    row.WorkoutExerciseId ?? row.Id,
+                    row.ExerciseId,
+                    row.ExerciseName,
+                    row.PrimaryMuscleName,
+                    row.ExerciseType,
+                    row.OrderIndex))
+                .OrderBy(row => row.OrderIndex)
+                .ThenBy(row => row.Name)
+                .ToArray();
+
+            var exerciseKeyByWorkoutExerciseId = logExercises
+                .Where(row => row.WorkoutExerciseId is not null)
+                .ToDictionary(row => row.WorkoutExerciseId!.Value, row => row.WorkoutExerciseId!.Value);
+
+            var exercisesByExerciseId = orderedExercises
+                .GroupBy(exercise => exercise.ExerciseId)
+                .ToDictionary(group => group.Key, group => group.ToArray());
+
+            var setsByExerciseKey = ResolveSets(logSetRows, exerciseKeyByWorkoutExerciseId, exercisesByExerciseId);
+
+            exercises = orderedExercises
+                .Select(entry => entry with
                 {
-                    return new WorkoutLogSetResolvedRow(
-                        exactExercise.Id,
-                        exactExercise.OrderIndex,
-                        logSetRow.Id,
-                        logSetRow.SetId,
-                        logSetRow.Type,
-                        logSetRow.Reps,
-                        logSetRow.Weight,
-                        logSetRow.OrderIndex,
-                        logSetRow.Rpe);
-                }
+                    Sets = setsByExerciseKey.TryGetValue(entry.Id, out var workoutSets)
+                        ? workoutSets
+                        : []
+                })
+                .ToArray();
+        }
+        else
+        {
+            var workoutExerciseById = workoutExercises.ToDictionary(exercise => exercise.Id);
 
-                if (!workoutExercisesByExerciseId.TryGetValue(logSetRow.ExerciseId, out var matchingExercises))
+            var exerciseKeyByWorkoutExerciseId = workoutExerciseById
+                .ToDictionary(entry => entry.Key, entry => entry.Key);
+
+            var orderedExercises = workoutExercises
+                .Select(entry => new ExerciseProjection(
+                    entry.Id,
+                    entry.ExerciseId,
+                    entry.ExerciseName,
+                    entry.PrimaryMuscleName,
+                    entry.ExerciseType,
+                    entry.OrderIndex))
+                .ToArray();
+
+            var exercisesByExerciseId = orderedExercises
+                .GroupBy(exercise => exercise.ExerciseId)
+                .ToDictionary(group => group.Key, group => group.ToArray());
+
+            var setsByExerciseKey = ResolveSets(logSetRows, exerciseKeyByWorkoutExerciseId, exercisesByExerciseId);
+
+            exercises = orderedExercises
+                .Select(entry => entry with
                 {
-                    return null;
-                }
+                    Sets = setsByExerciseKey.TryGetValue(entry.Id, out var workoutSets)
+                        ? workoutSets
+                        : []
+                })
+                .ToArray();
+        }
 
-                var fallbackExercise = matchingExercises[0];
-                return new WorkoutLogSetResolvedRow(
-                    fallbackExercise.Id,
-                    fallbackExercise.OrderIndex,
-                    logSetRow.Id,
-                    logSetRow.SetId,
-                    logSetRow.Type,
-                    logSetRow.Reps,
-                    logSetRow.Weight,
-                    logSetRow.OrderIndex,
-                    logSetRow.Rpe);
-            })
-            .Where(resolved => resolved is not null)
-            .Select(resolved => resolved!)
-            .OrderBy(row => row.WorkoutExerciseOrderIndex)
-            .ThenBy(row => row.OrderIndex)
-            .ThenBy(row => row.Id)
-            .ToList();
-
-        var setsByWorkoutExerciseId = resolvedLogSetRows
-            .GroupBy(row => row.WorkoutExerciseId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderBy(row => row.OrderIndex)
-                    .Select(row => new WorkoutLogSetDto(
-                        row.Id,
-                        row.SetId,
-                        row.Type.ToString(),
-                        row.Reps,
-                        row.Weight,
-                        row.OrderIndex,
-                        row.Rpe))
-                    .ToArray());
-
-        var exercises = workoutExercises.Select(entry => new WorkoutLogExerciseDetailDto(
+        var exerciseDtos = exercises.Select(entry => new WorkoutLogExerciseDetailDto(
             entry.Id,
             entry.ExerciseId,
-            entry.ExerciseName,
-            entry.PrimaryMuscleName,
+            entry.Name,
+            entry.PrimaryMuscle,
             ToFrontendExerciseType(entry.ExerciseType),
             entry.OrderIndex,
-            setsByWorkoutExerciseId.TryGetValue(entry.Id, out var workoutSets)
-                ? workoutSets
-                : [])).ToArray();
+            entry.Sets)).ToArray();
 
-        var primaryMuscleGroups = exercises
+        var primaryMuscleGroups = exerciseDtos
             .Select(exercise => exercise.PrimaryMuscle)
             .Distinct()
             .ToArray();
 
-        var exercisePreview = exercises
+        var exercisePreview = exerciseDtos
             .Select(exercise => exercise.Name)
             .Distinct()
             .Take(3)
@@ -172,7 +191,67 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             log.CompletedAt is null ? null : FormatDuration(log.CompletedAt.Value - log.StartedAt),
             primaryMuscleGroups,
             exercisePreview,
-            exercises);
+            exerciseDtos);
+    }
+
+    private static Dictionary<Guid, WorkoutLogSetDto[]> ResolveSets(
+        IEnumerable<WorkoutLogSetRow> logSetRows,
+        IReadOnlyDictionary<Guid, Guid> exerciseKeyByWorkoutExerciseId,
+        IReadOnlyDictionary<Guid, ExerciseProjection[]> exercisesByExerciseId)
+    {
+        var resolvedLogSetRows = logSetRows
+            .Select(logSetRow =>
+            {
+                if (logSetRow.WorkoutExerciseId is not null
+                    && exerciseKeyByWorkoutExerciseId.TryGetValue(logSetRow.WorkoutExerciseId.Value, out var exactExerciseKey))
+                {
+                    return new WorkoutLogSetResolvedRow(
+                        exactExerciseKey,
+                        logSetRow.Id,
+                        logSetRow.SetId,
+                        logSetRow.Type,
+                        logSetRow.Reps,
+                        logSetRow.Weight,
+                        logSetRow.OrderIndex,
+                        logSetRow.Rpe);
+                }
+
+                if (!exercisesByExerciseId.TryGetValue(logSetRow.ExerciseId, out var matchingExercises))
+                {
+                    return null;
+                }
+
+                var fallbackExercise = matchingExercises[0];
+                return new WorkoutLogSetResolvedRow(
+                    fallbackExercise.Id,
+                    logSetRow.Id,
+                    logSetRow.SetId,
+                    logSetRow.Type,
+                    logSetRow.Reps,
+                    logSetRow.Weight,
+                    logSetRow.OrderIndex,
+                    logSetRow.Rpe);
+            })
+            .Where(resolved => resolved is not null)
+            .Select(resolved => resolved!)
+            .ToList();
+
+        return resolvedLogSetRows
+            .GroupBy(row => row.ExerciseKey)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(row => row.OrderIndex)
+                    .ThenBy(row => row.Id)
+                    .Select(row => new WorkoutLogSetDto(
+                        row.Id,
+                        row.SetId,
+                        row.Type,
+                        row.Reps,
+                        row.Weight,
+                        row.OrderIndex,
+                        row.Rpe))
+                    .ToArray());
     }
 
     private static string ToFrontendExerciseType(OptiLifts.Domain.Workouts.ExerciseType exerciseType)
@@ -210,9 +289,28 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         int OrderIndex,
         float Rpe);
 
+    private sealed record WorkoutLogExerciseRow(
+        Guid Id,
+        Guid ExerciseId,
+        Guid? WorkoutExerciseId,
+        int OrderIndex,
+        string ExerciseName,
+        string PrimaryMuscleName,
+        OptiLifts.Domain.Workouts.ExerciseType ExerciseType);
+
+    private sealed record ExerciseProjection(
+        Guid Id,
+        Guid ExerciseId,
+        string Name,
+        string PrimaryMuscle,
+        OptiLifts.Domain.Workouts.ExerciseType ExerciseType,
+        int OrderIndex)
+    {
+        public WorkoutLogSetDto[] Sets { get; init; } = [];
+    }
+
     private sealed record WorkoutLogSetResolvedRow(
-        Guid WorkoutExerciseId,
-        int WorkoutExerciseOrderIndex,
+        Guid ExerciseKey,
         Guid Id,
         Guid? SetId,
         string Type,

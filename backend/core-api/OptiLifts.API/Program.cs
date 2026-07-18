@@ -35,7 +35,7 @@ builder.WebHost.UseSentry(options =>
     options.Debug = true;
     var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
     options.Environment = envName;
-    
+
     if (envName == "Development" || envName == "Testing")
     {
         options.InitializeSdk = false;

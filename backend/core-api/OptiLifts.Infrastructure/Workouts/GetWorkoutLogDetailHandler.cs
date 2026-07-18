@@ -59,14 +59,19 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             })
             .ToListAsync(cancellationToken);
 
-        var logSetRows = await (
-            from workoutSetLog in _dbContext.WorkoutLogSets.AsNoTracking()
-            where workoutSetLog.LogId == log.Id
-            join workoutExercise in _dbContext.WorkoutExercises.AsNoTracking() on workoutSetLog.ExerciseId equals workoutExercise.ExerciseId
-            where workoutExercise.WorkoutId == workout.Id
-            orderby workoutExercise.OrderIndex, workoutSetLog.OrderIndex, workoutSetLog.Id
-            select new WorkoutLogSetRow(
-                workoutExercise.Id,
+        var workoutExerciseById = workoutExercises.ToDictionary(exercise => exercise.Id);
+        var workoutExercisesByExerciseId = workoutExercises
+            .GroupBy(exercise => exercise.ExerciseId)
+            .ToDictionary(group => group.Key, group => group.OrderBy(exercise => exercise.OrderIndex).ToArray());
+
+        var logSetRows = await _dbContext.WorkoutLogSets
+            .AsNoTracking()
+            .Where(workoutSetLog => workoutSetLog.LogId == log.Id)
+            .OrderBy(workoutSetLog => workoutSetLog.OrderIndex)
+            .ThenBy(workoutSetLog => workoutSetLog.Id)
+            .Select(workoutSetLog => new WorkoutLogSetRow(
+                workoutSetLog.WorkoutExerciseId,
+                workoutSetLog.ExerciseId,
                 workoutSetLog.Id,
                 workoutSetLog.SetId,
                 workoutSetLog.Type.ToString(),
@@ -76,7 +81,49 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                 workoutSetLog.Rpe))
             .ToListAsync(cancellationToken);
 
-        var setsByWorkoutExerciseId = logSetRows
+        var resolvedLogSetRows = logSetRows
+            .Select(logSetRow =>
+            {
+                if (logSetRow.WorkoutExerciseId is not null
+                    && workoutExerciseById.TryGetValue(logSetRow.WorkoutExerciseId.Value, out var exactExercise))
+                {
+                    return new WorkoutLogSetResolvedRow(
+                        exactExercise.Id,
+                        exactExercise.OrderIndex,
+                        logSetRow.Id,
+                        logSetRow.SetId,
+                        logSetRow.Type,
+                        logSetRow.Reps,
+                        logSetRow.Weight,
+                        logSetRow.OrderIndex,
+                        logSetRow.Rpe);
+                }
+
+                if (!workoutExercisesByExerciseId.TryGetValue(logSetRow.ExerciseId, out var matchingExercises))
+                {
+                    return null;
+                }
+
+                var fallbackExercise = matchingExercises[0];
+                return new WorkoutLogSetResolvedRow(
+                    fallbackExercise.Id,
+                    fallbackExercise.OrderIndex,
+                    logSetRow.Id,
+                    logSetRow.SetId,
+                    logSetRow.Type,
+                    logSetRow.Reps,
+                    logSetRow.Weight,
+                    logSetRow.OrderIndex,
+                    logSetRow.Rpe);
+            })
+            .Where(resolved => resolved is not null)
+            .Select(resolved => resolved!)
+            .OrderBy(row => row.WorkoutExerciseOrderIndex)
+            .ThenBy(row => row.OrderIndex)
+            .ThenBy(row => row.Id)
+            .ToList();
+
+        var setsByWorkoutExerciseId = resolvedLogSetRows
             .GroupBy(row => row.WorkoutExerciseId)
             .ToDictionary(
                 group => group.Key,
@@ -153,7 +200,19 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
     }
 
     private sealed record WorkoutLogSetRow(
+        Guid? WorkoutExerciseId,
+        Guid ExerciseId,
+        Guid Id,
+        Guid? SetId,
+        string Type,
+        int Reps,
+        float Weight,
+        int OrderIndex,
+        float Rpe);
+
+    private sealed record WorkoutLogSetResolvedRow(
         Guid WorkoutExerciseId,
+        int WorkoutExerciseOrderIndex,
         Guid Id,
         Guid? SetId,
         string Type,

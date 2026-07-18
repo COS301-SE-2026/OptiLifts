@@ -88,6 +88,7 @@ function App() {
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
           <Route path="workouts/edit/:id" element={<CreateWorkoutPage />} />
+          <Route path="active-session" element={<ActiveSessionPage />} />
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />

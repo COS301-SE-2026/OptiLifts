@@ -595,9 +595,21 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("ai_suggested");
 
+                    b.Property<float?>("Distance")
+                        .HasColumnType("real")
+                        .HasColumnName("distance");
+
+                    b.Property<int?>("Duration")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration");
+
                     b.Property<Guid>("ExerciseId")
                         .HasColumnType("uuid")
                         .HasColumnName("exercise_id");
+
+                    b.Property<int>("GroupNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_number");
 
                     b.Property<Guid>("LogId")
                         .HasColumnType("uuid")
@@ -614,6 +626,10 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.Property<int>("Reps")
                         .HasColumnType("integer")
                         .HasColumnName("reps");
+
+                    b.Property<int>("RestTime")
+                        .HasColumnType("integer")
+                        .HasColumnName("rest_time");
 
                     b.Property<float>("Rpe")
                         .HasColumnType("real")
@@ -632,13 +648,15 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("real")
                         .HasColumnName("weight");
 
+                    b.Property<Guid?>("WorkoutExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workout_exercise_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExerciseId");
 
                     b.HasIndex("LogId");
-
-                    b.HasIndex("SetId");
 
                     b.ToTable("workout_log_sets", (string)null);
                 });
@@ -808,11 +826,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasForeignKey("LogId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("OptiLifts.Domain.Workouts.WorkoutSet", null)
-                        .WithMany()
-                        .HasForeignKey("SetId")
-                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

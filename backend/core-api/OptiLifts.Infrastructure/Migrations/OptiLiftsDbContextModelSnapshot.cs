@@ -547,6 +547,48 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.ToTable("workout_logs", (string)null);
                 });
 
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.WorkoutLogExercise", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("log_exercise_id");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_id");
+
+                    b.Property<int>("GroupNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_number");
+
+                    b.Property<Guid>("LogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("log_id");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_index");
+
+                    b.Property<Guid?>("WorkoutExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workout_exercise_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("LogId", "ExerciseId");
+
+                    b.HasIndex("LogId", "OrderIndex");
+
+                    b.HasIndex("LogId", "WorkoutExerciseId")
+                        .IsUnique()
+                        .HasFilter("workout_exercise_id IS NOT NULL");
+
+                    b.ToTable("workout_log_exercises", (string)null);
+                });
+
             modelBuilder.Entity("OptiLifts.Domain.Workouts.WorkoutSet", b =>
                 {
                     b.Property<Guid>("Id")
@@ -812,6 +854,21 @@ namespace OptiLifts.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.WorkoutLogExercise", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Workouts.WorkoutLog", null)
+                        .WithMany()
+                        .HasForeignKey("LogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.WorkoutSet", b =>

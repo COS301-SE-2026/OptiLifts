@@ -27,6 +27,21 @@ if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseSentry(options =>
+{
+
+    options.Dsn = Environment.GetEnvironmentVariable("CORE_API_SENTRY_DSN") ?? "";
+    options.TracesSampleRate = 1.0;
+    options.Debug = true;
+    var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+    options.Environment = envName;
+
+    if (envName == "Development" || envName == "Testing")
+    {
+        options.InitializeSdk = false;
+    }
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

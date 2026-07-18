@@ -28,7 +28,7 @@ public sealed class AuthController : ControllerBase
         var cookieSecureSetting = Environment.GetEnvironmentVariable("AUTH_COOKIE_SECURE");
         var secureCookies = bool.TryParse(cookieSecureSetting, out var parsedSecureCookies)
             ? parsedSecureCookies
-            : env.IsProduction();
+            : env.IsProduction(); //The SetTokenCookies allows the cookie's Secure flag to be overridden by an AUTH_COOKIE_SECURE environment variable, while defaulting to the original production environment check if the variable is absent.
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,

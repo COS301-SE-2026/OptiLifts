@@ -161,10 +161,14 @@ const frontendApp = new app.ContainerApp("frontend", {
         ],
     },
     template: {
+        scale: {
+            minReplicas: 0,
+            maxReplicas: 2,
+        },
         containers: [{
             name: "frontend",
             image: pulumi.interpolate`${acrServer}/optilifts-frontend:${imageTag}`,
-            resources: { cpu: 0.25, memory: "0.5Gi" },
+            resources: { cpu: 0.5, memory: "1.0Gi" },
             env: [{ name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }]
 
         }],
@@ -208,10 +212,14 @@ const coreApiApp = new app.ContainerApp("core-api", {
         }],
     },
     template: {
+        scale: {
+            minReplicas: 0,
+            maxReplicas: 2,
+        },
         containers: [{
             name: "core-api",
             image: pulumi.interpolate`${acrServer}/optilifts-core-api:${imageTag}`,
-            resources: { cpu: 0.25, memory: "0.5Gi" },
+            resources: { cpu: 0.5, memory: "1.0Gi" },
             env: [
                 { name: "POSTGRES_HOST", value: pgServer.fullyQualifiedDomainName },
                 { name: "POSTGRES_PORT", value: "5432" },
@@ -224,7 +232,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "JWT_EXP_MINUTES", value: jwtExpMin },
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
-                { name: "ConnectionStrings__AzureStorage", secretRef: "storage-connection-string" },
+                { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
             ],
         }],
     },
@@ -250,6 +258,10 @@ const aiApiApp = new app.ContainerApp("ai-api", {
         ],
     },
     template: {
+        scale: {
+            minReplicas: 0,
+            maxReplicas: 2,
+        },
         containers: [{
             name: "ai-api",
             image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${imageTag}`,

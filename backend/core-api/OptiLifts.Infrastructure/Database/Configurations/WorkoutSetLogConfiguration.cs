@@ -15,10 +15,15 @@ public class WorkoutLogSetConfiguration : IEntityTypeConfiguration<WorkoutSetLog
 
         builder.Property(w => w.LogId).HasColumnName("log_id").IsRequired();
         builder.Property(w => w.ExerciseId).HasColumnName("exercise_id").IsRequired();
+        builder.Property(w => w.WorkoutExerciseId).HasColumnName("workout_exercise_id");
         builder.Property(w => w.SetId).HasColumnName("set_id");
         builder.Property(w => w.Type).HasColumnName("set_type").HasConversion<string>().IsRequired();
         builder.Property(w => w.Reps).HasColumnName("reps").IsRequired();
         builder.Property(w => w.Weight).HasColumnName("weight").IsRequired();
+        builder.Property(w => w.Duration).HasColumnName("duration");
+        builder.Property(w => w.Distance).HasColumnName("distance");
+        builder.Property(w => w.RestTime).HasColumnName("rest_time").IsRequired();
+        builder.Property(w => w.GroupNumber).HasColumnName("group_number").IsRequired();
         builder.Property(w => w.Rpe).HasColumnName("rpe").IsRequired();
         builder.Property(w => w.OrderIndex).HasColumnName("order_index").IsRequired();
         builder.Property(w => w.AiSuggested).HasColumnName("ai_suggested").IsRequired();
@@ -35,11 +40,5 @@ public class WorkoutLogSetConfiguration : IEntityTypeConfiguration<WorkoutSetLog
                .WithMany()
                .HasForeignKey(w => w.ExerciseId)
                .OnDelete(DeleteBehavior.Restrict);
-
-        //FK relationship between workout log set and workout set
-        builder.HasOne<WorkoutSet>()
-               .WithMany()
-               .HasForeignKey(w => w.SetId)
-               .OnDelete(DeleteBehavior.SetNull); //if workout set is deleted keep the log set and set set id = null
     }
 }

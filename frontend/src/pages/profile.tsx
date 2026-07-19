@@ -165,23 +165,29 @@ export default function ProfilePage() {
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,600px)_minmax(0,520px)] lg:items-stretch">
         <BarChart title={displayChartTitle} data={displayChartData} className="w-full max-w-[600px]" />
 
-        <div className="grid h-full grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:mt-12">
-          {displayBadges.length > 0 ? (
-            displayBadges.map((badge) => (
-              <Badge
-                key={badge.name}
-                name={badge.name}
-                description={badge.description}
-                category={badge.category}
-                earnedAt={badge.earnedAt}
-                iconUrl={badge.iconUrl}
-              />
-            ))
-          ) : (
-            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-3">
-              You have not earned any badges yet.
-            </div>
-          )}
+        <div className="lg:self-start">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">BADGES</h2>
+          </div>
+
+          <div className="grid min-h-[180px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
+            {displayBadges.length > 0 ? (
+              displayBadges.map((badge) => (
+                <Badge
+                  key={badge.name}
+                  name={badge.name}
+                  description={badge.description}
+                  category={badge.category}
+                  earnedAt={badge.earnedAt}
+                  iconUrl={badge.iconUrl}
+                />
+              ))
+            ) : (
+              <div className="flex min-h-[180px] items-center rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-3">
+                You have not earned any badges yet.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

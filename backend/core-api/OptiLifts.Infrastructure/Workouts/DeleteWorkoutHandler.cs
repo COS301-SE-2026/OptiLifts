@@ -1,4 +1,3 @@
-using Azure.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Workouts.DeleteWorkout;
@@ -18,13 +17,16 @@ public sealed class DeleteWorkoutHandler : IRequestHandler<DeleteWorkoutCommand,
     public async Task<bool> Handle(DeleteWorkoutCommand request, CancellationToken cancellationToken)
     {
         var workout = await _dbContext.Workouts
-            .FirstOrDefaultAsync(w => w.Id == request.WorkoutId && w.CreatedBy == request.UserId, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == request.WorkoutId && w.CreatedBy == request.UserId && !w.IsDeleted, cancellationToken);
 
         if (workout == null)
         {
             return false;
         }
-        _dbContext.Workouts.Remove(workout);
+
+        workout.IsDeleted = true;
+        workout.DeletedAt = DateTime.UtcNow;
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

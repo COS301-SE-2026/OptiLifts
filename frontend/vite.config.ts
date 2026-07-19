@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 export default defineConfig(({ mode }) => {
   const rootDir = fileURLToPath(new URL('..', import.meta.url))
@@ -11,6 +12,7 @@ export default defineConfig(({ mode }) => {
   const frontendPort = Number(env.FRONTEND_PORT ?? '5173')
 
   return {
+    envDir: rootDir,
     plugins: [
       react(),
       VitePWA({
@@ -33,7 +35,17 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
+
+      env.SENTRY_AUTH_TOKEN ? sentryVitePlugin({ //only runs if env variable which is only in CD
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        org: "hatrock-un",
+        project: "hatrock-frontend",
+      }) : null,
+
     ],
+    test: {
+      environment: 'jsdom',
+    },
     server: {
       port: frontendPort,
       proxy: {
@@ -49,8 +61,21 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)), 
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
         //can say @/components/ui/button instead of ../../../components/ui/button 
+      },
+    },
+
+    build: {
+      sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('@sentry')) {
+              return 'sentry';
+            }
+          }
+        },
       },
     },
   }

@@ -20,7 +20,7 @@ public class AzureBlobStorageService : IBlobStorageService
         if (string.IsNullOrWhiteSpace(_connectionString))
         {
             // Support alternative env var names that users may set in .env
-            _connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__AzureStorage")
+            _connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
                                 ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING")
                                 ?? string.Empty;
         }
@@ -58,5 +58,24 @@ public class AzureBlobStorageService : IBlobStorageService
 
         // the local azure emulator url uses a different format, so just returning the uri works fine
         return blobClient.Uri.ToString();
+    }
+
+    public async Task DeleteFileAsync(string fileUrl, string containerName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(fileUrl) || string.IsNullOrEmpty(_connectionString))
+            return;
+
+        if (!Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri))
+            return;
+
+        var blobName = Path.GetFileName(uri.AbsolutePath);
+        if (string.IsNullOrWhiteSpace(blobName))
+            return;
+
+        var blobServiceClient = new BlobServiceClient(_connectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+        var blobClient = containerClient.GetBlobClient(blobName);
+
+        await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
     }
 }

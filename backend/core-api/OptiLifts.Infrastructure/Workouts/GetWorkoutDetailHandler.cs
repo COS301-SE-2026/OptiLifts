@@ -19,7 +19,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
     {
         var workout = await _dbContext.Workouts
             .AsNoTracking()
-            .FirstOrDefaultAsync(workout => workout.Id == request.WorkoutId && workout.CreatedBy == request.UserId, cancellationToken);
+            .FirstOrDefaultAsync(workout => workout.Id == request.WorkoutId && workout.CreatedBy == request.UserId && !workout.IsDeleted, cancellationToken);
 
         if (workout is null)
         {

@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
+using OptiLifts.Application.Exercises.DeleteCustomExercise;
 using OptiLifts.Application.Exercises.GetExerciseImages;
 using OptiLifts.Application.Exercises.GetExercises;
 
@@ -79,6 +80,24 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { error = "An unexpected error occurred while creating the exercise.", details = ex.Message });
+        }
+    }
+
+    [HttpDelete("custom/{exerciseId:guid}")]
+    public async Task<IActionResult> DeleteCustomExercise(Guid exerciseId, CancellationToken cancellationToken)
+    {
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdString, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            var deleted = await _mediator.Send(new DeleteCustomExerciseCommand(exerciseId, userId), cancellationToken);
+            return deleted ? NoContent() : NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
         }
     }
 

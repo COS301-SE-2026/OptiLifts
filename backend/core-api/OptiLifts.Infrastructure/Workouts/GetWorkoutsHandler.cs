@@ -18,7 +18,7 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
     {
         var workouts = await _dbContext.Workouts
             .AsNoTracking()
-            .Where(workout => workout.CreatedBy == request.UserId)
+            .Where(workout => workout.CreatedBy == request.UserId && !workout.IsDeleted)
             .OrderByDescending(workout => workout.CreatedAt)
             .Select(workout => new
             {

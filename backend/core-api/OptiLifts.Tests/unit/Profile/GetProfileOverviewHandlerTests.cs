@@ -133,9 +133,14 @@ public class GetProfileOverviewHandlerTests
             Id = Guid.NewGuid(),
             LogId = log.Id,
             ExerciseId = exercise.Id,
+            WorkoutExerciseId = workoutExercise.Id,
             Type = SetType.Normal,
             Reps = 8,
             Weight = 100,
+            Duration = null,
+            Distance = null,
+            RestTime = 120,
+            GroupNumber = 0,
             Rpe = 8,
             OrderIndex = 0,
             AiSuggested = false,
@@ -156,6 +161,6 @@ public class GetProfileOverviewHandlerTests
         result.RecentWorkouts.Should().HaveCount(1);
         result.RecentWorkouts[0].Name.Should().Be("Push Day");
         result.ChartData.Should().HaveCount(12);
-        result.ChartTitle.Should().Be("Workout activity");
+        result.ChartTitle.Should().Be("Workout volume");
     }
 }

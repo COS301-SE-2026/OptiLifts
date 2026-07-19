@@ -599,16 +599,40 @@ BEGIN
             CONTINUE;
         END IF;
 
-        INSERT INTO workout_log_sets (
-            log_set_id, log_id, exercise_id, set_id, set_type, reps, weight, rpe, order_index, ai_suggested, logged_at)
+        INSERT INTO workout_log_exercises (
+            log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
         SELECT
             gen_random_uuid(),
             v_log,
             we.exercise_dict_id,
+            we.workout_exercise_id,
+            we.order_index,
+            CASE
+                WHEN we.group_id IS NULL THEN 0
+                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+            END
+        FROM workout_exercises we
+        WHERE we.workout_id = CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END
+          AND we.order_index <= 4;
+
+        INSERT INTO workout_log_sets (
+            log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+        SELECT
+            gen_random_uuid(),
+            v_log,
+            we.exercise_dict_id,
+            we.workout_exercise_id,
             s.set_id,
             s.set_type,
             s.reps,
             s.weight,
+            s.duration,
+            s.distance,
+            s.rest_time,
+            CASE
+                WHEN we.group_id IS NULL THEN 0
+                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+            END,
             CASE WHEN i % 3 = 0 THEN 7.5 WHEN i % 3 = 1 THEN 8.0 ELSE 8.5 END,
             s.order_index,
             false,
@@ -629,16 +653,39 @@ BEGIN
     VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '82 minutes', false, NULL)
     RETURNING log_id INTO v_log;
 
-    INSERT INTO workout_log_sets (
-        log_set_id, log_id, exercise_id, set_id, set_type, reps, weight, rpe, order_index, ai_suggested, logged_at)
+    INSERT INTO workout_log_exercises (
+        log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
     SELECT
         gen_random_uuid(),
         v_log,
         we.exercise_dict_id,
+        we.workout_exercise_id,
+        we.order_index,
+        CASE
+            WHEN we.group_id IS NULL THEN 0
+            ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+        END
+    FROM workout_exercises we
+    WHERE we.workout_id = v_full_body;
+
+    INSERT INTO workout_log_sets (
+        log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+    SELECT
+        gen_random_uuid(),
+        v_log,
+        we.exercise_dict_id,
+        we.workout_exercise_id,
         s.set_id,
         s.set_type,
         COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
         COALESCE(s.weight, 0),
+        s.duration,
+        s.distance,
+        s.rest_time,
+        CASE
+            WHEN we.group_id IS NULL THEN 0
+            ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+        END,
         CASE WHEN we.order_index % 3 = 0 THEN 7.5 WHEN we.order_index % 3 = 1 THEN 8.0 ELSE 8.5 END,
         s.order_index,
         false,

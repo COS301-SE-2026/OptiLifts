@@ -204,7 +204,7 @@ describe('WorkoutsPage', () => {
                 value: 'Triceps'
             }
         });
-        expect(screen.queryByText('Push Day')).toBeDefined();
+        expect(screen.getByText('Push Day')).toBeDefined();
         expect(screen.queryByText('Leg Day')).toBeNull();
     });
 

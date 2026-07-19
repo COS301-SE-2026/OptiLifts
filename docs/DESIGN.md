@@ -25,17 +25,23 @@ flowchart TD
     A["/ - Public Landing"]
     B["/register - Register"]
     C["/login - Login"]
+    N["/brand-style - Brand Style"]
     J["Unauthenticated access to protected route"]
     GUARD(["RequireAuth Guard"])
-    D["/dashboard"]
+    D["/dashboard - Dashboard"]
     E["/workouts - Workouts List"]
     F["/workouts/create - Create Workout"]
-    G["/schedule"]
+    K["/workouts/:workoutId - Workout Detail"]
+    L["/workouts/:workoutId/logs/:logId - Workout Log Detail"]
+    G["/schedule - Schedule"]
     H["/progress"]
-    I["/profile"]
+    I["/profile - Profile"]
+    M["/past-workouts - Past Workouts"]
 
     A --> B
-    A --> C
+    A --> N
+    B --> C
+    C --> B
     B -->|"success"| GUARD
     C -->|"success"| GUARD
     J -->|"redirect"| B
@@ -45,7 +51,10 @@ flowchart TD
     D --> G
     D --> H
     D --> I
+    D --> M
+    E -->|"Click Workout"| K
     E -->|"+ Create Workout"| F
+    K -->|"View Log"| L
     F -.->|"save"| E
     I -->|"logout"| A
 
@@ -53,8 +62,8 @@ flowchart TD
     classDef public fill:#1C1C1F,stroke:#9A9AA8,color:#E8E8EC
     classDef guard fill:#B01030,stroke:#B01030,color:#FFFFFF
 
-    class D,E,F,G,H,I protected
-    class A,B,C,J public
+    class D,E,F,K,L,G,H,I,M protected
+    class A,B,C,J,N public
     class GUARD guard
 ```
 
@@ -184,3 +193,135 @@ Shows the athlete's saved workouts as a scrollable list of cards.
 - Exercise preview shows first 3 exercises then "..." to indicate more
 - Cards use the standard card component styling (border, surface background, 22px padding)
 - Delete option in "..." menu requires confirmation before removing the workout
+
+---
+
+#### Screen 5 - Dashboard
+
+description
+
+![Dashboard Wireframe](wireframes/dashboard-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+
+#### Screen 6 - Edit Workout
+
+description
+
+![Edit Workout Wireframe](wireframes/edit-workout-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+#### Screen 7 - Workout Detail
+
+description
+
+![Workout detail Wireframe](wireframes/workout-detail-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+#### Screen 8 - Workout Log Detail
+
+description
+
+![Workout Log Detail Wireframe](wireframes/workout-log-detail-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+#### Screen 9 - Week Schedule
+
+description
+
+![Week Schedule Wireframe](wireframes/week-schedule-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+#### Screen 10 - Month Schedule
+
+description
+
+![Month Schedule Wireframe](wireframes/month-schedule-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+#### Screen 11 - Past Workouts
+
+description
+
+![Past Workouts Wireframe](wireframes/past-workouts-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---
+#### Screen 12 - Profile
+
+description
+
+![Profile Wireframe](wireframes/profile-wireframe.png)
+
+**Component Placement:**
+- Header: 
+
+**User Interaction Points:**
+- a
+
+**Annotations:**
+- a
+
+---

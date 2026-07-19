@@ -198,6 +198,10 @@ describe('WorkoutsPage', () => {
             isAuthenticated: true
         });
         render(<WorkoutsPage/>);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day')).toBeDefined();
+        });
+        
         const searchInput = screen.getByPlaceholderText('Search workouts');
         fireEvent.change(searchInput, {
             target: {

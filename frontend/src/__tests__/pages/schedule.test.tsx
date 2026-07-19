@@ -22,11 +22,18 @@ vi.mock('@/components/ui/spider-graph', () => ({
 }));
 
 vi.mock('@/components/ui/confirm-dialog', () => ({
-    ConfirmDialog: ({isOpen, onConfirm}: any) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
+    ConfirmDialog: ({isOpen, onConfirm}: Readonly<{ isOpen: boolean; onConfirm: () => void}>) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
 }));
 
 vi.mock('@/components/ui/select-workout-dialog', () => ({
-    SelectWorkoutDialog: ({isOpen, onSchedule}: any) => isOpen? (<div data-testid="select-dialog"><button onClick={() => onSchedule('workout-123')}>Schedule Workout</button></div>):null,
+    SelectWorkoutDialog: ({isOpen, onSchedule}: Readonly<{ isOpen: boolean; onSchedule: (id: string) => void}>) => isOpen? (<div data-testid="select-dialog"><button onClick={() => onSchedule('workout-123')}>Schedule Workout</button></div>):null,
+}));
+
+vi.mock('@/components/ui/dropdown-menu', () => ({
+    DropdownMenu: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown">{children}</div>,
+    DropdownMenuTrigger: ({children, ...props}: Readonly<{ children: ReactNode; className?: string; variant?: string}>) => <button {...props}>{children}</button>,
+    DropdownMenuContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
+    DropdownMenuItem: ({ children, onClick }: Readonly<{ children: ReactNode; onClick: () => void }>) => (<button onClick={onClick} data-testid={`dropdown-item-${children}`}>{children}</button>),
 }));
 
 describe('SchedulePage', () => {
@@ -129,7 +136,7 @@ describe('SchedulePage', () => {
             expect(screen.getByTestId('select-dialog')).toBeDefined();//check that it opens the popup
         });        
         
-        mockFetch.mockImplementation(async (url: string, init?:any) => {
+        mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url === '/api/users/me/schedule/sessions' && init?.method === 'POST'){
                 return {
                     ok: true,
@@ -165,7 +172,7 @@ describe('SchedulePage', () => {
 
         expect(screen.getByTestId('confirm-dialog')).toBeDefined();
 
-        mockFetch.mockImplementation(async (url: string, init?:any) => {
+        mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url.includes('/api/users/me/schedule/sessions/session1') && init?.method === 'DELETE'){
                 return {ok:true};
             }
@@ -187,5 +194,56 @@ describe('SchedulePage', () => {
     });
     //^ 59% coverage
 
+    it('display error banner when loading schedule fails', async () => {
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes('/api/users/me/schedule')){
+                return {
+                    ok: false,
+                    status: 500
+                };
+            }
+            return {
+                ok: true,
+                json: async () => ({})
+            };
+        });
+        render(<SchedulePage/>);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Failed to load schedules \(500\)/i)).toBeDefined();
+        });
+    });
+
+    it('handles date pagination', async () => {
+        render(<SchedulePage/>);
+
+        await waitFor(() => {
+            expect(screen.getByText('July 13 - July 19')).toBeDefined(); //determinisic?
+        });
+
+        // const nextbtn = screen.getByRole('button', {name: ''});
+        const prevbtn = screen.getAllByRole('button')[0];
+        fireEvent.click(prevbtn);
+        //assert?
+        await waitFor(() => {
+            expect(screen.getByText('July 6 - July 12')).toBeDefined();
+        })
+    });
+
+    it('supports month view', async () => {
+        render(<SchedulePage/>);
+
+        await waitFor(() => {
+            expect(screen.getByText('Weekly Summary')).toBeDefined();
+        });
+
+        const viewtrigger = screen.getByRole('button', {name: 'Month View'});
+        fireEvent.click(viewtrigger);
+
+        await waitFor(() => {
+            expect(screen.getByText('MON')).toBeDefined();
+            expect(screen.getByText('SUN')).toBeDefined();
+        });
+    });
 
 });

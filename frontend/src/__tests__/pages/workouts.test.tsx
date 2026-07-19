@@ -29,15 +29,15 @@ vi.mock('@/componentts/ui/muscle-diagram', () =>({
 }));
 
 vi.mock('@/components/ui/confirm-dialog', () => ({
-    ConfirmDialog: ({isOpen, onConfirm}: any) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
-})); //sonarqube gonna kill me for this any'
+    ConfirmDialog: ({isOpen, onConfirm}: Readonly<{ isOpen: boolean; onConfirm: () => void}>) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
+}));
 
 //mock dropdown comp into html btns
 vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenu: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown">{children}</div>,
     DropdownMenuEllipsisTrigger: () => <button data-testid="dropdown-trigger">...</button>,
     DropdownMenuEllipsisContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
-    DropdownMenuItem: ({ children, onSelect }: any) => (<button onClick={onSelect} data-testid={`dropdown-item-${children}`}>{children}</button>),
+    DropdownMenuItem: ({ children, onSelect }: Readonly<{ children: ReactNode; onSelect: () => void }>) => (<button onClick={onSelect} data-testid={`dropdown-item-${children}`}>{children}</button>),
 }));
 
 describe('WorkoutsPage', () => {
@@ -120,7 +120,7 @@ describe('WorkoutsPage', () => {
             expect(screen.getByText('Push Day')).toBeDefined();
         });
 
-        mockFetch.mockImplementation(async (url: string, init?:any) => {
+        mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url === '/api/workouts/w-1/duplicate' && init?.method === 'POST'){
                 return {
                     ok: true,
@@ -172,7 +172,7 @@ describe('WorkoutsPage', () => {
 
         expect(screen.getByTestId('confirm-dialog')).toBeDefined();
 
-        mockFetch.mockImplementation(async (url: string, init?:any) => {
+        mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url === '/api/workouts/w-1' && init?.method === 'DELETE'){
                 return {
                     ok: true
@@ -267,6 +267,87 @@ describe('WorkoutsPage', () => {
 
         const addbtn = screen.getByRole('button', {name: 'Add'});
         fireEvent.click(addbtn);
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/create');
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/workouts/create');
+        });
+        
+    });
+
+    it ('goes to edit workout page when edit dropdown clicked', async () => {
+        mockAuth.mockReturnValue({
+            isHydrated: true,
+            isAuthenticated: true
+        });
+        render(<WorkoutsPage/>);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day')).toBeDefined();
+        });
+
+        const editbtn = screen.getAllByTestId('dropdown-item-Edit')[0];
+        fireEvent.click(editbtn);
+        expect(mockNavigate).toHaveBeenCalledWith('/workouts/edit/w-1');
+    });
+
+    it ('display error banner when loading workouts fails', async () => {
+        mockAuth.mockReturnValue({
+            isHydrated: true,
+            isAuthenticated: true
+        });
+        mockFetch.mockImplementationOnce(async () => ({
+            ok: false,
+            status: 500
+        }));
+        render(<WorkoutsPage/>);
+        await waitFor(() => {
+            expect(screen.getByText(/Failed to load workouts \(500\)/i)).toBeDefined();
+        });
+    });
+
+    it ('display error banner when duplicating workout fails', async () => {
+        mockAuth.mockReturnValue({
+            isHydrated: true,
+            isAuthenticated: true
+        });
+        render(<WorkoutsPage/>);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day')).toBeDefined();
+        });
+
+        mockFetch.mockImplementationOnce(async () => ({
+            ok: false,
+            status: 400
+        }));
+        const dupeBtn = screen.getAllByTestId('dropdown-item-Duplicate')[0];
+        fireEvent.click(dupeBtn);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Failed to duplicate workout \(400\)/i)).toBeDefined();
+        });
+    });
+
+    it ('display error banner when deleting workout fails', async () => {
+        mockAuth.mockReturnValue({
+            isHydrated: true,
+            isAuthenticated: true
+        });
+        render(<WorkoutsPage/>);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day')).toBeDefined();
+        });
+        
+        const deletebtn = screen.getAllByTestId('dropdown-item-Delete')[0];
+        fireEvent.click(deletebtn);
+
+        mockFetch.mockImplementationOnce(async () => ({
+            ok: false,
+            status: 403
+        }));
+        fireEvent.click(screen.getByRole('button', {
+            name: 'Confirm Delete'
+        }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Failed to delete workout/i)).toBeDefined();
+        });
     });
 });

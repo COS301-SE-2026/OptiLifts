@@ -267,6 +267,29 @@ const secureRandomHex = (): string => {
   return res ? Array.from(res, (b) => b.toString(16).padStart(2, '0')).join('') : Date.now().toString(36)
 }
 
+const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): WorkoutLogSetPayload[] => {
+  const sets: WorkoutLogSetPayload[] = []
+  let orderIdx = 0
+
+  for (const set of exerciseSets) {
+    if (!set.completed) continue
+
+    const reps = set.reps === '' ? 0 : Number(set.reps)
+    const weight = set.kg === '' ? 0 : Number(set.kg)
+    const rpe = set.rpe === '' ? 0 : Number(set.rpe)
+
+    if (Number.isNaN(reps) || Number.isNaN(weight) || Number.isNaN(rpe)) continue
+    
+    const dur = set.duration === '' ? null : Number(set.duration)
+    const dist = set.distance === '' ? null : Number(set.distance)
+
+    sets.push({ setId: set.sourceSetId, type: set.type, reps, weight, duration: dur, distance: dist, restTime: set.restTime, rpe, orderIndex: orderIdx++, groupNumber, })
+  }
+
+  return sets
+}
+
+
 const toNumericValue = (value: number | string) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : 0
@@ -312,7 +335,7 @@ export default function ActiveSessionPage() {
   const logId = logRefId.current
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
-  const [isPickerOpen, isPickerUp] = useState(false)
+  const [isPickerOpen, setPickerOpen] = useState(false)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
 
   useEffect(() => {
@@ -452,7 +475,7 @@ export default function ActiveSessionPage() {
         ],
       },
     ])
-    isPickerUp(false)
+    setPickerOpen(false)
   }
 
   const summary = useMemo(() => {
@@ -470,10 +493,7 @@ export default function ActiveSessionPage() {
   }, [exercises])
 
   const buildLogPayload = (): WorkoutLogPayload | null => {
-    if (!workoutId) 
-    {
-      return null
-    }
+    if (!workoutId) return null
 
     const groupNums = groupNumMap(exercises)
     const exercisesLog: WorkoutLogExercisePayload[] = []
@@ -481,50 +501,29 @@ export default function ActiveSessionPage() {
     for (const exercise of exercises) {
       if (!exercise.exerciseId) continue
 
-      let orderIndex = 0
       const groupNum = groupNums.get(exercise.id) ?? 0
-      const sets: WorkoutLogSetPayload[] = []
+      const sets = buildSetPayloads(exercise.sets, groupNum)
 
-      for (const set of exercise.sets) {
-        if (!set.completed) continue
-
-        const reps = set.reps === '' ? 0 : Number(set.reps)
-        const weight = set.kg === '' ? 0 : Number(set.kg)
-        const rpe = set.rpe === '' ? 0 : Number(set.rpe)
-        const duration = set.duration === '' ? null : Number(set.duration)
-        const distance = set.distance === '' ? null : Number(set.distance)
-
-
-        if (Number.isNaN(reps) || Number.isNaN(weight) || Number.isNaN(rpe)) continue
-
-        sets.push({ setId: set.sourceSetId, type: set.type, reps, weight, duration , distance, 
-          restTime: set.restTime, rpe, orderIndex: orderIndex++, groupNumber: groupNum, 
-        })
-      }
-    
       if (sets.length === 0) continue
 
-      exercisesLog.push({
-          exerciseId: exercise.exerciseId,
-          workoutExerciseId: exercise.sourceWorkoutExerciseId,
-          orderIndex: exercisesLog.length,
-          groupNumber: groupNum,
-          sets,
-        })
-      }
-        
-      if (exercisesLog.length === 0) return null
+      exercisesLog.push({ exerciseId: exercise.exerciseId, workoutExerciseId: exercise.sourceWorkoutExerciseId,
+        orderIndex: exercisesLog.length, groupNumber: groupNum, sets,
+      })
+    }
 
-      return {
-        logId,
-        workoutId,
-        entryId: null,
-        startedAt: new Date(startedAtMs ?? Date.now()).toISOString(),
-        completedAt: new Date().toISOString(),
-        notes: null,
-        exercises: exercisesLog,
-      }
+    if (exercisesLog.length === 0) return null
+
+    return {
+      logId,
+      workoutId,
+      entryId: null,
+      startedAt: new Date(startedAtMs ?? Date.now()).toISOString(),
+      completedAt: new Date().toISOString(),
+      notes: null,
+      exercises: exercisesLog,
+    }
   }
+
 
   const removeExercise = (exerciseId: string) => {
     setExercises((currentExercises) => currentExercises.filter((exercise) => exercise.id !== exerciseId))
@@ -701,7 +700,7 @@ export default function ActiveSessionPage() {
               <Button
                 variant="outline"
                 className="w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-10 text-xs"
-                onClick={() => isPickerUp(true)}
+                onClick={() => setPickerOpen(true)}
               >
                 <Plus className="mr-2 h-3.5 w-3.5" /> Add Exercise
               </Button>
@@ -745,7 +744,7 @@ export default function ActiveSessionPage() {
       </div>
       <ExercisePickerDialog
         isOpen={isPickerOpen}
-        onClose={() => isPickerUp(false)}
+        onClose={() => setPickerOpen(false)}
         onSelect={selectedExercise}
       />
     </section>

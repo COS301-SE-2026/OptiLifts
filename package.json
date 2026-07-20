@@ -29,8 +29,8 @@
     "test:backend": "cd backend/core-api && dotnet test",
     "test:ai": "cd backend/ai-api && ./venv/bin/pytest",
     
-    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
-    "test:e2e:ui": "playwright test --config=e2e/playwright.config.ts --ui",
+    "test:e2e": "bash -lc 'set -euo pipefail; started_services=0; cleanup() { status=$?; if [ \"$started_services\" = \"1\" ]; then pnpm e2e:services:down; fi; exit \"$status\"; }; trap cleanup EXIT; if [ \"${E2E_USE_EXISTING_SERVICES:-0}\" = \"1\" ]; then pnpm exec playwright test --config=e2e/playwright.config.ts; else started_services=1; AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} pnpm e2e:services:up:detached; pnpm exec playwright test --config=e2e/playwright.config.ts; fi'",
+    "test:e2e:ui": "bash -lc 'set -euo pipefail; started_services=0; cleanup() { status=$?; if [ \"$started_services\" = \"1\" ]; then pnpm e2e:services:down; fi; exit \"$status\"; }; trap cleanup EXIT; if [ \"${E2E_USE_EXISTING_SERVICES:-0}\" = \"1\" ]; then pnpm exec playwright test --config=e2e/playwright.config.ts --ui; else started_services=1; AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} pnpm e2e:services:up:detached; pnpm exec playwright test --config=e2e/playwright.config.ts --ui; fi'",
     "e2e:services:build": "docker compose -f docker-compose.prod.yml build",
     "e2e:services:up": "docker compose -f docker-compose.prod.yml up",
     "e2e:services:webserver": "bash -lc 'export AUTH_COOKIE_SECURE=\"${AUTH_COOKIE_SECURE:-false}\"; trap \"docker compose -f docker-compose.prod.yml down -v --remove-orphans\" EXIT; docker compose -f docker-compose.prod.yml up'",

@@ -1,10 +1,5 @@
 BEGIN;
 
--- ---------------------------------------------------------------------------
--- Muscles (idempotent). No unique constraint exists on muscles.name, so the
--- insert is guarded with an anti-join (LEFT JOIN ... IS NULL).
--- gen_random_uuid() is built into PG13+.
--- ---------------------------------------------------------------------------
 INSERT INTO muscles (muscle_id, name)
 SELECT gen_random_uuid(), v.name
 FROM (VALUES
@@ -28,10 +23,6 @@ FROM (VALUES
 LEFT JOIN muscles m ON m.name = v.name
 WHERE m.muscle_id IS NULL;
 
--- ---------------------------------------------------------------------------
--- Stable demo ids + repeated literals, defined once (avoids duplicated
--- literals across the script). Referenced as c.<name> everywhere below.
--- ---------------------------------------------------------------------------
 CREATE TEMP TABLE seed_constants (
     exercise_bench_id uuid NOT NULL,
     exercise_squat_id uuid NOT NULL,
@@ -165,10 +156,6 @@ VALUES (
     'Milestone'
 );
 
--- ---------------------------------------------------------------------------
--- Exercise dictionary (global exercises, user_id = NULL). primary_muscle is a
--- required FK into muscles, resolved by name.
--- ---------------------------------------------------------------------------
 INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
 SELECT c.exercise_bench_id, c.exercise_bench_press_name, c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
 FROM seed_constants c JOIN muscles m ON m.name = c.muscle_chest
@@ -214,10 +201,6 @@ SELECT c.exercise_pulldown_id, 'Lat Pulldown', c.mechanic_isolated, c.equipment_
 FROM seed_constants c JOIN muscles m ON m.name = c.muscle_lats
 ON CONFLICT (exercise_dict_id) DO NOTHING;
 
--- ---------------------------------------------------------------------------
--- Additional global library exercises (not referenced by the demo workouts).
--- Idempotent via an anti-join on (name, user_id IS NULL).
--- ---------------------------------------------------------------------------
 WITH exercise_types AS (
     SELECT
         'BodyweightReps'::text AS bodyweight_reps,
@@ -248,10 +231,6 @@ JOIN muscles m ON m.name = v.muscle_name
 LEFT JOIN exercise_dictionary e ON e.name = v.name AND e.user_id IS NULL
 WHERE e.exercise_dict_id IS NULL;
 
--- ---------------------------------------------------------------------------
--- Secondary muscles (sec_muscles join). Exercise ids come from seed_constants
--- (no raw UUID literals); guarded by an anti-join per pair.
--- ---------------------------------------------------------------------------
 INSERT INTO sec_muscles (sec_muscle_id, muscle_id, exercise_id)
 SELECT gen_random_uuid(), m.muscle_id, e.exercise_id
 FROM seed_constants c
@@ -277,9 +256,6 @@ JOIN muscles m ON m.name = e.muscle_name
 LEFT JOIN sec_muscles s ON s.exercise_id = e.exercise_id AND s.muscle_id = m.muscle_id
 WHERE s.sec_muscle_id IS NULL;
 
--- ---------------------------------------------------------------------------
--- Folders.
--- ---------------------------------------------------------------------------
 INSERT INTO folders (folder_id, user_id, name, description, created_at)
 SELECT c.folder_push_id, u.user_id, 'Starter Push', 'Demo folder for local testing', NOW()
 FROM seed_constants c
@@ -292,9 +268,6 @@ FROM seed_constants c
 JOIN users u ON u.email_hash = encode(sha256(c.demo_user_email::bytea), c.hex_enc)
 ON CONFLICT (folder_id) DO NOTHING;
 
--- ---------------------------------------------------------------------------
--- Workouts (created_by column is now user_id).
--- ---------------------------------------------------------------------------
 INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
 SELECT c.workout_push_id, f.folder_id, 'Push Day A', u.user_id, NOW()
 FROM seed_constants c
@@ -327,10 +300,6 @@ JOIN users u ON u.user_id = f.user_id
 WHERE u.email_hash = encode(sha256(c.demo_user_email::bytea), c.hex_enc)
 ON CONFLICT (workout_id) DO NOTHING;
 
--- ---------------------------------------------------------------------------
--- Workout exercises (which exercise sits in which workout, ordered).
--- order_index = position of the exercise within the workout.
--- ---------------------------------------------------------------------------
 INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index)
 SELECT v.we_id, v.workout_id, v.exercise_id, v.order_index
 FROM seed_constants c
@@ -347,13 +316,6 @@ CROSS JOIN LATERAL (VALUES
 ) AS v(we_id, workout_id, exercise_id, order_index)
 ON CONFLICT (workout_exercise_id) DO NOTHING;
 
--- ---------------------------------------------------------------------------
--- Exercise groups (superset / circuit) for demo workouts.
---   Push Day A: bench + squat        -> Superset (90s rest between)
---   Upper B:    incline + row + ohp   -> Circuit  (120s rest between)
--- Members are linked below by setting workout_exercises.group_id.
--- (Group rest lives on the group; per-set rest stays on the sets.)
--- ---------------------------------------------------------------------------
 INSERT INTO exercise_groups (exercise_group_id, workout_id, group_type, rest_time)
 SELECT v.group_id, v.workout_id, v.group_type, v.rest_time
 FROM seed_constants c
@@ -372,10 +334,6 @@ SET group_id = eg.exercise_group_id
 FROM exercise_groups eg
 WHERE eg.workout_id = we.workout_id;
 
--- ---------------------------------------------------------------------------
--- Sets (now attached to workout_exercises, not directly to workouts).
--- One set per workout-exercise here, so set order_index = 1.
--- ---------------------------------------------------------------------------
 INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, order_index, rest_time)
 SELECT v.set_id, v.we_id, c.set_type, v.reps, v.weight, 1, v.rest_time
 FROM seed_constants c
@@ -391,6 +349,153 @@ CROSS JOIN LATERAL (VALUES
     (c.set_calf_id,     c.we_calf_id,     12, 60::real,   60)
 ) AS v(set_id, we_id, reps, weight, rest_time)
 ON CONFLICT (set_id) DO NOTHING;
+
+-- ===========================================================================
+-- Completed workout demo data for "test@optilifts.com".
+-- Seeds two completed workouts using the two workouts that this user created
+-- but have not yet been completed in the demo data.
+-- ===========================================================================
+DO $$
+DECLARE
+    test_email text;
+    hex_enc text;
+    completed_status constant text := 'Completed';
+    push_name constant text := 'Push Day A';
+    upper_name constant text := 'Upper B';
+    test_id uuid;
+    v_push uuid;
+    v_upper uuid;
+    v_entry uuid;
+    v_log uuid;
+    rec record;
+BEGIN
+    SELECT c.test_user_email INTO test_email
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT c.hex_enc INTO hex_enc
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT user_id INTO test_id
+    FROM users
+    WHERE email_hash = encode(sha256(test_email::bytea), hex_enc);
+
+    IF test_id IS NULL THEN
+        RAISE NOTICE 'Test user (%) not found - run the C# seeder (dotnet run) before this script.', test_email;
+        RETURN;
+    END IF;
+
+    DELETE FROM workout_log_sets
+    WHERE log_id IN (
+        SELECT log_id
+        FROM workout_logs
+        WHERE entry_id IN (
+            SELECT entry_id
+            FROM scheduled_entries
+            WHERE user_id = test_id
+              AND workout_id IN (
+                  SELECT workout_id
+                  FROM workouts
+                  WHERE user_id = test_id AND name IN (push_name, upper_name)
+              )
+              AND status = completed_status
+        )
+    );
+
+    DELETE FROM workout_logs
+    WHERE entry_id IN (
+        SELECT entry_id
+        FROM scheduled_entries
+        WHERE user_id = test_id
+          AND workout_id IN (
+              SELECT workout_id
+              FROM workouts
+              WHERE user_id = test_id AND name IN (push_name, upper_name)
+          )
+          AND status = completed_status
+    );
+
+    DELETE FROM scheduled_entries
+    WHERE user_id = test_id
+      AND workout_id IN (
+          SELECT workout_id
+          FROM workouts
+          WHERE user_id = test_id AND name IN (push_name, upper_name)
+      )
+      AND status = completed_status;
+
+    SELECT workout_id INTO v_push
+    FROM workouts
+    WHERE user_id = test_id AND name = push_name
+    LIMIT 1;
+
+    SELECT workout_id INTO v_upper
+    FROM workouts
+    WHERE user_id = test_id AND name = upper_name
+    LIMIT 1;
+
+    IF v_push IS NULL OR v_upper IS NULL THEN
+        RAISE NOTICE 'Test user split workouts not found - run the demo workout seeding before this block.';
+        RETURN;
+    END IF;
+
+    FOR rec IN
+        SELECT * FROM (VALUES
+            (TIMESTAMPTZ '2026-06-10 18:30:00+00', v_push),
+            (TIMESTAMPTZ '2026-06-12 18:30:00+00', v_upper)
+        ) AS t(scheduled_at, workout_id)
+    LOOP
+        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+        VALUES (gen_random_uuid(), test_id, rec.workout_id, rec.scheduled_at, completed_status)
+        RETURNING entry_id INTO v_entry;
+
+        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+        VALUES (gen_random_uuid(), v_entry, rec.scheduled_at, rec.scheduled_at + INTERVAL '55 minutes', false, NULL)
+        RETURNING log_id INTO v_log;
+
+        INSERT INTO workout_log_exercises (
+            log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
+        SELECT
+            gen_random_uuid(),
+            v_log,
+            we.exercise_dict_id,
+            we.workout_exercise_id,
+            we.order_index,
+            CASE
+                WHEN we.group_id IS NULL THEN 0
+                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+            END
+        FROM workout_exercises we
+        WHERE we.workout_id = rec.workout_id;
+
+        INSERT INTO workout_log_sets (
+            log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+        SELECT
+            gen_random_uuid(),
+            v_log,
+            we.exercise_dict_id,
+            we.workout_exercise_id,
+            s.set_id,
+            s.set_type,
+            COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
+            COALESCE(s.weight, 0),
+            s.duration,
+            s.distance,
+            s.rest_time,
+            CASE
+                WHEN we.group_id IS NULL THEN 0
+                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+            END,
+            CASE WHEN we.order_index % 3 = 0 THEN 7.5 WHEN we.order_index % 3 = 1 THEN 8.0 ELSE 8.5 END,
+            s.order_index,
+            false,
+            rec.scheduled_at + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
+        FROM workout_exercises we
+        JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
+        WHERE we.workout_id = rec.workout_id;
+    END LOOP;
+END $$;
 
 -- ===========================================================================
 -- Profile-page demo data for "Alex" (gymgoer@gmail.com).

@@ -58,7 +58,7 @@ function openDB(): Promise<IDBDatabase> {
     }
 
     req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
+    req.onerror = () => reject(req.error ?? new Error('Could not open offline database'))
   })
 }
 
@@ -77,7 +77,7 @@ Promise<T> {
 
         txx.onerror = () => {
           db.close()
-          reject(txx.error)
+          reject(txx.error ?? new Error('Offline database transaction failed'))
         }
       })
   )

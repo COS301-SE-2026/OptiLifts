@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
@@ -89,6 +89,77 @@ const setTypeLabelMap: Record<SetType, string> = {
   DropSet: 'Dropset'
 }
 
+const getSetLabel = (type: SetType, workingNumber: number): string | number => {
+  if (type === 'Warmup') return 'W'
+  if (type === 'DropSet') return 'D'
+  return workingNumber
+}
+
+type SetRowProps = Readonly<{
+  set: SetData
+  setLabel: string | number
+  columns: ReturnType<typeof getColumns>
+  gridTemplate: string
+  onUpdate: (updater: (current: SetData) => SetData) => void
+}>
+
+function SetRow({ set, setLabel, columns, gridTemplate, onUpdate }: SetRowProps) {
+  const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
+    onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
+
+  return (
+    <div className="grid items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium" style={{ gridTemplateColumns: gridTemplate }}>
+      <div className="flex items-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
+            <ChevronDown className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {SET_TYPE_OPTIONS.map((option) => (
+              <DropdownMenuItem key={option} onSelect={() => onUpdate((current) => ({ ...current, type: option }))}>
+                {setTypeLabelMap[option]}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Input readOnly value={setLabel} className="h-8 w-8 border-0 bg-transparent px-0 text-center text-sm font-bold" />
+      </div>
+
+      <div className="text-muted-foreground font-normal">{set.previous}</div>
+
+      {columns.map((col) => {
+        const key = FIELD_TO_SET_KEY[col.field]
+        return (
+          <NumericalUnderscoreInput
+            key={col.field}
+            value={set[key]}
+            onChange={(event) => setField(key, event.target.value)}
+            className="text-xl text-center mx-auto"
+          />
+        )
+      })}
+
+      <NumericalUnderscoreInput
+        value={set.rpe}
+        placeholder="RPE"
+        onChange={(event) => setField('rpe', event.target.value)}
+        className="text-base text-center mx-auto"
+      />
+
+      <div className="flex w-full items-center justify-center gap-1">
+        <Button
+          variant="icon"
+          size="icon"
+          className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
+          onClick={() => onUpdate((current) => ({ ...current, completed: !current.completed }))}
+        >
+          <Check className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 const buildPreviousText = (kg: number | null, reps: number | null) => {
   if (kg == null && reps == null) {
     return '-'
@@ -103,43 +174,74 @@ type SessionSegment =
   | { kind: 'single'; exercise: ExerciseData }
   | { kind: 'group'; groupId: string; groupType: string; groupRestTime: number | null; members: ExerciseData[] }
 
+function findLastMember(exercises: ExerciseData[], start: number, groupId: string): number {
+  let last = start
+
+  while (last < exercises.length && exercises[last].groupId === groupId) {
+    last++
+  }
+
+  return last
+}
+
+function toSegs(members: ExerciseData[]): SessionSegment {
+  const firstMem = members[0]
+  
+  if (members.length > 1 && firstMem.groupId) {
+    return {
+      kind: 'group',
+      groupId: firstMem.groupId,
+      groupType: firstMem.groupType ?? (members.length === 2 ? 'Superset' : 'Circuit'),
+      groupRestTime: firstMem.groupRestTime ?? null,
+      members,
+    }
+  }
+
+  return { kind: 'single', exercise: firstMem }
+}
+
 function buildSessionSegs(exercises: ExerciseData[]): SessionSegment[] {
   const segs: SessionSegment[] = []
   let x = 0
 
   while (x < exercises.length) {
     const curr = exercises[x]
-
-    if (curr.groupId) {
-      let y = x
-
-      while (y < exercises.length && exercises[y].groupId === curr.groupId) {
-        y++
-      }
-      const urMembers = exercises.slice(x, y)
-
-      if (urMembers.length > 1) 
-      {
-        segs.push({
-          kind: 'group',
-          groupId: curr.groupId,
-          groupType: curr.groupType ?? (urMembers.length === 2 ? 'Superset' : 'Circuit'),
-          groupRestTime: curr.groupRestTime ?? null,
-          members: urMembers,
-        })
-      } 
-      else {
-        segs.push({ kind: 'single', exercise: curr })
-      }
-      x = y
-    } 
-    else {
-      segs.push({ kind: 'single', exercise: curr })
-      x++
-    }
+    const end = curr.groupId ? findLastMember(exercises, x, curr.groupId) : x + 1
+    
+    segs.push(toSegs(exercises.slice(x, end)))
+    x = end
   }
+
   return segs
 }
+
+const toSessSet = (set: WorkoutDetailsResponse['exercises'][number]['sets'][number]): SetData => ({
+  id: set.id,
+  sourceSetId: set.id,
+  type: set.type,
+  previous: buildPreviousText(set.weight, set.reps),
+  kg: set.weight ?? '',
+  reps: set.reps ?? '',
+  rpe: '',
+  duration: set.duration ?? '',
+  distance: set.distance ?? '',
+  restTime: set.restTime,
+  completed: false,
+})
+
+const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): ExerciseData => ({
+  id: exercise.id,
+  exerciseId: exercise.exerciseId,
+  sourceWorkoutExerciseId: exercise.id,
+  name: exercise.name,
+  muscleGroup: exercise.primaryMuscle,
+  groupId: exercise.groupId ?? null,
+  groupType: exercise.groupType ?? null,
+  groupRestTime: exercise.groupRestTime ?? null,
+  exerciseType: exercise.exerciseType,
+  sets: [...exercise.sets].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessSet),
+})
+
 
 function groupNumMap(exercises: ExerciseData[]): Map<string, number> {
   const groupNumByExerciseId = new Map<string, number>()
@@ -205,7 +307,9 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(() =>
     workoutId ? null : 'No workout was selected. Start a workout from the workouts page.'
   )
-  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)
+  const logRefId = useRef<string | null>(null)
+  logRefId.current ??= globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`
+  const logId = logRefId.current
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, isPickerUp] = useState(false)
@@ -239,32 +343,7 @@ export default function ActiveSessionPage() {
         setWorkoutName(data.name)
         setStartedAtMs(Date.now())
 
-        const mappedExercises: ExerciseData[] = data.exercises
-          .sort((a, b) => a.orderIndex - b.orderIndex)
-          .map((exercise) => ({
-            id: exercise.id,
-            exerciseId: exercise.exerciseId,
-            sourceWorkoutExerciseId: exercise.id,
-            name: exercise.name,
-            muscleGroup: exercise.primaryMuscle,
-            groupId: exercise.groupId ?? null,
-            groupType: exercise.groupType ?? null,
-            groupRestTime: exercise.groupRestTime ?? null,
-            exerciseType: exercise.exerciseType,
-            sets: exercise.sets.sort((a, b) => a.orderIndex - b.orderIndex).map((set) => ({
-                id: set.id,
-                sourceSetId: set.id,
-                type: set.type,
-                previous: buildPreviousText(set.weight, set.reps),
-                kg: set.weight ?? '',
-                reps: set.reps ?? '',
-                rpe: '',
-                duration: set.duration ?? '',
-                distance: set.distance ?? '',
-                restTime: set.restTime,
-                completed: false,
-              })),
-          }))
+        const mappedExercises: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
         setExercises(mappedExercises)
       } catch (loadError) {
@@ -306,19 +385,11 @@ export default function ActiveSessionPage() {
     setId: string,
     updater: (current: SetData) => SetData
   ) => {
-    setExercises((currentExercises) =>
-      currentExercises.map((exercise) => {
-        if (exercise.id !== exerciseId) {
-          return exercise
-        }
-
-        return {
-          ...exercise,
-          sets: exercise.sets.map((set) => (set.id === setId ? updater(set) : set)),
-        }
-      })
-    )
+    const applySet = (set: SetData): SetData => (set.id === setId ? updater(set) : set)
+    const applyExercise = (exercise: ExerciseData): ExerciseData => exercise.id === exerciseId ? { ...exercise, sets: exercise.sets.map(applySet) } : exercise
+    setExercises((current) => current.map(applyExercise))
   }
+
 
   const addSet = (exerciseId: string) => {
     setExercises((currentExercises) =>
@@ -351,7 +422,7 @@ export default function ActiveSessionPage() {
   }
   
 
-    const selectedExercise = (exercise: CatalogExercise) => {
+  const selectedExercise = (exercise: CatalogExercise) => {
     setExercises((currentExercises) => [
       ...currentExercises,
       {
@@ -478,8 +549,11 @@ export default function ActiveSessionPage() {
     navigate('/workouts')
   }
 
-  const renderExerciseCard = (exercise: ExerciseData) => {
-    const columns = getColumns(exercise.exerciseType)
+    const renderExerciseCard = (exercise: ExerciseData) => {
+
+    const cols = getColumns(exercise.exerciseType)
+    const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 5rem`
+    
     return (
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
@@ -490,7 +564,7 @@ export default function ActiveSessionPage() {
               <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
             </div>
           </div>
-                  <CardAction>
+          <CardAction>
             <DropdownMenu>
               <DropdownMenuTrigger variant="plain" className="p-1 text-muted-foreground hover:text-foreground">
                 <MoreHorizontal className="h-5 w-5" />
@@ -507,102 +581,33 @@ export default function ActiveSessionPage() {
         <CardContent className="px-5 pb-4">
           <div
             className="mb-2 grid gap-4 px-2 text-center text-xs font-semibold tracking-wide text-muted-foreground"
-            style={{ gridTemplateColumns: `4rem 1.5fr ${columns.map(() => '1fr').join(' ')} 0.8fr 5rem` }}
-          >
+            style={{ gridTemplateColumns: gridTemp }}>
             <div>SET</div>
             <div>PREVIOUS</div>
-            {columns.map((col) => <div key={col.field}>{col.label}</div>)}
+            {cols.map((col) => <div key={col.field}>{col.label}</div>)}
             <div>RPE</div>
             <div className="w-full flex justify-center"><Check className="h-4 w-4" /></div>
           </div>
 
-
           <div className="space-y-2">
             {exercise.sets.map((set, setIndex) => {
               const workingNumber = exercise.sets.slice(0, setIndex + 1).filter((s) => s.type === 'Normal').length
-              const setLabel = set.type === 'Warmup' ? 'W' : set.type === 'DropSet' ? 'D' : workingNumber
-
               return (
-                <div
-                  key={set.id} className="grid items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium"
-                  style={{ gridTemplateColumns: `4rem 1.5fr ${columns.map(() => '1fr').join(' ')} 0.8fr 5rem` }}
-                  >
-                  <div className="flex items-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
-                        <ChevronDown className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {SET_TYPE_OPTIONS.map((option) => (
-                          <DropdownMenuItem
-                            key={option}
-                            onSelect={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, type: option }))}
-                          >
-                            {setTypeLabelMap[option]}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Input
-                      readOnly
-                      value={setLabel}
-                      className="h-8 w-8 border-0 bg-transparent px-0 text-center text-sm font-bold"
-                    />
-                  </div>
-
-                  <div className="text-muted-foreground font-normal">{set.previous}</div>
-
-                  {columns.map((col) => {
-                    const key = FIELD_TO_SET_KEY[col.field]
-                    return (
-                      <NumericalUnderscoreInput
-                        key={col.field}
-                        value={set[key]}
-                        onChange={(event) => {
-                          const rawValue = event.target.value
-                          updateSet(exercise.id, set.id, (currentSet) => ({
-                            ...currentSet,
-                            [key]: rawValue === '' ? '' : Number(rawValue),
-                          }))
-                        }}
-                        className="text-xl text-center mx-auto"
-                      />
-                    )
-                  })}
-
-                  <NumericalUnderscoreInput
-                    value={set.rpe}
-                    placeholder="RPE"
-                    onChange={(event) => {
-                      const rawValue = event.target.value
-                      updateSet(exercise.id, set.id, (currentSet) => ({
-                        ...currentSet,
-                        rpe: rawValue === '' ? '' : Number(rawValue),
-                      }))
-                    }}
-                    className="text-base text-center mx-auto"
-                  />
-
-                  <div className="flex w-full items-center justify-center gap-1">
-                    <Button
-                      variant="icon"
-                      size="icon"
-                      className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
-                      onClick={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, completed: !currentSet.completed }))}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
+                <SetRow
+                  key={set.id}
+                  set={set}
+                  setLabel={getSetLabel(set.type, workingNumber)}
+                  columns={cols}
+                  gridTemplate={gridTemp}
+                  onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
+                />
               )
             })}
           </div>
-
           <Button
             variant="outline"
             className="mt-3 w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-9 text-xs"
-            onClick={() => addSet(exercise.id)}
-          >
+            onClick={() => addSet(exercise.id)}>
             <Plus className="mr-2 h-3.5 w-3.5" /> Add Set
           </Button>
         </CardContent>
@@ -610,7 +615,7 @@ export default function ActiveSessionPage() {
     )
   }
 
-    return (
+  return (
     <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
       <div className="grid grid-cols-12 gap-6 lg:h-full lg:min-h-0">
         <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">

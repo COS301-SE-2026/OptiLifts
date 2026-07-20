@@ -20,7 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-md flex-col items-center justify-center gap-4 px-6 py-16 text-center">
           <h2 className="text-lg font-bold text-foreground">Couldn’t load this page</h2>
           <p className="text-sm text-muted-foreground">
-            If you’re offline, reconnect and try again — your workout is saved on this device and will sync automatically.
+            You are offline, refresh your page. Your session was saved on this device and will sync automatically.
           </p>
           <button
             type="button"

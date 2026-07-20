@@ -36,14 +36,15 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         if (request.EntryId is Guid providedEntryId)
         {
             var valid = await _dbContext.ScheduledEntries
-                .AnyAsync(e => e.Id == providedEntryId && e.UserId == request.UserId && e.WorkoutId == request.WorkoutId, cancellationToken);
+                .FirstOrDefaultAsync(e => e.Id == providedEntryId && e.UserId == request.UserId && e.WorkoutId == request.WorkoutId, cancellationToken);
 
-            if (!valid)
+            if (valid is null)
             {
                 return null;
             }
 
-            entryId = providedEntryId;
+            valid.Status = ScheduleStatus.Completed;
+            entryId = valid.Id;
         }
         else
         {
@@ -52,7 +53,7 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
                 WorkoutId = request.WorkoutId,
                 UserId = request.UserId,
                 Scheduled = request.StartedAt,
-                Status = ScheduleStatus.AdHoc
+                Status = ScheduleStatus.Completed
             };
 
             _dbContext.ScheduledEntries.Add(entry);

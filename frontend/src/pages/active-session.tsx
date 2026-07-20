@@ -492,6 +492,8 @@ export default function ActiveSessionPage() {
     }
   }, [exercises])
 
+  const allowedFinish = summary.completedSets > 0
+
   const buildLogPayload = (): WorkoutLogPayload | null => {
     if (!workoutId) return null
 
@@ -533,7 +535,6 @@ export default function ActiveSessionPage() {
   const finishWorkout = async () => {
     const load = buildLogPayload()
     if (!load) {
-      window.alert('You must atleast have 1 set ticked to finish.')
       return
     }
 
@@ -648,7 +649,7 @@ export default function ActiveSessionPage() {
                   <p className="text-xs font-semibold text-muted-foreground">Sets</p>
                   <p className="text-sm font-bold">{summary.completedSets}/{summary.totalSets}</p>
                 </div>
-                <Button variant="default" size="sm" className="h-8" onClick={() => void finishWorkout()}>
+                <Button variant="default" size="sm" className="h-8" disabled={!allowedFinish} onClick={() => void finishWorkout()}>
                   Finish
                 </Button>
               </div>

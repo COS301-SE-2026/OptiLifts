@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Workout Details Page', () => {
+test.describe('Workout Detail Page', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/workouts/33333333-3333-3333-3333-333333333333');//push day A's workoutId
         await page.waitForLoadState('networkidle');

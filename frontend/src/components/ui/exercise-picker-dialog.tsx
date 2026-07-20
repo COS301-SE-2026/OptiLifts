@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Dumbbell, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
@@ -14,6 +14,7 @@ export type CatalogExercise = {
   name: string
   muscleGroup: string
   equipment?: string
+  exerciseType?: string
   imageUrl?: string
 }
 
@@ -22,6 +23,7 @@ type ExerciseApiResponse = {
   name: string
   primaryMuscles?: string[]
   equipment?: string
+  category?: string
   imageUrl?: string
 }
 
@@ -42,34 +44,44 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
   const [selectedMuscle, setSelectedMuscle] = useState('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
-  const fetchExercises = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const results = await customFetch('/api/exercises', { headers: { 'Content-Type': 'application/json' } })
-      if (!results.ok) throw new Error(`Failed to load exercises (${results.status})`)
-      const json = (await results.json()) as ExerciseApiResponse[]
-      setAllExercises(
-        json.map((ex) => ({
-          id: ex.id,
-          name: ex.name,
-          muscleGroup: ex.primaryMuscles?.[0] ?? 'Other',
-          equipment: ex.equipment,
-          imageUrl: ex.imageUrl,
-        }))
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load exercises')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    if (isOpen) void fetchExercises()
-  }, [isOpen, fetchExercises])
+    if (!isOpen)
+    {
+      return
+    }
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const results = await customFetch('/api/exercises', { headers: { 'Content-Type': 'application/json' } })
+        if (!results.ok) throw new Error(`Failed to load exercises (${results.status})`)
+        const json = (await results.json()) as ExerciseApiResponse[]
+        if (!cancelled) {
+          setAllExercises(
+            json.map((ex) => ({
+              id: ex.id,
+              name: ex.name,
+              muscleGroup: ex.primaryMuscles?.[0] ?? 'Other',
+              equipment: ex.equipment,
+              exerciseType: ex.category,
+              imageUrl: ex.imageUrl,
+            }))
+          )
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load exercises')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void load()
+    return () => { cancelled = true }
+  }, [isOpen, reloadKey])
 
   useEffect(() => {
     if (!isOpen) return
@@ -196,7 +208,7 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
       <CreateExercise
         isOpen={isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}
-        onSaved={async () => { await fetchExercises() }}
+        onSaved={() => setReloadKey((k) => k + 1)}
       />
     </>
   )

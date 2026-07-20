@@ -3,9 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
 import { Input, NumericalUnderscoreInput } from '@/components/ui/input'
+import { toast } from '@/components/ui/alert'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { customFetch } from '@/lib/custom-fetch'
-import { Check, X, Plus, ChevronDown, MoreHorizontal, ArrowLeft } from 'lucide-react'
+import { getColumns } from '@/components/ui/exercise-card'
+import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft } from 'lucide-react'
+import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -24,11 +28,16 @@ type SetData = {
   kg: number | string
   reps: number | string
   rpe: number | string
+  duration: number | string
+  distance: number | string
+  restTime: number
   completed: boolean
+  sourceSetId: string | null
 }
 
 type ExerciseData = Readonly<{
   id: string
+  sourceWorkoutExerciseId: string | null
   name: string
   muscleGroup: string
   sets: SetData[]
@@ -36,6 +45,8 @@ type ExerciseData = Readonly<{
   groupId: string | null
   groupType: string | null
   groupRestTime: number | null
+  exerciseId: string | null
+  exerciseType: string
 }>
 
 type WorkoutDetailsResponse = Readonly<{
@@ -70,6 +81,7 @@ type WorkoutDetailsResponse = Readonly<{
 }>
 
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
+const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
 
 const setTypeLabelMap: Record<SetType, string> = {
   Warmup: 'Warmup',
@@ -129,6 +141,25 @@ function buildSessionSegs(exercises: ExerciseData[]): SessionSegment[] {
   return segs
 }
 
+function groupNumMap(exercises: ExerciseData[]): Map<string, number> {
+  const groupNumByExerciseId = new Map<string, number>()
+  let counterr = 0
+
+  for (const seg of buildSessionSegs(exercises)) {
+    if (seg.kind === 'group') {
+      counterr += 1
+      for (const member of seg.members) 
+      {
+        groupNumByExerciseId.set(member.id, counterr)
+      }
+    } else {
+      groupNumByExerciseId.set(seg.exercise.id, 0)
+    }
+  }
+  return groupNumByExerciseId
+}
+
+
 const toNumericValue = (value: number | string) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : 0
@@ -169,8 +200,10 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(() =>
     workoutId ? null : 'No workout was selected. Start a workout from the workouts page.'
   )
+  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${Math.floor(Math.random() * 1e6)}`)
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
+  const [isPickerOpen, isPickerUp] = useState(false)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
 
   useEffect(() => {
@@ -205,18 +238,25 @@ export default function ActiveSessionPage() {
           .sort((a, b) => a.orderIndex - b.orderIndex)
           .map((exercise) => ({
             id: exercise.id,
+            exerciseId: exercise.exerciseId,
+            sourceWorkoutExerciseId: exercise.id,
             name: exercise.name,
             muscleGroup: exercise.primaryMuscle,
             groupId: exercise.groupId ?? null,
             groupType: exercise.groupType ?? null,
             groupRestTime: exercise.groupRestTime ?? null,
+            exerciseType: exercise.exerciseType,
             sets: exercise.sets.sort((a, b) => a.orderIndex - b.orderIndex).map((set) => ({
                 id: set.id,
+                sourceSetId: set.id,
                 type: set.type,
                 previous: buildPreviousText(set.weight, set.reps),
                 kg: set.weight ?? '',
                 reps: set.reps ?? '',
                 rpe: '',
+                duration: set.duration ?? '',
+                distance: set.distance ?? '',
+                restTime: set.restTime,
                 completed: false,
               })),
           }))
@@ -288,11 +328,15 @@ export default function ActiveSessionPage() {
             ...exercise.sets,
             {
               id: createClientSetId(),
+              sourceSetId: null,
               type: 'Normal',
               previous: '-',
               kg: '',
               reps: '',
               rpe: '',
+              duration: '',
+              distance: '',
+              restTime: 0,
               completed: false,
             },
           ],
@@ -302,32 +346,38 @@ export default function ActiveSessionPage() {
   }
   
 
-  const addExercise = () => {
+    const selectedExercise = (exercise: CatalogExercise) => {
     setExercises((currentExercises) => [
       ...currentExercises,
       {
         id: createClientExerciseId(),
-        name: 'New Exercise',
-        muscleGroup: 'Unknown',
+        exerciseId: exercise.id,
+        sourceWorkoutExerciseId: null,
+        name: exercise.name,
+        muscleGroup: exercise.muscleGroup,
         groupId: null,
         groupType: null,
         groupRestTime: null,
+        exerciseType: exercise.exerciseType ?? 'weight-reps',
         sets: [
           {
             id: createClientSetId(),
+            sourceSetId: null,
             type: 'Normal',
             previous: '-',
             kg: '',
             reps: '',
             rpe: '',
+            duration: '',
+            distance: '',
+            restTime: 0,
             completed: false,
           },
         ],
       },
     ])
+    isPickerUp(false)
   }
-
-  
 
   const summary = useMemo(() => {
     const allSets = exercises.flatMap((exercise) => exercise.sets)
@@ -343,133 +393,217 @@ export default function ActiveSessionPage() {
     }
   }, [exercises])
 
-  const renderExerciseCard = (exercise: ExerciseData) => (
-    <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
-      <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
-          <div>
-            <CardTitle className="text-base font-bold">{exercise.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+  const buildLogPayload = (): WorkoutLogPayload | null => {
+    if (!workoutId) 
+    {
+      return null
+    }
+
+    const groupNums = groupNumMap(exercises)
+    const exercisesLog: WorkoutLogExercisePayload[] = []
+
+    for (const exercise of exercises) {
+      if (!exercise.exerciseId) continue
+
+      let orderIndex = 0
+      const groupNum = groupNums.get(exercise.id) ?? 0
+      const sets: WorkoutLogSetPayload[] = []
+
+      for (const set of exercise.sets) {
+        if (!set.completed) continue
+
+        const reps = set.reps === '' ? 0 : Number(set.reps)
+        const weight = set.kg === '' ? 0 : Number(set.kg)
+        const rpe = set.rpe === '' ? 0 : Number(set.rpe)
+        const duration = set.duration === '' ? null : Number(set.duration)
+        const distance = set.distance === '' ? null : Number(set.distance)
+
+
+        if (Number.isNaN(reps) || Number.isNaN(weight) || Number.isNaN(rpe)) continue
+
+        sets.push({ setId: set.sourceSetId, type: set.type, reps, weight, duration , distance, 
+          restTime: set.restTime, rpe, orderIndex: orderIndex++, groupNumber: groupNum, 
+        })
+      }
+    
+      if (sets.length === 0) continue
+
+      exercisesLog.push({
+          exerciseId: exercise.exerciseId,
+          workoutExerciseId: exercise.sourceWorkoutExerciseId,
+          orderIndex: exercisesLog.length,
+          groupNumber: groupNum,
+          sets,
+        })
+      }
+        
+      if (exercisesLog.length === 0) return null
+
+      return {
+        logId,
+        workoutId,
+        entryId: null,
+        startedAt: new Date(startedAtMs ?? Date.now()).toISOString(),
+        completedAt: new Date().toISOString(),
+        notes: null,
+        exercises: exercisesLog,
+      }
+  }
+
+  const removeExercise = (exerciseId: string) => {
+    setExercises((currentExercises) => currentExercises.filter((exercise) => exercise.id !== exerciseId))
+  }
+
+
+  const finishWorkout = async () => {
+    const load = buildLogPayload()
+    if (!load) {
+      window.alert('You must atleast have 1 set ticked to finish.')
+      return
+    }
+
+    await enqueue(load)
+    void flushOutBox()
+
+    if (navigator.onLine) {
+      toast.success('Workout saved.', 'Saved')
+    } else {
+      toast.info("Workout saved but will sync when you're back online.", 'Saved offline')
+    }
+    navigate('/workouts')
+  }
+
+  const renderExerciseCard = (exercise: ExerciseData) => {
+    const columns = getColumns(exercise.exerciseType)
+    return (
+      <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
+        <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
+            <div>
+              <CardTitle className="text-base font-bold">{exercise.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+            </div>
           </div>
-        </div>
-        <CardAction>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-            <MoreHorizontal className="h-5 w-5" />
-          </Button>
-        </CardAction>
-      </CardHeader>
+                  <CardAction>
+            <DropdownMenu>
+              <DropdownMenuTrigger variant="plain" className="p-1 text-muted-foreground hover:text-foreground">
+                <MoreHorizontal className="h-5 w-5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem variant="destructive" onSelect={() => removeExercise(exercise.id)}>
+                  Remove exercise
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardAction>
+        </CardHeader>
 
-      <CardContent className="px-5 pb-4">
-        <div className="mb-2 grid grid-cols-[4rem_1.5fr_1fr_1fr_0.8fr_5rem] gap-4 px-2 text-center text-xs font-semibold tracking-wide text-muted-foreground">
-          <div>SET</div>
-          <div>PREVIOUS</div>
-          <div>KG</div>
-          <div>REPS</div>
-          <div>RPE</div>
-          <div className="w-full flex justify-center"><Check className="h-4 w-4" /></div>
-        </div>
+        <CardContent className="px-5 pb-4">
+          <div
+            className="mb-2 grid gap-4 px-2 text-center text-xs font-semibold tracking-wide text-muted-foreground"
+            style={{ gridTemplateColumns: `4rem 1.5fr ${columns.map(() => '1fr').join(' ')} 0.8fr 5rem` }}
+          >
+            <div>SET</div>
+            <div>PREVIOUS</div>
+            {columns.map((col) => <div key={col.field}>{col.label}</div>)}
+            <div>RPE</div>
+            <div className="w-full flex justify-center"><Check className="h-4 w-4" /></div>
+          </div>
 
-        <div className="space-y-2">
-          {exercise.sets.map((set, setIndex) => {
-            const workingNumber = exercise.sets.slice(0, setIndex + 1).filter((s) => s.type === 'Normal').length
-            const setLabel = set.type === 'Warmup' ? 'W' : set.type === 'DropSet' ? 'D' : workingNumber
 
-            return (
-              <div key={set.id} className="grid grid-cols-[4rem_1.5fr_1fr_1fr_0.8fr_5rem] items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium">
-                <div className="flex items-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
-                      <ChevronDown className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {SET_TYPE_OPTIONS.map((option) => (
-                        <DropdownMenuItem
-                          key={option}
-                          onSelect={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, type: option }))}
-                        >
-                          {setTypeLabelMap[option]}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Input
-                    readOnly
-                    value={setLabel}
-                    className="h-8 w-8 border-0 bg-transparent px-0 text-center text-sm font-bold"
+          <div className="space-y-2">
+            {exercise.sets.map((set, setIndex) => {
+              const workingNumber = exercise.sets.slice(0, setIndex + 1).filter((s) => s.type === 'Normal').length
+              const setLabel = set.type === 'Warmup' ? 'W' : set.type === 'DropSet' ? 'D' : workingNumber
+
+              return (
+                <div
+                  key={set.id} className="grid items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium"
+                  style={{ gridTemplateColumns: `4rem 1.5fr ${columns.map(() => '1fr').join(' ')} 0.8fr 5rem` }}
+                  >
+                  <div className="flex items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
+                        <ChevronDown className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {SET_TYPE_OPTIONS.map((option) => (
+                          <DropdownMenuItem
+                            key={option}
+                            onSelect={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, type: option }))}
+                          >
+                            {setTypeLabelMap[option]}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Input
+                      readOnly
+                      value={setLabel}
+                      className="h-8 w-8 border-0 bg-transparent px-0 text-center text-sm font-bold"
+                    />
+                  </div>
+
+                  <div className="text-muted-foreground font-normal">{set.previous}</div>
+
+                  {columns.map((col) => {
+                    const key = FIELD_TO_SET_KEY[col.field]
+                    return (
+                      <NumericalUnderscoreInput
+                        key={col.field}
+                        value={set[key]}
+                        onChange={(event) => {
+                          const rawValue = event.target.value
+                          updateSet(exercise.id, set.id, (currentSet) => ({
+                            ...currentSet,
+                            [key]: rawValue === '' ? '' : Number(rawValue),
+                          }))
+                        }}
+                        className="text-xl text-center mx-auto"
+                      />
+                    )
+                  })}
+
+                  <NumericalUnderscoreInput
+                    value={set.rpe}
+                    placeholder="RPE"
+                    onChange={(event) => {
+                      const rawValue = event.target.value
+                      updateSet(exercise.id, set.id, (currentSet) => ({
+                        ...currentSet,
+                        rpe: rawValue === '' ? '' : Number(rawValue),
+                      }))
+                    }}
+                    className="text-base text-center mx-auto"
                   />
+
+                  <div className="flex w-full items-center justify-center gap-1">
+                    <Button
+                      variant="icon"
+                      size="icon"
+                      className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
+                      onClick={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, completed: !currentSet.completed }))}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
+              )
+            })}
+          </div>
 
-                <div className="text-muted-foreground font-normal">{set.previous}</div>
-
-                <NumericalUnderscoreInput
-                  value={set.kg}
-                  onChange={(event) => {
-                    const rawValue = event.target.value
-                    updateSet(exercise.id, set.id, (currentSet) => ({
-                      ...currentSet,
-                      kg: rawValue === '' ? '' : Number(rawValue),
-                    }))
-                  }}
-                  className="text-xl text-center mx-auto"
-                />
-                <NumericalUnderscoreInput
-                  value={set.reps}
-                  onChange={(event) => {
-                    const rawValue = event.target.value
-                    updateSet(exercise.id, set.id, (currentSet) => ({
-                      ...currentSet,
-                      reps: rawValue === '' ? '' : Number(rawValue),
-                    }))
-                  }}
-                  className="text-xl text-center mx-auto"
-                />
-                <NumericalUnderscoreInput
-                  value={set.rpe}
-                  placeholder="RPE"
-                  onChange={(event) => {
-                    const rawValue = event.target.value
-                    updateSet(exercise.id, set.id, (currentSet) => ({
-                      ...currentSet,
-                      rpe: rawValue === '' ? '' : Number(rawValue),
-                    }))
-                  }}
-                  className="text-base text-center mx-auto"
-                />
-
-                <div className="flex w-full items-center justify-center gap-1">
-                  <Button
-                    variant="icon"
-                    size="icon"
-                    className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
-                    onClick={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, completed: !currentSet.completed }))}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => updateSet(exercise.id, set.id, (currentSet) => ({ ...currentSet, completed: false }))}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        <Button
-          variant="outline"
-          className="mt-3 w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-9 text-xs"
-          onClick={() => addSet(exercise.id)}
-        >
-          <Plus className="mr-2 h-3.5 w-3.5" /> Add Set
-        </Button>
-      </CardContent>
-    </Card>
-  )
+          <Button
+            variant="outline"
+            className="mt-3 w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-9 text-xs"
+            onClick={() => addSet(exercise.id)}
+          >
+            <Plus className="mr-2 h-3.5 w-3.5" /> Add Set
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
 
     return (
     <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
@@ -505,7 +639,7 @@ export default function ActiveSessionPage() {
                   <p className="text-xs font-semibold text-muted-foreground">Sets</p>
                   <p className="text-sm font-bold">{summary.completedSets}/{summary.totalSets}</p>
                 </div>
-                <Button variant="default" size="sm" className="h-8" onClick={() => navigate('/workouts')}>
+                <Button variant="default" size="sm" className="h-8" onClick={() => void finishWorkout()}>
                   Finish
                 </Button>
               </div>
@@ -557,7 +691,7 @@ export default function ActiveSessionPage() {
               <Button
                 variant="outline"
                 className="w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-10 text-xs"
-                onClick={addExercise}
+                onClick={() => isPickerUp(true)}
               >
                 <Plus className="mr-2 h-3.5 w-3.5" /> Add Exercise
               </Button>
@@ -599,6 +733,11 @@ export default function ActiveSessionPage() {
         </div>
 
       </div>
+      <ExercisePickerDialog
+        isOpen={isPickerOpen}
+        onClose={() => isPickerUp(false)}
+        onSelect={selectedExercise}
+      />
     </section>
   )
 }

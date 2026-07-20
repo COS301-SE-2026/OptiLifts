@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Expressions;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
+using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
@@ -92,6 +93,39 @@ public sealed class WorkoutsController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    [HttpPost("{workoutId:guid}/logs")]
+    public async Task<ActionResult<CreateWorkoutLogRes>> CreateWorkoutLog(
+        [FromRoute] Guid workoutId,
+        [FromBody] CreateWorkoutLogReq request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized();
+
+        var cmd = new CreateWorkoutLogCom(
+            userId,
+            workoutId,
+            request.LogId,
+            request.EntryId,
+            request.Notes,
+            request.StartedAt,
+            request.CompletedAt,
+            request.Exercises);
+
+        var res = await _sender.Send(cmd, cancellationToken);
+
+        if (res is null)
+        {
+            return NotFound(new { message = "Workout log could not be created for this specific user." });
+        }
+        if (res.AlreadyExisted)
+        {
+            return Ok(res);
+        }
+
+        return CreatedAtAction(nameof(GetWorkoutLogDetail), new { workoutId, logId = res.LogId }, res);
     }
 
     [HttpPost]

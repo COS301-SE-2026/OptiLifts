@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { Agent } from 'node:http';
 
 test.describe('Schedule Page', () => {
     test.beforeEach(async ({ page }) => {
@@ -17,6 +18,10 @@ test.describe('Schedule Page', () => {
         const month = String(futureDate.getMonth() + 1).padStart(2, '0');
         const day = String(futureDate.getDate()).padStart(2, '0');
         const formattedFutureDate = `${year}-${month}-${day}`;
+
+        //race condition fix
+        const nextWeekButton = page.locator('button:has(svg.lucide-chevron-right)');
+        await nextWeekButton.click();
 
         const addWorkoutButton = page.getByRole('button', { name: /^Add workout for / }).first();
 

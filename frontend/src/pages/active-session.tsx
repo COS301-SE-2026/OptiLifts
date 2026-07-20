@@ -159,6 +159,11 @@ function groupNumMap(exercises: ExerciseData[]): Map<string, number> {
   return groupNumByExerciseId
 }
 
+const secureRandomHex = (): string => {
+  const res = globalThis.crypto?.getRandomValues?.(new Uint8Array(6))
+
+  return res ? Array.from(res, (b) => b.toString(16).padStart(2, '0')).join('') : Date.now().toString(36)
+}
 
 const toNumericValue = (value: number | string) => {
   if (typeof value === 'number') {
@@ -178,7 +183,7 @@ const createClientSetId = () => {
     return globalThis.crypto.randomUUID()
   }
 
-  return `set-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  return `set-${Date.now()}-${secureRandomHex()}`
 }
 
 const createClientExerciseId = () => {
@@ -186,7 +191,7 @@ const createClientExerciseId = () => {
     return globalThis.crypto.randomUUID()
   }
 
-  return `exercise-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  return `exercise-${Date.now()}-${secureRandomHex()}`
 }
 
 export default function ActiveSessionPage() {
@@ -200,7 +205,7 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(() =>
     workoutId ? null : 'No workout was selected. Start a workout from the workouts page.'
   )
-  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${Math.floor(Math.random() * 1e6)}`)
+  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, isPickerUp] = useState(false)

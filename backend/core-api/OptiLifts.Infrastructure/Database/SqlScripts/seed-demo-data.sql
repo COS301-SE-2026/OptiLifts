@@ -325,10 +325,6 @@ CROSS JOIN LATERAL (VALUES
 ) AS v(group_id, workout_id, group_type, rest_time)
 ON CONFLICT (exercise_group_id) DO NOTHING;
 
--- Link each exercise to its workout's group. Push Day A and Upper B are fully
--- grouped (all their exercises belong to the superset/circuit); Pull/Lower have
--- no group row, so their exercises stay ungrouped. Deriving group_id from the
--- workout avoids repeating the group ids.
 UPDATE workout_exercises we
 SET group_id = eg.exercise_group_id
 FROM exercise_groups eg
@@ -350,11 +346,89 @@ CROSS JOIN LATERAL (VALUES
 ) AS v(set_id, we_id, reps, weight, rest_time)
 ON CONFLICT (set_id) DO NOTHING;
 
--- ===========================================================================
--- Completed workout demo data for "test@optilifts.com".
--- Seeds two completed workouts using the two workouts that this user created
--- but have not yet been completed in the demo data.
--- ===========================================================================
+CREATE OR REPLACE FUNCTION seed_logged_workout(
+    p_user_id uuid,
+    p_workout_id uuid,
+    p_scheduled_at timestamptz,
+    p_completed_at timestamptz,
+    p_ai_modified boolean,
+    p_notes text,
+    p_max_order_index integer DEFAULT NULL,
+    p_rpe_mode text DEFAULT 'session',
+    p_rpe_seed integer DEFAULT NULL
+) RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_entry uuid;
+    v_log uuid;
+BEGIN
+    INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+    VALUES (gen_random_uuid(), p_user_id, p_workout_id, p_scheduled_at, 'Completed')
+    RETURNING entry_id INTO v_entry;
+
+    INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+    VALUES (gen_random_uuid(), v_entry, p_scheduled_at, p_completed_at, p_ai_modified, p_notes)
+    RETURNING log_id INTO v_log;
+
+    INSERT INTO workout_log_exercises (
+        log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
+    SELECT
+        gen_random_uuid(),
+        v_log,
+        we.exercise_dict_id,
+        we.workout_exercise_id,
+        we.order_index,
+        CASE
+            WHEN we.group_id IS NULL THEN 0
+            ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+        END
+    FROM workout_exercises we
+    WHERE we.workout_id = p_workout_id
+      AND (p_max_order_index IS NULL OR we.order_index <= p_max_order_index);
+
+    INSERT INTO workout_log_sets (
+        log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+    SELECT
+        gen_random_uuid(),
+        v_log,
+        we.exercise_dict_id,
+        we.workout_exercise_id,
+        s.set_id,
+        s.set_type,
+        COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
+        COALESCE(s.weight, 0),
+        s.duration,
+        s.distance,
+        s.rest_time,
+        CASE
+            WHEN we.group_id IS NULL THEN 0
+            ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
+        END,
+        CASE
+            WHEN p_rpe_mode = 'exercise' THEN
+                CASE
+                    WHEN we.order_index % 3 = 0 THEN 7.5
+                    WHEN we.order_index % 3 = 1 THEN 8.0
+                    ELSE 8.5
+                END
+            ELSE
+                CASE
+                    WHEN COALESCE(p_rpe_seed, 0) % 3 = 0 THEN 7.5
+                    WHEN COALESCE(p_rpe_seed, 0) % 3 = 1 THEN 8.0
+                    ELSE 8.5
+                END
+        END,
+        s.order_index,
+        false,
+        p_scheduled_at + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
+    FROM workout_exercises we
+    JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
+    WHERE we.workout_id = p_workout_id
+      AND (p_max_order_index IS NULL OR we.order_index <= p_max_order_index);
+END;
+$$;
+
 DO $$
 DECLARE
     test_email text;
@@ -365,8 +439,6 @@ DECLARE
     test_id uuid;
     v_push uuid;
     v_upper uuid;
-    v_entry uuid;
-    v_log uuid;
     rec record;
 BEGIN
     SELECT c.test_user_email INTO test_email
@@ -446,63 +518,20 @@ BEGIN
             (TIMESTAMPTZ '2026-06-12 18:30:00+00', v_upper)
         ) AS t(scheduled_at, workout_id)
     LOOP
-        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-        VALUES (gen_random_uuid(), test_id, rec.workout_id, rec.scheduled_at, completed_status)
-        RETURNING entry_id INTO v_entry;
-
-        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
-        VALUES (gen_random_uuid(), v_entry, rec.scheduled_at, rec.scheduled_at + INTERVAL '55 minutes', false, NULL)
-        RETURNING log_id INTO v_log;
-
-        INSERT INTO workout_log_exercises (
-            log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
-        SELECT
-            gen_random_uuid(),
-            v_log,
-            we.exercise_dict_id,
-            we.workout_exercise_id,
-            we.order_index,
-            CASE
-                WHEN we.group_id IS NULL THEN 0
-                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
-            END
-        FROM workout_exercises we
-        WHERE we.workout_id = rec.workout_id;
-
-        INSERT INTO workout_log_sets (
-            log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
-        SELECT
-            gen_random_uuid(),
-            v_log,
-            we.exercise_dict_id,
-            we.workout_exercise_id,
-            s.set_id,
-            s.set_type,
-            COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
-            COALESCE(s.weight, 0),
-            s.duration,
-            s.distance,
-            s.rest_time,
-            CASE
-                WHEN we.group_id IS NULL THEN 0
-                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
-            END,
-            CASE WHEN we.order_index % 3 = 0 THEN 7.5 WHEN we.order_index % 3 = 1 THEN 8.0 ELSE 8.5 END,
-            s.order_index,
+        PERFORM seed_logged_workout(
+            test_id,
+            rec.workout_id,
+            rec.scheduled_at,
+            rec.scheduled_at + INTERVAL '55 minutes',
             false,
-            rec.scheduled_at + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
-        FROM workout_exercises we
-        JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
-        WHERE we.workout_id = rec.workout_id;
+            NULL,
+            NULL,
+            'exercise',
+            NULL
+        );
     END LOOP;
 END $$;
 
--- ===========================================================================
--- Profile-page demo data for "Alex" (gymgoer@gmail.com).
--- The user itself is created by the C# seeder (encrypted), so run `dotnet run`
--- before this script. Logs attach to the user via scheduled_entries; the
--- encrypted workout_logs.notes column is left NULL (raw SQL can't encrypt).
--- ===========================================================================
 DO $$
 DECLARE
     alex_email text;
@@ -512,7 +541,6 @@ DECLARE
     push_name constant text := 'Push';
     full_body_name constant text := 'Full Body';
     my_split_name constant text := 'My Split';
-    completed_status constant text := 'Completed';
     alex_id uuid;
     v_folder uuid;
     v_pull uuid;
@@ -520,8 +548,6 @@ DECLARE
     v_full_body uuid;
     v_we uuid;
     v_ex uuid;
-    v_entry uuid;
-    v_log uuid;
     v_day timestamp;
     i int;
     rec record;
@@ -687,117 +713,32 @@ BEGIN
     -- ~51 logged sessions spread across 2026-03-23 .. mid-June (calendar / hours / streak / count)
     FOR i IN 0..50 LOOP
         v_day := TIMESTAMP '2026-03-23 17:00:00' + (i * INTERVAL '41 hours');
-
-        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-        VALUES (gen_random_uuid(), alex_id, CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END, v_day, completed_status)
-        RETURNING entry_id INTO v_entry;
-
-        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
-        VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '65 minutes', false, NULL)
-        RETURNING log_id INTO v_log;
-
-        PERFORM 1
-        FROM workout_log_sets
-        WHERE log_id = v_log;
-
-        IF FOUND THEN
-            CONTINUE;
-        END IF;
-
-        INSERT INTO workout_log_exercises (
-            log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
-        SELECT
-            gen_random_uuid(),
-            v_log,
-            we.exercise_dict_id,
-            we.workout_exercise_id,
-            we.order_index,
-            CASE
-                WHEN we.group_id IS NULL THEN 0
-                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
-            END
-        FROM workout_exercises we
-        WHERE we.workout_id = CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END
-          AND we.order_index <= 4;
-
-        INSERT INTO workout_log_sets (
-            log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
-        SELECT
-            gen_random_uuid(),
-            v_log,
-            we.exercise_dict_id,
-            we.workout_exercise_id,
-            s.set_id,
-            s.set_type,
-            s.reps,
-            s.weight,
-            s.duration,
-            s.distance,
-            s.rest_time,
-            CASE
-                WHEN we.group_id IS NULL THEN 0
-                ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
-            END,
-            CASE WHEN i % 3 = 0 THEN 7.5 WHEN i % 3 = 1 THEN 8.0 ELSE 8.5 END,
-            s.order_index,
+        PERFORM seed_logged_workout(
+            alex_id,
+            CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END,
+            v_day,
+            v_day + INTERVAL '65 minutes',
             false,
-            v_day + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
-        FROM workout_exercises we
-        JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
-        WHERE we.workout_id = CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END
-          AND we.order_index <= 4;
+            NULL,
+            4,
+            'session',
+            i
+        );
     END LOOP;
 
     v_day := TIMESTAMP '2026-03-23 17:00:00' + (51 * INTERVAL '41 hours');
 
-    INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-    VALUES (gen_random_uuid(), alex_id, v_full_body, v_day, completed_status)
-    RETURNING entry_id INTO v_entry;
-
-    INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
-    VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '82 minutes', false, NULL)
-    RETURNING log_id INTO v_log;
-
-    INSERT INTO workout_log_exercises (
-        log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
-    SELECT
-        gen_random_uuid(),
-        v_log,
-        we.exercise_dict_id,
-        we.workout_exercise_id,
-        we.order_index,
-        CASE
-            WHEN we.group_id IS NULL THEN 0
-            ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
-        END
-    FROM workout_exercises we
-    WHERE we.workout_id = v_full_body;
-
-    INSERT INTO workout_log_sets (
-        log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
-    SELECT
-        gen_random_uuid(),
-        v_log,
-        we.exercise_dict_id,
-        we.workout_exercise_id,
-        s.set_id,
-        s.set_type,
-        COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
-        COALESCE(s.weight, 0),
-        s.duration,
-        s.distance,
-        s.rest_time,
-        CASE
-            WHEN we.group_id IS NULL THEN 0
-            ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
-        END,
-        CASE WHEN we.order_index % 3 = 0 THEN 7.5 WHEN we.order_index % 3 = 1 THEN 8.0 ELSE 8.5 END,
-        s.order_index,
+    PERFORM seed_logged_workout(
+        alex_id,
+        v_full_body,
+        v_day,
+        v_day + INTERVAL '82 minutes',
         false,
-        v_day + (we.order_index * INTERVAL '4 minutes') + (s.order_index * INTERVAL '45 seconds')
-    FROM workout_exercises we
-    JOIN sets s ON s.workout_exercise_id = we.workout_exercise_id
-    WHERE we.workout_id = v_full_body;
+        NULL,
+        NULL,
+        'exercise',
+        NULL
+    );
 END $$;
 
 -- ===========================================================================

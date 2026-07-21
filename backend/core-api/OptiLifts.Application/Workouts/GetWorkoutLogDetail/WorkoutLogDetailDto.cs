@@ -7,6 +7,10 @@ public sealed record WorkoutLogSetDto(
     int Reps,
     float Weight,
     int OrderIndex,
+    int? Duration,
+    float? Distance,
+    int RestTime,
+    int GroupNumber,
     float Rpe);
 
 public sealed record WorkoutLogExerciseDetailDto(

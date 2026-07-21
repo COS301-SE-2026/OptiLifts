@@ -220,12 +220,17 @@ export default function WorkoutsPage() {
                   </CardAction>
                 </CardHeader>
 
-                <CardContent>
-                  <Link to={`/workouts/${w.id}`} className="block text-left">
+                <CardContent className="flex items-end justify-between gap-4">
+                  <div>
                     <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
-                    <p className="text-sm mt-1 text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
-                  </Link>
-                </CardContent>
+                    <p className="mt-1 text-sm text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
+                  </div>
+                  <Button size="sm" onClick={(e) =>  { 
+                    e.stopPropagation() 
+                    navigate('/active-session', { state: { workout: w } })}}>
+                    Start Workout
+                  </Button>
+                </CardContent>  
               </Card>
             ))}
           </div>

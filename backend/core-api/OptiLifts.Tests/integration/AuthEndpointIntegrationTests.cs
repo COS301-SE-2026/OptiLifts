@@ -40,7 +40,7 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Register_Succeeds_ReturnsTokenAndUser()
+    public async Task Register_Succeeds_ReturnsCookiesAndUser()
     {
         var request = new RegisterRequest("Jordan", "jordanRegister@gmail.com", "P@ssw0rd!");
         var response = await Client.PostAsJsonAsync("/api/auth/register", request);
@@ -74,7 +74,7 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Login_Succeeds_ReturnsTokenAndUser()
+    public async Task Login_Succeeds_ReturnsCookiesAndUser()
     {
         var email = "jordanLogin@optilifts.com";
         var password = "Password123!";
@@ -111,5 +111,77 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
     {
         var response = await Client.PostAsJsonAsync("/api/auth/register", new { DisplayName = "", Email = "", Password = "" });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ValidRefreshToken_ReturnsNewTokens()
+    {
+        var email = "jordan@gmail.com";
+        var password = "Password123!";
+        await SeedAuthUserAsync(email, "Jordan", password);
+
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
+        loginResponse.EnsureSuccessStatusCode();
+
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
+        var refreshC = cookies.FirstOrDefault(c => c.Contains("refresh_token="));
+        refreshC.Should().NotBeNull();
+
+        var refreshReq = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
+        refreshReq.Headers.Add("Cookie", refreshC);
+
+        var refreshResponse = await Client.SendAsync(refreshReq);
+        refreshResponse.EnsureSuccessStatusCode();
+        var newCookies = refreshResponse.Headers.GetValues("Set-Cookie").ToList();
+        newCookies.Should().Contain(c => c.Contains("access_token="));
+
+    }
+
+    [Fact]
+    public async Task InvalidRefreshToken_ReturnsUnauthorized()
+    {
+        var refreshReq = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
+        refreshReq.Headers.Add("Cookie", "refresh_token=lol");
+
+        var refreshResponse = await Client.SendAsync(refreshReq);
+        refreshResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Me_WithValidAccessToken_ReturnsUser()
+    {
+        var email = "jordan@gmail.com";
+        var password = "Password123!";
+        await SeedAuthUserAsync(email, "Jordan", password);
+
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
+        loginResponse.EnsureSuccessStatusCode();
+
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
+        var refreshC = cookies.FirstOrDefault(c => c.Contains("refresh_token="));
+        refreshC.Should().NotBeNull();
+
+        var meReq = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+        meReq.Headers.Add("Cookie", refreshC);
+
+        var meResponse = await Client.SendAsync(meReq);
+
+        meResponse.EnsureSuccessStatusCode();
+        var userDto = await meResponse.Content.ReadFromJsonAsync<AuthUserDto>();
+        userDto.Should().NotBeNull();
+        userDto.Email.Should().Be(email);
+        userDto.DisplayName.Should().Be("Jordan");
+
+    }
+
+    [Fact]
+    public async Task Me_WithInvalidAccessToken_ReturnsUnauthorized()
+    {
+        var meReq = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+        meReq.Headers.Add("Cookie", "access_token=lol");
+
+        var meResponse = await Client.SendAsync(meReq);
+
+        meResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
     }
 }

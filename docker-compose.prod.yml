@@ -48,7 +48,7 @@ services:
       - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-+8bGaoOpx4CEfxnMcX1RG2qrcJaT+RZO/0IIpSePZQA=}
 
       - FRONTEND_ORIGIN=http://localhost
-      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
     
       - CONNECTIONSTRINGS__AZURESTORAGE=${CONNECTIONSTRINGS__AZURESTORAGE:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;}
     
@@ -71,8 +71,8 @@ services:
       context: ./backend/ai-api
       dockerfile: Dockerfile
       network: host
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     restart: unless-stopped
  
   frontend:

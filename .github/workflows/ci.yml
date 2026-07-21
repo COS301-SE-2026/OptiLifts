@@ -52,6 +52,12 @@ jobs:
     - name: Install Dependencies
       run: pnpm install --frozen-lockfile && pnpm run setup
 
+    - name: Lint Code
+      run: pnpm lint
+
+    - name: Run Tests
+      run: pnpm test
+
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
 
@@ -60,12 +66,6 @@ jobs:
 
     - name: Wait for E2E App
       run: bash ./scripts/e2e-ci.sh wait
-
-    - name: Lint Code
-      run: pnpm lint
-
-    - name: Run Tests
-      run: pnpm test
 
     - name: Run End-to-End Tests
       run: bash ./scripts/e2e-ci.sh test

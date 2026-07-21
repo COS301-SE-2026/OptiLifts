@@ -198,93 +198,137 @@ Shows the athlete's saved workouts as a scrollable list of cards.
 
 #### Screen 5 - Dashboard
 
-description
+Shows a quick overiew of how the athlete is doing this week, what workouts are coming up, and recent milestones.
 
 ![Dashboard Wireframe](wireframes/dashboard-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo on the left, full navigation (DASHBOARD, WORKOUTS active, SCHEDULE, PROGRESS, PROFILE) right
+- Upper section: left-aligned greeting header with a subtitle of today's scheduled workout. Below are two utility buttons, "VIEW WORKOUT" and "START SESSION".
+- Mid left panel: 70% width, a large card displaying a line graph tracking the user's volume for the current week. Top right of the card contains dropdown menus for muscle group filtering and week/month duration.
+- Mid right panel: an "Upcoming" sidebar card listing the scheduled workouts with exercise counts and days. A dashed "See all" action button is at the bottom.
+- Bottom row: grid layout, four grid blocks:
+    - "Favourite exercise": displays name and icon placeholder
+    - "Days exercised this week": numerical value and fire icon
+    - "Personal records hit thia week": numerical value and medal achievement icon
+    - Interactive radar chart showing relative muscle group balance across key sections
 
 **User Interaction Points:**
-- a
+- VIEW WORKOUT / START SESSIOON buttons - navigates to the workout active session or the details page
+- Volume chart filters - dropdown selection that modifies chart data arrays dynamically
+- Upcoming sidebar items - clicking specific workout navigates straight to that specific scheduled workout
+- "See all" button - redirects to schedule page
 
 **Annotations:**
-- a
+- The radar chart updates to visually captrue the weekly load balancing based on the user's completed workouts volume logs
 
 ---
 
 #### Screen 6 - Edit Workout
 
-description
+Allows athlete to modify an existing workout by editing the names, set ranges, adding new exercises, etc.
 
 ![Edit Workout Wireframe](wireframes/edit-workout-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigation (WORKOUTS active) right
+- Left panel (70% width): workout name input + SAVE WORKOUT button at top, exercise cards below, each with set rows
+- Right panel (30% width): muscle diagram at top, Recommended exercises section, Exercise library with filters and search below
+- Each exercise card: exercise name + muscle group header, set rows with SET type / KG / REPS columns, "+ Add Set" at bottom
+- Right panel exercise items: exercise name + muscle label + "+" add button
 
 **User Interaction Points:**
-- a
+- Workout Name field - text input
+- SAVE WORKOUT button - update the existing workout with new edits
+- Exercise card "..." menu - edit or remove exercise
+- Set row fields - inline editable KG and REPS inputs
+- Set row "x" button - removes that set row
+- Set type dropdown - select set type (W = working, warmup, etc.)
+- "+ Add Set" - appends a new set row to the exercise card
+- Right panel "+" button - adds exercise to workout
+- "+ Create Exercise" link - opens create exercise flow
+- Muscle filter dropdown - filters exercise list by muscle group
+- Equipment filter dropdown - filters exercise list by equipment
+- Search field - searches exercise library by name
 
 **Annotations:**
-- a
+- Muscle diagram updates to highlight muscles targeted by added exercises
+- Recommended section shows AI-suggested exercises based on current workout composition
+- Set rows are drag-reorderable within an exercise card
+- Exercise cards are reorderable within the workout
 
 ---
 #### Screen 7 - Workout Detail
 
-description
+Displays the  details of a specific created workout, including set information and muscle distribution
 
 ![Workout detail Wireframe](wireframes/workout-detail-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigation (WORKOUTS active) right
+- Page title of workout name "PULL" left-aligned with right aligned summary details
+- Left column panel: Vertical scroll view displaying exercise cards, each with a exercise image, title and set and rep details
+- Right column panel: muscle heatmap displaying highlight values across specific muscle groups, and a horizontal bar chart displaying the exact set count per muscle category
 
 **User Interaction Points:**
-- a
+- Card stack container - standard scrolling mechanics
 
 **Annotations:**
-- a
+- Heatmap shows a clean muscle distribution for easy viewing of the primary muscle groups a workout exercises
 
 ---
 #### Screen 8 - Workout Log Detail
 
-description
+Displays the details of a completed workout session, including the exercises, set and rep counts, and muscle distribution
 
 ![Workout Log Detail Wireframe](wireframes/workout-log-detail-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigation (WORKOUTS active) right
+- Page title of workout name "PULL" left-aligned with right aligned summary details
+- Left container card: completed exercise cards with columns for sets, showing their types and details
+- Right container card: muscle heatmap displaying highlight values across specific muscle groups, and a horizontal bar chart displaying the exact set count per muscle category
 
 **User Interaction Points:**
-- a
+- Card stack container - standard scrolling mechanics
 
 **Annotations:**
-- a
+- Heatmap shows a clean muscle distribution for easy viewing of the primary muscle groups a workout exercises
+- RPE fields are shown next to the rep count
 
 ---
 #### Screen 9 - Week Schedule
 
-description
+Calendar grid showing scheduled workout routines across a weekly context view, and displaying weekly summaries
 
 ![Week Schedule Wireframe](wireframes/week-schedule-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigaion (SCHEDULE active) right
+- Page title "SCHEDULE" left-aligned with right date selector block with chevron toggles, and a dropdown menu for toggling Week/Month view
+- Left column view: Vertical cards for each day of the week, with empty slots with centered "+" icon button, and active slots with the workout name, primary muscle groups, and workout summary and scheduled status
+- Right column view: forecast panels with stats for that week, and a spider graph mapping muscle distribution over 6 main muscle groups
 
 **User Interaction Points:**
-- a
+- Chevron arrows - shifts data range backwards or forwards by a week
+- Dropdown select - switches layout mode between Month and Week views
+- Card "+" buttons - opens popup with created workouts to schedule them on specific days
+- "X" buttons - removes the scheduled entry from the calendar
 
 **Annotations:**
-- a
+- - The radar chart updates to visually captrue the weekly load balancing based on the user's workouts set count
 
 ---
 #### Screen 10 - Month Schedule
 
-description
+Calendar grid showing scheduled workout routines across a monthly context view
 
 ![Month Schedule Wireframe](wireframes/month-schedule-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigaion (SCHEDULE active) right
+- Page title "SCHEDULE" left-aligned with right date selector block with chevron toggles, and a dropdown menu for toggling Week/Month view
+- Center section: a structures calendar grid mapping columns MON through to SUN.
 
 **User Interaction Points:**
 - a

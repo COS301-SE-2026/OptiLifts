@@ -63,6 +63,7 @@ CREATE TEMP TABLE seed_constants (
     demo_user_email text NOT NULL,
     alex_user_email text NOT NULL,
     hex_enc text NOT NULL,
+    rpe_exercise text NOT NULL,
     set_type text NOT NULL,
     exercise_type text NOT NULL,
     mechanic_compound text NOT NULL,
@@ -130,6 +131,7 @@ VALUES (
     'demo2@optilifts.com',
     'gymgoer@gmail.com',
     'hex',
+    'exercise',
     'Normal',
     'WeightReps',
     'compound',
@@ -314,6 +316,7 @@ CROSS JOIN LATERAL (VALUES
     (c.we_lunge_id,    c.workout_lower_b_id, c.exercise_lunge_id,    2),
     (c.we_calf_id,     c.workout_lower_b_id, c.exercise_calf_id,     3)
 ) AS v(we_id, workout_id, exercise_id, order_index)
+JOIN workouts w ON w.workout_id = v.workout_id
 ON CONFLICT (workout_exercise_id) DO NOTHING;
 
 INSERT INTO exercise_groups (exercise_group_id, workout_id, group_type, rest_time)
@@ -323,6 +326,7 @@ CROSS JOIN LATERAL (VALUES
     ('66666666-6666-6666-6666-666666666661'::uuid, c.workout_push_id,    'Superset', 90),
     ('66666666-6666-6666-6666-666666666662'::uuid, c.workout_upper_b_id, 'Circuit',  120)
 ) AS v(group_id, workout_id, group_type, rest_time)
+JOIN workouts w ON w.workout_id = v.workout_id
 ON CONFLICT (exercise_group_id) DO NOTHING;
 
 UPDATE workout_exercises we
@@ -344,6 +348,7 @@ CROSS JOIN LATERAL (VALUES
     (c.set_lunge_id,    c.we_lunge_id,    10, 24::real,   75),
     (c.set_calf_id,     c.we_calf_id,     12, 60::real,   60)
 ) AS v(set_id, we_id, reps, weight, rest_time)
+JOIN workout_exercises we ON we.workout_exercise_id = v.we_id
 ON CONFLICT (set_id) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION seed_logged_workout(
@@ -353,6 +358,8 @@ CREATE OR REPLACE FUNCTION seed_logged_workout(
     p_completed_at timestamptz,
     p_ai_modified boolean,
     p_notes text,
+    p_entry_id uuid DEFAULT NULL,
+    p_log_id uuid DEFAULT NULL,
     p_max_order_index integer DEFAULT NULL,
     p_rpe_mode text DEFAULT 'session',
     p_rpe_seed integer DEFAULT NULL
@@ -362,13 +369,14 @@ AS $$
 DECLARE
     v_entry uuid;
     v_log uuid;
+    v_exercise_mode constant text := 'exercise';
 BEGIN
     INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-    VALUES (gen_random_uuid(), p_user_id, p_workout_id, p_scheduled_at, 'Completed')
+    VALUES (COALESCE(p_entry_id, gen_random_uuid()), p_user_id, p_workout_id, p_scheduled_at, 'Completed')
     RETURNING entry_id INTO v_entry;
 
     INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
-    VALUES (gen_random_uuid(), v_entry, p_scheduled_at, p_completed_at, p_ai_modified, p_notes)
+    VALUES (COALESCE(p_log_id, gen_random_uuid()), v_entry, p_scheduled_at, p_completed_at, p_ai_modified, p_notes)
     RETURNING log_id INTO v_log;
 
     INSERT INTO workout_log_exercises (
@@ -406,7 +414,7 @@ BEGIN
             ELSE DENSE_RANK() OVER (PARTITION BY we.workout_id ORDER BY we.group_id)
         END,
         CASE
-            WHEN p_rpe_mode = 'exercise' THEN
+            WHEN p_rpe_mode = v_exercise_mode THEN
                 CASE
                     WHEN we.order_index % 3 = 0 THEN 7.5
                     WHEN we.order_index % 3 = 1 THEN 8.0
@@ -433,6 +441,7 @@ DO $$
 DECLARE
     test_email text;
     hex_enc text;
+    exercise_mode text;
     completed_status constant text := 'Completed';
     push_name constant text := 'Push Day A';
     upper_name constant text := 'Upper B';
@@ -446,6 +455,10 @@ BEGIN
     LIMIT 1;
 
     SELECT c.hex_enc INTO hex_enc
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT c.rpe_exercise INTO exercise_mode
     FROM seed_constants c
     LIMIT 1;
 
@@ -525,8 +538,10 @@ BEGIN
             rec.scheduled_at + INTERVAL '55 minutes',
             false,
             NULL,
+            CASE WHEN rec.workout_id = v_push THEN 'd6d19f21-8c17-49d1-b7eb-7a8c59dca1cd'::uuid ELSE NULL END,
+            CASE WHEN rec.workout_id = v_push THEN '58597dd0-e02c-416c-a4b0-cba560f21045'::uuid ELSE NULL END,
             NULL,
-            'exercise',
+            exercise_mode,
             NULL
         );
     END LOOP;
@@ -536,6 +551,7 @@ DO $$
 DECLARE
     alex_email text;
     hex_enc text;
+    exercise_mode text;
     normal_set_type text;
     pull_name constant text := 'Pull';
     push_name constant text := 'Push';
@@ -558,6 +574,10 @@ BEGIN
 
     SELECT c.hex_enc, c.set_type
     INTO hex_enc, normal_set_type
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT c.rpe_exercise INTO exercise_mode
     FROM seed_constants c
     LIMIT 1;
 
@@ -720,6 +740,8 @@ BEGIN
             v_day + INTERVAL '65 minutes',
             false,
             NULL,
+            NULL,
+            NULL,
             4,
             'session',
             i
@@ -736,7 +758,9 @@ BEGIN
         false,
         NULL,
         NULL,
-        'exercise',
+        NULL,
+        NULL,
+        exercise_mode,
         NULL
     );
 END $$;

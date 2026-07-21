@@ -55,9 +55,9 @@ public sealed class UserSettingsController : ControllerBase
             return BadRequest("No file uploaded or file is empty.");
         }
 
-        if (!profilePicture.ContentType.StartsWith("image/"))
+        if (profilePicture.ContentType != "image/jpeg" && profilePicture.ContentType != "image/png" && profilePicture.ContentType != "image/webp")
         {
-            return BadRequest("File must be an image.");
+            return BadRequest("File must be an image(JPEG, PNG or WebP)");
         }
 
         try

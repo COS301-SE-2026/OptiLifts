@@ -107,5 +107,84 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task UploadProfilePicture_Succeeds()
+    {
+        await SeedAuthenticatedUserAsync("jordan@gmail.com");
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("fake image"));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        content.Add(fileContent, "profilePicture", "test.png");
+
+        var response = await Client.PatchAsync("/api/users/me/profilePicture", content);
+        response.EnsureSuccessStatusCode();
+        
+        var result = await response.Content.ReadAsStringAsync();
+        result.Should().Contain("profilePictureUrl");
+
+        var getResponse = await Client.GetAsync("/api/users/me/settings");
+        var settings = await getResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        settings!.Profile.ProfilePictureUrl.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task UploadProfilePicture_UnsupportedImageType_ReturnsBadRequest()
+    {
+        await SeedAuthenticatedUserAsync("pic-bad-bmp@optilifts.com");
+        using var content = new MultipartFormDataContent();
+   
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("hola"));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/svg");
+        content.Add(fileContent, "profilePicture", "test.svg");
+        var response = await Client.PatchAsync("/api/users/me/profilePicture", content);
+        
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        var responseString = await response.Content.ReadAsStringAsync();
+
+        responseString.Should().Contain("File must be an image(JPEG, PNG or WebP)");
+    }
+
+    [Fact]
+    public async Task UploadProfilePicture_NotAnImage_ReturnsBadRequest()
+    {
+        await SeedAuthenticatedUserAsync("pic-bad-txt@optilifts.com");
+        using var content = new MultipartFormDataContent();
+        
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("I am totally an image, trust"));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        content.Add(fileContent, "profilePicture", "test.txt");
+        var response = await Client.PatchAsync("/api/users/me/profilePicture", content);
+        
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteProfilePicture_Succeeds()
+    {
+        await SeedAuthenticatedUserAsync("del-pic-good@optilifts.com");
+
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("delete this one"));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        content.Add(fileContent, "profilePicture", "test.png");
+        await Client.PatchAsync("/api/users/me/profilePicture", content);
+
+        var response = await Client.DeleteAsync("/api/users/me/deleteProfilePicture");
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+
+        var getResponse = await Client.GetAsync("/api/users/me/settings");
+        var settings = await getResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        settings!.Profile.ProfilePictureUrl.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteProfilePicture_Unauthenticated_ReturnsUnauthorized()
+    {
+        Client.DefaultRequestHeaders.Remove("Cookie");
+        var response = await Client.DeleteAsync("/api/users/me/deleteProfilePicture");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
    
 }

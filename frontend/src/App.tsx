@@ -7,6 +7,7 @@ import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { Loader2 } from 'lucide-react'
+import { Toaster } from '@/components/ui/alert'
 
 const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
 const WorkoutsPage = lazy(() => import('@/pages/workouts'))
@@ -21,6 +22,7 @@ function AppLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <Navbar />
+      <Toaster />
       <main>
         <Suspense fallback={
           <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">

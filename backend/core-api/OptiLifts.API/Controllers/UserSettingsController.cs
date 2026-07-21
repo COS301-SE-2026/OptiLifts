@@ -220,6 +220,10 @@ public sealed class UserSettingsController : ControllerBase
         {
             return BadRequest(new { error = e.Message });
         }
+        catch (ArgumentException e)
+        {
+            return BadRequest(new { error = e.Message });
+        }
     }
 
 }

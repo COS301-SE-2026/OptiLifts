@@ -871,11 +871,11 @@ ExerciseDto fields:
 
 **Inputs:**
 - `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
-- `exercises`: array of string - A list of exercise names to fetch images.
+- `exerciseIds`: array of GUIDs - A list of exercise ids to fetch images.
 
 **Outputs:**
 - A JSON dictionary (`Record<string, string>`) where:
-  - Key: string - The exercise name.
+  - Key: string - The exercise id.
   - Value: string - The image URL in the database.
 
 **Usage / Interaction Rules:**

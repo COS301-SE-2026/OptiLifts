@@ -8,7 +8,6 @@ import { ExerciseCard } from '@/components/ui/exercise-card'
 import { PageTitle } from '@/components/ui/page-title'
 import { CreateExercise } from '@/components/ui/create-exercise'
 import { SearchInput } from '@/components/ui/search-input'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import {
   Card,
@@ -369,25 +368,6 @@ export default function CreateWorkoutPage() {
         exerciseType: exercise.exerciseType
       },
     ])
-
-  const addExerciseByName = (name: string, muscle: MuscleName) => {
-    const match = allExercises.find(exercise => exercise.name === name)
-
-    if (match) {
-      addExercise(match)
-      return
-    }
-
-    setExercises(prev => [
-      ...prev,
-      {
-        id: `ex-${nextExerciseId++}`,
-        name,
-        muscle,
-        sets: [],
-      },
-    ])
-  }
 
   const handleExerciseSaved = async () => {
     const refreshedExercises = await fetchExercises()

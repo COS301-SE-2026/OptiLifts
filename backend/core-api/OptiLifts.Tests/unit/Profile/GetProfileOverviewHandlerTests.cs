@@ -161,7 +161,7 @@ public class GetProfileOverviewHandlerTests
         result.RecentWorkouts.Should().HaveCount(1);
         result.RecentWorkouts[0].Name.Should().Be("Push Day");
         result.ChartData.Should().HaveCount(12);
-        result.ChartTitle.Should().Be("Hours this week");
+        result.ChartTitle.Should().Be("Weekly Hours");
     }
 
     [Fact]
@@ -225,7 +225,7 @@ public class GetProfileOverviewHandlerTests
 
         result.RecentWorkouts.Should().ContainSingle();
         result.RecentWorkouts[0].Duration.Should().Be("<1m");
-        result.ChartTitle.Should().Be("Hours this week");
+        result.ChartTitle.Should().Be("Weekly Hours");
         result.ChartData.Should().ContainSingle(point => point.Value > 0);
         result.ChartData.Single(point => point.Value > 0).Value.Should().BeLessThan(0.1);
     }

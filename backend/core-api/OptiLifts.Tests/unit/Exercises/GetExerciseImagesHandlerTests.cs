@@ -62,14 +62,14 @@ public class GetExerciseImagesHandlerTests
         await context.SaveChangesAsync();
 
         var handler = new GetExerciseImagesHandler(context);
-        var query = new GetExerciseImagesQuery(new List<string> { "Bench Press", "Squat", "Deadlift" });
+        var query = new GetExerciseImagesQuery(new List<Guid> { ex1.Id, ex2.Id, exNoImg.Id });
         var result = await handler.Handle(query, CancellationToken.None);
-
+        
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result.Should().ContainKey("Bench Press").WhoseValue.Should().Be("http://127.0.0.1:10000/images/bench.jpg");
-        result.Should().ContainKey("Squat").WhoseValue.Should().Be("http://127.0.0.1:10000/images/squat.jpg");
-        result.Should().NotContainKey("Deadlift");
+        result.Should().ContainKey(ex1.Id.ToString()).WhoseValue.Should().Be("http://127.0.0.1:10000/images/bench.jpg");
+        result.Should().ContainKey(ex2.Id.ToString()).WhoseValue.Should().Be("http://127.0.0.1:10000/images/squat.jpg");
+        result.Should().NotContainKey(exNoImg.Id.ToString());
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class GetExerciseImagesHandlerTests
         await context.SaveChangesAsync();
 
         var handler = new GetExerciseImagesHandler(context);
-        var query = new GetExerciseImagesQuery(new List<string> { "Overhead Press" });
+        var query = new GetExerciseImagesQuery(new List<Guid> { exNoImg.Id });
         var result = await handler.Handle(query, CancellationToken.None);
 
         result.Should().NotBeNull();

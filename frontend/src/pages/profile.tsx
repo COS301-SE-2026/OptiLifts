@@ -220,7 +220,7 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="rounded-lg border border-border bg-card px-4 py-6 text-sm text-muted-foreground sm:col-span-2">
-                {isLoading ? 'Loading workouts...' : 'You do not have any workouts yet.'}
+                {isLoading ? 'Loading workouts...' : "You haven't completed any workouts yet."}
               </div>
             )}
           </div>

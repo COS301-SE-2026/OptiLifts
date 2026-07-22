@@ -242,6 +242,17 @@ export function CreateExercise({
 
   const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0] ?? null
+    
+    if (nextFile) {
+      const validTypes = ['image/png', 'image/jpeg', 'image/webp']
+      if (!validTypes.includes(nextFile.type)) {
+        setSaveError("Only PNG, JPG, and WEBP images are supported.")
+        event.target.value = ""
+        return
+      }
+    }
+    
+    setSaveError(null)
     setSelectedImageFile(nextFile)
     if (!nextFile && !selectedImageFile) setSelectedImageUrl(initialValues?.imageUrl ?? null)
     event.target.value = ""
@@ -358,11 +369,14 @@ export function CreateExercise({
               </label>
 
               <div className="grid gap-1.5">
-                <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise image</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise image</span>
+                  <span className="text-xs text-muted-foreground font-medium">PNG, JPG, WEBP</span>
+                </div>
                 <div className="rounded-lg border border-dashed border-border p-3">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" onChange={onImageChange} />
+                      <input ref={fileInputRef} type="file" accept="image/png, image/jpeg, image/webp" className="sr-only" onChange={onImageChange} />
                       <button type="button" aria-label="Select exercise image" onClick={() => fileInputRef.current?.click()} className="relative flex h-20 w-20 cursor-pointer overflow-hidden rounded-lg border border-border bg-surface-2 transition-colors hover:bg-border items-center justify-center">
                         {selectedImageUrl ? (
                           <img src={selectedImageUrl} alt="Selected exercise" className="h-full w-full object-cover" />

@@ -1,8 +1,12 @@
 using System.Data.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Npgsql;
+using OptiLifts.Application.Storage;
 using OptiLifts.Infrastructure.Database;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -43,6 +47,25 @@ public sealed class DatabaseFixture : IAsyncLifetime
             builder.UseSetting("JWT_EXP_MINUTES", "60");
             builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
             builder.UseSetting("RUN_MIGRATIONS", "false");
+
+            builder.ConfigureTestServices(services =>
+            {
+                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IBlobStorageService));
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
+
+                var mockBlobService = new Mock<IBlobStorageService>();
+                mockBlobService.Setup(x => x.UploadFileAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                                .ReturnsAsync((Stream s, string fn, string ct, string containerName, CancellationToken token) =>
+                                    $"https://fake.blob.core.windows.net/{containerName}/fake.png");
+
+                mockBlobService.Setup(x => x.DeleteFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                               .Returns(Task.CompletedTask);
+
+                services.AddSingleton(mockBlobService.Object);
+            });
         });
 
         var dbOptions = new DbContextOptionsBuilder<OptiLiftsDbContext>()

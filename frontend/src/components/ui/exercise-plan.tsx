@@ -6,7 +6,7 @@ import type { ExercisePlanItem, ExercisePlanProps, ExercisePlanSet } from '@/typ
 const DEFAULT_EXERCISE_TYPE = 'weight-reps'
 const PLANNED_EXERCISE_SUBTITLE = 'Planned exercise'
 const DEFAULT_EMPTY_STATE = 'No exercises have been planned for this workout yet.'
-const EXERCISE_ROW_CLASS = 'grid grid-cols-[68px_minmax(0,1.25fr)_minmax(160px,12vw)] items-center gap-2 rounded-2xl border border-border bg-surface-2 px-2 py-2'
+const EXERCISE_ROW_CLASS = 'grid grid-cols-[68px_minmax(0,1.45fr)_minmax(152px,11vw)] items-center gap-2 rounded-2xl border border-border bg-surface-2 px-2 py-2'
 const SETS_PANEL_CLASS = 'w-full justify-self-end rounded-xl border border-border bg-card px-2 py-2 shadow-sm'
 const SET_ROW_CLASS = 'grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-4'
 

@@ -29,7 +29,7 @@ function formatDurationAsHours(duration: string | null) {
   }
 
   if (hours === 0) {
-    return `${minutes}m`
+    return minutes === 0 ? '<1m' : `${minutes}m`
   }
 
   return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`

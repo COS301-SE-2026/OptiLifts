@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
@@ -6,7 +6,10 @@ import { PageTitle } from '@/components/ui/page-title'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import ActiveSessionPage from '@/pages/active-session'
 import { Loader2 } from 'lucide-react'
+import { Toaster } from '@/components/ui/alert'
+import { initOfflineWorkoutLogSync } from '@/lib/offline/workout-logs'
 
 const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
 const WorkoutsPage = lazy(() => import('@/pages/workouts'))
@@ -21,6 +24,7 @@ function AppLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <Navbar />
+      <Toaster />
       <main>
         <Suspense fallback={
           <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">
@@ -74,6 +78,7 @@ function PlaceholderPage({ title, description }: PlaceholderPageProps) {
 }
 
 function App() {
+  useEffect(() => initOfflineWorkoutLogSync(), [])
   return (
     <Routes>
       <Route element={<AppLayout />}>
@@ -87,6 +92,7 @@ function App() {
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
           <Route path="workouts/edit/:id" element={<CreateWorkoutPage />} />
+          <Route path="active-session" element={<ActiveSessionPage />} />
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
           <Route path="profile" element={<ProfilePage />} />

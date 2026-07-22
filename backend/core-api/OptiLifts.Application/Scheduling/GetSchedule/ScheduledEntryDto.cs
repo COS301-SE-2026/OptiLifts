@@ -9,6 +9,7 @@ public sealed record ScheduledEntryDto(
     string[] PrimaryMuscleGroups,
     int ExerciseCount,
     string[] ExercisePreview,
+    Guid[] ExercisePreviewIds,
     float TotalVolume,
     int TotalSets,
     DateTime? StartedAt,

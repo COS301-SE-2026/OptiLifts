@@ -82,6 +82,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 var totalSets = workoutSets.Count;
                 var primaryMuscles = weList.Select(we => we.MuscleName).Where(name => name != "Other").Distinct().Take(3).ToArray();
                 var exercisePreview = weList.OrderBy(we => we.OrderIndex).Select(we => we.ExerciseName).Distinct().Take(3).ToArray();
+                var exercisePreviewIds = weList.OrderBy(we => we.OrderIndex).Select(we => we.ExerciseId).Distinct().Take(3).ToArray();
                 var exerciseCount = weList.Select(we => we.ExerciseId).Distinct().Count();
 
                 return new
@@ -90,6 +91,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                     TotalSets = totalSets,
                     PrimaryMuscleGroups = primaryMuscles,
                     ExercisePreview = exercisePreview,
+                    ExercisePreviewIds = exercisePreviewIds,   
                     ExerciseCount = exerciseCount
                 };
             }
@@ -162,6 +164,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.PrimaryMuscleGroups ?? Array.Empty<string>(),
                 stats?.ExerciseCount ?? 0,
                 stats?.ExercisePreview ?? Array.Empty<string>(),
+                stats?.ExercisePreviewIds ?? Array.Empty<Guid>(),
                 volume,
                 totalSets,
                 log?.StartedAt,

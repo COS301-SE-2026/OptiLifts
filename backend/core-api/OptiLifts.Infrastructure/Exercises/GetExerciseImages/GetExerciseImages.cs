@@ -18,8 +18,8 @@ public sealed class GetExerciseImagesHandler : IRequestHandler<GetExerciseImages
     {
         var images = await _dbContext.Exercises
             .AsNoTracking()
-            .Where(exc => request.ExerciseNames.Contains(exc.Name) && exc.ImageUrl != null)
-            .ToDictionaryAsync(exc => exc.Name, exc => exc.ImageUrl!, cancellationToken);
+            .Where(exc => request.ExerciseIds.Contains(exc.Id) && exc.ImageUrl != null)
+            .ToDictionaryAsync(exc => exc.Id.ToString(), exc => exc.ImageUrl!, cancellationToken);
         return images;
     }
 }

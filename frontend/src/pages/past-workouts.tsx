@@ -18,6 +18,7 @@ type ScheduledEntryDto = {
     primaryMuscleGroups: string[]
     exerciseCount: number
     exercisePreview: string[]
+    exercisePreviewIds: string[]
     totalVolume: number
     totalSets: number
     startedAt?: string
@@ -60,14 +61,14 @@ export default function PastWorkoutsPage() {
                     setWorkouts(out)
 
                     const exercises = Array.from(new Set(
-                        out.flatMap((workout: ScheduledEntryDto) => workout.exercisePreview || [])
+                        out.flatMap((workout: ScheduledEntryDto) => workout.exercisePreviewIds || [])
                     )) as string[];
 
                     if (exercises.length > 0) {
                         const imgRes = await customFetch('/api/exercises/images', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ exercises: exercises })
+                            body: JSON.stringify({ exerciseIds: exercises })
                         });
 
                         if (imgRes.ok) {
@@ -105,8 +106,8 @@ export default function PastWorkoutsPage() {
             <div className="space-y-5">
                 {workouts.map((workout) => {
                     //map exercise names to images via dictionary
-                    const allImages = (workout.exercisePreview || [])
-                        .map(name => exerciseImages[name])
+                    const allImages = (workout.exercisePreviewIds || [])
+                        .map(id => exerciseImages[id])
                         .filter(Boolean);
 
                     const exerImages = allImages.slice(0, 8);

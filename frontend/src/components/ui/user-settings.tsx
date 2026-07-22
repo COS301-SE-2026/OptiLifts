@@ -408,6 +408,18 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
     const handleImgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            const imageTypes = ["image/jpeg", "image/png", "image/webp"];
+            if (!imageTypes.includes(file.type)) {
+                toast.error("Invalid image format, please use JPEG, PNG, or WebP.", "Upload Failed");
+                console.error("Invalid image format:", file.type);
+
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                }
+
+                return;
+            }
+
             //delete old image in memory
             if (selectedImgUrl?.startsWith("blob:")) {
                 URL.revokeObjectURL(selectedImgUrl);
@@ -471,6 +483,10 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                         Remove Picture
                     </Button>
                 )}
+
+                <span className="text-[12px] text-muted-foreground mt-2 text-center max-w-[200px]">
+                    Supported formats: JPEG, PNG, WebP
+                </span>
             </div>
 
             <div className="flex flex-col gap-1.5">

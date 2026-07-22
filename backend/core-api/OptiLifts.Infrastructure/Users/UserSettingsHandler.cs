@@ -38,7 +38,7 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
         }
 
         DateTime? dateOfBirth = null;
-        if (DateTime.TryParse(user.DateOfBirth, CultureInfo.InvariantCulture, out var dob))
+        if (DateTime.TryParse(user.DateOfBirth, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var dob))
         {
             dateOfBirth = dob;
         }

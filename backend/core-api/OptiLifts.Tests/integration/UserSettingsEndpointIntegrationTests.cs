@@ -48,23 +48,23 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     public async Task UpdateProfileDetails_Succeeds()
     {
         await SeedAuthenticatedUserAsync("jordan@gmail.com");
-        
-        var request = JsonContent.Create(new 
-        { 
-            DisplayName = "Jordan", 
+
+        var request = JsonContent.Create(new
+        {
+            DisplayName = "Jordan",
             Bio = "New bio",
             Sex = "Male",
-            DateOfBirth = "2005-11-22T00:00:00Z", 
+            DateOfBirth = "2005-11-22T00:00:00Z",
             Weight = 1, //skinny legend
             Height = 194.0
         });
-        
+
         var response = await Client.PatchAsync("/api/users/me/profileDetails", request);
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
-    
+
         var getResponse = await Client.GetAsync("/api/users/me/settings");
         var settings = await getResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
-        
+
         settings.Should().NotBeNull();
         settings.Profile.DisplayName.Should().Be("Jordan");
         settings.Profile.Bio.Should().Be("New bio");
@@ -78,10 +78,10 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     public async Task UpdatePreferences_Succeeds()
     {
         await SeedAuthenticatedUserAsync("jordan@gmail.com");
-        var request = JsonContent.Create(new 
-        { 
-            Theme = "dark", 
-            Units = "imperial" 
+        var request = JsonContent.Create(new
+        {
+            Theme = "dark",
+            Units = "imperial"
         });
 
         var response = await Client.PatchAsync("/api/users/me/preferences", request);
@@ -98,10 +98,10 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     public async Task UpdatePreferences_MissingFields_ReturnsBadRequest()
     {
         await SeedAuthenticatedUserAsync("pref-bad@optilifts.com");
-        var request = JsonContent.Create(new 
-        { 
-            Theme = "", 
-            Units = "imperial" 
+        var request = JsonContent.Create(new
+        {
+            Theme = "",
+            Units = "imperial"
         });
         var response = await Client.PatchAsync("/api/users/me/preferences", request);
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
@@ -118,7 +118,7 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
 
         var response = await Client.PatchAsync("/api/users/me/profilePicture", content);
         response.EnsureSuccessStatusCode();
-        
+
         var result = await response.Content.ReadAsStringAsync();
         result.Should().Contain("profilePictureUrl");
 
@@ -132,12 +132,12 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     {
         await SeedAuthenticatedUserAsync("pic-bad-bmp@optilifts.com");
         using var content = new MultipartFormDataContent();
-   
+
         var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("hola"));
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/svg");
         content.Add(fileContent, "profilePicture", "test.svg");
         var response = await Client.PatchAsync("/api/users/me/profilePicture", content);
-        
+
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
         var responseString = await response.Content.ReadAsStringAsync();
 
@@ -149,12 +149,12 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     {
         await SeedAuthenticatedUserAsync("pic-bad-txt@optilifts.com");
         using var content = new MultipartFormDataContent();
-        
+
         var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("I am totally an image, trust"));
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
         content.Add(fileContent, "profilePicture", "test.txt");
         var response = await Client.PatchAsync("/api/users/me/profilePicture", content);
-        
+
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
@@ -190,9 +190,10 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     public async Task UpdatePassword_Succeeds()
     {
         await SeedAuthenticatedUserAsync("pass-good@optilifts.com");
-        var request = new { 
-            CurrentPassword = "Password123!", 
-            NewPassword = "NewPassword123!" 
+        var request = new
+        {
+            CurrentPassword = "Password123!",
+            NewPassword = "NewPassword123!"
         };
 
         var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
@@ -204,9 +205,10 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     public async Task UpdatePassword_IncorrectCurrentPassword_ReturnsBadRequest()
     {
         await SeedAuthenticatedUserAsync("jordan@gmail.com");
-        var request = new { 
-            CurrentPassword = "WrongPassword!", 
-            NewPassword = "NewPassword123!" 
+        var request = new
+        {
+            CurrentPassword = "WrongPassword!",
+            NewPassword = "NewPassword123!"
         };
 
         var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
@@ -218,9 +220,10 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
     public async Task UpdatePassword_WeakNewPassword_ReturnsBadRequest()
     {
         await SeedAuthenticatedUserAsync("jordan@gmail.com");
-        var request = new { 
-            CurrentPassword = "Password123!", 
-            NewPassword = "lol" 
+        var request = new
+        {
+            CurrentPassword = "Password123!",
+            NewPassword = "lol"
         };
 
         var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
@@ -228,5 +231,5 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
-   
+
 }

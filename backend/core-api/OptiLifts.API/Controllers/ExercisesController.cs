@@ -102,9 +102,9 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpGet("allImages")]
-    public async Task<ActionResult<Dictionary<string, string>>> GetExerciseImages(CancellationToken cancellationToken)
+    public async Task<ActionResult<Dictionary<string, string>>> GetExerciseImages([FromBody] GetExerciseImagesRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetExerciseImagesQuery(), cancellationToken);
+        var result = await _mediator.Send(new GetExerciseImagesQuery(request.Exercises), cancellationToken);
         return Ok(result);
     }
 }
@@ -118,4 +118,9 @@ public class CreateCustomExerciseRequest
     public List<string> PrimaryMuscles { get; set; } = new();
     public List<string> SecondaryMuscles { get; set; } = new();
     public IFormFile? Image { get; set; }
+}
+
+public class GetExerciseImagesRequest
+{
+    public List<string> Exercises { get; set; } = new();
 }

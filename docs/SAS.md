@@ -864,13 +864,14 @@ ExerciseDto fields:
 
 ---
 
-### GET /api/exercises/allImages
-**Service Name:** Exercise Images Dictionary Service
+### POST /api/exercises/images
+**Service Name:** Exercise Images Service
 
-**Description:** Retrieves a dictionary mapping all exercise names to their corresponding Azure Blob Storage image URLs. Can be used across the frontend to display exercise images without multiple API calls.
+**Description:** Retrieves a dictionary mapping exercise names to their corresponding Azure Blob Storage image URLs. 
 
 **Inputs:**
 - `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+- `exercises`: array of string - A list of exercise names to fetch images.
 
 **Outputs:**
 - A JSON dictionary (`Record<string, string>`) where:
@@ -878,7 +879,7 @@ ExerciseDto fields:
   - Value: string - The image URL in the database.
 
 **Usage / Interaction Rules:**
-- Clients must send a GET request to `/api/exercises/allImages`.
+- Clients must send a POST request to `/api/exercises/images`.
 - The browser automatically attaches the `access_token` cookie.
 - The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
 

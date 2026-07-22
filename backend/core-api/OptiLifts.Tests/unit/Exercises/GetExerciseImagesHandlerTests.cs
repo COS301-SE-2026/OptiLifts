@@ -62,7 +62,7 @@ public class GetExerciseImagesHandlerTests
         await context.SaveChangesAsync();
 
         var handler = new GetExerciseImagesHandler(context);
-        var query = new GetExerciseImagesQuery();
+        var query = new GetExerciseImagesQuery(new List<string> { "Bench Press", "Squat", "Deadlift" });
         var result = await handler.Handle(query, CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -95,7 +95,7 @@ public class GetExerciseImagesHandlerTests
         await context.SaveChangesAsync();
 
         var handler = new GetExerciseImagesHandler(context);
-        var query = new GetExerciseImagesQuery();
+        var query = new GetExerciseImagesQuery(new List<string> { "Overhead Press" });
         var result = await handler.Handle(query, CancellationToken.None);
 
         result.Should().NotBeNull();

@@ -89,6 +89,10 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                 workoutSetLog.Reps,
                 workoutSetLog.Weight,
                 workoutSetLog.OrderIndex,
+                workoutSetLog.Duration,
+                workoutSetLog.Distance,
+                workoutSetLog.RestTime,
+                workoutSetLog.GroupNumber,
                 workoutSetLog.Rpe))
             .ToListAsync(cancellationToken);
 
@@ -213,6 +217,10 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                         logSetRow.Reps,
                         logSetRow.Weight,
                         logSetRow.OrderIndex,
+                        logSetRow.Duration,
+                        logSetRow.Distance,
+                        logSetRow.RestTime,
+                        logSetRow.GroupNumber,
                         logSetRow.Rpe);
                 }
 
@@ -230,6 +238,10 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                     logSetRow.Reps,
                     logSetRow.Weight,
                     logSetRow.OrderIndex,
+                    logSetRow.Duration,
+                    logSetRow.Distance,
+                    logSetRow.RestTime,
+                    logSetRow.GroupNumber,
                     logSetRow.Rpe);
             })
             .Where(resolved => resolved is not null)
@@ -250,6 +262,10 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                         row.Reps,
                         row.Weight,
                         row.OrderIndex,
+                        row.Duration,
+                        row.Distance,
+                        row.RestTime,
+                        row.GroupNumber,
                         row.Rpe))
                     .ToArray());
     }
@@ -287,6 +303,10 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         int Reps,
         float Weight,
         int OrderIndex,
+        int? Duration,
+        float? Distance,
+        int RestTime,
+        int GroupNumber,
         float Rpe);
 
     private sealed record WorkoutLogExerciseRow(
@@ -317,5 +337,9 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         int Reps,
         float Weight,
         int OrderIndex,
+        int? Duration,
+        float? Distance,
+        int RestTime,
+        int GroupNumber,
         float Rpe);
 }

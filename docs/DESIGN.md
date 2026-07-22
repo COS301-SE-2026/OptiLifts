@@ -51,7 +51,7 @@ flowchart TD
     D --> G
     D --> H
     D --> I
-    D --> M
+    I --> M
     E -->|"Click Workout"| K
     E -->|"+ Create Workout"| F
     K -->|"View Log"| L
@@ -316,7 +316,8 @@ Calendar grid showing scheduled workout routines across a weekly context view, a
 - "X" buttons - removes the scheduled entry from the calendar
 
 **Annotations:**
-- - The radar chart updates to visually captrue the weekly load balancing based on the user's workouts set count
+- The radar chart updates to visually captrue the weekly load balancing based on the user's workouts set count
+- Users are unable to schedule workouts on a day before the current day, so these cards are disabled
 
 ---
 #### Screen 10 - Month Schedule
@@ -331,41 +332,54 @@ Calendar grid showing scheduled workout routines across a monthly context view
 - Center section: a structures calendar grid mapping columns MON through to SUN.
 
 **User Interaction Points:**
-- a
+- Chevron arrows - shifts data range backwards or forwards between months
+- Grid "+" buttons - opens popup with created workouts to schedule them on specific days
 
 **Annotations:**
-- a
+- Users are unable to schedule workouts on a day before the current day
 
 ---
 #### Screen 11 - Past Workouts
 
-description
+Displays historical completed workouts
 
 ![Past Workouts Wireframe](wireframes/past-workouts-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigaion (none active) right
+- Page title "SCHEDULE" left-aligned with right date selector block with chevron toggles
+- Main layout: centered vertical stack with completed workout cards, with the workout name, timestamp, targeted muscles, exercise images, as well as summaries of each workout including duration, volume, number of exercises and record
 
 **User Interaction Points:**
-- a
+- Chevron arrows - shifts data range backwards or forwards between weeks
+- Workout cards - clicking any card redirects the user to the corresponding past log detail page
 
 **Annotations:**
-- a
+- The circle icons are the images of the exercises the user completed in their workout
 
 ---
 #### Screen 12 - Profile
 
-description
+User detail page displaying their information, workout history and tracking. Provides easy access to past workouts and settings configuration
 
 ![Profile Wireframe](wireframes/profile-wireframe.png)
 
 **Component Placement:**
-- Header: 
+- Header: logo left, full navigaion (PROFILE active) right
+- Page title user name "ALEX" left-aligned with right SETTINGS button
+- Subtitle: Email and bio text blocks
+- Top metric row: bar graph mapping out "Hours this week" against calendar axis, with right individual blocks with badges, including "Streak", "Workouts" and "Record"
+- Bottom panel layout: 
+    - Left region: 65% width, "Recent Workouts" card stack with detailed summary blocks including PR badge graphics and workout metrics
+    - Right region: 35% width, mini-calendar widget displaying historical active training days
+
 
 **User Interaction Points:**
-- a
+- SETINGS button - opens user profile configuration popup
+- Recent Workout cards - navigates to individual workout detail pages
+- Calendar wigdet controls - page through months
 
 **Annotations:**
-- a
+- The bar graph and calendar update with the user's activity 
 
 ---

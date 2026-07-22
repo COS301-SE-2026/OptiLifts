@@ -14,7 +14,8 @@ public sealed class GetExerciseImagesHandler : IRequestHandler<GetExerciseImages
         _dbContext = dbContext;
     }
 
-    public async Task<Dictionary<string, string>> Handle(GetExerciseImagesQuery request, CancellationToken cancellationToken) {
+    public async Task<Dictionary<string, string>> Handle(GetExerciseImagesQuery request, CancellationToken cancellationToken)
+    {
         var images = await _dbContext.Exercises
             .AsNoTracking()
             .Where(exc => request.ExerciseNames.Contains(exc.Name) && exc.ImageUrl != null)

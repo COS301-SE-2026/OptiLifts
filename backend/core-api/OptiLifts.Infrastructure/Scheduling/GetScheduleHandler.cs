@@ -98,17 +98,36 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
             .Where(w => workoutids.Contains(w.Id))
             .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
 
+        //The rest of the code gets stats for completed workouts 
         var entryids = entries
             .Where(e => e.Status == ScheduleStatus.Completed)
             .Select(e => e.Id)
             .ToList();
 
-        var logs = new Dictionary<Guid, OptiLifts.Domain.Workouts.WorkoutLog>();
+        var logs = new Dictionary<Guid, WorkoutLog>();
+        var completedStats = new Dictionary<Guid, (float Volume, int TotalSets)>();
+
         if (entryids.Count > 0)
         {
             logs = await _dbContext.WorkoutLogs.AsNoTracking()
                 .Where(l => l.EntryId.HasValue && entryids.Contains(l.EntryId.Value))
                 .ToDictionaryAsync(l => l.EntryId!.Value, l => l, cancellationToken);
+
+            var logIds = logs.Values.Select(l => l.Id).ToList();
+            if (logIds.Count > 0)
+            {
+                completedStats = await _dbContext.WorkoutLogSets.AsNoTracking()
+                    .Where(s => logIds.Contains(s.LogId))
+                    .GroupBy(s => s.LogId)
+                    .Select(g => new
+                    {
+                        LogId = g.Key,
+                        Volume = g.Sum(s => s.Weight * s.Reps),
+                        TotalSets = g.Count()
+                    })
+                    .ToDictionaryAsync(x => x.LogId, x => (x.Volume, x.TotalSets), cancellationToken);
+
+            }
         }
 
         //Will change once PR table is implemented
@@ -121,6 +140,19 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
 
             logs.TryGetValue(entry.Id, out var log);
 
+            float volume = 0f;
+            int totalSets = 0;
+            if (entry.Status == ScheduleStatus.Completed && log != null && completedStats.TryGetValue(log.Id, out var completedStat))
+            {
+                volume = completedStat.Volume;
+                totalSets = completedStat.TotalSets;
+            }
+            else
+            {
+                volume = stats?.Volume ?? 0f;
+                totalSets = stats?.TotalSets ?? 0;
+            }
+
             return new ScheduledEntryDto(
                 entry.Id,
                 entry.WorkoutId,
@@ -130,8 +162,8 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 stats?.PrimaryMuscleGroups ?? Array.Empty<string>(),
                 stats?.ExerciseCount ?? 0,
                 stats?.ExercisePreview ?? Array.Empty<string>(),
-                stats?.Volume ?? 0f,
-                stats?.TotalSets ?? 0,
+                volume,
+                totalSets,
                 log?.StartedAt,
                 log?.CompletedAt,
                 PRs,

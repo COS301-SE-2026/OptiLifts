@@ -274,7 +274,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var totalMinutes = Math.Max(0, (int)Math.Round(duration.TotalMinutes));
         if (totalMinutes < 60)
         {
-            return $"{totalMinutes}m";
+            return totalMinutes == 0 ? "<1m" : $"{totalMinutes}m";
         }
 
         var hours = totalMinutes / 60;

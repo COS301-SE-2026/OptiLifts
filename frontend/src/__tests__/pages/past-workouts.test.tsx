@@ -50,7 +50,7 @@ describe('PastWorkoutsPage', () => {
                             logId: 'l-1',
                             workoutName: 'Morning Bench Routine',
                             startedAt: '2026-07-17T09:00:00Z',
-                            completedAt: '2026-07-17T10:00:00Z',
+                            completedAt: '2026-07-17T09:00:20Z',
                             primaryMuscleGroups: ['Chest'],
                             exerciseCount: 3,
                             exercisePreview: ['Bench Press'],
@@ -79,6 +79,7 @@ describe('PastWorkoutsPage', () => {
             expect(screen.getByText('Morning Bench Routine')).toBeDefined();
         });
 
+        expect(screen.getByText('<1m')).toBeDefined();
         expect(screen.getByText('Muscles: Chest')).toBeDefined();
         expect(screen.getByText('3')).toBeDefined();
         expect(screen.getByText('2')).toBeDefined();

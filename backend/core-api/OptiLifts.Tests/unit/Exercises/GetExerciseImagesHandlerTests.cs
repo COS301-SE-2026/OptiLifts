@@ -64,7 +64,7 @@ public class GetExerciseImagesHandlerTests
         var handler = new GetExerciseImagesHandler(context);
         var query = new GetExerciseImagesQuery(new List<Guid> { ex1.Id, ex2.Id, exNoImg.Id });
         var result = await handler.Handle(query, CancellationToken.None);
-        
+
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
         result.Should().ContainKey(ex1.Id.ToString()).WhoseValue.Should().Be("http://127.0.0.1:10000/images/bench.jpg");

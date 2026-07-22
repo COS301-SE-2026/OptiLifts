@@ -492,8 +492,6 @@ export default function ActiveSessionPage() {
     }
   }, [exercises])
 
-  const allowedFinish = summary.completedSets > 0
-
   const buildLogPayload = (): WorkoutLogPayload | null => {
     if (!workoutId) return null
 
@@ -531,7 +529,6 @@ export default function ActiveSessionPage() {
     setExercises((currentExercises) => currentExercises.filter((exercise) => exercise.id !== exerciseId))
   }
 
-
   const finishWorkout = async () => {
     const load = buildLogPayload()
     if (!load) {
@@ -549,11 +546,23 @@ export default function ActiveSessionPage() {
     navigate('/workouts')
   }
 
-    const renderExerciseCard = (exercise: ExerciseData) => {
+  const blankInputs = () => exercises.some((exercise) => {
+      if (!exercise.exerciseId) return false
+
+      const cols = getColumns(exercise.exerciseType)
+
+      return exercise.sets.some(
+        (set) => set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
+      )
+    })
+
+  const allowedFinish = summary.completedSets > 0 && !blankInputs()
+
+  const renderExerciseCard = (exercise: ExerciseData) => {
 
     const cols = getColumns(exercise.exerciseType)
     const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 5rem`
-    
+      
     return (
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">

@@ -82,10 +82,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var totalLoggedSets = await CountWorkoutLogSetsAsync(sessions.Select(session => session.LogId).ToArray(), cancellationToken);
         var streakWeeks = ComputeStreakWeeks(sessions.Select(session => session.CompletedAt));
 
-        var chartData = BuildWeeklyChartData(
-            sessions.Select(session => session.CompletedAt),
-            ChartWindowWeeks,
-            "Workout volume");
+        var chartData = BuildWeeklyChartData(sessions.Select(session => new WeeklyDurationSample(session.CompletedAt, (session.CompletedAt - session.StartedAt).TotalHours)), ChartWindowWeeks, "Weekly Hours");
 
         return new ProfileOverviewDto(
             new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),
@@ -226,19 +223,19 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         return streak;
     }
 
-    private static ProfileChart BuildWeeklyChartData(IEnumerable<DateTime> dates, int weekCount, string title)
+    private static ProfileChart BuildWeeklyChartData(IEnumerable<WeeklyDurationSample> samples, int weekCount, string title)
     {
-        var countsByWeek = dates
-            .Select(GetWeekStart)
-            .GroupBy(week => week)
-            .ToDictionary(group => group.Key, group => group.Count());
+        var valuesByWeek = samples
+            .Select(sample => new { Week = GetWeekStart(sample.Date), sample.Value })
+            .GroupBy(sample => sample.Week)
+            .ToDictionary(group => group.Key, group => group.Sum(sample => sample.Value));
 
         var currentWeek = GetWeekStart(DateTime.UtcNow);
         var points = Enumerable.Range(0, weekCount)
             .Select(offset => currentWeek.AddDays(-(weekCount - 1 - offset) * 7))
             .Select(weekStart => new ProfileChartDatumDto(
                 weekStart.ToString("MMM d", CultureInfo.InvariantCulture),
-                countsByWeek.TryGetValue(weekStart, out var count) ? count : 0))
+                valuesByWeek.TryGetValue(weekStart, out var value) ? value : 0))
             .ToArray();
 
         return new ProfileChart(title, points);
@@ -291,6 +288,8 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
     private sealed record WorkoutSetRow(Guid WorkoutId, int? Reps, float? Weight, int RestTime);
 
     private sealed record WorkoutLogSetRow(Guid LogId, Guid ExerciseId, string Name, int Reps, float Weight);
+
+    private sealed record WeeklyDurationSample(DateTime Date, double Value);
 
     private sealed record ProfileChart(string Title, IReadOnlyList<ProfileChartDatumDto> Points);
 }

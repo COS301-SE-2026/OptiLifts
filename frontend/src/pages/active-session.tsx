@@ -269,7 +269,7 @@ const secureRandomHex = (): string => {
 
 const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): WorkoutLogSetPayload[] => {
   const sets: WorkoutLogSetPayload[] = []
-  let orderIdx = 0
+  let orderIdx = 1
 
   for (const set of exerciseSets) {
     if (!set.completed) continue
@@ -507,7 +507,7 @@ export default function ActiveSessionPage() {
       if (sets.length === 0) continue
 
       exercisesLog.push({ exerciseId: exercise.exerciseId, workoutExerciseId: exercise.sourceWorkoutExerciseId,
-        orderIndex: exercisesLog.length, groupNumber: groupNum, sets,
+        orderIndex: exercisesLog.length + 1, groupNumber: groupNum, sets,
       })
     }
 

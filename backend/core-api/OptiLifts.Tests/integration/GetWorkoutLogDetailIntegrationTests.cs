@@ -3,8 +3,8 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.CreateSession;
+using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -71,7 +71,7 @@ public class GetWorkoutLogDetailIntegrationTests : IntegrationTestBase
         createLogResp.EnsureSuccessStatusCode();
 
         var detailResp = await Client.GetAsync($"/api/workouts/{workoutId}/logs/{logId}");
-        detailResp.StatusCode.Should().Be(HttpStatusCode.OK);   
+        detailResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var detail = await detailResp.Content.ReadFromJsonAsync<WorkoutLogDetailDto>();
         detail.Should().NotBeNull();

@@ -186,5 +186,47 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    public async Task UpdatePassword_Succeeds()
+    {
+        await SeedAuthenticatedUserAsync("pass-good@optilifts.com");
+        var request = new { 
+            CurrentPassword = "Password123!", 
+            NewPassword = "NewPassword123!" 
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task UpdatePassword_IncorrectCurrentPassword_ReturnsBadRequest()
+    {
+        await SeedAuthenticatedUserAsync("jordan@gmail.com");
+        var request = new { 
+            CurrentPassword = "WrongPassword!", 
+            NewPassword = "NewPassword123!" 
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdatePassword_WeakNewPassword_ReturnsBadRequest()
+    {
+        await SeedAuthenticatedUserAsync("jordan@gmail.com");
+        var request = new { 
+            CurrentPassword = "Password123!", 
+            NewPassword = "lol" 
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
    
 }

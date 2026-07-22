@@ -226,6 +226,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "POSTGRES_DB", value: pgDatabase.name },
                 { name: "POSTGRES_USER", value: "optilifts_admin" },
                 { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
+                { name: "AUTH_COOKIE_SECURE", value: "true" },
                 { name: "DEV_SEEDING", value: devSeeding },
                 { name: "FRONTEND_ORIGIN", value: frontendUrl },
                 { name: "JWT_SECRET", secretRef: "jwt-secret" },

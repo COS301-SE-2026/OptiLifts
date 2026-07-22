@@ -32,7 +32,7 @@ describe('PastWorkoutsPage', () => {
     beforeEach(() => { //runs each 'it' test block + resets spy functions
         vi.clearAllMocks();
         mockFetch.mockImplementation(async (url: string) => {
-            if(url.includes('/api/exercises/allImages')){
+            if(url.includes('/api/exercises/images')){
                 return {
                     ok: true,
                     json: async() => ({
@@ -93,7 +93,7 @@ describe('PastWorkoutsPage', () => {
 
     it('renders placeholder when list is empty', async () => {
         mockFetch.mockImplementation(async (url: string) => {
-            if (url.includes('/api/exercises/allImages')){
+            if (url.includes('/api/exercises/images')){
                 return {
                     ok: true,
                     json: async() => ({})

@@ -101,7 +101,7 @@ public class ExercisesController : ControllerBase
         }
     }
 
-    [HttpGet("allImages")]
+    [HttpPost("images")]
     public async Task<ActionResult<Dictionary<string, string>>> GetExerciseImages([FromBody] GetExerciseImagesRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetExerciseImagesQuery(request.Exercises), cancellationToken);

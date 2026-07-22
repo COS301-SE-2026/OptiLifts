@@ -163,4 +163,44 @@ public class GetProfileOverviewHandlerTests
         result.ChartData.Should().HaveCount(12);
         result.ChartTitle.Should().Be("Workout volume");
     }
+
+    [Fact]
+    public async Task Handle_WithoutCompletedSessions_DoesNotReturnPlannedWorkouts()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "profile@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "Profile User",
+            Bio = "Built for testing",
+            CreatedAt = new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc)
+        };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Push Day",
+            CreatedBy = user.Id,
+            CreatedAt = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc)
+        };
+
+        context.Users.Add(user);
+        context.Workouts.Add(workout);
+        await context.SaveChangesAsync();
+
+        var handler = new GetProfileOverviewHandler(context);
+        var result = await handler.Handle(new GetProfileOverviewQuery(user.Id), CancellationToken.None);
+
+        result.RecentWorkouts.Should().BeEmpty();
+        result.Stats.Should().ContainSingle(stat => stat.Label == "Streak" && stat.Value == "0 weeks");
+        result.Stats.Should().ContainSingle(stat => stat.Label == "Workouts" && stat.Value == "0 sessions");
+        result.Stats.Should().ContainSingle(stat => stat.Label == "Records" && stat.Value == "0 logged sets");
+    }
 }

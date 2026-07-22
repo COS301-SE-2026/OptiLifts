@@ -31,13 +31,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         }
 
         var completedSessions = await LoadCompletedSessionsAsync(request.UserId, cancellationToken);
-        if (completedSessions.Count > 0)
-        {
-            return await BuildSessionProfileAsync(user, completedSessions, cancellationToken);
-        }
-
-        var workouts = await LoadRecentWorkoutsAsync(request.UserId, cancellationToken);
-        return await BuildWorkoutProfileAsync(user, workouts, cancellationToken);
+        return await BuildSessionProfileAsync(user, completedSessions, cancellationToken);
     }
 
     private async Task<ProfileOverviewDto> BuildSessionProfileAsync(
@@ -103,67 +97,6 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
             },
             badges,
             recentWorkouts,
-            chartData.Title,
-            chartData.Points);
-    }
-
-    private async Task<ProfileOverviewDto> BuildWorkoutProfileAsync(
-        User user,
-        IReadOnlyList<WorkoutRow> workouts,
-        CancellationToken cancellationToken)
-    {
-        var recentWorkouts = workouts.Take(RecentWorkoutCount).ToArray();
-        var recentWorkoutIds = recentWorkouts.Select(workout => workout.WorkoutId).Distinct().ToArray();
-
-        var workoutExercises = await LoadWorkoutExercisesAsync(recentWorkoutIds, cancellationToken);
-        var workoutSets = await LoadWorkoutSetsAsync(recentWorkoutIds, cancellationToken);
-        var badges = await LoadEarnedBadgesAsync(user.Id, cancellationToken);
-
-        var workoutCards = recentWorkouts.Select(workout =>
-        {
-            var exerciseNames = workoutExercises
-                .Where(entry => entry.WorkoutId == workout.WorkoutId)
-                .Select(entry => entry.Name)
-                .Distinct()
-                .ToArray();
-
-            var plannedSets = workoutSets.Where(entry => entry.WorkoutId == workout.WorkoutId).ToArray();
-            var volume = plannedSets.Sum(entry => (double)(entry.Reps ?? 0) * (entry.Weight ?? 0));
-            var duration = EstimateDuration(plannedSets);
-
-            return new ProfileWorkoutDto(
-                workout.WorkoutId,
-                null,
-                workout.Name,
-                exerciseNames,
-                $"{Math.Max(1, exerciseNames.Length)} PRs",
-                duration,
-                FormatWeight(volume),
-                $"{plannedSets.Length} sets");
-        }).ToArray();
-
-        var streakWeeks = ComputeStreakWeeks(workouts.Select(workout => workout.CreatedAt));
-        var totalWorkouts = workouts.Count;
-        var totalExercises = workoutExercises
-            .Select(entry => entry.ExerciseId)
-            .Distinct()
-            .Count();
-
-        var chartData = BuildWeeklyChartData(
-            workouts.Select(workout => workout.CreatedAt),
-            ChartWindowWeeks,
-            "Workout volume");
-
-        return new ProfileOverviewDto(
-            new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),
-            new[]
-            {
-                new ProfileStatDto("Streak", $"{streakWeeks} weeks"),
-                new ProfileStatDto("Workouts", $"{totalWorkouts} workouts"),
-                new ProfileStatDto("Records", $"{totalExercises:N0} exercises tracked"),
-            },
-            badges,
-            workoutCards,
             chartData.Title,
             chartData.Points);
     }

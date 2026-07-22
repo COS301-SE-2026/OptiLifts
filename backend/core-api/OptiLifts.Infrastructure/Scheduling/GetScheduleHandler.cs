@@ -91,7 +91,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                     TotalSets = totalSets,
                     PrimaryMuscleGroups = primaryMuscles,
                     ExercisePreview = exercisePreview,
-                    ExercisePreviewIds = exercisePreviewIds,   
+                    ExercisePreviewIds = exercisePreviewIds,
                     ExerciseCount = exerciseCount
                 };
             }

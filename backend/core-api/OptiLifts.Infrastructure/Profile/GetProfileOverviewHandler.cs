@@ -31,13 +31,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         }
 
         var completedSessions = await LoadCompletedSessionsAsync(request.UserId, cancellationToken);
-        if (completedSessions.Count > 0)
-        {
-            return await BuildSessionProfileAsync(user, completedSessions, cancellationToken);
-        }
-
-        var workouts = await LoadRecentWorkoutsAsync(request.UserId, cancellationToken);
-        return await BuildWorkoutProfileAsync(user, workouts, cancellationToken);
+        return await BuildSessionProfileAsync(user, completedSessions, cancellationToken);
     }
 
     private async Task<ProfileOverviewDto> BuildSessionProfileAsync(
@@ -88,10 +82,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var totalLoggedSets = await CountWorkoutLogSetsAsync(sessions.Select(session => session.LogId).ToArray(), cancellationToken);
         var streakWeeks = ComputeStreakWeeks(sessions.Select(session => session.CompletedAt));
 
-        var chartData = BuildWeeklyChartData(
-            sessions.Select(session => session.CompletedAt),
-            ChartWindowWeeks,
-            "Workout volume");
+        var chartData = BuildWeeklyChartData(sessions.Select(session => new WeeklyDurationSample(session.CompletedAt, (session.CompletedAt - session.StartedAt).TotalHours)), ChartWindowWeeks, "Weekly Hours");
 
         return new ProfileOverviewDto(
             new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),
@@ -103,67 +94,6 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
             },
             badges,
             recentWorkouts,
-            chartData.Title,
-            chartData.Points);
-    }
-
-    private async Task<ProfileOverviewDto> BuildWorkoutProfileAsync(
-        User user,
-        IReadOnlyList<WorkoutRow> workouts,
-        CancellationToken cancellationToken)
-    {
-        var recentWorkouts = workouts.Take(RecentWorkoutCount).ToArray();
-        var recentWorkoutIds = recentWorkouts.Select(workout => workout.WorkoutId).Distinct().ToArray();
-
-        var workoutExercises = await LoadWorkoutExercisesAsync(recentWorkoutIds, cancellationToken);
-        var workoutSets = await LoadWorkoutSetsAsync(recentWorkoutIds, cancellationToken);
-        var badges = await LoadEarnedBadgesAsync(user.Id, cancellationToken);
-
-        var workoutCards = recentWorkouts.Select(workout =>
-        {
-            var exerciseNames = workoutExercises
-                .Where(entry => entry.WorkoutId == workout.WorkoutId)
-                .Select(entry => entry.Name)
-                .Distinct()
-                .ToArray();
-
-            var plannedSets = workoutSets.Where(entry => entry.WorkoutId == workout.WorkoutId).ToArray();
-            var volume = plannedSets.Sum(entry => (double)(entry.Reps ?? 0) * (entry.Weight ?? 0));
-            var duration = EstimateDuration(plannedSets);
-
-            return new ProfileWorkoutDto(
-                workout.WorkoutId,
-                null,
-                workout.Name,
-                exerciseNames,
-                $"{Math.Max(1, exerciseNames.Length)} PRs",
-                duration,
-                FormatWeight(volume),
-                $"{plannedSets.Length} sets");
-        }).ToArray();
-
-        var streakWeeks = ComputeStreakWeeks(workouts.Select(workout => workout.CreatedAt));
-        var totalWorkouts = workouts.Count;
-        var totalExercises = workoutExercises
-            .Select(entry => entry.ExerciseId)
-            .Distinct()
-            .Count();
-
-        var chartData = BuildWeeklyChartData(
-            workouts.Select(workout => workout.CreatedAt),
-            ChartWindowWeeks,
-            "Workout volume");
-
-        return new ProfileOverviewDto(
-            new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),
-            new[]
-            {
-                new ProfileStatDto("Streak", $"{streakWeeks} weeks"),
-                new ProfileStatDto("Workouts", $"{totalWorkouts} workouts"),
-                new ProfileStatDto("Records", $"{totalExercises:N0} exercises tracked"),
-            },
-            badges,
-            workoutCards,
             chartData.Title,
             chartData.Points);
     }
@@ -293,19 +223,19 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         return streak;
     }
 
-    private static ProfileChart BuildWeeklyChartData(IEnumerable<DateTime> dates, int weekCount, string title)
+    private static ProfileChart BuildWeeklyChartData(IEnumerable<WeeklyDurationSample> samples, int weekCount, string title)
     {
-        var countsByWeek = dates
-            .Select(GetWeekStart)
-            .GroupBy(week => week)
-            .ToDictionary(group => group.Key, group => group.Count());
+        var valuesByWeek = samples
+            .Select(sample => new { Week = GetWeekStart(sample.Date), sample.Value })
+            .GroupBy(sample => sample.Week)
+            .ToDictionary(group => group.Key, group => group.Sum(sample => sample.Value));
 
         var currentWeek = GetWeekStart(DateTime.UtcNow);
         var points = Enumerable.Range(0, weekCount)
             .Select(offset => currentWeek.AddDays(-(weekCount - 1 - offset) * 7))
             .Select(weekStart => new ProfileChartDatumDto(
                 weekStart.ToString("MMM d", CultureInfo.InvariantCulture),
-                countsByWeek.TryGetValue(weekStart, out var count) ? count : 0))
+                valuesByWeek.TryGetValue(weekStart, out var value) ? value : 0))
             .ToArray();
 
         return new ProfileChart(title, points);
@@ -341,7 +271,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var totalMinutes = Math.Max(0, (int)Math.Round(duration.TotalMinutes));
         if (totalMinutes < 60)
         {
-            return $"{totalMinutes}m";
+            return totalMinutes == 0 ? "<1m" : $"{totalMinutes}m";
         }
 
         var hours = totalMinutes / 60;
@@ -358,6 +288,8 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
     private sealed record WorkoutSetRow(Guid WorkoutId, int? Reps, float? Weight, int RestTime);
 
     private sealed record WorkoutLogSetRow(Guid LogId, Guid ExerciseId, string Name, int Reps, float Weight);
+
+    private sealed record WeeklyDurationSample(DateTime Date, double Value);
 
     private sealed record ProfileChart(string Title, IReadOnlyList<ProfileChartDatumDto> Points);
 }

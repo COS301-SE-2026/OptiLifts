@@ -73,7 +73,6 @@ export default function PastWorkoutsPage() {
                         if (imgRes.ok) {
                             const imgDetails = await imgRes.json();
                             setExerciseImages(imgDetails)
-                            console.log('Exercise images fetched:', imgDetails);
                         }
                     }
                 }

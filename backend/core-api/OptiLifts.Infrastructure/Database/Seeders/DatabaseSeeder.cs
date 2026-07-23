@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Domain.Users;
-using OptiLifts.Infrastructure.Database;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Infrastructure.Database.Seeders;
@@ -13,6 +13,7 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken = default)
     {
         await SeedUsersAsync(dbContext, cancellationToken);
+        await SeedMusclesAsync(dbContext, cancellationToken); 
 
         if (!await dbContext.Workouts.AnyAsync(cancellationToken))
         {
@@ -99,6 +100,47 @@ public static class DatabaseSeeder
                     Bio = u.Bio,
                     Metric = u.Metric,
                     LightTheme = u.LightTheme
+                });
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedMusclesAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var muscles = new[]
+        {
+            "Abductors",
+            "Adductors",
+            "Abdominals",
+            "Obliques",
+            "Biceps",
+            "Chest",
+            "Calves",
+            "Forearms",
+            "Glutes",
+            "Hamstrings",
+            "Lats",
+            "Lower Back",
+            "Middle Back",
+            "Upper Back",
+            "Quadriceps",
+            "Shoulders",
+            "Trapezius",
+            "Triceps",
+            "Front Deltoid",
+            "Middle Deltoid",
+            "Rear Deltoid"
+        };
+
+        foreach (var muscle in muscles)
+        {
+            if (!await dbContext.Muscles.AnyAsync(m => m.Name == muscle, cancellationToken))
+            {
+                dbContext.Muscles.Add(new Muscle
+                {
+                    Name = muscle
                 });
             }
         }

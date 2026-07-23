@@ -50,7 +50,6 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var workoutExercises = await LoadWorkoutExercisesAsync(recentWorkoutIds, cancellationToken);
         var workoutSets = await LoadWorkoutSetsAsync(recentWorkoutIds, cancellationToken);
         var recentLogSets = await LoadWorkoutLogSetsAsync(recentLogIds, cancellationToken);
-        var badges = await LoadEarnedBadgesAsync(user.Id, cancellationToken);
 
         var recentWorkouts = recentSessions.Select(session =>
         {
@@ -82,36 +81,64 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
         var totalLoggedSets = await CountWorkoutLogSetsAsync(sessions.Select(session => session.LogId).ToArray(), cancellationToken);
         var streakWeeks = ComputeStreakWeeks(sessions.Select(session => session.CompletedAt));
 
+        var badges = new List<ProfileBadgeDto>();
+
+        if (totalSessions > 0)
+        {
+            int bestMilestone = 0;
+            int[] milestones = { 1, 5, 10, 25, 50, 100, 250, 500 };
+            foreach (var milestone in milestones)
+                if (totalSessions >= milestone && totalSessions > bestMilestone)
+                    bestMilestone = milestone;
+            badges.Add(new ProfileBadgeDto($"{bestMilestone} WORKOUTS", $"Completed {bestMilestone} workouts", "MILESTONE", sessions[totalSessions - bestMilestone].CompletedAt));
+        }
+
+        switch (streakWeeks)
+        {
+            case >= 104:
+                badges.Add(new ProfileBadgeDto("IRON MAN", $"Maintained a {streakWeeks / 52} year-long streak", "STREAK", DateTime.UtcNow));
+                break;
+            case >= 52:
+                badges.Add(new ProfileBadgeDto("YEARLONG", "Maintained a year-long streak", "STREAK", DateTime.UtcNow));
+                break;
+            case >= 24:
+                badges.Add(new ProfileBadgeDto("HALFYEAR", "Maintained a half-year-long streak", "STREAK", DateTime.UtcNow));
+                break;
+            case >= 12:
+                badges.Add(new ProfileBadgeDto("QUARTERLONG", "Maintained a quarter-long streak", "STREAK", DateTime.UtcNow));
+                break;
+            case >= 4:
+                badges.Add(new ProfileBadgeDto("MONTHLONG", "Maintained a month-long streak", "STREAK", DateTime.UtcNow));
+                break;
+        }
+
+        switch (totalLoggedSets)
+        {
+            case >= 5000:
+                badges.Add(new ProfileBadgeDto("5000 SETS", $"Logged over 5000 sets", "SET COUNT", DateTime.UtcNow));
+                break;
+            case >= 2500:
+                badges.Add(new ProfileBadgeDto("2500 SETS", $"Logged over 2500 sets", "SET COUNT", DateTime.UtcNow));
+                break;
+            case >= 1000:
+                badges.Add(new ProfileBadgeDto("1000 SETS", $"Logged over 1000 sets", "SET COUNT", DateTime.UtcNow));
+                break;
+            case >= 500:
+                badges.Add(new ProfileBadgeDto("500 SETS", $"Logged over 500 sets", "SET COUNT", DateTime.UtcNow));
+                break;
+            case >= 100:
+                badges.Add(new ProfileBadgeDto("100 SETS", $"Logged over 100 sets", "SET COUNT", DateTime.UtcNow));
+                break;
+        }
+
         var chartData = BuildWeeklyChartData(sessions.Select(session => new WeeklyDurationSample(session.CompletedAt, (session.CompletedAt - session.StartedAt).TotalHours)), ChartWindowWeeks, "Weekly Hours");
 
         return new ProfileOverviewDto(
             new ProfileUserDto(user.DisplayName, user.Email, user.Bio, user.ProfileImageUrl),
-            new[]
-            {
-                new ProfileStatDto("Streak", $"{streakWeeks} weeks"),
-                new ProfileStatDto("Workouts", $"{totalSessions} sessions"),
-                new ProfileStatDto("Records", $"{totalLoggedSets:N0} logged sets"),
-            },
             badges,
             recentWorkouts,
             chartData.Title,
             chartData.Points);
-    }
-
-    private async Task<IReadOnlyList<ProfileBadgeDto>> LoadEarnedBadgesAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        return await (
-            from userBadge in _dbContext.UserBadges.AsNoTracking()
-            where userBadge.UserId == userId
-            join badge in _dbContext.Badges.AsNoTracking() on userBadge.BadgeId equals badge.Id
-            orderby userBadge.EarnedAt descending, badge.Name
-            select new ProfileBadgeDto(
-                badge.Name,
-                badge.Description,
-                badge.Category.ToString(),
-                badge.IconUrl,
-                userBadge.EarnedAt))
-            .ToListAsync(cancellationToken);
     }
 
     private async Task<IReadOnlyList<SessionRow>> LoadCompletedSessionsAsync(Guid userId, CancellationToken cancellationToken)

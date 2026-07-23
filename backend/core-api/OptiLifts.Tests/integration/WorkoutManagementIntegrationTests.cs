@@ -2,10 +2,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using OptiLifts.Application.Workouts.GetWorkouts;
-using OptiLifts.Application.Workouts.GetWorkoutDetail;
-using OptiLifts.Tests.Integration.IntegrationDb;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.GetWorkoutDetail;
+using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Tests.Integration.IntegrationDb;
 
 namespace OptiLifts.Tests.Integration;
 
@@ -22,7 +22,7 @@ public sealed class WorkoutManagementIntegrationTests : IntegrationTestBase
         var userId = await SeedUserAsync("dupe-workout-1@example.com");
         var workoutId = await SeedWorkoutAsync(userId, "Pull day");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
-        
+
         //act
         var response = await Client.PostAsync($"/api/workouts/{workoutId}/duplicate", null);
         //assert
@@ -49,7 +49,7 @@ public sealed class WorkoutManagementIntegrationTests : IntegrationTestBase
         var workoutId = await SeedWorkoutAsync(userId, "Pull day");
         var notownderId = await SeedUserAsync("notownder@example.com");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(notownderId)}");
-        
+
         //act
         var response = await Client.PostAsync($"/api/workouts/{workoutId}/duplicate", null);
         //assert
@@ -65,7 +65,7 @@ public sealed class WorkoutManagementIntegrationTests : IntegrationTestBase
 
         var initialreq = await Client.GetAsync($"/api/workouts/{workoutId}");
         initialreq.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         //act
         var response = await Client.DeleteAsync($"/api/workouts/{workoutId}");
         //assert
@@ -79,7 +79,7 @@ public sealed class WorkoutManagementIntegrationTests : IntegrationTestBase
 
         var result = await workoutslist.Content.ReadFromJsonAsync<List<WorkoutCardDto>>();
         result.Should().NotBeNull();
-        result!.Select(w=> w.Id).Should().NotContain(workoutId);
+        result!.Select(w => w.Id).Should().NotContain(workoutId);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class WorkoutManagementIntegrationTests : IntegrationTestBase
         var workoutId = await SeedWorkoutAsync(userId, "Pull day");
         var notownderId = await SeedUserAsync("notownder@example.com");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(notownderId)}");
-        
+
         //act
         var response = await Client.DeleteAsync($"/api/workouts/{workoutId}");
         //assert

@@ -32,7 +32,7 @@ public sealed class UpdateWorkoutIntegrationTests : IntegrationTestBase
             var folder = await db.Folders.FirstAsync(f => f.UserId == userId);
             folderId = folder.Id;
         }
-        
+
         var updateRequest = new UpdateWorkoutRequest(
             FolderId: folderId,
             Name: "Updated name",

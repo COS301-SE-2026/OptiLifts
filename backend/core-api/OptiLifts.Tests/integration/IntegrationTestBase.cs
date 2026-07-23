@@ -80,7 +80,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await using var scope = Fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
 
-        var primaryMuscle = await db.Muscles.FirstOrDefaultAsync() 
+        var primaryMuscle = await db.Muscles.FirstOrDefaultAsync()
         ?? new Muscle
         {
             Id = Guid.NewGuid(),

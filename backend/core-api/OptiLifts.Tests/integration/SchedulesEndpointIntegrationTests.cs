@@ -55,7 +55,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
         var creatresp = await Client.PostAsJsonAsync("/api/users/me/schedule/sessions", request);
         creatresp.EnsureSuccessStatusCode();
 
-        var response = await Client.GetAsync("/api/users/me/schedule");        
+        var response = await Client.GetAsync("/api/users/me/schedule");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<ScheduledEntryDto[]>();
@@ -84,7 +84,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
 
         var patchrequest = new SchedulesController.UpdateScheduledSessionStatusRequest(ScheduleStatus.Completed);
 
-        var response = await Client.PatchAsJsonAsync($"/api/users/me/schedule/sessions/{createdresult!.Id}", patchrequest);        
+        var response = await Client.PatchAsJsonAsync($"/api/users/me/schedule/sessions/{createdresult!.Id}", patchrequest);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<UpdateScheduledSessionStatusResult>();
@@ -110,7 +110,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
         var createdresult = await creatresp.Content.ReadFromJsonAsync<CreateScheduledSessionResult>();
         createdresult.Should().NotBeNull();
 
-        var response = await Client.DeleteAsync($"/api/users/me/schedule/sessions/{createdresult!.Id}");        
+        var response = await Client.DeleteAsync($"/api/users/me/schedule/sessions/{createdresult!.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await Client.GetAsync("/api/users/me/schedule");

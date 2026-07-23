@@ -111,7 +111,7 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
                 badges.Add(new ProfileBadgeDto("MONTHLONG", "Maintained a month-long streak", "STREAK", DateTime.UtcNow));
                 break;
         }
-
+        //won't show a badge for weekly streaks/number of logged sets if the user doesn't have any
         switch (totalLoggedSets)
         {
             case >= 5000:

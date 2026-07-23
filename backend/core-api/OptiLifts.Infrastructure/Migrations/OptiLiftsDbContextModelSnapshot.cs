@@ -327,6 +327,57 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.ToTable("exercise_groups", (string)null);
                 });
 
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExercisePr", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("pr_id");
+
+                    b.Property<DateTime>("AchievedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("achieved_at");
+
+                    b.Property<int>("AchievedReps")
+                        .HasColumnType("integer")
+                        .HasColumnName("achieved_reps");
+
+                    b.Property<float>("AchievedWeight")
+                        .HasColumnType("real")
+                        .HasColumnName("achieved_weight");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_id");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_current");
+
+                    b.Property<string>("PrType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("pr_type");
+
+                    b.Property<float>("PrValue")
+                        .HasColumnType("real")
+                        .HasColumnName("pr_value");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("UserId", "ExerciseId", "PrType")
+                        .IsUnique()
+                        .HasFilter("is_current = true");
+
+                    b.ToTable("exercise_prs", (string)null);
+                });
+
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Folder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -771,6 +822,21 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Workouts.Workout", null)
                         .WithMany()
                         .HasForeignKey("WorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExercisePr", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

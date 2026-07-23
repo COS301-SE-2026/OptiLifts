@@ -15,6 +15,9 @@ export const MUSCLE_GROUPS = [
   "Shoulders",
   "Trapezius",
   "Triceps",
+  "Front Deltoid",
+  "Middle Deltoid",
+  "Rear Deltoid"
 ] as const
 
 //map muscle name -> diagram region id/class
@@ -23,16 +26,18 @@ export const MUSCLE_REGION_MAP: Record<string, string> = {
   Abductors: "region-abductors",
   Adductors: "region-adductors",
   Biceps: "region-biceps",
-  Calves: "region-calves",
   Chest: "region-chest",
+  "Front Deltoid": "region-front-deltoid",
+  "Middle Deltoid": "region-middle-deltoid",
+  Quadriceps: "region-quadriceps",
   Forearms: "region-forearms",
+  Calves: "region-calves",
   Glutes: "region-glutes",
   Hamstrings: "region-hamstrings",
   Lats: "region-lats",
   "Lower Back": "region-lower-back",
   "Middle Back": "region-middle-back",
-  Quadriceps: "region-quadriceps",
-  Shoulders: "region-shoulders",
   Traps: "region-traps",
   Triceps: "region-triceps",
+  "Rear Deltoid": "region-rear-deltoid"
 }

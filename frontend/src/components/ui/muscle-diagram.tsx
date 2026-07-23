@@ -19,7 +19,7 @@ export function MuscleDiagram({ highlightedMuscles, variant = 'both' }: Props) {
         <div className="flex-1">
           <div className="mb-2 text-sm font-semibold">Front</div>
           <div className="grid grid-cols-2 gap-2">
-            {Object.keys(MUSCLE_REGION_MAP).slice(0, 8).map((m) => (
+            {Object.keys(MUSCLE_REGION_MAP).slice(0, 9).map((m) => (
               <div
                 key={`front-${m}`}
                 className={`rounded-md border p-2 text-xs text-center ${isHighlighted(m as MuscleName) ? 'bg-brand/10 border-brand' : 'bg-surface'}`}>
@@ -34,7 +34,7 @@ export function MuscleDiagram({ highlightedMuscles, variant = 'both' }: Props) {
         <div className="flex-1">
           <div className="mb-2 text-sm font-semibold">Back</div>
           <div className="grid grid-cols-2 gap-2">
-            {Object.keys(MUSCLE_REGION_MAP).slice(8).map((m) => (
+            {Object.keys(MUSCLE_REGION_MAP).slice(9).map((m) => (
               <div
                 key={`back-${m}`}
                 className={`rounded-md border p-2 text-xs text-center ${isHighlighted(m as MuscleName) ? 'bg-brand/10 border-brand' : 'bg-surface'}`}>

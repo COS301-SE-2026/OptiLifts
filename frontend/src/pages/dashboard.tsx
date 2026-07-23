@@ -55,6 +55,7 @@ const MUSCLE_CATEGORY_MAP: Record<string, 'Chest' | 'Core' | 'Shoulders' | 'Arms
     Lats: 'Back',
     'Lower Back': 'Back',
     'Middle Back': 'Back',
+    'Upper Back': 'Back',
     Trapezius: 'Back',
     Shoulders: 'Shoulders',
     'Front Deltoid': 'Shoulders',
@@ -70,6 +71,7 @@ const MUSCLE_CATEGORY_MAP: Record<string, 'Chest' | 'Core' | 'Shoulders' | 'Arms
     Abductors: 'Legs',
     Adductors: 'Legs',
     Abdominals: 'Core',
+    Obliques: 'Core',
 }
 
 const MUSCLE_KEYS = ['Chest', 'Core', 'Shoulders', 'Arms', 'Legs', 'Back'] as const

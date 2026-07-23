@@ -18,32 +18,6 @@ public class AddExerciseToWorkoutIntegrationTests : IntegrationTestBase
         //to execute base constructor
     }
 
-    public async Task<Guid> SeedExerciseAsync(string name)
-    {
-        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-
-        var primaryMuscle = await db.Muscles.FirstOrDefaultAsync()
-                    ?? new Muscle { Id = Guid.NewGuid(), Name = "Chest" };
-
-        if (db.Entry(primaryMuscle).State == EntityState.Detached)
-        {
-            db.Muscles.Add(primaryMuscle);
-        }
-
-        var exercise = new Exercise
-        {
-            Name = name,
-            ExerciseType = default,
-            Mechanic = "compound",
-            Equipment = "barbell",
-            PrimaryMuscleId = primaryMuscle.Id
-        };
-
-        db.Exercises.Add(exercise);
-        await db.SaveChangesAsync();
-        return exercise.Id;
-    }
 
     public async Task<bool> HasSetAsync(Guid workoutId, Guid exerciseId)
     {

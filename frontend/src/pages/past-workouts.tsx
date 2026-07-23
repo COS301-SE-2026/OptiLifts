@@ -18,6 +18,7 @@ type ScheduledEntryDto = {
     primaryMuscleGroups: string[]
     exerciseCount: number
     exercisePreview: string[]
+    exercisePreviewIds: string[]
     totalVolume: number
     totalSets: number
     startedAt?: string
@@ -48,21 +49,6 @@ export default function PastWorkoutsPage() {
     const navigate = useNavigate()
 
     useEffect(() => {
-        const getImages = async () => {
-            try {
-                const response = await customFetch(`/api/exercises/allImages`)
-                if (response.ok) {
-                    const out = await response.json();
-                    setExerciseImages(out)
-                }
-            } catch (e) {
-                console.error('Error fetching exercise images:', e)
-            }
-        }
-        void getImages();
-    }, [])
-
-    useEffect(() => {
         const fetchWorkouts = async () => {
             setLoading(true)
             try {
@@ -73,6 +59,23 @@ export default function PastWorkoutsPage() {
                 if (response.ok) {
                     const out = await response.json()
                     setWorkouts(out)
+
+                    const exercises = Array.from(new Set(
+                        out.flatMap((workout: ScheduledEntryDto) => workout.exercisePreviewIds || [])
+                    )) as string[];
+
+                    if (exercises.length > 0) {
+                        const imgRes = await customFetch('/api/exercises/images', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ exerciseIds: exercises })
+                        });
+
+                        if (imgRes.ok) {
+                            const imgDetails = await imgRes.json();
+                            setExerciseImages(imgDetails)
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching workouts:', error)
@@ -103,8 +106,8 @@ export default function PastWorkoutsPage() {
             <div className="space-y-5">
                 {workouts.map((workout) => {
                     //map exercise names to images via dictionary
-                    const allImages = (workout.exercisePreview || [])
-                        .map(name => exerciseImages[name])
+                    const allImages = (workout.exercisePreviewIds || [])
+                        .map(id => exerciseImages[id])
                         .filter(Boolean);
 
                     const exerImages = allImages.slice(0, 8);

@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 import { customFetch } from '@/lib/custom-fetch'
+import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 
 export type CatalogExercise = {
   id: string
@@ -46,6 +47,7 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
   const [searchQuery, setSearchQuery] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen)
@@ -163,16 +165,19 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
               <p className="px-4 py-3 text-sm text-muted-foreground">No exercises match your filters.</p>
             )}
             <div className="divide-y divide-border/70">
-              {filtered.map((ex) => (
+                            {filtered.map((ex) => (
                 <div key={ex.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <CircularProfileImage
-                    src={ex.imageUrl}
-                    alt={ex.name}
-                    className="size-9 shrink-0 border-border"
-                    fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
+                  <CircularProfileImage src={ex.imageUrl} alt={ex.name}
+                    className="size-9 shrink-0 border-border" fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+                    <button
+                      type="button"
+                      className="block w-fit max-w-full truncate text-left text-sm font-semibold text-foreground cursor-pointer hover:underline"
+                      onClick={() => setDetailsExerciseId(ex.id)} aria-label={`View details for ${ex.name}`}
+                    >
+                      {ex.name}
+                    </button>
                     <div className="text-xs text-muted-foreground">
                       {ex.muscleGroup}{ex.equipment ? ` • ${ex.equipment}` : ''}
                     </div>
@@ -204,7 +209,11 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
           </div>
         </div>
       </div>
-
+      <ExerciseDetailsPopup
+        exerciseId={detailsExerciseId}
+        onClose={() => setDetailsExerciseId(null)}
+        onChanged={() => setReloadKey((k) => k + 1)}
+      />
       <CreateExercise
         isOpen={isCreateOpen}
         onCancel={() => setIsCreateOpen(false)}

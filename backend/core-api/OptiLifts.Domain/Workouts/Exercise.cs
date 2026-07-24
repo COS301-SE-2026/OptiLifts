@@ -12,6 +12,7 @@ public class Exercise
     public Guid PrimaryMuscleId { get; set; }
     public Guid? UserId { get; set; } // Null for public, populated for custom exercises
     public string? ImageUrl { get; set; }
+    public bool IsDeleted { get; set; } = false;
 }
 
 public enum ExerciseType

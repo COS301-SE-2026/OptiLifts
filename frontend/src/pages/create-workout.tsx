@@ -9,6 +9,7 @@ import { PageTitle } from '@/components/ui/page-title'
 import { CreateExercise } from '@/components/ui/create-exercise'
 import { SearchInput } from '@/components/ui/search-input'
 import { CircularProfileImage } from '@/components/ui/circular-image'
+import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import {
   Card,
   CardContent,
@@ -222,7 +223,7 @@ export default function CreateWorkoutPage() {
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
- 
+  const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
@@ -478,7 +479,14 @@ export default function CreateWorkoutPage() {
           fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+          <button
+            type="button"
+            className="block w-fit max-w-full truncate text-left text-sm font-semibold text-foreground cursor-pointer hover:underline"
+            onClick={() => setDetailsExerciseId(ex.id)}
+            aria-label={`View details for ${ex.name}`}
+          >
+            {ex.name}
+          </button>
           <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
         </div>
         <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
@@ -554,7 +562,7 @@ export default function CreateWorkoutPage() {
                 return (
                   <Fragment key={seg.exercise.id}>
                     <ExerciseCard exercise={seg.exercise} restTime={seg.exercise.restTime} onRemove={removeExercise} 
-                    onSetsChange={updateSets} onRestTimeChange={updateExerciseRestTime} />
+                    onSetsChange={updateSets} onRestTimeChange={updateExerciseRestTime} onOpenDetails={setDetailsExerciseId} />
                     {chainAfter}
                   </Fragment>
                 )
@@ -598,7 +606,7 @@ export default function CreateWorkoutPage() {
                     </div>
                     {seg.members.map((m, mi) => (
                       <Fragment key={m.exercise.id}> 
-                        <ExerciseCard exercise={m.exercise} onRemove={removeExercise} onSetsChange={updateSets} />
+                        <ExerciseCard exercise={m.exercise} onRemove={removeExercise} onSetsChange={updateSets} onOpenDetails={setDetailsExerciseId}/>
                         {mi < seg.members.length - 1 && (
                           <ChainLink linked onClick={() => toggleLink(m.index)} />
                         )}
@@ -671,6 +679,11 @@ export default function CreateWorkoutPage() {
         </div>
         </div>
       </div>
+      <ExerciseDetailsPopup
+        exerciseId={detailsExerciseId}
+        onClose={() => setDetailsExerciseId(null)}
+        onChanged={handleExerciseSaved}
+      />
       <CreateExercise
         isOpen={isCreateExerciseOpen}
         onCancel={() => setIsCreateExerciseOpen(false)}

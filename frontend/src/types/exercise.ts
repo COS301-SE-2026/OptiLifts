@@ -37,6 +37,18 @@ export type CreateExerciseProps = Readonly<{
   equipmentOptions?: readonly string[]
 }>
 
+export type ExerciseDetails = Readonly<{
+  id: string
+  name: string
+  mechanic: string | null
+  equipment: string | null
+  exerciseType: string
+  primaryMuscles: string[]
+  secondaryMuscles: string[]
+  isCustom: boolean
+  imageUrl: string | null
+}>
+
 export type CreateExerciseBackdropProps = Readonly<{
   zIndexClassName: string
   backdropClassName: string

@@ -19,12 +19,14 @@ public sealed class DeleteCustomExerciseHandler : IRequestHandler<DeleteCustomEx
 
     public async Task<bool> Handle(DeleteCustomExerciseCommand request, CancellationToken cancellationToken)
     {
-        var exercise = await _dbContext.Exercises.FirstOrDefaultAsync(e => e.Id == request.ExerciseId && e.UserId == request.UserId, cancellationToken);
+        var ex = await _dbContext.Exercises.FirstOrDefaultAsync(e => e.Id == request.ExerciseId && e.UserId == request.UserId && !e.IsDeleted, cancellationToken);
 
-        if (exercise == null)
+        if (ex == null)
+        {
             return false;
+        }
 
-        exercise.IsDeleted = true;
+        ex.IsDeleted = true;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -457,7 +457,7 @@ export default function ActiveSessionPage() {
         groupId: null,
         groupType: null,
         groupRestTime: null,
-        exerciseType: exercise.exerciseType ?? 'weight-reps',
+        exerciseType: exercise.exerciseType ?? 'WeightReps',
         sets: [
           {
             id: createClientSetId(),

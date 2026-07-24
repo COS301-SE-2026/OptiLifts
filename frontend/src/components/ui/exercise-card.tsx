@@ -36,38 +36,38 @@ export function getColumns(exerciseType: string): ColumnDef[] {
   const minus = isMetric ? '-KG': '-LB'
 
 const COLUMNSTYPE: Record<string, ColumnDef[]> = {
-  'weight-reps': [
+  'WeightReps': [
     {label: weightUnit, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
-  'bodyweight-reps': [
+  'BodyweightReps': [
     { label: 'Reps', field: 'reps'},
   ],
-  'weighted-bodyweight': [
+  'WeightedBodyWeight': [
     {label: plus, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
-  'assisted-bodyweight': [
+  'AssistedWeightReps': [
     {label: minus, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
-  'duration': [
+  'Duration': [
     { label: 'Time(s)', field: 'time'},
   ],
-  'duration-weight': [
+  'DurationWeight': [
     {label: weightUnit, field: 'kg'},
     { label: 'Time(s)', field: 'time'},
   ],
-  'distance-duration': [
+  'DistanceDuration': [
     {label: 'KM', field: 'distance'},
     { label: 'Time(s)', field: 'time'},
   ],
-  'weight-distance': [
+  'WeightDistance': [
     {label: weightUnit, field: 'kg'},
     { label: 'KM', field: 'distance'},
   ],
 }
-return COLUMNSTYPE[exerciseType] ?? COLUMNSTYPE['weight-reps']
+return COLUMNSTYPE[exerciseType] ?? COLUMNSTYPE['WeightReps']
 }
 
 function SetRow({
@@ -137,7 +137,7 @@ let nextSetId = 0
 export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
-  const columns = getColumns(exercise.exerciseType ?? 'weight-reps')
+  const columns = getColumns(exercise.exerciseType ?? 'WeightReps')
 
   const updateSets = (updated: ExerciseSet[]) => {
     setSets(updated)

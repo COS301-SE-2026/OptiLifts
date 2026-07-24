@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPlannedExerciseSetText } from '@/lib/exercise-format'
 import type { ExercisePlanItem, ExercisePlanProps, ExercisePlanSet } from '@/types/exercise-plan'
 
-const DEFAULT_EXERCISE_TYPE = 'weight-reps'
+const DEFAULT_EXERCISE_TYPE = 'WeightReps'
 const PLANNED_EXERCISE_SUBTITLE = 'Planned exercise'
 const DEFAULT_EMPTY_STATE = 'No exercises have been planned for this workout yet.'
 const EXERCISE_ROW_CLASS = 'grid grid-cols-[68px_minmax(0,1.45fr)_minmax(152px,11vw)] items-center gap-2 rounded-2xl border border-border bg-surface-2 px-2 py-2'

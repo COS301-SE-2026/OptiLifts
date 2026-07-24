@@ -1,12 +1,12 @@
 export type KnownExerciseTypeValue =
-  | 'weight-reps'
-  | 'bodyweight-reps'
-  | 'weighted-bodyweight'
-  | 'assisted-bodyweight'
-  | 'duration'
-  | 'duration-weight'
-  | 'distance-duration'
-  | 'weight-distance'
+  | 'WeightReps'
+  | 'BodyweightReps'
+  | 'WeightedBodyWeight'
+  | 'AssistedWeightReps'
+  | 'Duration'
+  | 'DurationWeight'
+  | 'DistanceDuration'
+  | 'WeightDistance'
 
 
 export type PlannedExerciseSet = Readonly<{

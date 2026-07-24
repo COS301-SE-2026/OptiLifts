@@ -121,16 +121,16 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
 
     private static ExerciseType ResolveExerciseType(string value)
     {
-        return value.Trim().ToLowerInvariant() switch
+        return value.Trim() switch
         {
-            "strength" or "weight-reps" => ExerciseType.WeightReps,
-            "bodyweight-reps" => ExerciseType.BodyweightReps,
-            "weighted-bodyweight" => ExerciseType.WeightedBodyweight,
-            "assisted-bodyweight" => ExerciseType.AssistedWeightReps,
-            "duration" => ExerciseType.Duration,
-            "duration-weight" => ExerciseType.DurationWeight,
-            "distance-duration" => ExerciseType.DistanceDuration,
-            "weight-distance" => ExerciseType.WeightDistance,
+            "strength" or "WeightReps" => ExerciseType.WeightReps,
+            "BodyweightReps" => ExerciseType.BodyweightReps,
+            "WeightedBodyWeight" => ExerciseType.WeightedBodyweight,
+            "AssistedWeightReps" => ExerciseType.AssistedWeightReps,
+            "Duration" => ExerciseType.Duration,
+            "DurationWeight" => ExerciseType.DurationWeight,
+            "DistanceDuration" => ExerciseType.DistanceDuration,
+            "WeightDistance" => ExerciseType.WeightDistance,
             _ => throw new InvalidOperationException($"Unsupported exercise type: {value}")
         };
     }

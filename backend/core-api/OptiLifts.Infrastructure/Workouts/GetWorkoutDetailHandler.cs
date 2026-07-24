@@ -136,14 +136,14 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
     {
         return exerciseType switch
         {
-            OptiLifts.Domain.Workouts.ExerciseType.WeightReps => "weight-reps",
-            OptiLifts.Domain.Workouts.ExerciseType.BodyweightReps => "bodyweight-reps",
-            OptiLifts.Domain.Workouts.ExerciseType.AssistedWeightReps => "assisted-bodyweight",
-            OptiLifts.Domain.Workouts.ExerciseType.WeightedBodyweight => "weighted-bodyweight",
-            OptiLifts.Domain.Workouts.ExerciseType.Duration => "duration",
-            OptiLifts.Domain.Workouts.ExerciseType.DurationWeight => "duration-weight",
-            OptiLifts.Domain.Workouts.ExerciseType.DistanceDuration => "distance-duration",
-            OptiLifts.Domain.Workouts.ExerciseType.WeightDistance => "weight-distance",
+            OptiLifts.Domain.Workouts.ExerciseType.WeightReps => "WeightReps",
+            OptiLifts.Domain.Workouts.ExerciseType.BodyweightReps => "BodyweightReps",
+            OptiLifts.Domain.Workouts.ExerciseType.AssistedWeightReps => "AssistedWeightReps",
+            OptiLifts.Domain.Workouts.ExerciseType.WeightedBodyweight => "WeightedBodyWeight",
+            OptiLifts.Domain.Workouts.ExerciseType.Duration => "Duration",
+            OptiLifts.Domain.Workouts.ExerciseType.DurationWeight => "DurationWeight",
+            OptiLifts.Domain.Workouts.ExerciseType.DistanceDuration => "DistanceDuration",
+            OptiLifts.Domain.Workouts.ExerciseType.WeightDistance => "WeightDistance",
             _ => exerciseType.ToString()
         };
     }

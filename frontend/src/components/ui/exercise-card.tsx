@@ -180,9 +180,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
             type="button"
             className="block w-fit max-w-full truncate text-left font-sans font-semibold text-sm text-foreground leading-tight cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
             disabled={!onOpenDetails || !exercise.exerciseCatalogId}
-            onClick={() => {
-              if (onOpenDetails && exercise.exerciseCatalogId) onOpenDetails(exercise.exerciseCatalogId)
-            }}
+            onClick={() => { if (exercise.exerciseCatalogId) onOpenDetails?.(exercise.exerciseCatalogId) }}
           >
             {exercise.name}
           </button>

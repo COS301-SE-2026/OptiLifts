@@ -108,9 +108,7 @@ function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Re
           type="button"
           className="block w-fit max-w-full truncate text-left text-[0.98rem] font-semibold text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
           disabled={!onOpenDetails || !exercise.exerciseId}
-          onClick={() => {
-            if (onOpenDetails && exercise.exerciseId) onOpenDetails(exercise.exerciseId)
-          }}
+          onClick={() => { if (exercise.exerciseId) onOpenDetails?.(exercise.exerciseId) }}
         >
           {exercise.name}
         </button>

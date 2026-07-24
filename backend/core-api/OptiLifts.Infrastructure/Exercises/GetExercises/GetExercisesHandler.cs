@@ -18,7 +18,7 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
     public async Task<List<ExerciseDto>> Handle(GetExercisesQuery request, CancellationToken cancellationToken)
     {
         var query = _dbContext.Exercises
-            .Where(e => e.UserId == null || e.UserId == request.UserId);
+            .Where(e => !e.IsDeleted && (e.UserId == null || e.UserId == request.UserId));
 
         if (!string.IsNullOrWhiteSpace(request.Equipment))
         {

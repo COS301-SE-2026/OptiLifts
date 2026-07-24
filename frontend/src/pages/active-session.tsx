@@ -816,6 +816,26 @@ export default function ActiveSessionPage() {
         onClose={() => setPickerOpen(false)}
         onSelect={selectedExercise}
       />
+      {exitOpen && (
+        <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center p-4">
+          <button type="button" aria-label="Stay" className="absolute inset-0 bg-foreground/50" onClick={() => setExitOpen(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-bold text-foreground">Leave session?</h2>
+              <button type="button" aria-label="Stay" onClick={() => setExitOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Do you want to keep this session or discard it permanently?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={discard}>Discard</Button>
+              <Button variant="default" className="flex-1" onClick={keep}>Keep</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

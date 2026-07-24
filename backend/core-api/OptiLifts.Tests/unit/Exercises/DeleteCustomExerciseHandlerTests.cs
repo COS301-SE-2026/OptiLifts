@@ -1,9 +1,7 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using OptiLifts.Application.Exercises.DeleteCustomExercise;
-using OptiLifts.Application.Storage;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -23,7 +21,7 @@ public class DeleteCustomExerciseHandlerTests
     }
 
     [Fact]
-    public async Task Handle_DeletesOwnedCustomExercise_AndRemovesSecondaryMuscles()
+    public async Task Handle_SoftDeletion()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         await connection.OpenAsync();
@@ -56,21 +54,22 @@ public class DeleteCustomExerciseHandlerTests
         context.SecMuscles.Add(new SecMuscle { ExerciseId = exercise.Id, MuscleId = muscle.Id });
         await context.SaveChangesAsync();
 
-        var blobMock = new Mock<IBlobStorageService>();
-        blobMock.Setup(s => s.DeleteFileAsync(exercise.ImageUrl!, "exercises", It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-
-        var handler = new DeleteCustomExerciseHandler(context, blobMock.Object);
+        var handler = new DeleteCustomExerciseHandler(context);
 
         var result = await handler.Handle(new DeleteCustomExerciseCommand(exercise.Id, userId), CancellationToken.None);
 
         result.Should().BeTrue();
-        (await context.Exercises.FindAsync(exercise.Id)).Should().BeNull();
+
+        var store = await context.Exercises.FindAsync(exercise.Id);
+        store.Should().NotBeNull();
+        store!.IsDeleted.Should().BeTrue();
+        store.ImageUrl.Should().Be(exercise.ImageUrl);
+        
         (await context.SecMuscles.Where(s => s.ExerciseId == exercise.Id).ToListAsync()).Should().BeEmpty();
-        blobMock.Verify(s => s.DeleteFileAsync(exercise.ImageUrl!, "exercises", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_ThrowsWhenExerciseIsUsedInWorkout()
+    public async Task Handle_SoftDeletionWhenWorkoutIsInUse()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         await connection.OpenAsync();
@@ -117,11 +116,11 @@ public class DeleteCustomExerciseHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var blobMock = new Mock<IBlobStorageService>();
-        var handler = new DeleteCustomExerciseHandler(context, blobMock.Object);
+        var handler = new DeleteCustomExerciseHandler(context);
 
-        var act = async () => await handler.Handle(new DeleteCustomExerciseCommand(exercise.Id, userId), CancellationToken.None);
+        var result = await handler.Handle(new DeleteCustomExerciseCommand(exercise.Id, userId), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("This exercise is already used in a workout and cannot be deleted.");
+        result.Should().BeTrue();
+        (await context.Exercises.FindAsync(exercise.Id))!.IsDeleted.Should().BeTrue();
     }
 }

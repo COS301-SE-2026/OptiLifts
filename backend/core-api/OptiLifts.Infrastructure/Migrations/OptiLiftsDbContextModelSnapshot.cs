@@ -334,10 +334,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("pr_id");
 
-                    b.Property<DateTime>("AchievedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("achieved_at");
-
                     b.Property<int>("AchievedReps")
                         .HasColumnType("integer")
                         .HasColumnName("achieved_reps");
@@ -349,10 +345,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.Property<Guid>("ExerciseId")
                         .HasColumnType("uuid")
                         .HasColumnName("exercise_id");
-
-                    b.Property<bool>("IsCurrent")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_current");
 
                     b.Property<string>("PrType")
                         .IsRequired()
@@ -367,13 +359,17 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<Guid>("WorkoutLogSetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workout_log_set_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExerciseId");
 
-                    b.HasIndex("UserId", "ExerciseId", "PrType")
-                        .IsUnique()
-                        .HasFilter("is_current = true");
+                    b.HasIndex("WorkoutLogSetId");
+
+                    b.HasIndex("UserId", "ExerciseId", "PrType");
 
                     b.ToTable("exercise_prs", (string)null);
                 });
@@ -837,6 +833,12 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Workouts.WorkoutSetLog", null)
+                        .WithMany()
+                        .HasForeignKey("WorkoutLogSetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

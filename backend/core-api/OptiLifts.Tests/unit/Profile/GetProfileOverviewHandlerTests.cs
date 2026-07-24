@@ -147,6 +147,32 @@ public class GetProfileOverviewHandlerTests
             LoggedAt = new DateTime(2026, 6, 18, 8, 10, 0, DateTimeKind.Utc)
         });
 
+        var loggedSetId = context.WorkoutLogSets.Local.Single().Id;
+
+        context.ExercisePrs.AddRange(
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ExerciseId = exercise.Id,
+                WorkoutLogSetId = loggedSetId,
+                PrType = ExercisePrType.MaxWeight,
+                PrValue = 100,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            },
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ExerciseId = exercise.Id,
+                WorkoutLogSetId = loggedSetId,
+                PrType = ExercisePrType.MaxSetVolume,
+                PrValue = 800,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            });
+
         await context.SaveChangesAsync();
 
         var handler = new GetProfileOverviewHandler(context);
@@ -160,6 +186,7 @@ public class GetProfileOverviewHandlerTests
         result.Badges[0].Name.Should().Be("First Workout");
         result.RecentWorkouts.Should().HaveCount(1);
         result.RecentWorkouts[0].Name.Should().Be("Push Day");
+        result.RecentWorkouts[0].Prs.Should().Be("2 PRs");
         result.ChartData.Should().HaveCount(12);
         result.ChartTitle.Should().Be("Weekly Hours");
     }

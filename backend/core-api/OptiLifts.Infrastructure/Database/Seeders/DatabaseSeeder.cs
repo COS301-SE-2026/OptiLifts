@@ -13,7 +13,7 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken = default)
     {
         await SeedUsersAsync(dbContext, cancellationToken);
-        await SeedMusclesAsync(dbContext, cancellationToken); 
+        await SeedMusclesAsync(dbContext, cancellationToken);
 
         if (!await dbContext.Workouts.AnyAsync(cancellationToken))
         {

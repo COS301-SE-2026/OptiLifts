@@ -4,8 +4,9 @@ export const DEFAULT_EQUIPMENT_OPTIONS = [
   "Barbell",
   "Kettlebell",
   "Machine",
+  "Smith machine",
+  "Cable",
   "Plate",
   "Resistance Band",
-  "Suspension Band",
   "Other",
 ] as const

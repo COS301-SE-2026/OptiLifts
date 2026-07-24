@@ -25,6 +25,8 @@ import type { WorkoutExercise, SetType, ExerciseSet } from '@/types/create-worko
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
+import { MUSCLE_GROUPS } from '@/constants/muscles'
+import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 
 type CatalogExercise = {
   id: string
@@ -108,7 +110,7 @@ function buildSegs(exercises: SelectedWorkoutExercise[]): WorkoutSegment[] {
   return segments
 }
 
-const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
+const MUSCLE_OPTIONS = ['All Muscles', ...MUSCLE_GROUPS] as const
 
 function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
   return(
@@ -446,7 +448,7 @@ export default function CreateWorkoutPage() {
   
   const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
 
-  const EQUIPMENT_OPTIONS = ['All Equipment', ...Array.from(new Set(allExercises.map(e => e.equipment).filter(Boolean) as string[])).map(e => e.charAt(0).toUpperCase() + e.slice(1))]
+  const EQUIPMENT_OPTIONS = ['All Equipment', ...DEFAULT_EQUIPMENT_OPTIONS]
 
   const filteredExercises = allExercises.filter((ex) => {
     const q = searchQuery.trim().toLowerCase()
@@ -632,7 +634,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
                   {MUSCLE_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedMuscle(o)}>{o}</DropdownMenuItem>
                   ))}
@@ -643,7 +645,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedEquipment}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
                   {EQUIPMENT_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedEquipment(o)}>{o}</DropdownMenuItem>
                   ))}

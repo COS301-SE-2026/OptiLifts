@@ -14,7 +14,7 @@ export function MuscleDiagram({ highlightedMuscles, variant = 'both' }: Props) {
   //replace with heatmap svg when implemented
   return (
     <div className="w-full">
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-2 items-start">
         {showFront && (
         <div className="flex-1">
           <div className="mb-2 text-sm font-semibold">Front</div>

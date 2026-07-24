@@ -57,7 +57,7 @@ export function WorkoutDetailShell({
                 <CardTitle className="text-[1.05rem] font-bold">Summary</CardTitle>
               </CardHeader>
               <CardContent className="flex min-h-0 flex-1 flex-col">
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-2 text-sm text-muted-foreground">
+                <div className="exercise-summary-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-2 text-sm text-muted-foreground">
                   {summaryContent}
                 </div>
               </CardContent>

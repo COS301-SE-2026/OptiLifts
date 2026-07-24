@@ -756,20 +756,17 @@ function MonthViewCalendar({
 
                             <div className="flex-1 flex flex-col gap-1.5 items-stretch justify-center w-full min-h-[48px]">
                                 {sessionsOnDay.map((session) => (
-                                    <button key={session.id}
-                                    tabIndex={0}
-                                    onClick={() => onWorkoutClick(session)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault()
-                                            onWorkoutClick(session)
-                                        }
-                                    }} 
-                                    className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 hover:ring-2 hover:ring-brand/45 focus-visible:ring-2 focus-visible:ring-brand/45 outline-none cursor-pointer shadow-sm">
-                                        <span className="truncate flex-1 text-left" title={session.workoutName}>
+                                    <div key={session.id}
+                                    className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 hover:ring-2 hover:ring-brand/45 focus-visible-within:ring-2 focus-visible-within:ring-brand/45 shadow-sm">
+                                        <button type="button"
+                                        onClick={() => onWorkoutClick(session)}
+                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline" 
+                                        title={session.workoutName}>
                                             {session.workoutName}
-                                        </span>
-                                        <button type="button" className="opacity-0 group-hover/item:opacity-100 size-4 flex items-center justify-center rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all flex-shrink-0 cursor-pointer"
+                                        </button>                                            
+                                        <button 
+                                        type="button" 
+                                        className="opacity-0 group-hover/item:opacity-100 size-4 flex items-center justify-center rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all flex-shrink-0 cursor-pointer outline-none focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-destructive"
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             onDeleteSession(session.id)
@@ -777,7 +774,7 @@ function MonthViewCalendar({
                                         aria-label={`Delete ${session.workoutName}`}>
                                             <X size={10} />
                                         </button>
-                                    </button>
+                                    </div>
 
                     ))}
                     {sessionsOnDay.length === 0 && (

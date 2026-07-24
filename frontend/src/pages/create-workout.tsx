@@ -479,7 +479,14 @@ export default function CreateWorkoutPage() {
           fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+          <button
+            type="button"
+            className="block w-fit max-w-full truncate text-left text-sm font-semibold text-foreground cursor-pointer hover:underline"
+            onClick={() => setDetailsExerciseId(ex.id)}
+            aria-label={`View details for ${ex.name}`}
+          >
+            {ex.name}
+          </button>
           <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
         </div>
         <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">

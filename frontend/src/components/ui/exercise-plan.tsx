@@ -26,6 +26,7 @@ function normalizeExercise(exercise: string | ExercisePlanItem): Required<Exerci
       groupId: null,
       groupType: null,
       groupRestTime :null,
+      exerciseId: null,
     }
   }
 
@@ -37,6 +38,7 @@ function normalizeExercise(exercise: string | ExercisePlanItem): Required<Exerci
     groupId: exercise.groupId ?? null,
     groupType: exercise.groupType ?? null,
     groupRestTime: exercise.groupRestTime ?? null,
+    exerciseId: exercise.exerciseId ?? null,
   }
 }
 
@@ -95,14 +97,21 @@ function buildWorkoutSegs(exercises: Required<ExercisePlanItem>[]): GroupedSegme
 }
 
 //resolves duplication issues
-function ExerciseRow({ exercise, index }: Readonly<{ exercise: Required<ExercisePlanItem>; index: number }>) {
+function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Required<ExercisePlanItem>; index: number; onOpenDetails?: (exerciseId: string) => void }>) {
   return (
     <div key={`${exercise.name}-${index}`} className={EXERCISE_ROW_CLASS}>
       <Avatar className="h-[68px] w-[68px] shrink-0 border border-border bg-background">
         <AvatarFallback className="bg-background text-transparent" />
       </Avatar>
       <div className="min-w-0 pr-2">
-        <p className="truncate text-[0.98rem] font-semibold text-foreground">{exercise.name}</p>
+        <button
+          type="button"
+          className="block w-fit max-w-full truncate text-left text-[0.98rem] font-semibold text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
+          disabled={!onOpenDetails || !exercise.exerciseId}
+          onClick={() => { if (exercise.exerciseId) onOpenDetails?.(exercise.exerciseId) }}
+        >
+          {exercise.name}
+        </button>
         <p className="mt-1 truncate text-[0.85rem] text-muted-foreground">{exercise.subtitle}</p>
       </div>
 
@@ -133,6 +142,7 @@ export function ExercisePlan({
   exercises,
   className,
   emptyState = 'No exercises have been planned for this workout yet.',
+  onOpenDetails,
 }: ExercisePlanProps) {
   const normalizedExercises = exercises.map((exercise) => {
     const normalized = normalizeExercise(exercise)
@@ -167,7 +177,7 @@ export function ExercisePlan({
                       )}
                       </div>
                       {seg.exercises.map((exercise, index) => (
-                        <ExerciseRow key={`${exercise.name}-${index}`} exercise={exercise} index={index} />
+                        <ExerciseRow key={`${exercise.name}-${index}`} exercise={exercise} index={index} onOpenDetails={onOpenDetails} />
                       ))}
                     </div>
                   )
@@ -176,7 +186,8 @@ export function ExercisePlan({
                 return (
                   <ExerciseRow key={`${seg.exercises[0].name}-${segIdx}`}
                     exercise={seg.exercises[0]}
-                    index={segIdx}/>
+                    index={segIdx}
+                    onOpenDetails={onOpenDetails}/>
                 )
               })}
               </div>

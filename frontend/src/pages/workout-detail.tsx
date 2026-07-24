@@ -9,6 +9,7 @@ import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 import type { ExercisePlanItem } from '@/types/exercise-plan'
 import type { MuscleName } from '@/types/workout'
+import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
@@ -28,6 +29,7 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
     name: exercise.name,
     subtitle: exercise.primaryMuscle,
     exerciseType: exercise.exerciseType,
+    exerciseId: exercise.exerciseId,
     sets: exercise.sets.map((set) => ({
       label: `${set.orderIndex}`,
       reps: set.reps,
@@ -52,6 +54,7 @@ export default function WorkoutDetailPage() {
   const [workout, setWorkout] = useState<WorkoutDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated || !workoutId) {
@@ -179,6 +182,7 @@ export default function WorkoutDetailPage() {
               exercises={plannedExercises}
               subtitle={workout.primaryMuscleGroups.join(', ')}
               className="min-h-0"
+              onOpenDetails={setDetailsExerciseId}
             />
           ) : null
         }
@@ -190,6 +194,10 @@ export default function WorkoutDetailPage() {
             </>
           ) : null
         }
+      />
+      <ExerciseDetailsPopup
+        exerciseId={detailsExerciseId}
+        onClose={() => setDetailsExerciseId(null)}
       />
     </section>
   )

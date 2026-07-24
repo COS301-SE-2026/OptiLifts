@@ -18,6 +18,7 @@ type ExerciseCardProps = Readonly<{
   onRemove: (id: string) => void
   onSetsChange: (id: string, sets: ExerciseSet[]) => void
   onRestTimeChange?: (id: string, value: number) => void
+  onOpenDetails?: (exerciseCatalogId: string) => void
 }>
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
@@ -134,7 +135,7 @@ function SetRow({
 
 let nextSetId = 0
 
-export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange, onOpenDetails }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
   const columns = getColumns(exercise.exerciseType ?? 'weight-reps')
@@ -164,7 +165,6 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
 
   return (
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
-
       <div className="flex items-center gap-3 px-4 py-3">
         <Avatar size="lg">
           {exercise.imageUrl
@@ -176,9 +176,16 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
         </Avatar>
 
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="font-sans font-semibold text-sm text-foreground leading-tight truncate">
+          <button
+            type="button"
+            className="block w-fit max-w-full truncate text-left font-sans font-semibold text-sm text-foreground leading-tight cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
+            disabled={!onOpenDetails || !exercise.exerciseCatalogId}
+            onClick={() => {
+              if (onOpenDetails && exercise.exerciseCatalogId) onOpenDetails(exercise.exerciseCatalogId)
+            }}
+          >
             {exercise.name}
-          </span>
+          </button>
           <span className="font-sans text-xs text-muted-foreground">
             {exercise.muscle}
           </span>

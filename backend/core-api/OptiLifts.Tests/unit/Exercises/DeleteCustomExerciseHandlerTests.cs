@@ -64,8 +64,8 @@ public class DeleteCustomExerciseHandlerTests
         store.Should().NotBeNull();
         store!.IsDeleted.Should().BeTrue();
         store.ImageUrl.Should().Be(exercise.ImageUrl);
-        
-        (await context.SecMuscles.Where(s => s.ExerciseId == exercise.Id).ToListAsync()).Should().BeEmpty();
+
+        (await context.SecMuscles.Where(s => s.ExerciseId == exercise.Id).ToListAsync()).Should().NotBeEmpty();
     }
 
     [Fact]

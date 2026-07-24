@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
@@ -8,8 +8,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft } from 'lucide-react'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
+import { saveDraft, clearDraft } from '@/lib/session-drafts'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -79,6 +80,14 @@ type WorkoutDetailsResponse = Readonly<{
     groupRestTime?: number | null
   }>
 }>
+
+type SessionDraft = {
+  workoutId: string
+  workoutName: string
+  startedAtMs: number | null
+  logId: string
+  exercises: ExerciseData[]
+}
 
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
@@ -330,12 +339,11 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(() =>
     workoutId ? null : 'No workout was selected. Start a workout from the workouts page.'
   )
-  const logRefId = useRef<string | null>(null)
-  logRefId.current ??= globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`
-  const logId = logRefId.current
+  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, setPickerOpen] = useState(false)
+  const [exitOpen, setExitOpen] = useState(false)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
 
   useEffect(() => {
@@ -393,6 +401,33 @@ export default function ActiveSessionPage() {
     const interval = setInterval(() => setNowMs(Date.now()), 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    //browser/hardware backing now shows dialog rather than leaving.
+    window.history.pushState(null, '', window.location.href)
+
+    const reload = () => {
+      window.history.pushState(null, '', window.location.href)
+      setExitOpen(true)
+    }
+
+    //closing or refreshing tab auto-keeps
+    const closing = (event: BeforeUnloadEvent) => {
+      if (workoutId && exercises.length > 0) {
+        saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('popstate', reload)
+    window.addEventListener('beforeunload', closing)
+    
+    return () => {
+      window.removeEventListener('popstate', reload)
+      window.removeEventListener('beforeunload', closing)
+    }
+  }, [workoutId, workoutName, startedAtMs, logId, exercises])
+
 
   const secondsElapsed = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
 
@@ -531,6 +566,7 @@ export default function ActiveSessionPage() {
 
   const finishWorkout = async () => {
     const load = buildLogPayload()
+
     if (!load) {
       return
     }
@@ -540,11 +576,34 @@ export default function ActiveSessionPage() {
 
     if (navigator.onLine) {
       toast.success('Workout saved.', 'Saved')
-    } else {
+    } 
+    else {
       toast.info("Workout saved but will sync when you're back online.", 'Saved offline')
     }
+
+    if (workoutId) {
+      clearDraft(workoutId)
+    }
+
     navigate('/workouts')
   }
+
+  const keep = () => {
+    if (workoutId) {
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
+    }
+
+    navigate('/workouts')
+  }
+
+  const discard = () => {
+    if (workoutId) {
+      clearDraft(workoutId)
+    }
+
+    navigate('/workouts')
+  }
+
 
   const blankInputs = () => exercises.some((exercise) => {
       if (!exercise.exerciseId) return false
@@ -632,7 +691,7 @@ export default function ActiveSessionPage() {
             <Button
               variant="text"
               size="sm"
-              onClick={() => navigate('/workouts')}
+              onClick={() => setExitOpen(true)}
               className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />

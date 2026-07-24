@@ -53,13 +53,15 @@ public sealed class GetProfileOverviewHandler : IRequestHandler<GetProfileOvervi
 
         var recentWorkouts = recentSessions.Select(session =>
         {
-            var exerciseNames = workoutExercises
-                .Where(entry => entry.WorkoutId == session.WorkoutId)
-                .Select(entry => entry.Name)
-                .Distinct()
-                .ToArray();
-
             var sessionSets = recentLogSets.Where(entry => entry.LogId == session.LogId).ToArray();
+
+            var exerciseNames = sessionSets.Length > 0
+                ? sessionSets.Select(entry => entry.Name).Distinct().ToArray()
+                : workoutExercises
+                    .Where(entry => entry.WorkoutId == session.WorkoutId)
+                    .Select(entry => entry.Name)
+                    .Distinct()
+                    .ToArray();
             var plannedSets = workoutSets.Where(entry => entry.WorkoutId == session.WorkoutId).ToArray();
             var sessionVolume = sessionSets.Length > 0
                 ? sessionSets.Sum(entry => (double)entry.Reps * entry.Weight)

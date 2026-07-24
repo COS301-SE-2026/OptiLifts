@@ -9,7 +9,7 @@ import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 import { customFetch } from '@/lib/custom-fetch'
 import type { CreateExerciseFormData, ExerciseDetails } from '@/types/exercise'
 
-type ExerciseApiDetailsResponse = {
+type ExerciseDetsResponse = {
   id: string
   name: string
   mechanic?: string | null
@@ -27,7 +27,7 @@ type ExerciseDetailsPopupProps = Readonly<{
   onChanged?: () => void | Promise<void>
 }>
 
-const toDetails = (dto: ExerciseApiDetailsResponse): ExerciseDetails => ({
+const toDetails = (dto: ExerciseDetsResponse): ExerciseDetails => ({
   id: dto.id,
   name: dto.name,
   mechanic: dto.mechanic ?? null,
@@ -40,179 +40,233 @@ const toDetails = (dto: ExerciseApiDetailsResponse): ExerciseDetails => ({
 })
 
 const normalizeEquipment = (equipment: string | null): string | undefined => {
-  if (!equipment) return undefined
-  const match = DEFAULT_EQUIPMENT_OPTIONS.find((option) => option.toLowerCase() === equipment.toLowerCase())
-  return match ?? equipment
+  if (!equipment) {
+    return undefined
+  }
+
+  const matches = DEFAULT_EQUIPMENT_OPTIONS.find((option) => option.toLowerCase() === equipment.toLowerCase())
+  
+  return matches ?? equipment
 }
 
-const sameEquipment = (a: string | null | undefined, b: string | null | undefined) =>
-  (a ?? '').toLowerCase() === (b ?? '').toLowerCase()
-
-const fileFromImageUrl = async (imageUrl: string, name: string): Promise<File | null> => {
+const fileFromUrl = async (imageUrl: string, name: string): Promise<File | null> => {
   try {
-    const response = await fetch(imageUrl)
-    if (!response.ok) return null
-    const blob = await response.blob()
-    const extension = blob.type.split('/')[1] ?? 'jpg'
-    return new File([blob], `${name || 'exercise'}.${extension}`, { type: blob.type || 'image/jpeg' })
-  } catch {
+    const resp = await fetch(imageUrl)
+
+    if (!resp.ok) {
+        return null
+    }
+    const bloblStorage = await resp.blob()
+    const ext = bloblStorage.type.split('/')[1] ?? 'jpg'
+
+    return new File([bloblStorage], `${name || 'exercise'}.${ext}`, { type: bloblStorage.type || 'image/jpeg' })
+  } 
+  catch {
     return null
   }
 }
 
+const sameEquip = (a: string | null | undefined, b: string | null | undefined) => (a ?? '').toLowerCase() === (b ?? '').toLowerCase()
+
 export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: ExerciseDetailsPopupProps) {
-  const [details, setDetails] = useState<ExerciseDetails | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isEditOpen, setIsEditOpen] = useState(false)
-  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [details, setDetails] = useState<ExerciseDetails | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+    useEffect(() => {
+        if (!exerciseId) {
+            return
+        }
+
+        const key = (e: KeyboardEvent) => {
+
+            if (e.key === 'Escape' && !isEditOpen && !isConfirmDeleteOpen) {
+                onClose()
+            }
+        }
+
+        window.addEventListener('keydown', key)
+        return () => window.removeEventListener('keydown', key)
+    }, [exerciseId, isEditOpen, isConfirmDeleteOpen, onClose])
+
+    useEffect(() => {
+        if (!exerciseId) {
+            return
+        }
+
+        let canclled = false
+
+        const loading = async () => {
+            setLoading(true)
+            setError(null)
+
+            try {
+                const response = await customFetch(`/api/exercises/${exerciseId}`, { headers: { Accept: 'application/json' } })
+                if (!response.ok) throw new Error(`Failure to load exercise (${response.status})`)
+
+                const dto = (await response.json()) as ExerciseDetsResponse
+
+                if (!canclled) setDetails(toDetails(dto))
+                } 
+                catch (err) {
+                    if (!canclled) setError(err instanceof Error ? err.message : 'Failed to load exercise')
+                } 
+                finally {
+                    if (!canclled) setLoading(false)
+            }
+        }
+
+        void loading()
+        return () => { canclled = true }
+    }, [exerciseId])
+
+    const initEditVals = useMemo(() => {
+        if (!details) {
+            return undefined
+        }
+
+        return {
+            name: details.name,
+            exerciseType: details.exerciseType,
+            equipment: normalizeEquipment(details.equipment),
+            imageUrl: details.imageUrl,
+            primaryMuscle: details.primaryMuscles[0] ?? null,
+            secondaryMuscles: details.secondaryMuscles,
+        }
+    }, [details])
+
     if (!exerciseId) {
-      return
+        return null
     }
 
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await customFetch(`/api/exercises/${exerciseId}`, { headers: { Accept: 'application/json' } })
-        if (!response.ok) throw new Error(`Failed to load exercise (${response.status})`)
-        const dto = (await response.json()) as ExerciseApiDetailsResponse
-        if (!cancelled) setDetails(toDetails(dto))
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load exercise')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+    const structuralDiff = (values: CreateExerciseFormData) =>
+        values.exerciseType !== details?.exerciseType ||
+        !sameEquip(values.equipment, details?.equipment) ||
+        values.primaryMuscle !== (details?.primaryMuscles[0] ?? null) ||
+        values.secondaryMuscles.length !== details?.secondaryMuscles.length ||
+        values.secondaryMuscles.some((m) => !details?.secondaryMuscles.includes(m))
+
+    const saves = async (values: CreateExerciseFormData) => {
+        if (!details) {
+            return
+        }
+
+        const data = new FormData()
+
+        data.append('Name', values.name)
+        if (values.imageFile) {
+            data.append('Image', values.imageFile)
+        } 
+        else if (!values.imageUrl && details.imageUrl) {
+            data.append('RemoveImage', 'true')
+        }
+
+        const resp = await customFetch(`/api/exercises/custom/${details.id}`, {
+            method: 'PUT',
+            headers: { Accept: 'application/json' },
+            body: data,
+        })
+
+        if (!resp.ok) {
+            const txt = await resp.text()
+            throw new Error(txt || `Request failed with status ${resp.status}`)
+        }
     }
 
-    void load()
-    return () => { cancelled = true }
-  }, [exerciseId])
+    const forkNRetire = async (values: CreateExerciseFormData) => {
+        if (!details) {
+            return
+        }
 
-  useEffect(() => {
-    if (!exerciseId) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isEditOpen && !isConfirmDeleteOpen) onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [exerciseId, isEditOpen, isConfirmDeleteOpen, onClose])
+        let imageFile = values.imageFile
 
-  const initialEditValues = useMemo(() => {
-    if (!details) return undefined
-    return {
-      name: details.name,
-      exerciseType: details.exerciseType,
-      equipment: normalizeEquipment(details.equipment),
-      imageUrl: details.imageUrl,
-      primaryMuscle: details.primaryMuscles[0] ?? null,
-      secondaryMuscles: details.secondaryMuscles,
-    }
-  }, [details])
+        if (!imageFile && values.imageUrl && values.imageUrl === details.imageUrl) {
+            imageFile = await fileFromUrl(values.imageUrl, values.name)
+            if (!imageFile) {
+                toast.info("Couldn't carry the image over", 'Image not copied')
+            }
+        }
 
-  if (!exerciseId) return null
+        const data = new FormData()
+        data.append('Name', values.name)
 
-  const isStructuralChange = (values: CreateExerciseFormData) =>
-    !details ||
-    values.exerciseType !== details.exerciseType ||
-    !sameEquipment(values.equipment, details.equipment) ||
-    values.primaryMuscle !== (details.primaryMuscles[0] ?? null) ||
-    values.secondaryMuscles.length !== details.secondaryMuscles.length ||
-    values.secondaryMuscles.some((m) => !details.secondaryMuscles.includes(m))
+        if (values.equipment) {
+            data.append('Equipment', values.equipment)
+        }
+        data.append('Category', values.exerciseType)
+        if (values.primaryMuscle) {
+            data.append('PrimaryMuscles', values.primaryMuscle)
+        }
+        values.secondaryMuscles.forEach((m) => data.append('SecondaryMuscles', m))
+        if (imageFile) {
+            data.append('Image', imageFile)
+        }
 
-  const saveInPlace = async (values: CreateExerciseFormData) => {
-    if (!details) return
-    const formData = new FormData()
-    formData.append('Name', values.name)
-    if (values.imageFile) {
-      formData.append('Image', values.imageFile)
-    } else if (!values.imageUrl && details.imageUrl) {
-      formData.append('RemoveImage', 'true')
-    }
+        const createResp = await customFetch('/api/exercises/custom', {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body: data,
+        })
 
-    const response = await customFetch(`/api/exercises/custom/${details.id}`, {
-      method: 'PUT',
-      headers: { Accept: 'application/json' },
-      body: formData,
-    })
+        if (!createResp.ok) {
+            const text = await createResp.text()
+            throw new Error(text || `Request failed with status ${createResp.status}`)
+        }
 
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(text || `Request failed with status ${response.status}`)
-    }
-  }
-
-  const forkAndRetire = async (values: CreateExerciseFormData) => {
-    if (!details) return
-
-    let imageFile = values.imageFile
-    if (!imageFile && values.imageUrl && values.imageUrl === details.imageUrl) {
-      imageFile = await fileFromImageUrl(values.imageUrl, values.name)
-      if (!imageFile) {
-        toast.info("Couldn't carry over the image automatically — add it again if needed.", 'Image not copied')
-      }
+        const deleteResp = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
+        if (!deleteResp.ok) {
+            toast.info('The update was successful', 'Cleanup needed')
+        }
     }
 
-    const formData = new FormData()
-    formData.append('Name', values.name)
-    if (values.equipment) formData.append('Equipment', values.equipment)
-    formData.append('Category', values.exerciseType)
-    if (values.primaryMuscle) formData.append('PrimaryMuscles', values.primaryMuscle)
-    values.secondaryMuscles.forEach((m) => formData.append('SecondaryMuscles', m))
-    if (imageFile) formData.append('Image', imageFile)
+    const editSaveHandle = async (values: CreateExerciseFormData) => {
+        if (structuralDiff(values)) {
+            await forkNRetire(values)
+        } 
+        else {
+            await saves(values)
+        }
 
-    const createResponse = await customFetch('/api/exercises/custom', {
-      method: 'POST',
-      headers: { Accept: 'application/json' },
-      body: formData,
-    })
+        toast.success('Exercise updated.', 'Saved')
+        if (onChanged) {
+            await onChanged()
+        }
 
-    if (!createResponse.ok) {
-      const text = await createResponse.text()
-      throw new Error(text || `Request failed with status ${createResponse.status}`)
+        onClose()
     }
 
-    const deleteResponse = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
-    if (!deleteResponse.ok) {
-      toast.info('The updated exercise was created, but the old one could not be retired automatically.', 'Cleanup needed')
-    }
-  }
+    const deleteHandle = async () => {
+        if (!details) {
+            return
+        }
 
-  const handleEditSave = async (values: CreateExerciseFormData) => {
-    if (isStructuralChange(values)) {
-      await forkAndRetire(values)
-    } else {
-      await saveInPlace(values)
-    }
+        setIsDeleting(true)
 
-    toast.success('Exercise updated.', 'Saved')
-    if (onChanged) await onChanged()
-    onClose()
-  }
+        try {
+            const resp = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
+            if (!resp.ok) {
+                const body = (await resp.json().catch(() => null)) as { error?: string } | null
+                throw new Error(body?.error ?? `Request failed with status ${resp.status}`)
+            }
 
-  const handleDelete = async () => {
-    if (!details) return
-    setIsDeleting(true)
-    try {
-      const response = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(body?.error ?? `Request failed with status ${response.status}`)
-      }
-      toast.success('Exercise deleted.', 'Deleted')
-      if (onChanged) await onChanged()
-      setIsConfirmDeleteOpen(false)
-      onClose()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete exercise', 'Error')
-    } finally {
-      setIsDeleting(false)
+            toast.success('Exercise deleted.', 'Deleted')
+            if (onChanged) {
+                await onChanged()
+            }
+
+            setIsConfirmDeleteOpen(false)
+            onClose()
+        } 
+        catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to delete exercise', 'Error')
+        } 
+        finally {
+            setIsDeleting(false)
+        }
     }
-  }
 
   return (
     <>
@@ -221,9 +275,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
           <button
             type="button"
             className="absolute inset-0 block w-full cursor-default bg-foreground/50 outline-none"
-            aria-label="Close exercise details"
-            onClick={onClose}
-            tabIndex={-1}
+            aria-label="Close exercise details" onClick={onClose} tabIndex={-1}
           />
           <div className="relative z-10 flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -241,8 +293,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-4">
                     <CircularProfileImage
-                      src={details.imageUrl ?? undefined}
-                      alt={details.name}
+                      src={details.imageUrl ?? undefined} alt={details.name}
                       className="size-16 shrink-0 border-border"
                       fallbackIcon={<Dumbbell className="size-6 text-muted-foreground" />}
                     />
@@ -307,23 +358,17 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
       {details && (
         <CreateExercise
-          isOpen={isEditOpen}
-          onCancel={() => setIsEditOpen(false)}
-          onSave={handleEditSave}
-          initialValues={initialEditValues}
+          isOpen={isEditOpen} onCancel={() => setIsEditOpen(false)}
+          onSave={editSaveHandle} initialValues={initEditVals}
         />
       )}
 
       <ConfirmDialog
-        isOpen={isConfirmDeleteOpen}
-        onClose={() => setIsConfirmDeleteOpen(false)}
-        onConfirm={handleDelete}
-        isLoading={isDeleting}
-        variant="danger"
-        title="Delete Exercise"
-        description="This will remove it from your exercise list. Existing workouts and logs that used it are unaffected."
-        confirmText="Delete"
-        cancelText="Cancel"
+        isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={deleteHandle} isLoading={isDeleting}
+        variant="danger" title="Delete Exercise"
+        description="This will remove this exercise from your list permanently. Existing workouts and logs that used it are unaffected."
+        confirmText="Delete" cancelText="Cancel"
       />
     </>
   )

@@ -11,12 +11,10 @@ public sealed class DeleteCustomExerciseHandler : IRequestHandler<DeleteCustomEx
     private const string ExerciseContainerName = "exercises";
 
     private readonly OptiLiftsDbContext _dbContext;
-    private readonly IBlobStorageService _blobStorageService;
 
-    public DeleteCustomExerciseHandler(OptiLiftsDbContext dbContext, IBlobStorageService blobStorageService)
+    public DeleteCustomExerciseHandler(OptiLiftsDbContext dbContext)
     {
         _dbContext = dbContext;
-        _blobStorageService = blobStorageService;
     }
 
     public async Task<bool> Handle(DeleteCustomExerciseCommand request, CancellationToken cancellationToken)
@@ -26,20 +24,8 @@ public sealed class DeleteCustomExerciseHandler : IRequestHandler<DeleteCustomEx
         if (exercise == null)
             return false;
 
-        var isUsedInWorkout = await _dbContext.WorkoutExercises.AnyAsync(we => we.ExerciseId == exercise.Id, cancellationToken);
+        exercise.IsDeleted = true;
 
-        if (isUsedInWorkout)
-            throw new InvalidOperationException("This exercise is already used in a workout and cannot be deleted.");
-
-        if (!string.IsNullOrWhiteSpace(exercise.ImageUrl))
-            await _blobStorageService.DeleteFileAsync(exercise.ImageUrl, ExerciseContainerName, cancellationToken);
-
-        var secondaryMuscles = await _dbContext.SecMuscles.Where(sm => sm.ExerciseId == exercise.Id).ToListAsync(cancellationToken);
-
-        if (secondaryMuscles.Count > 0)
-            _dbContext.SecMuscles.RemoveRange(secondaryMuscles);
-
-        _dbContext.Exercises.Remove(exercise);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

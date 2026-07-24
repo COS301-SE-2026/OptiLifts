@@ -182,7 +182,7 @@ export default function WorkoutsPage() {
           )}
 
           <div className="space-y-4">
-            {filtered.map((w) => (
+            {filtered.map((w, index) => (
               <Card
                 key={w.id}
                 role="button"
@@ -225,7 +225,7 @@ export default function WorkoutsPage() {
                     <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
                     <p className="mt-1 text-sm text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
                   </div>
-                  <Button size="sm" onClick={(e) =>  { 
+                  <Button id={`start-workout-btn-${index}`} size="sm" onClick={(e) =>  { 
                     e.stopPropagation() 
                     navigate('/active-session', { state: { workout: w } })}}>
                     Start Workout

@@ -18,12 +18,11 @@ namespace OptiLifts.Infrastructure.Migrations
                     pr_id = table.Column<Guid>(type: "uuid", nullable: false),
                     user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     exercise_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workout_log_set_id = table.Column<Guid>(type: "uuid", nullable: false),
                     pr_type = table.Column<string>(type: "text", nullable: false),
                     pr_value = table.Column<float>(type: "real", nullable: false),
                     achieved_weight = table.Column<float>(type: "real", nullable: false),
-                    achieved_reps = table.Column<int>(type: "integer", nullable: false),
-                    achieved_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    is_current = table.Column<bool>(type: "boolean", nullable: false)
+                    achieved_reps = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -40,6 +39,12 @@ namespace OptiLifts.Infrastructure.Migrations
                         principalTable: "users",
                         principalColumn: "user_id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_exercise_prs_workout_log_sets_workout_log_set_id",
+                        column: x => x.workout_log_set_id,
+                        principalTable: "workout_log_sets",
+                        principalColumn: "log_set_id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -50,9 +55,12 @@ namespace OptiLifts.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_exercise_prs_user_id_exercise_id_pr_type",
                 table: "exercise_prs",
-                columns: new[] { "user_id", "exercise_id", "pr_type" },
-                unique: true,
-                filter: "is_current = true");
+                columns: new[] { "user_id", "exercise_id", "pr_type" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_exercise_prs_workout_log_set_id",
+                table: "exercise_prs",
+                column: "workout_log_set_id");
         }
 
         /// <inheritdoc />

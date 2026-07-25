@@ -186,6 +186,7 @@ export default function WorkoutsPage() {
               <Card
                 key={w.id}
                 role="button"
+                data-testid={`workout-card-${w.name}`}
                 tabIndex={0}
                 aria-pressed={w.id === selectedId}
                 className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}

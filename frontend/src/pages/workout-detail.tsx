@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import ExercisePlan from '@/components/ui/exercise-plan'
@@ -27,10 +27,10 @@ function formatRestTime(restTimeSeconds: number) {
 function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanItem[] {
   return exercises.map((exercise) => ({
     name: exercise.name,
-    subtitle: exercise.primaryMuscle,
-    exerciseType: exercise.exerciseType,
-    exerciseId: exercise.exerciseId,
-    sets: exercise.sets.map((set) => ({
+    subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
+    exerciseType: exercise.exerciseType ?? 'weight-reps',
+    exerciseId: exercise.exerciseId ?? (exercise as any).id ?? (exercise as any).workoutExerciseId,
+    sets: (exercise.sets ?? []).map((set) => ({
       label: `${set.orderIndex}`,
       reps: set.reps,
       weight: set.weight,
@@ -38,9 +38,9 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
       distance: set.distance,
       restTime: formatRestTime(set.restTime),
     })),
-      groupId: exercise.groupId,
-      groupType: exercise.groupType,
-      groupRestTime: exercise.groupRestTime,
+    groupId: exercise.groupId,
+    groupType: exercise.groupType,
+    groupRestTime: exercise.groupRestTime,
   }))
 }
 
@@ -56,56 +56,42 @@ export default function WorkoutDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadWorkout = useCallback(async () => {
     if (!isHydrated || !isAuthenticated || !workoutId) {
       return
     }
 
-    let mounted = true
+    setIsLoading(true)
+    setError(null)
 
-    const loadWorkout = async () => {
-      setIsLoading(true)
-      setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${workoutId}`, {
+        headers: {
+          Accept: 'application/json',
+        },
+      })
 
-      try {
-        const response = await customFetch(`/api/workouts/${workoutId}`, {
-          headers: {
-            Accept: 'application/json',
-          },
-        })
-
-        if (response.status === 404) {
-          if (mounted) {
-            setWorkout(null)
-          }
-          return
-        }
-
-        if (!response.ok) {
-          throw new Error(`Failed to load workout (${response.status})`)
-        }
-
-        const data = (await response.json()) as WorkoutDetailResponse
-        if (mounted) {
-          setWorkout(data)
-        }
-      } catch (loadError) {
-        if (mounted) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false)
-        }
+      if (response.status === 404) {
+        setWorkout(null)
+        return
       }
-    }
 
-    void loadWorkout()
+      if (!response.ok) {
+        throw new Error(`Failed to load workout (${response.status})`)
+      }
 
-    return () => {
-      mounted = false
+      const data = (await response.json()) as WorkoutDetailResponse
+      setWorkout(data)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
+    } finally {
+      setIsLoading(false)
     }
   }, [isAuthenticated, isHydrated, workoutId])
+
+  useEffect(() => {
+    void loadWorkout()
+  }, [loadWorkout])
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow
@@ -198,6 +184,7 @@ export default function WorkoutDetailPage() {
       <ExerciseDetailsPopup
         exerciseId={detailsExerciseId}
         onClose={() => setDetailsExerciseId(null)}
+        onChanged={loadWorkout}
       />
     </section>
   )

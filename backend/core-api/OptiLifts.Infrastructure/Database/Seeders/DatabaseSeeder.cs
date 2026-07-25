@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
+using System.Text.Json;
+using OptiLifts.Application.Storage;
 
 namespace OptiLifts.Infrastructure.Database.Seeders;
 
@@ -10,10 +12,12 @@ public static class DatabaseSeeder
     // Only encryption-critical data (users) is seeded here, because writing through
     // EF is what applies the [Encrypted] value converters. The Alex profile demo
     // rows now live in Database/SqlScripts/seed-demo-data.sql.
-    public static async Task SeedAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken = default)
+    public static async Task SeedAsync(OptiLiftsDbContext dbContext, IBlobStorageService blobStorage, CancellationToken cancellationToken = default)
     {
         await SeedUsersAsync(dbContext, cancellationToken);
         await SeedMusclesAsync(dbContext, cancellationToken);
+        await SeedExercisesAsync(dbContext, blobStorage, cancellationToken);
+
 
         if (!await dbContext.Workouts.AnyAsync(cancellationToken))
         {
@@ -146,5 +150,107 @@ public static class DatabaseSeeder
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private sealed record JsonExercise(
+        string Name,
+        string Mechanic,
+        string Equipment,
+        string ExerciseType,
+        string PrimaryMuscle,
+        List<string> SecondaryMuscles,
+        string ImageUrl,
+        string Attribution
+    );
+    private static async Task SeedExercisesAsync(OptiLiftsDbContext dbContext, IBlobStorageService blobStorage, CancellationToken cancellationToken)
+    {
+        if (!await dbContext.Exercises.AnyAsync(cancellationToken))
+        {
+            var assembly = typeof(DatabaseSeeder).Assembly;
+            using var stream = assembly.GetManifestResourceStream("OptiLifts.Infrastructure.Database.Seeders.exercises.json");
+
+            if (stream == null)
+            {
+                throw new InvalidOperationException("Exercises.json not found");
+            }
+
+            using var reader = new StreamReader(stream);
+            var jsonData = await reader.ReadToEndAsync(cancellationToken);
+
+            var config = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var jsonExercises = JsonSerializer.Deserialize<List<JsonExercise>>(jsonData, config);
+
+            if (jsonExercises == null)
+            {
+                return;
+            }
+
+            var muscleIds = await dbContext.Muscles.ToDictionaryAsync(m => m.Name, m => m.Id, cancellationToken);
+
+            using var httpClient = new HttpClient(); //use this to get the images directly
+
+            foreach (var exercise in jsonExercises)
+            {
+                if (!muscleIds.TryGetValue(exercise.PrimaryMuscle, out var primaryMuscleId))
+                {
+                    continue; //so doesn't crash whole seeder if primary muscle doesn't match
+                }
+
+                string? imageUrl = null;
+                if (!string.IsNullOrEmpty(exercise.ImageUrl))
+                {
+                    try
+                    {
+                        var response = await httpClient.GetByteArrayAsync(exercise.ImageUrl, cancellationToken);
+                        using var imagestream = new MemoryStream(response);
+                        var fileName = Path.GetFileName(new Uri(exercise.ImageUrl).LocalPath);
+                        var imageName = $"{Guid.NewGuid()}-{fileName}";
+                        imageUrl = await blobStorage.UploadFileAsync(imagestream, imageName, "image/jpeg", "exercises", cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to upload image for exercise {exercise.Name}: {ex.Message}");
+                    }
+
+
+                }
+
+                var exerciseType = ExerciseType.WeightReps;
+                if (Enum.TryParse<ExerciseType>(exercise.ExerciseType, true, out var parsedType))
+                {
+                    exerciseType = parsedType;
+                }
+
+                var exerciseEntry = new Exercise
+                {
+                    Name = exercise.Name,
+                    Mechanic = exercise.Mechanic,
+                    Equipment = exercise.Equipment,
+                    ExerciseType = exerciseType,
+                    PrimaryMuscleId = primaryMuscleId,
+                    ImageUrl = imageUrl
+                };
+                dbContext.Exercises.Add(exerciseEntry);
+
+                foreach (var secMuscle in exercise.SecondaryMuscles)
+                {
+                    if (muscleIds.TryGetValue(secMuscle, out var secondaryMuscleId))
+                    {
+                        dbContext.SecMuscles.Add(new SecMuscle
+                        {
+                            ExerciseId = exerciseEntry.Id,
+                            MuscleId = secondaryMuscleId
+                        });
+                    }
+                }
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
     }
 }

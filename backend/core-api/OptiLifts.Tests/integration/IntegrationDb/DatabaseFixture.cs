@@ -94,7 +94,9 @@ public sealed class DatabaseFixture : IAsyncLifetime
             .UseNpgsql(_pg.GetConnectionString())
             .Options;
         await using var db = new OptiLiftsDbContext(dbOptions);
-        await OptiLifts.Infrastructure.Database.Seeders.DatabaseSeeder.SeedAsync(db);
+
+        var mockBlob = new Mock<IBlobStorageService>();
+        await OptiLifts.Infrastructure.Database.Seeders.DatabaseSeeder.SeedAsync(db, mockBlob.Object);
     }
 
     public async Task DisposeAsync()

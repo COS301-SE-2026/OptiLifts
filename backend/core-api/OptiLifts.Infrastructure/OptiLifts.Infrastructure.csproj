@@ -27,4 +27,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup> 
+    <EmbeddedResource Include="Database\Seeders\exercises.json" />
+  </ItemGroup>
+
 </Project>

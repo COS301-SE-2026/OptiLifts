@@ -117,7 +117,8 @@ if (runMigrations)
     var seed = string.Equals(builder.Configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
     if (seed)
     {
-        await DatabaseSeeder.SeedAsync(dbContext);
+        var blobStorage = scope.ServiceProvider.GetRequiredService<OptiLifts.Application.Storage.IBlobStorageService>();
+        await DatabaseSeeder.SeedAsync(dbContext, blobStorage);
     }
 }
 

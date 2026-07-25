@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { UpcomingWorkoutsCard } from '@/components/ui/upcoming-workouts'
 import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
@@ -190,6 +191,7 @@ function formatUpcomingDate(dateString: string) {
 }
 
 export default function DashboardPage() {
+    const navigate = useNavigate()
     const { isAuthenticated, isHydrated } = useAuth()
     const [volumePeriod, setVolumePeriod] = useState<VolumeChartPeriod>('Week')
     const [volumeMuscleGroup, setVolumeMuscleGroup] = useState<MuscleFilter>('All')
@@ -410,7 +412,7 @@ export default function DashboardPage() {
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
-                                window.location.href = `/workouts/${upcomingWorkouts[0].workoutId}`
+                                navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
                         className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
@@ -420,7 +422,15 @@ export default function DashboardPage() {
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
-                                window.location.href = `/session/${upcomingWorkouts[0].id}`
+                                navigate('/active-session', {
+                                    state: {
+                                        workout: {
+                                            id: upcomingWorkouts[0].workoutId,
+                                            name: upcomingWorkouts[0].name,
+                                            primaryMuscleGroups: [],
+                                        },
+                                    },
+                                })
                             }
                         }}
                         className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">

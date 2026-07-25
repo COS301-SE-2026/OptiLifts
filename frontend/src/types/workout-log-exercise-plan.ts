@@ -11,6 +11,10 @@ export type WorkoutLogExercisePlanItem = Readonly<{
     reps: number
     weight: number
     orderIndex: number
+    duration: number | null
+    distance: number | null
+    restTime: number
+    groupNumber: number
     rpe: number
   }>
 }>

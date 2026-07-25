@@ -4,6 +4,7 @@ export type WorkoutLogExercisePlanItem = Readonly<{
   primaryMuscle: string
   exerciseType: string
   orderIndex: number
+  imageUrl?: string | null
   sets: ReadonlyArray<{
     id: string
     setId: string | null

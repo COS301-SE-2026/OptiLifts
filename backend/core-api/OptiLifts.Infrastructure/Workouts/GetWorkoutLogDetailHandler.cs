@@ -55,7 +55,8 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                 workoutExercise.OrderIndex,
                 ExerciseName = exercise.Name,
                 PrimaryMuscleName = muscle.Name,
-                ExerciseType = exercise.ExerciseType
+                ExerciseType = exercise.ExerciseType, 
+                ImageUrl = exercise.ImageUrl
             })
             .ToListAsync(cancellationToken);
 
@@ -72,7 +73,9 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                 workoutLogExercise.OrderIndex,
                 exercise.Name,
                 muscle.Name,
-                exercise.ExerciseType))
+                exercise.ExerciseType,
+                exercise.ImageUrl
+                ))
             .ToListAsync(cancellationToken);
 
         var logSetRows = await _dbContext.WorkoutLogSets
@@ -107,6 +110,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                     row.ExerciseName,
                     row.PrimaryMuscleName,
                     row.ExerciseType,
+                    row.ImageUrl,
                     row.OrderIndex))
                 .OrderBy(row => row.OrderIndex)
                 .ThenBy(row => row.Name)
@@ -145,6 +149,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                     entry.ExerciseName,
                     entry.PrimaryMuscleName,
                     entry.ExerciseType,
+                    entry.ImageUrl,
                     entry.OrderIndex))
                 .ToArray();
 
@@ -171,6 +176,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             entry.PrimaryMuscle,
             ToFrontendExerciseType(entry.ExerciseType),
             entry.OrderIndex,
+            entry.ImageUrl,
             entry.Sets)).ToArray();
 
         var primaryMuscleGroups = exerciseDtos
@@ -316,7 +322,9 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         int OrderIndex,
         string ExerciseName,
         string PrimaryMuscleName,
-        OptiLifts.Domain.Workouts.ExerciseType ExerciseType);
+        OptiLifts.Domain.Workouts.ExerciseType ExerciseType,
+        string? ImageUrl
+        );
 
     private sealed record ExerciseProjection(
         Guid Id,
@@ -324,6 +332,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         string Name,
         string PrimaryMuscle,
         OptiLifts.Domain.Workouts.ExerciseType ExerciseType,
+        string? ImageUrl,
         int OrderIndex)
     {
         public WorkoutLogSetDto[] Sets { get; init; } = [];

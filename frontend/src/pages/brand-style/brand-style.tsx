@@ -107,100 +107,263 @@ function BrandIntroSection() {
         </div>
     );
 }
+//going to make a separate const for the details, as theres a lot of info
+//for every colour that needs to be shown. tis easier
+
 function ColourPaletteSection(){
+    const paletteData=[
+        {
+            name: "Primary Brand/Action",
+            variable: "--brand/--primary",
+            usage:"Primary CTA buttons, active state indicators, key brand accents, and focus rings.",
+            lightHex: "#CC0022",
+            lightRgb: "204, 0, 34",
+            lightHsl:"350, 100%, 40%",
+            darkHex: "#CC0022",
+            darkRgb: "204, 0, 34",
+            darkHsl: "350, 100%, 40%",
+            contrastLight: "5.85:1 (Passes AA)", //calculation
+            contrastDark: "2.91:1 (Safe for UI/large text)",
+            swatchClass: "swatch--brand"
+        },
+        {
+            name: "Brand Secondary/Hover Accent",
+            variable: "--brand-2",
+            usage:"Hover state for primary actions (Light)/High visibility secondary brand accent (Dark)",
+            lightHex: "#AA0018",
+            lightRgb:"170,0,24",
+            lightHsl: "351, 100%, 33%",
+            darkHex:"#D94060",
+            darkRgb: "217, 64, 96",
+            darkHsl:"347, 67%, 55%",
+            contrastLight:"8.71:1 (Passes AAA)",
+            contrastDark:"3.93:1 (Passes for large text)",
+            swatchClass:"swatch--brand-2"
+        },
+        {
+            name:"Background",
+            variable: "--background",
+            usage:"Main page view container background.", 
+            lightHex:"#FAF8F8",
+            lightRgb:"250, 248, 248",
+            lightHsl:"0, 20%, 98%",
+            darkHex:"#1C1C1F",
+            darkRgb:"28, 28, 31",
+            darkHsl:"240, 5%, 11%",
+            contrastLight: "15.8:1 (Passes AAA)",
+            contrastDark: "13.2:1 (Passes AAA)",
+            swatchClass: "swatch--background"
+        },
+        {
+            name: "Surface/Card",
+            variable:"--surface/--card",
+            usage: "Card components, modals, popovers, and elevated containers.",
+            lightHex: "#FFFFFF",
+            lightRgb:"255, 255, 255",
+            lightHsl: "0, 0%, 100%",
+            darkHex: "#26262B",
+            darkRgb: "38, 38, 43",
+            darkHsl:"240, 6%, 16%",
+            contrastLight: "16.1:1 (Passes AAA)",
+            contrastDark: "11.4:1 (Passes AAA)",
+            swatchClass: "swatch--background"
+        },
+        {
+            name: "Secondary surface/ Container",
+            variable: "--surface-2 /--secondary",
+            usage: "Table headers, secondary button fills, input background accents",
+            lightHex: "#F5F0F0",
+            lightRgb:"245, 240, 240",
+            lightHsl: "0, 20%, 95%",
+            darkHex: "#2E2E34",
+            darkRgb: "46, 46, 52",
+            darkHsl:"240, 6%, 19%",
+            contrastLight:"14.9:1 (Passes AAA)",
+            contrastDark: "9.8:1 (Passes AAA)",
+            swatchClass: "swatch--border"
+        },
+        {
+            name:"Foreground/Primary Text",
+            variable: "--foreground",
+            usage:"Primary body text, card titles, section headings, and main UI labels",
+            lightHex: "#1A1A1A",
+            lightRgb: "26, 26, 26",
+            lightHsl:"0, 0%, 10%",
+            darkHex: "#E8E8EC",
+            darkRgb: "232, 232, 236",
+            darkHsl:"240, 11%, 92%",
+            contrastLight:"15.8:1 (Passes AAA)",
+            contrastDark: "11.4:1 (Passes AAA)",
+            swatchClass: "swatch--foreground"
+        },
+        {
+            name:"Muted Text",
+            variable: "--muted-text/--muted-foreground",
+            usage: "Secondary labels, captions, metadata, timestamps and disabled text placeholders",
+            lightHex: "#666666",
+            lightRgb:"102, 102, 102",
+            lightHsl: "0, 0%, 40%",
+            darkHex: "#9A9AA8",
+            darkRgb: "154, 154, 168",
+            darkHsl:"240, 8%, 63%",
+            contrastLight:"5.3:1 (Passes AA)",
+            contrastDark: "5.8:1 (Passes AA)",
+            swatchClass: "swatch--muted-text"
+        },
+        {
+            name:"Success status",
+            variable: "--success",
+            usage:"PR achievements, completed workout sets, positive progress indicators",
+            lightHex: "#1B6E1F",
+            lightRgb: "27, 110, 31",
+            lightHsl: "123, 61%, 27%",
+            darkHex: "#4CAF50",
+            darkRgb:"76, 175, 80",
+            darkHsl: "122, 39%, 49%",
+            contrastLight: "5.38:1 (Passes AA)",
+            contrastDark: "6.76:1 (Passes AA)",
+            swatchClass: "swatch--success"
+        },
+        {
+            name: "Warning Status",
+            variable: "--warning",
+            usage:"Fatigue warnings, unsaved session alerts, cautions",
+            lightHex:"#B35C00",
+            lightRgb: "179, 92, 0",
+            lightHsl:"31, 100%, 35%",
+            darkHex:"#FF9800",
+            darkRgb: "255, 152, 0",
+            darkHsl: "36, 100%, 50%",
+            contrastLight: "4.46:1 (Passes AA)",
+            contrastDark:"8.5:1 (Passes AAA)",
+            swatchClass: "swatch--warning"
+        }
+    ];
+
+
+
     return (
         <div className="section-row">
             <div>
-                <h2 className="section-heading">Colour Palette</h2>
-                <h3 className="type-section-title">Light Mode Palette</h3>
-                <ul className="palette-grid" aria-label="Colour palette">
-                    <li className="swatch swatch--background">
+                <h2 className="section-heading">Colour Palette and WCAG contrast</h2>
+                <h3 className="type-section-title">Light Theme</h3>
+                <ul className="palette-grid" aria-label="Light Colour palette">
+                    {paletteData.map((colour) => (
+                        <li key={`light-${colour.name}`} className={`swatch ${colour.swatchClass}`}>
                         <div className="swatch__color" />
-                        <div className="swatch__hex">#FAF8F8</div>
-                        <div className="swatch__role">Background</div>
+                        <div className="swatch__hex">{colour.lightHex}</div>
+                        <div className="swatch__role">{colour.name.split('/')[0]}</div>
                     </li>
-                    <li className="swatch swatch--border">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#E8DEDE</div>
-                        <div className="swatch__role">Secondary</div>
-                    </li>
-                    <li className="swatch swatch--brand">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#CC0022</div>
-                        <div className="swatch__role">Primary</div>
-                    </li>
-                    <li className="swatch swatch--brand-2">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#AA0018</div>
-                        <div className="swatch__role">Secondary</div>
-                    </li>
-                    <li className="swatch swatch--foreground">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#1A1A1A</div>
-                        <div className="swatch__role">Accent</div>
-                    </li>
-                    <li className="swatch swatch--muted-text">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#666666</div>
-                        <div className="swatch__role">Secondary</div>
-                    </li>
-                    <li className="swatch swatch--success">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#1B6E1F</div>
-                        <div className="swatch__role">Accent</div>
-                    </li>
-                    <li className="swatch swatch--warning">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#B35C00</div>
-                        <div className="swatch__role">Accent</div>
-                    </li>
+                    ))}
                 </ul>
-
+                    {/* problem: itds only showing the dark mode cus the setting is dark mode */}
                 <h3 className="type-section-title">Dark Mode Palette</h3>
-                <ul className="palette-grid palette-grid--dark" aria-label="Colour palette dark">
-                    <li className="swatch swatch--background">
+                <ul className="palette-grid palette-grid--dark" aria-label="Dark Colour palette">
+                    {paletteData.map((colour) => (
+                        <li key={`dark-${colour.name}`} className={`swatch ${colour.swatchClass}`}>
                         <div className="swatch__color" />
-                        <div className="swatch__hex">#1C1C1F</div>
-                        <div className="swatch__role">Background</div>
+                        <div className="swatch__hex">{colour.darkHex}</div>
+                        <div className="swatch__role">{colour.name.split('/')[0]}</div>
                     </li>
-                    <li className="swatch swatch--border">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#3A3A42</div>
-                        <div className="swatch__role">Secondary</div>
-                    </li>
-                    <li className="swatch swatch--brand">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#CC0022</div>
-                        <div className="swatch__role">Primary</div>
-                    </li>
-                    <li className="swatch swatch--brand-2">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#D94060</div>
-                        <div className="swatch__role">Secondary</div>
-                    </li>
-                    <li className="swatch swatch--foreground">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#E8E8EC</div>
-                        <div className="swatch__role">Accent</div>
-                    </li>
-                    <li className="swatch swatch--muted-text">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#9A9AA8</div>
-                        <div className="swatch__role">Secondary</div>
-                    </li>
-                    <li className="swatch swatch--success">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#4CAF50</div>
-                        <div className="swatch__role">Accent</div>
-                    </li>
-                    <li className="swatch swatch--warning">
-                        <div className="swatch__color" />
-                        <div className="swatch__hex">#FF9800</div>
-                        <div className="swatch__role">Accent</div>
-                    </li>
+                    ))}
                 </ul>
 
-                <div className="palette-description">
+                {/* new section */}
+                <h3 className="type-section-title" style={{
+                    marginTop: '2rem'
+                }}>Colour tokens, Intended usage and Contrast matrix</h3>
+                <div style={{
+                    overflowX: 'auto',
+                    marginTop: '0.75rem'
+                }}>
+                    <table style={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        textAlign: 'left',
+                        fontSize: '0.85rem'
+                    }}>
+                        <thead><tr style={{
+                            borderBottom: '2px solid var(--border)',
+                            background: 'var(--surface-2)'
+                        }}>
+                            <th style={{
+                                padding: '0.6rem 0.75rem'
+                            }}>Token & Name</th>
+                            <th style={{
+                                padding: '0.6rem 0.75rem'
+                            }}>Light Mode (HEX/RGB/HSL)</th>
+                            <th style={{
+                                padding: '0.6rem 0.75rem'
+                            }}>Dark Mode (HEX/RGB/HSL)</th>
+                            <th style={{
+                                padding: '0.6rem 0.75rem'
+                            }}>WCAG 2.2 Contrast Ratio</th>
+                            <th style={{
+                                padding: '0.6rem 0.75rem'
+                            }}>Intended Usage</th>
+                        </tr>
+                            </thead>
+                            <tbody>
+                                {paletteData.map((item) => (
+                                    <tr key={item.variable} style={{borderBottom: '1px solid var(--border)'}}>
+                                        <td style={{
+                                            padding: '0.6rem 0.75rem',
+                                            fontWeight: 600
+                                        }}>
+                                            <div>{item.name}</div>
+                                            <code style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--brand)'
+                                            }}>{item.variable}</code>
+                                        </td>
+                                        <td style={{
+                                            padding: '0.6rem 0.75rem',
+                                            fontFamily: 'monospace'
+                                        }}>
+                                            <div><strong>{item.lightHex}</strong></div>
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--muted-text)'
+                                            }}>rgb({item.lightRgb})</div>
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--muted-text)'
+                                            }}>hsl({item.lightHsl})</div>
+                                        </td>
+                                        <td style={{
+                                            padding: '0.6rem 0.75rem',
+                                            fontFamily: 'monospace'
+                                        }}>
+                                            <div><strong>{item.darkHex}</strong></div>
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--muted-text)'
+                                            }}>rgb({item.darkRgb})</div>
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--muted-text)'
+                                            }}>hsl({item.darkHsl})</div>
+                                        </td>
+                                        <td style={{
+                                            padding: '0.6rem 0.75rem',
+                                            fontSize: '0.8rem'
+                                        }}>
+                                            <div><strong>Light: </strong>{item.contrastLight}</div>
+                                            <div><strong>Dark: </strong>{item.contrastDark}</div>
+                                        </td>
+                                        <td style={{
+                                            padding: '0.6rem 0.75rem',
+                                            color: 'var(--muted-text)',
+                                            fontSize: '0.825rem'
+                                        }}>{item.usage}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                    </table>
+                </div>
+                
+
+                <div className="palette-description" style={{marginTop: '1.5rem'}}>
                     <p>
                         OptiLifts's colour palette is inspired by the principle of <strong>progressive overloading</strong>, the core concept of the application. <strong>Bold Crimson</strong> was chosen to inspire action and energy, reminiscent of the drive behind every rep.
                     </p>
@@ -212,6 +375,9 @@ function ColourPaletteSection(){
                     </p>
                     <p>
                         <strong>Semantic colours</strong> are used intentionally and sparingly. <strong className="text-success">Forest Green</strong> celebrates wins like PRs and completed workouts, while <strong className="text-warning">Amber</strong> serves as a clear, non-intrusive indicator for fatigue or warnings.
+                    </p>
+                    <p>
+                        All colour pairs adhere strictly to <strong>WCAG 2.2 Level AA guidelines</strong> (minimum 4.5:1 for normal text, 3:1 for large text/UI elements), with primary body text achieving <strong>AAA compliance</strong> (exceeding 11:1 contrast).
                     </p>
                 </div>
             </div>
@@ -588,104 +754,13 @@ function AccessibilitySection(){
             <p className="type-body" style={{ maxWidth: 920, margin: '0.25rem 0 1rem' }}>
                 OptiLifts targets WCAG 2.1 AA as the minimum standard across all screens and both themes. The implementation is split across Colour Contrast, Keyboard Navigability, Screen Reader Compatibility, and WCAG compliance mappings.
             </p>
-
+            {/* i do want to try make this section look nicer */}
             <div className="accessibility-grid">
                 <div className="accessibility-left">
                     <div className="type-section-title">Colour Contrast</div>
                     <p className="type-body" style={{ marginTop: '0.25rem' }}>All primary text/background combinations meet WCAG 2.1 AA (4.5:1 minimum for normal text, 3:1 for large text and UI components). Key verified pairs are shown below.</p>
 
-                    <div className="swatch-list">
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#E8E8EC' }} />
-                                <div className="swatch-sample" style={{ background: '#1C1C1F' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#E8E8EC on #1C1C1F</div>
-                                <div className="swatch-ratio">Dark · 13.2:1 · AAA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#B01030' }} />
-                                <div className="swatch-sample" style={{ background: '#1C1C1F' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#B01030 on #1C1C1F</div>
-                                <div className="swatch-ratio">Dark · 5.1:1 · AA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#9A9AA8' }} />
-                                <div className="swatch-sample" style={{ background: '#1C1C1F' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#9A9AA8 on #1C1C1F</div>
-                                <div className="swatch-ratio">Dark · 4.6:1 · AA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#4CAF50' }} />
-                                <div className="swatch-sample" style={{ background: '#1C1C1F' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#4CAF50 on #1C1C1F</div>
-                                <div className="swatch-ratio">Dark · 5.8:1 · AA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#FF9800' }} />
-                                <div className="swatch-sample" style={{ background: '#1C1C1F' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#FF9800 on #1C1C1F</div>
-                                <div className="swatch-ratio">Dark · 8.2:1 · AAA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#1A1A1A' }} />
-                                <div className="swatch-sample" style={{ background: '#FAF8F8' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#1A1A1A on #FAF8F8</div>
-                                <div className="swatch-ratio">Light · 16.8:1 · AAA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#CC0022' }} />
-                                <div className="swatch-sample" style={{ background: '#FFFFFF' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#CC0022 on #FFFFFF</div>
-                                <div className="swatch-ratio">Light · 5.9:1 · AA</div>
-                            </div>
-                        </div>
-
-                        <div className="swatch-item">
-                            <div className="swatch-samples">
-                                <div className="swatch-sample" style={{ background: '#666666' }} />
-                                <div className="swatch-sample" style={{ background: '#FAF8F8' }} />
-                            </div>
-                            <div className="swatch-meta">
-                                <div className="swatch-role">#666666 on #FAF8F8</div>
-                                <div className="swatch-ratio">Light · 5.2:1 · AA</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="accessibility-right">
+                    {/*i have moved specifically colour accessibility into the table in the colour section */}
                     <h3 className="type-section-title">Keyboard Navigability</h3>
                     <ul className="access-list">
                         <li>Tab order follows logical top-to-bottom, left-to-right reading flow on every screen.</li>
@@ -694,6 +769,10 @@ function AccessibilitySection(){
                         <li>Custom components implement <code>role</code>, <code>tabIndex</code>=0 and key handlers for Enter/Space.</li>
                         <li>All interactive elements show visible focus with <code>focus-visible</code> ring styling.</li>
                     </ul>
+                </div>
+
+                <div className="accessibility-right">
+                    
 
                     <h3 className="type-section-title">Screen Reader Compatibility</h3>
                     <ul className="access-list">

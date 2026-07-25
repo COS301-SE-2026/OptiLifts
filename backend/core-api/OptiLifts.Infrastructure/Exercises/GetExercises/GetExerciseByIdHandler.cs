@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Exercises.GetExerciseById;
 using OptiLifts.Application.Exercises.GetExercises;
-using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Exercises.GetExerciseById;
@@ -39,27 +38,11 @@ public sealed class GetExerciseByIdHandler : IRequestHandler<GetExerciseByIdQuer
             ex.Name,
             ex.Mechanic,
             ex.Equipment,
-            ToFrontendExerciseType(ex.ExerciseType),
+            ex.ExerciseType.ToString(),
             primMuscle is null ? [] : [primMuscle],
             secMuscle,
             ex.UserId != null,
             ex.ImageUrl
         );
-    }
-
-    private static string ToFrontendExerciseType(ExerciseType exerciseType)
-    {
-        return exerciseType switch
-        {
-            ExerciseType.WeightReps => "weight-reps",
-            ExerciseType.BodyweightReps => "bodyweight-reps",
-            ExerciseType.AssistedWeightReps => "assisted-bodyweight",
-            ExerciseType.WeightedBodyweight => "weighted-bodyweight",
-            ExerciseType.Duration => "duration",
-            ExerciseType.DurationWeight => "duration-weight",
-            ExerciseType.DistanceDuration => "distance-duration",
-            ExerciseType.WeightDistance => "weight-distance",
-            _ => exerciseType.ToString()
-        };
     }
 }

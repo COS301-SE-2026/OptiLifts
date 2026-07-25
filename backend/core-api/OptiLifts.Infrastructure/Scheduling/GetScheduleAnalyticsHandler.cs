@@ -88,13 +88,13 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
     {
         if (startDate.HasValue && endDate.HasValue)
         {
-            return (startDate.Value.Date, endDate.Value.Date);
+            return (DateTime.SpecifyKind(startDate.Value.Date, DateTimeKind.Utc), DateTime.SpecifyKind(endDate.Value.Date, DateTimeKind.Utc));
         }
 
         var now = DateTime.UtcNow.Date;
         int dif = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
-        var start = now.AddDays(-dif);
-        var end = start.AddDays(6);
+        var start = DateTime.SpecifyKind(now.AddDays(-dif), DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(start.AddDays(6), DateTimeKind.Utc);
         return (start, end);
 
     }

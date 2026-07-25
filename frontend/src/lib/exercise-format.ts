@@ -126,6 +126,8 @@ export function formatLoggedExerciseSetText(exerciseType: string, set: LoggedExe
   const reps = `${set.reps}`
   const weight = formatWeight(set.weight)
   const rpe = formatRpe(set.rpe)
+  const duration = formatDurationValue(set.duration)
+  const distance = formatDistanceValue(set.distance)
 
   switch (exerciseType) {
     case 'BodyweightReps':
@@ -135,13 +137,17 @@ export function formatLoggedExerciseSetText(exerciseType: string, set: LoggedExe
     case 'AssistedWeightReps':
       return `${reps} reps (-${weight}) @ ${rpe} RPE`
     case 'Duration':
-      return `${reps}s @ ${rpe} RPE`
+      return `${duration || '--'} @ ${rpe} RPE`
     case 'DurationWeight':
-      return `${reps}s + ${weight} @ ${rpe} RPE`
-    case 'DistanceDuration':
-      return `${reps}m @ ${rpe} RPE`
-    case 'WeightDistance':
-      return `${weight} for ${reps}m @ ${rpe} RPE`
+      return `${duration || '--'} + ${weight} @ ${rpe} RPE`
+    case 'DistanceDuration': {
+      const durationPart = duration ? ` in ${duration}` : ''
+      return `${distance || '--'}${durationPart} @ ${rpe} RPE`
+    }
+    case 'WeightDistance': {
+      const distancePart = distance ? ` for ${distance}` : ''
+      return `${weight}${distancePart} @ ${rpe} RPE`
+    }
     case 'WeightReps':
     default:
       return `${weight} x ${reps} reps @ ${rpe} RPE`

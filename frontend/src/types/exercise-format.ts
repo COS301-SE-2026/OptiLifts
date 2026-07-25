@@ -18,7 +18,10 @@ export type PlannedExerciseSet = Readonly<{
 }>
 
 export type LoggedExerciseSet = Readonly<{
+  type: string
   reps: number
   weight: number
+  duration: number | null
+  distance: number | null
   rpe: number
 }>

@@ -29,7 +29,7 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
     name: exercise.name,
     subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
     exerciseType: exercise.exerciseType ?? 'weight-reps',
-    exerciseId: exercise.exerciseId ?? (exercise as any).id ?? (exercise as any).workoutExerciseId,
+    exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
     sets: (exercise.sets ?? []).map((set) => ({
       label: `${set.orderIndex}`,
       reps: set.reps,
@@ -55,43 +55,62 @@ export default function WorkoutDetailPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const loadWorkout = useCallback(async () => {
+  const handleWorkoutChanged = useCallback(() => {
+    setRefreshKey((prev) => prev + 1)
+  }, [])
+
+  useEffect(() => {
     if (!isHydrated || !isAuthenticated || !workoutId) {
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    let mounted = true
 
-    try {
-      const response = await customFetch(`/api/workouts/${workoutId}`, {
-        headers: {
-          Accept: 'application/json',
-        },
-      })
+    const fetchWorkout = async () => {
+      setIsLoading(true)
+      setError(null)
 
-      if (response.status === 404) {
-        setWorkout(null)
-        return
+      try {
+        const response = await customFetch(`/api/workouts/${workoutId}`, {
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (response.status === 404) {
+          if (mounted) {
+            setWorkout(null)
+          }
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to load workout (${response.status})`)
+        }
+
+        const data = (await response.json()) as WorkoutDetailResponse
+        if (mounted) {
+          setWorkout(data)
+        }
+      } catch (loadError) {
+        if (mounted) {
+          setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
-
-      if (!response.ok) {
-        throw new Error(`Failed to load workout (${response.status})`)
-      }
-
-      const data = (await response.json()) as WorkoutDetailResponse
-      setWorkout(data)
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
-    } finally {
-      setIsLoading(false)
     }
-  }, [isAuthenticated, isHydrated, workoutId])
 
-  useEffect(() => {
-    void loadWorkout()
-  }, [loadWorkout])
+    void fetchWorkout()
+
+    return () => {
+      mounted = false
+    }
+  }, [isAuthenticated, isHydrated, workoutId, refreshKey])
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow
@@ -106,32 +125,44 @@ export default function WorkoutDetailPage() {
     }
   }, [])
 
-  const workoutLabel = workout?.name ?? 'Workout'
-  const plannedExercises = workout ? toExercisePlanItems(workout.exercises) : []
-  const highlightedMuscles = (workout?.primaryMuscleGroups ?? []) as MuscleName[]
-  const workoutStats = useMemo(() => {
+  const workoutLabel = workout?.name ?? 'Workout Detail'
+  const plannedExercises = useMemo(
+    () => (workout ? toExercisePlanItems(workout.exercises) : []),
+    [workout]
+  )
+
+  const totalSets = useMemo(
+    () => workout?.exercises.reduce((sum, item) => sum + item.sets.length, 0) ?? 0,
+    [workout]
+  )
+
+  const totalVolume = useMemo(() => {
     if (!workout) {
-      return { volume: '0 kg', sets: '0' }
+      return 0
     }
 
-    const totalVolume = workout.exercises.reduce((exerciseTotal, exercise) => {
-      return (
-        exerciseTotal +
-        exercise.sets.reduce((setTotal, set) => {
-          const reps = set.reps ?? 0
-          const weight = set.weight ?? 0
-          return setTotal + reps * weight
-        }, 0)
-      )
+    return workout.exercises.reduce((exerciseSum, item) => {
+      const exerciseVolume = item.sets.reduce((setSum, set) => {
+        const weight = set.weight ?? 0
+        const reps = set.reps ?? 0
+        return setSum + weight * reps
+      }, 0)
+
+      return exerciseSum + exerciseVolume
     }, 0)
+  }, [workout])
 
-    const totalSets = workout.exercises.reduce((exerciseTotal, exercise) => exerciseTotal + exercise.sets.length, 0)
-
+  const workoutStats = useMemo(() => {
     return {
       volume: formatVolume(totalVolume),
       sets: `${totalSets}`,
     }
-  }, [workout])
+  }, [totalVolume, totalSets])
+
+  const highlightedMuscles = useMemo(
+    () => (workout?.primaryMuscleGroups ?? []) as MuscleName[],
+    [workout]
+  )
 
   return (
     <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
@@ -184,7 +215,7 @@ export default function WorkoutDetailPage() {
       <ExerciseDetailsPopup
         exerciseId={detailsExerciseId}
         onClose={() => setDetailsExerciseId(null)}
-        onChanged={loadWorkout}
+        onChanged={handleWorkoutChanged}
       />
     </section>
   )

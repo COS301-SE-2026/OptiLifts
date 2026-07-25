@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260724081720_AddExerciseSoftDelete")]
+    partial class AddExerciseSoftDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -331,53 +334,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasIndex("WorkoutId");
 
                     b.ToTable("exercise_groups", (string)null);
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExercisePr", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("pr_id");
-
-                    b.Property<int>("AchievedReps")
-                        .HasColumnType("integer")
-                        .HasColumnName("achieved_reps");
-
-                    b.Property<float>("AchievedWeight")
-                        .HasColumnType("real")
-                        .HasColumnName("achieved_weight");
-
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("exercise_id");
-
-                    b.Property<string>("PrType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("pr_type");
-
-                    b.Property<float>("PrValue")
-                        .HasColumnType("real")
-                        .HasColumnName("pr_value");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<Guid>("WorkoutLogSetId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("workout_log_set_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("WorkoutLogSetId");
-
-                    b.HasIndex("UserId", "ExerciseId", "PrType");
-
-                    b.ToTable("exercise_prs", (string)null);
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Folder", b =>
@@ -824,27 +780,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Workouts.Workout", null)
                         .WithMany()
                         .HasForeignKey("WorkoutId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExercisePr", b =>
-                {
-                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OptiLifts.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OptiLifts.Domain.Workouts.WorkoutSetLog", null)
-                        .WithMany()
-                        .HasForeignKey("WorkoutLogSetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

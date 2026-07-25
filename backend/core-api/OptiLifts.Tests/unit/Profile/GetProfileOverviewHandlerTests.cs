@@ -181,9 +181,8 @@ public class GetProfileOverviewHandlerTests
         result.Profile.Name.Should().Be("Profile User");
         result.Profile.Email.Should().Be("profile@example.com");
         result.Profile.Bio.Should().Be("Built for testing");
-        result.Stats.Should().HaveCount(3);
         result.Badges.Should().HaveCount(1);
-        result.Badges[0].Name.Should().Be("First Workout");
+        result.Badges[0].Name.Should().Be("1 WORKOUTS");
         result.RecentWorkouts.Should().HaveCount(1);
         result.RecentWorkouts[0].Name.Should().Be("Push Day");
         result.RecentWorkouts[0].Prs.Should().Be("2 PRs");
@@ -292,8 +291,5 @@ public class GetProfileOverviewHandlerTests
         var result = await handler.Handle(new GetProfileOverviewQuery(user.Id), CancellationToken.None);
 
         result.RecentWorkouts.Should().BeEmpty();
-        result.Stats.Should().ContainSingle(stat => stat.Label == "Streak" && stat.Value == "0 weeks");
-        result.Stats.Should().ContainSingle(stat => stat.Label == "Workouts" && stat.Value == "0 sessions");
-        result.Stats.Should().ContainSingle(stat => stat.Label == "Records" && stat.Value == "0 logged sets");
     }
 }

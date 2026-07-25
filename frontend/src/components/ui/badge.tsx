@@ -51,8 +51,9 @@ export function Badge({ name, category, earnedAt, iconUrl, className }: BadgePro
         <h3 className="max-w-[10ch] text-base font-bold leading-tight text-foreground sm:text-[1.05rem]">{name}</h3>
       </div>
 
-      <p className="max-w-[12ch] text-[0.7rem] font-medium uppercase leading-tight tracking-[0.14em] text-muted-foreground">
-        Earned {formatEarnedAt(earnedAt)}
+      <p className="text-[0.7rem] font-medium uppercase leading-tight tracking-[0.14em] text-muted-foreground">
+        Earned<br />
+        <span className="whitespace-nowrap">{formatEarnedAt(earnedAt)}</span>
       </p>
     </article>
   )

@@ -730,9 +730,9 @@ BEGIN
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
-    -- ~51 logged sessions spread across 2026-03-23 .. mid-June (calendar / hours / streak / count)
-    FOR i IN 0..50 LOOP
-        v_day := TIMESTAMP '2026-03-23 17:00:00' + (i * INTERVAL '41 hours');
+    -- makes it such that the user always has a month long streak
+    FOR i IN 0..17 LOOP
+        v_day := NOW() - INTERVAL '30 days' + (i * INTERVAL '41 hours');
         PERFORM seed_logged_workout(
             alex_id,
             CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END,
@@ -748,7 +748,7 @@ BEGIN
         );
     END LOOP;
 
-    v_day := TIMESTAMP '2026-03-23 17:00:00' + (51 * INTERVAL '41 hours');
+    v_day := NOW() - INTERVAL '30 days' + (18 * INTERVAL '41 hours');
 
     PERFORM seed_logged_workout(
         alex_id,

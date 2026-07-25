@@ -18,6 +18,7 @@ export type WorkoutExercise = Readonly<{
   sets: ExerciseSet[]
   imageUrl?: string
   exerciseType?: string
+  exerciseCatalogId?: string
 }>
 
 export type ExerciseCatalogItem = Readonly<{

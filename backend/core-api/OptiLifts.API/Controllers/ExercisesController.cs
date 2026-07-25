@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
 using OptiLifts.Application.Exercises.DeleteCustomExercise;
+using OptiLifts.Application.Exercises.GetExerciseById;
 using OptiLifts.Application.Exercises.GetExerciseImages;
 using OptiLifts.Application.Exercises.GetExercises;
+using OptiLifts.Application.Exercises.UpdateCustomExercise;
 
 namespace OptiLifts.API.Controllers;
 
@@ -36,6 +38,28 @@ public class ExercisesController : ControllerBase
         var query = new GetExercisesQuery(userId, search, muscle, equipment);
         var exercises = await _mediator.Send(query, cancellationToken);
         return Ok(exercises);
+    }
+
+    [HttpGet("{exerciseId:guid}")]
+    public async Task<IActionResult> GetExerciseById(Guid exerciseId, CancellationToken cancellationToken)
+    {
+        var userIdd = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userIdd, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var ex = await _mediator.Send(new GetExerciseByIdQuery(exerciseId, userId), cancellationToken);
+
+        if (ex is null)
+        {
+            return NotFound();
+        }
+        else
+        {
+            return Ok(ex);
+        }
     }
 
     [HttpPost("custom")]
@@ -83,6 +107,55 @@ public class ExercisesController : ControllerBase
         }
     }
 
+    [HttpPut("custom/{exerciseId:guid}")]
+    public async Task<IActionResult> UpdateCustomExercise(Guid exerciseId, [FromForm] UpdateCustomExerciseRequest request, CancellationToken cancellationToken)
+    {
+        var userIdd = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userIdd, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        Stream? stream = null;
+        string? fileName = null;
+        string? contentType = null;
+
+        if (request.Image != null)
+        {
+            stream = request.Image.OpenReadStream();
+            fileName = request.Image.FileName;
+            contentType = request.Image.ContentType;
+        }
+
+        var command = new UpdateCustomExerciseCommand(
+            exerciseId,
+            userId,
+            request.Name,
+            stream,
+            fileName,
+            contentType,
+            request.RemoveImage);
+
+        try
+        {
+            var isUpdated = await _mediator.Send(command, cancellationToken);
+
+            if (isUpdated)
+            {
+                return NoContent();
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+        catch (InvalidOperationException exc)
+        {
+            return BadRequest(new { error = exc.Message });
+        }
+    }
+
     [HttpDelete("custom/{exerciseId:guid}")]
     public async Task<IActionResult> DeleteCustomExercise(Guid exerciseId, CancellationToken cancellationToken)
     {
@@ -124,3 +197,11 @@ public class GetExerciseImagesRequest
 {
     public List<Guid> ExerciseIds { get; set; } = new();
 }
+
+public class UpdateCustomExerciseRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public IFormFile? Image { get; set; }
+    public bool RemoveImage { get; set; }
+}
+

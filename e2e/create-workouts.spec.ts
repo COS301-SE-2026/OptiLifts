@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Create Workouts Page', () => {
-    let createdExerciseId: string | null = null;
     let createdWorkoutId: string | null = null;
 
     test.beforeEach(async ({ page }) => {
@@ -10,12 +9,6 @@ test.describe('Create Workouts Page', () => {
     });
 
     test.afterEach(async ({ request }) => {
-        if (createdExerciseId) {
-            const response = await request.delete(`http://localhost:5036/api/exercises/custom/${createdExerciseId}`);
-            expect(response.ok()).toBeTruthy();
-            createdExerciseId = null;
-        }
-
         if (createdWorkoutId) {
             const response = await request.delete(`http://localhost:5036/api/workouts/${createdWorkoutId}`);
             expect(response.ok()).toBeTruthy();

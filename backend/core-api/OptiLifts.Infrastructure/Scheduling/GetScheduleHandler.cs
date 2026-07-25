@@ -18,15 +18,15 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
         DateTime start, end;
         if (request.StartDate.HasValue && request.EndDate.HasValue)
         {
-            start = request.StartDate.Value.Date;
-            end = request.EndDate.Value.Date;
+            start = DateTime.SpecifyKind(request.StartDate.Value.Date, DateTimeKind.Utc);
+            end = DateTime.SpecifyKind(request.EndDate.Value.Date, DateTimeKind.Utc);
         }
         else
         {
             var now = DateTime.UtcNow.Date;
             int dif = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
-            start = now.AddDays(-dif);
-            end = start.AddDays(6);
+            start = DateTime.SpecifyKind(now.AddDays(-dif), DateTimeKind.Utc);
+            end = DateTime.SpecifyKind(start.AddDays(6), DateTimeKind.Utc);
         }
 
         //add status filtering

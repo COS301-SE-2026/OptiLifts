@@ -10,16 +10,18 @@ export type WorkoutDetailSet = Readonly<{
 }>
 
 export type WorkoutDetailExercise = Readonly<{
-  id: string
+  id?: string
+  workoutExerciseId?: string
   exerciseId: string
   name: string
-  primaryMuscle: string
-  exerciseType: string
+  primaryMuscle?: string
+  muscleGroup?: string
+  exerciseType?: string
   orderIndex: number
   sets: WorkoutDetailSet[]
-  groupId?: string |null
+  groupId?: string | null
   groupType?: string | null
-  groupRestTime? : number | null
+  groupRestTime?: number | null
 }>
 
 export type WorkoutDetailResponse = Readonly<{

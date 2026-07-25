@@ -191,14 +191,13 @@ export default function WorkoutsPage() {
                 aria-pressed={w.id === selectedId}
                 className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}
                 onClick={() => {
-                  setSelectedId(w.id)
                   navigate(`/workouts/${w.id}`)
                 }}
+                onMouseEnter={() => setSelectedId(w.id)}
                 onFocus={() => setSelectedId(w.id)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    setSelectedId(w.id)
                     navigate(`/workouts/${w.id}`)
                   }
                 }}

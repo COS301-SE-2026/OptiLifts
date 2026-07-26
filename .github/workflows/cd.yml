@@ -61,6 +61,8 @@ jobs:
           env:
             PULUMI_ACCESS_TOKEN: ${{secrets.PULUMI_ACCESS_TOKEN}}
             IMAGE_TAG: ${{github.sha}}
+            NAMEDOTCOM_USERNAME: ${{secrets.NAMEDOTCOM_USERNAME}}
+            NAMEDOTCOM_TOKEN: ${{secrets.NAMEDOTCOM_TOKEN}}
 
 
         

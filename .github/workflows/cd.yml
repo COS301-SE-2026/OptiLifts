@@ -23,7 +23,7 @@ jobs:
 
         - name: Get Dynamic ACR Name
           run: |
-            ACR_NAME=$(az acr list --resource-group rgoptilifts --query "[0].name" -o tsv)
+            ACR_NAME=$(az acr list --query "[0].name" -o tsv)
             echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
 
         - name: Azure container regiistry login

@@ -7,8 +7,6 @@ on:
   # a manual trigger
   workflow_dispatch:
 
-env: 
-    ACR_NAME: acroptiliftse3077197
 
 jobs:
     build-deploy:
@@ -22,6 +20,11 @@ jobs:
           uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d
           with: 
             creds: ${{secrets.AZURE_CREDENTIALS}}
+
+        - name: Get Dynamic ACR Name
+          run: |
+            ACR_NAME=$(az acr list --resource-group rgoptilifts --query "[0].name" -o tsv)
+            echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
 
         - name: Azure container regiistry login
           run: az acr login --name ${{env.ACR_NAME}}

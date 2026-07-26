@@ -1224,16 +1224,202 @@ function DesignTokenSection(){
         </div>
     );
 }
-// function LayoutMotionSection(){
-//     return (
+function LayoutSection(){
+    const spacingScale=[
+        {
+            token: "0.25rem",
+            px: "4x",
+            usage: "Tight gaps, badge padding, micro element offsets"
+        },
+        {
+            token: "0.5rem",
+            px: "8px",
+            usage: "Button icon gaps, small card padding"
+        },
+        {
+            token: "0.75rem",
+            px: "12px",
+            usage: "List item gaps, input padding"
+        },
+        {
+            token: "1.0rem",
+            px: "16px",
+            usage: "Standard card padding, default form field spacing"
+        },
+        {
+            token: "1.5rem",
+            px: "24px",
+            usage: "Card section gaps, modal container padding"
+        },
+        {
+            token: "2.0rem",
+            px: "32px",
+            usage: "Page section gaps, header outer margins"
+        },
+        {
+            token: "3.0rem",
+            px: "48px",
+            usage: "major view container dividers"
+        }
+    ];
+    const breakpoints =[
+        {
+            name: "sm",
+            px: "640px",
+            behaviour: "Mobile; stacks single column cards into 2-column grids"
+        },
+        {
+            name: "md",
+            px: "768px",
+            behaviour: "Tablet; adjusts dashboard summaries and nav layout"
+        },{
+            name: "lg",
+            px: "1024px",
+            behaviour: "Desktop; full multi-column grid, sidebar and chart views"
+        },{
+            name: "xl",
+            px: "1280px",
+            behaviour: "Large desktop; max-width containers"
+        }
+    ];
+    return (
+        <div className="section-row">
+            <div>
+                <h2 className="section-heading">Layout & Spacing</h2>
+                <p className="type-body" style={{marginBottom: '1.5rem'}}>
+                    Optilifts uses a responsive 12 column grid and a 4px (0.25rem) base spacing scale. Layouts adapt across modile, table and desktop views.
+                </p>
 
-//     );
-// }
-// function ChangelogSection(){
-//     return (
+                <h3 className="type-section-title">Spacing Scale</h3>
+                <div className="goals-grid" style={{
+                    marginTop: '0.75rem',
+                    marginBottom: '2rem'
+                }}>
+                    {spacingScale.map((space) => (
+                        <Card key={space.token} className="goal-card">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="font-mono text-sm font-bold text-brand">{space.token}</span>
+                                    <span className="font-mono text-xs text-muted-foreground">{space.px}</span>
+                                </div>
+                                <div style={{
+                                    height: '12px',
+                                    width: space.px === '48px'?'100%': `${Number.parseInt(space.px) * 2.5}px`,
+                                    maxWidth: '100%',
+                                    backgroundColor: 'var(--brand)',
+                                    borderRadius: '2px',
+                                    marginBottom: '0.5rem',
+                                    opacity: 0.85
+                                }}/>
+                                <p className="goal-copy text-xs">{space.usage}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
 
-//     );
-// }
+                <h3 className="type-section-title">Responsive Breakpoints</h3>
+                <div className="goals-grid" style={{
+                    marginTop: '0.75rem',
+                    marginBottom: '2rem'
+                }}>
+                    {breakpoints.map((bp)=>(
+                        <Card key={bp.name} className="goal-card">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="font-display text-xl text-foreground">{bp.name}</span>
+                                    <span className="font-mono text-xs font-bold text-brand">{bp.px}</span>
+                                </div>
+                                <p className="goal-copy text-xs">{bp.behaviour}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+
+                <h3 className="type-section-title">Layout Adaptation (Mobile vs. Desktop)</h3>
+                <div className="goals-grid" style={{
+                    marginTop: '0.75rem',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'
+                }}>
+                    <Card className="goal-card">
+                        <CardContent className="p-4">
+                            <div className="goal-title text-foreground">Mobile Adaptation (&lt; 640px)</div>
+                            <ul className="type-body text-xs space-y-2 mt-2" style={{
+                                paddingLeft: '1rem',
+                                listStyleType: 'disc'
+                            }}>
+                                <li>Single column linear stacked layout</li>
+                                <li>Touch-friendly controls with minimum targets</li>
+                                <li>Data grids collapse into scrollable swipe cards</li>
+                            </ul>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="goal-card">
+                        <CardContent className="p-4">
+                            <div className="goal-title text-foreground">Desktop Adaptation (&ge; 1024px)</div>
+                            <ul className="type-body text-xs space-y-2 mt-2" style={{
+                                paddingLeft: '1rem',
+                                listStyleType: 'disc'
+                            }}>
+                                <li>Multi-column grid views</li>
+                                <li>Sticky header with link navigation</li>
+                                <li>Analytics are side by side (spider graph, colume charts, etc.)</li>
+                            </ul>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+}
+function ChangelogSection(){
+    const changelog =[
+        {
+            title: "Refined palette & WCAG 2.2 Compliance",
+            description: "The light and dark mode tokens were finalised with their HEX, RGB, and HSL values and contrast ratios",
+            rationale: "To ensure the application is comfortable to read in any environment, including bright outdoor workouts to dim gym floors, while still keeping the UI accessible"
+        },
+        {
+            title: "Formalised Typographic Scale & Licensing",
+            description: "Documented modular scale sizes (px, rem, weights, tracking) and SIL font licenses",
+            rationale: "Gives our team a clear hierarchy to follow so that the text stays consistent across screens"
+        },
+        {
+            title: "Design Tokens",
+            description: "Mapped design tokens directly to actual CSS custom properties in index.css",
+            rationale: "Creates a single source of truth for all styling, preventing hardcoded colours from cluttering the component files"
+        },
+        {
+            title: "Graph Visualisations and Components",
+            description: "Added interactive showcases for muscle diagams, volume charts, spider graphs, and UI controls",
+            rationale: "Interactive charts break down complex workout data into easy-to-digest summaries, rather than overwhelming fitness stats"
+        }
+    ];
+    return (
+        <div className="section-row">
+            <div>
+                <h2 className="section-heading">Demo 1 to Demo 2 Changelog</h2>
+                <p className="type-body" style={{marginBottom: '1.5rem'}}>
+                    As OptiLifts progressed from our initial 5 use cases to the current production implementation, the brand style guide has evolved to reflect our updated design decisions.
+                </p>
+                <div className="goals-grid" style={{marginTop: '0.75rem' }}>
+                    {changelog.map((item, index) => (
+                        <Card key={item.title} className="goal-card">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-brand/10 text-brand text-xs font-bold">
+                                {index+1}</span>
+                                <span className="font-sans text-sm font-bold text-foreground">{item.title}</span>
+                            </div>
+                            <p className="type-body text-xs text-foreground/90 mb-2">{item.description}</p>
+                            <p className="goal-copy text-xs italic text-muted-foreground"><strong>Rationale: </strong>{item.rationale}</p>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 
 export default function BrandStylePage() {
@@ -1250,9 +1436,9 @@ export default function BrandStylePage() {
             <DesignPrincipleSection/>
             <ComponentLibrarySection/>
             <GraphSection/>
-            {/* layout and spacing */}
+            <LayoutSection/>
             <AccessibilitySection/>
-            {/* changelog goes here */}
+            <ChangelogSection/>
         </section>
     )
 }

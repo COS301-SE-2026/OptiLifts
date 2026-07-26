@@ -1,5 +1,7 @@
 import { customFetch } from '@/lib/custom-fetch'
 
+export const WORKOUT_LOG_SYNC_EVENT = 'ol-workout-log-synced'
+
 export type WorkoutLogSetPayload = {
   setId: string | null
   type: 'Warmup' | 'Normal' | 'DropSet'
@@ -114,6 +116,12 @@ export async function flushOutBox(): Promise<void> {
 
         if (res.ok || res.status === 409) {
           await store('readwrite', (store) => store.delete(item.logId))
+          globalThis.dispatchEvent(new CustomEvent(WORKOUT_LOG_SYNC_EVENT, {
+            detail: {
+              logId: item.logId,
+              workoutId: item.payload.workoutId,
+            },
+          }))
         } 
         else {
           await mark(item, `HTTP ${res.status}`)

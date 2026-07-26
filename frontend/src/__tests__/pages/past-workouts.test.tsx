@@ -55,7 +55,7 @@ describe('PastWorkoutsPage', () => {
                             exerciseCount: 3,
                             exercisePreview: ['Bench Press'],
                             totalVolume: 4500,
-                            recordsCount: 2,
+                            recordCount: 2,
                         },
                     ],
                 };

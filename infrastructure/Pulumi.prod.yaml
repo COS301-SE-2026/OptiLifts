@@ -10,3 +10,5 @@ config:
   namedotcom:token:
     secure: AAABACBdbD8KnEgs+afV9EBIeRrnZXTw+QriLVpWrj9ewC2ozExjNCF173hfhthVr4dApv9zN7BJEFOvAswNCUsgwUf5aerj
   namedotcom:username: u24664155
+  infrastructure:bindDomains: "true"
+  infrastructure:domainStage: bind

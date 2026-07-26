@@ -25,7 +25,7 @@ const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
 
-const bindDomains = config.getBoolean("bindDomains") ?? false;
+const domainStage = config.get("domainStage") ?? "none";
 
 const imageTag = process.env.IMAGE_TAG;
 if (!imageTag) {
@@ -161,10 +161,10 @@ const managedCert = (name: string, subjectName: string) =>
         },
     });
 
-const frontendCert = bindDomains ? managedCert("frontend-cert", frontendDomain) : undefined;
-const backendCert = bindDomains ? managedCert("core-api-cert", backendDomain) : undefined;
+const frontendCert = domainStage === "bind" ? managedCert("frontend-cert", frontendDomain) : undefined;
+const backendCert = domainStage === "bind" ? managedCert("core-api-cert", backendDomain) : undefined;
 
-const customDomain = (domain: string, cert?: app.ManagedCertificate) => [{
+const customDomain = (domain: string, cert?: app.ManagedCertificate) => domainStage === "none" ? undefined : [{
     name: domain,
     bindingType: cert ? "SniEnabled" : "Disabled",
     certificateId: cert?.id,

@@ -7,6 +7,11 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { CircularProfileImage } from '@/components/ui/circular-image';
 import { PageTitle } from '@/components/ui/page-title';
 import Badge from "@/components/ui/badge";
+import { MuscleDiagram } from '@/components/ui/muscle-diagram';
+import { BarChart } from '@/components/ui/barchart';
+import { VolumeChart } from '@/components/ui/volume-chart';
+import { SpiderGraph } from '@/components/ui/spider-graph';
+import { Calendar } from '@/components/ui/calendar';
 
 function BrandHeader() {
     return(
@@ -819,7 +824,6 @@ function ComponentLibrarySection(){
                     </div>
                 </div>
                 <div className="component-description">
-                    {/*finish this tmr  */}
                     <h3 className="component-title">Badges & Status Tags</h3>
                     <p className="component-copy"><strong>Achievement Badges: </strong>Card component used in Profile page to display milestones and streaks</p>
                     <p className="component-copy"><strong>PR Badge: </strong>Highlight personal records on past workouts and active session logs</p>
@@ -890,7 +894,134 @@ function ComponentLibrarySection(){
         </section>
     );
 }
+function GraphSection(){
+    const barChartData=[
+        {
+            label: "Mon",
+            value: 1.2
+        },
+        {
+            label: "Tue",
+            value: 0.8
+        },
+        {
+            label: "Wed",
+            value: 1.5
+        },
+        {
+            label: "Thu",
+            value: 0.0
+        },
+        {
+            label: "Fri",
+            value: 1.1
+        },
+        {
+            label: "Sat",
+            value: 2.0
+        },
+        {
+            label: "Sun",
+            value: 0.5
+        }
+    ];
+    const spiderGraphData ={
+        Chest: 12, Core: 8, Shoulders: 14, Arms: 10, Legs: 18, Back: 15
+    }
+    const volumeChartData=[
+        {
+            label: "Mon",
+            value: 2400
+        },
+        {
+            label: "Tue",
+            value: 1800
+        },
+        {
+            label: "Wed",
+            value: 3100
+        },
+        {
+            label: "Thu",
+            value: 0
+        },
+        {
+            label: "Fri",
+            value: 2800
+        },
+        {
+            label: "Sat",
+            value: 4200
+        },
+        {
+            label: "Sun",
+            value: 1200
+        }
+    ];
+    
+    return (
+        <div className="section-row">
+            <div>
+                <h2 className="section-heading">Graph Visualisations</h2>
+                <p className="type-body" style={{
+                    marginBottom: '1.5rem'
+                }}>
+                    Interactive charts and diagrams used throughout OptiLifts to visualise workout volume, muscle distributions and training quantities.
+                </p>
+                <div className="goals-grid" style={{
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '1.5rem'
+                }}>
+                    <Card className="goal-card">
+                        <CardContent className="p-4">
+                            <h3 className="goal-title mb-2">Muscle Diagram</h3>
+                            <p className="goal-copy mb-2">Highlights primary and secondary targeted muscles</p>
+                            <MuscleDiagram highlightedMuscles={["Chest","Quadriceps","Lats"]} variant="both"/>
+                        </CardContent>
+                    </Card>
+                    <Card className="goal-card">
+                        <CardContent className="p-4">
+                            <h3 className="goal-title mb-2">Bar Chart</h3>
+                            <p className="goal-copy mb-2">Weekly training duration bar chart</p>
+                            <BarChart title="" data={barChartData}/>
+                        </CardContent>
+                    </Card>
+                    <Card className="goal-card">
+                        <CardContent className="p-4">
+                            <h3 className="goal-title mb-2">Spider Graph</h3>
+                            <p className="goal-copy" style={{marginBottom: '40px'}}>Muscle group set distribution radar graph</p>
+                            <div style={{
+                                height: '220px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '20px'
+                            }}>
+                                <SpiderGraph data={spiderGraphData}/>
+                            </div>
+                        </CardContent>
+                    </Card>                    
 
+                    <Card className="goal-card">
+                        <CardContent className="p-4">
+                            <h3 className="goal-title mb-2">Calendar</h3>
+                            <p className="goal-copy" style={{marginBottom: '10px'}}>Monthly activity calendar highlighting workout days</p>
+                            <Calendar highlightedDates={["2026-07-02", "2026-07-05", "2026-07-10", "2026-07-15","2026-07-20", "2026-07-25"]}/>
+                        </CardContent>
+                    </Card>
+                    <Card className="goal-card" style={{gridColumn: '1/-1'}}>
+                        <CardContent className="p-4">
+                            <h3 className="goal-title mb-2">Volume Chart</h3>
+                            <p className="goal-copy mb-2">Total weight colume line chart over time</p>
+                            <VolumeChart title="Total Volume" data={volumeChartData} showFilters={false} />
+                        </CardContent>
+                    </Card>
+                </div>
+                
+            </div>
+        </div>
+    )
+}
 function AccessibilitySection(){
     return (
         <section className="accessibility-section">
@@ -971,6 +1102,7 @@ export default function BrandStylePage() {
             {/* design tokens go here?*/}
             <DesignPrincipleSection/>
             <ComponentLibrarySection/>
+            <GraphSection/>
             {/* layout and spacing */}
             <AccessibilitySection/>
             {/* changelog goes here */}

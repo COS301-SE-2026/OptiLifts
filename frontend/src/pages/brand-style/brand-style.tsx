@@ -1072,11 +1072,158 @@ function AccessibilitySection(){
         </section>
     );
 }
-// function DesignTokenSection(){
-//     return (
+function DesignTokenSection(){
+    return (
+        <div className="section-row">
+            <div>
+                <h2 className="section-heading">Design Tokens</h2>
+                <p className="type-body" style={{ marginBottom: '1.5rem' }}>
+                    OptiLifts design tokens represent the source of truth for all visual values on the platform. These are defined in <code>src/index.css</code> and Tailwind <code>@theme</code> inline definitions.
+                </p>
+                <h3 className="type-section-title">1. Color Tokens</h3>
+                <div style={{
+                    overflowX: 'auto',
+                    marginBottom: '1.5rem',
+                    marginTop: '0.5rem'
+                }}>
+                    <table style={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        textAlign: 'left',
+                        fontSize: '0.85rem'
+                    }}>
+                        <thead>
+                            <tr style={{
+                                borderBottom: '2px solid var(--border)',
+                                background: 'var(--surface-2)'
+                            }}>
+                                <th style={{ padding: '0.6rem 0.75rem' }}>CSS Variable</th>
+                                <th style={{ padding: '0.6rem 0.75rem' }}>Light Value</th>
+                                <th style={{ padding: '0.6rem 0.75rem' }}>Dark Value</th>
+                                <th style={{ padding: '0.6rem 0.75rem' }}>Tailwind Mapping</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--background</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#FAF8F8</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#1C1C1F</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>bg-background</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--surface</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#FFFFFF</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#26262B</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>bg-surface/bg-card</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--surface-2</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#F5F0F0</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#2E2E34</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>bg-surface-2/bg-secondary</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--border</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#E8DEDE</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#3A3A42</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>border-border</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--brand</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#CC0022</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#CC0022</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>bg-brand/text-brand/bg-primary</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--brand-2</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#AA0018</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#D94060</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>bg-brand-2/text-brand-2</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--foreground</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#1A1A1A</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#E8E8EC</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>text-foreground</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--muted-text</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#666666</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#9A9AA8</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>text-muted-foreground</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--background</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#FAF8F8</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#1C1C1F</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>bg-background</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
+                                <td style={{padding: '0.5rem 0.75rem'}}><code>--warning</code></td>
+                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#B35C00</td>
+                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#FF9800</td>
+                                <td style={{padding: '0.5rem 0.75rem'}}>text-warning</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-//     );
-// }
+                <div className="goals-grid" style={{
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '1.5rem'
+                }}>
+                    <Card className="goal-card">
+                        <CardContent>
+                            <div className="goal-title">Spacing Scale</div>
+                            <p className="goal-copy">
+                                <strong>4px</strong> (0.25rem) | <strong>8px</strong> (0.5rem)<br/>
+                                <strong>12px</strong> (0.75rem) | <strong>16px</strong> (1.0rem)<br/>
+                                <strong>24px</strong> (1.5rem) | <strong>32px</strong> (2.0rem)<br/>
+                                <strong>48px</strong> (3.0rem)
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="goal-card">
+                        <CardContent>
+                            <div className="goal-title">Border Radius Tokens</div>
+                            <p className="goal-copy">
+                                {/* is there a nice way to show this visually? */}
+                                <code>--radius-sm</code>: 6px (calc(var(--radius)*0.6))<br/>
+                                <code>--radius-md</code>: 8px (calc(var(--radius)*0.8))<br/>
+                                <code>--radius-lg/--radius</code>: 10px (0.625rem)<br/>
+                                <code>--radius-xl</code>: 14px<br/>
+                                <code>--radius-2xl</code>: 18px<br/>
+                                <code>Pill/Full</code>: 9999px
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="goal-card">
+                        <CardContent>
+                            <div className="goal-title">Shadows and Focus Rings</div>
+                            <p className="goal-copy">
+                                <strong>Card Shadow:</strong> <code>shadow-sm/shadow-md</code><br/>
+                                <strong>Model Elevation:</strong> <code>shadow-2xl</code><br/>
+                                <strong>Focus Ring:</strong> <code>outline-ring/50</code> (uses <code>--brand</code> crimson ring wih 50% opacity)
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="goal-card">
+                        <CardContent>
+                            <div className="goal-title">Breakpoints</div>
+                            <p className="goal-copy">
+                                <strong>sm:</strong> 640px (Mobile /small tablet)<br/>
+                                <strong>md:</strong> 768px (Tablet/Desktop sidebar trigger)<br/>
+                                <strong>lg:</strong> 1024px (Standard desktop)<br/>
+                                <strong>xl:</strong> 1280px (Large desktop)
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+}
 // function LayoutMotionSection(){
 //     return (
 
@@ -1099,7 +1246,7 @@ export default function BrandStylePage() {
             <ColourPaletteSection/>
             <TypographySection/>
             <LogoIconographySection/>
-            {/* design tokens go here?*/}
+            <DesignTokenSection/>
             <DesignPrincipleSection/>
             <ComponentLibrarySection/>
             <GraphSection/>

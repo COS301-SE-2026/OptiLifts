@@ -182,36 +182,41 @@ public static class DatabaseSeeder
     {
         var exercises = new[]
         {
-            new { Name = "Back Squat", Muscle = "Quadriceps" },
-            new { Name = "Deadlift", Muscle = "Hamstrings" },
-            new { Name = "Barbell Bench Press", Muscle = "Chest" },
-            new { Name = "Barbell full squat", Muscle = "Quadriceps" },
-            new { Name = "Cable lat pulldown", Muscle = "Lats" },
-            new { Name = "Dumbbell incline bench press", Muscle = "Chest" },
-            new { Name = "Cable seated row", Muscle = "Middle Back" },
-            new { Name = "Barbell romanian deadlift", Muscle = "Hamstrings" },
-            new { Name = "Walking lunge", Muscle = "Quadriceps" },
-            new { Name = "Barbell seated overhead press", Muscle = "Shoulders" },
-            new { Name = "Standing calf raise", Muscle = "Calves" },
-            new { Name = "Pull-up", Muscle = "Lats" },
-            new { Name = "Dumbbell Alternate Bicep Curl", Muscle = "Biceps" },
-            new { Name = "Cable triceps pushdown (v-bar)", Muscle = "Triceps" },
-            new { Name = "Weighted pull-up", Muscle = "Lats" },
-            new { Name = "Machine assisted pull-up", Muscle = "Lats" },
-            new { Name = "Weighted front plank", Muscle = "Abdominals" },
-            new { Name = "Barbell deadlift", Muscle = "Hamstrings" }
+            new { Name = "Barbell Back Squat", Muscle = "Quadriceps", Secondary = new List<string> { "Hamstrings", "Glutes", "Lower Back", "Calves" } },
+            new { Name = "Deadlift", Muscle = "Hamstrings", Secondary = new List<string> { "Glutes", "Lower Back", "Middle Back", "Traps", "Quadriceps", "Forearms" } },
+            new { Name = "Barbell Bench Press", Muscle = "Chest", Secondary = new List<string> { "Shoulders", "Triceps" } },
+            new { Name = "Barbell full squat", Muscle = "Quadriceps", Secondary = new List<string>() },
+            new { Name = "Cable lat pulldown", Muscle = "Lats", Secondary = new List<string>() },
+            new { Name = "Dumbbell incline bench press", Muscle = "Chest", Secondary = new List<string>() },
+            new { Name = "Cable seated row", Muscle = "Middle Back", Secondary = new List<string>() },
+            new { Name = "Barbell romanian deadlift", Muscle = "Hamstrings", Secondary = new List<string>() },
+            new { Name = "Walking lunge", Muscle = "Quadriceps", Secondary = new List<string>() },
+            new { Name = "Barbell seated overhead press", Muscle = "Shoulders", Secondary = new List<string>() },
+            new { Name = "Standing calf raise", Muscle = "Calves", Secondary = new List<string>() },
+            new { Name = "Pull-up", Muscle = "Lats", Secondary = new List<string>() },
+            new { Name = "Dumbbell Alternate Bicep Curl", Muscle = "Biceps", Secondary = new List<string>() },
+            new { Name = "Cable triceps pushdown (v-bar)", Muscle = "Triceps", Secondary = new List<string>() },
+            new { Name = "Weighted pull-up", Muscle = "Lats", Secondary = new List<string>() },
+            new { Name = "Machine assisted pull-up", Muscle = "Lats", Secondary = new List<string>() },
+            new { Name = "Weighted front plank", Muscle = "Abdominals", Secondary = new List<string>() },
+            new { Name = "Barbell deadlift", Muscle = "Hamstrings", Secondary = new List<string>() }
         };
+
         foreach (var exercise in exercises)
         {
-            dbContext.Exercises.Add(new Exercise
+            var exerciseDb = new Exercise
             {
                 Name = exercise.Name,
                 ExerciseType = ExerciseType.WeightReps,
                 PrimaryMuscleId = muscleIds.GetValueOrDefault(exercise.Muscle, muscleIds.Values.First()),
                 Mechanic = "compound",
                 Equipment = "barbell"
-            });
+            };
+
+            dbContext.Exercises.Add(exerciseDb);
+            AddSecondaryMusclesAsync(dbContext, exerciseDb, exercise.Secondary, muscleIds);
         }
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
     private static async Task SeedExercisesAsync(OptiLiftsDbContext dbContext, IBlobStorageService blobStorage, bool testing, CancellationToken cancellationToken)

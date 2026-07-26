@@ -71,8 +71,8 @@ CREATE TEMP TABLE seed_constants (
 
 INSERT INTO seed_constants
 VALUES (
-    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell bench press' LIMIT 1),
-    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell full squat' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell Bench Press' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell Back Squat' LIMIT 1),
     (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Cable lat pulldown%' LIMIT 1),
     (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Dumbbell incline bench press' LIMIT 1),
     (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Cable seated row' LIMIT 1),

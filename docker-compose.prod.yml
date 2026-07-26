@@ -56,6 +56,7 @@ services:
       
       - RUN_MIGRATIONS=true
       - DEV_SEEDING=${DEV_SEEDING:-true}
+      - E2E_TESTING=${E2E_TESTING:-false}
 
     depends_on:
       db:

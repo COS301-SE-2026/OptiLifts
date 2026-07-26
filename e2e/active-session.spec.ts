@@ -42,8 +42,8 @@ test.describe('Active Session Page', () => {
         const dialog = page.getByRole('button', { name: 'Close exercise picker' }).locator('xpath=..');
         await expect(dialog).toBeVisible();
 
-        await page.getByRole('button', { name: 'Add Back Squat' }).click();
-        await expect(page.getByText('Back Squat').first()).toBeVisible();
+        await page.getByRole('button', { name: 'Add Barbell Back Squat' }).click();
+        await expect(page.getByText('Barbell Back Squat').first()).toBeVisible();
 
         const checkButtons = page.locator('button').filter({ has: page.locator('svg.lucide-check') });
         await checkButtons.first().click();

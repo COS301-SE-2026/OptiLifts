@@ -81,7 +81,7 @@ export function CreateExercise({
   useAuth()
 
   const [name, setName] = useState("")
-  const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "weight-reps")
+  const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "WeightReps")
   const [equipment, setEquipment] = useState<string>(equipmentOptions[0] ?? "None")
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
@@ -148,7 +148,7 @@ export function CreateExercise({
 
     const t = setTimeout(() => {
       setName(initialValues?.name ?? "")
-      setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "weight-reps"))
+      setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps"))
       setEquipment(initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None"))
       setSelectedImageFile(null)
       setSelectedImageUrl(initialValues?.imageUrl ?? null)

@@ -117,8 +117,10 @@ if (runMigrations)
     var seed = string.Equals(builder.Configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
     if (seed)
     {
+       //if e2e testing don't add images in seeding func 
+        var isE2e = string.Equals(builder.Configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
         var blobStorage = scope.ServiceProvider.GetRequiredService<OptiLifts.Application.Storage.IBlobStorageService>();
-        await DatabaseSeeder.SeedAsync(dbContext, blobStorage);
+        await DatabaseSeeder.SeedAsync(dbContext, blobStorage, isE2e);
     }
 }
 

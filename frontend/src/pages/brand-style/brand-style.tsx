@@ -6,6 +6,7 @@ import { Input, NumericalUnderscoreInput } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { CircularProfileImage } from '@/components/ui/circular-image';
 import { PageTitle } from '@/components/ui/page-title';
+import Badge from "@/components/ui/badge";
 
 function BrandHeader() {
     return(
@@ -495,11 +496,31 @@ function LogoIconographySection(){
                         <li><strong>Wordmark minimum height:</strong> 32px. Use larger sizes for hero/header contexts.</li>
                         <li><strong>Clearspace:</strong> Maintain at least 50% of the mark height as clearspace around the logo.</li>
                     </ul>
+                     {/*canonical logo formats */}
+                    <h3 className ="type-section-title">Canonical Logo Formats</h3>
+                    <ul>
+                        <li><strong>Full Logo: </strong>Icon mark & wordmark for primary header and branding contexts</li>
+                        <li><strong>Monogram/Icon Mark: </strong>Dumbbell & Hexagon container for favicons, and compact UI avatar slots</li>
+                        <li><strong>Monochrome: </strong>Single-tone fill for solid high-contrast backgrounds</li>
+                        <li><strong>Inverse: </strong>High-contrast light-on-dark/dark-on-light colour mapping using <code>--foreground</code> and <code>--background</code></li>
+                    </ul>
+                     {/* forbidden treatments */}
+                    <h3 className="type-section-title">Forbidden Treatments (Do-Nots)</h3>
+                    <ul>
+                        <li><strong>NO Stretching: </strong>Do not distort aspect ratios or stretch the icon mark</li>
+                        <li><strong>NO Recolouring: </strong>Do not apply custom gradients, fills or non-brand colours</li>
+                        <li><strong>NO Drop shadows: </strong>Do not use heavy drop shadows, glows or other unapproved affects</li>
+                        <li><strong>NO Low contrast: </strong>Do not place the dark logo on dark surfaces or the light variant on light surfaces</li>
+                    </ul>
 
+                    {/* update these rules */}
                     <h3 className="type-section-title">Iconography rules</h3>
                     <ul>
                         <li>Source icons from <strong>Lucide Icons</strong> for consistency (the repo uses <code>lucide-react</code>).</li>
+
                         <li>Render icons at <strong>18×18px</strong> in sidebars/navigation; buttons may use 20px for balance.</li>
+                        <li>Use a consistent sizing scale; <code>16px</code> (tables/badges), <code>18px</code> (sidebards/nav), <code>20px</code> (button actions), <code>24px</code> (empty states)</li>
+                        <li>Stroke weight: standard <code>2px</code> stroke width (<code>strokeWidth={2}</code>)</li>
                         <li>Use <code>currentColor</code> so icons inherit parent colour tokens.</li>
                         <li>Ensure minimum touch target of <strong>44×44px</strong> on mobile.</li>
                     </ul>
@@ -610,14 +631,36 @@ function ComponentLibrarySection(){
 
             <div className="component-section">
                 <div className="component-visual">
-                    <div className="component-showcase">
-                        <div className="component-showcase__group">
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
-                                <Button>Start Session</Button>
+                    <div className="component-showcase"
+                    style={{
+                        flexDirection: 'column',
+                        gap: '1rem'
+                    }}>
+                        {/* make these actually interactive */}
+                            <div style={{ display: 'flex', gap: '0.5rem',
+                                flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+                                <Button>Default</Button>
+                                <Button variant="secondary">Secondary</Button>
+                                <Button variant="outline">+ Add Set</Button>
+                                <Button variant="ghost">Ghost</Button>
                             </div>
-                            <div className="component-label">Primary Button</div>
-                        </div>
-                        <div className="component-showcase__group">
+                            <div style={{
+                                display: 'flex',
+                                gap: '0.5rem',
+                                flexWrap: 'wrap',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Button disabled>Disabled</Button>
+                                <Button className="opacity-80 cursor-wait">Loading...</Button>
+                            </div>
+                            <div className="component-label">Button variants & interactive states</div>
+
+
+
+                            {/* <div className="component-label">Primary Button</div> */}
+
+                        {/* <div className="component-showcase__group">
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
                                 <Button variant="secondary">Secondary</Button>
                             </div>
@@ -628,15 +671,17 @@ function ComponentLibrarySection(){
                                 <Button variant="outline">+ Add Set</Button>
                             </div>
                             <div className="component-label">Outline Button</div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
                 <div className="component-description">
                     <h3 className="component-title">Button</h3>
-                    <p className="component-copy"><strong>Primary:</strong> Call-to-action buttons for main workflows (Start Session, Save Workout). Uses brand colour with hover and focus states.</p>
+                    <p className="component-copy"><strong>Variants: </strong>Primary (brand call-to-action), Secondary (surface fill), Outling (dashed/bordered actions) and Ghost</p>
+                    <p className="component-copy"><strong>States: </strong>Default, Hover, Focus-visible, Active/Pressed, Disabled, and Loading (spinner.wait cursor)</p>
+                    {/* <p className="component-copy"><strong>Primary:</strong> Call-to-action buttons for main workflows (Start Session, Save Workout). Uses brand colour with hover and focus states.</p>
                     <p className="component-copy"><strong>Secondary:</strong> Alternative actions with lower visual weight. Uses surface colour.</p>
                     <p className="component-copy"><strong>Outline:</strong> Tertiary actions like "Add Set" or "Create Exercise". Dashed border for visual distinction.</p>
-                    <p className="component-copy"><strong>Icon, Ghost, Text:</strong> Additional variants for specific contexts (icon-only controls, text links).</p>
+                    <p className="component-copy"><strong>Icon, Ghost, Text:</strong> Additional variants for specific contexts (icon-only controls, text links).</p> */}
                 </div>
             </div>
 
@@ -704,12 +749,85 @@ function ComponentLibrarySection(){
                 </div>
                 <div className="component-description">
                     <h3 className="component-title">Alert / Toast</h3>
-                    <p className="component-copy">Non-blocking feedback messages for system events. Appears at the top centre and auto-dismisses after 5 seconds.</p>
-                    <p className="component-copy"><strong>Variants:</strong> Info (blue), Success (green), Warning (amber), Error (red). Each variant has an icon and left border accent.</p>
+                    <p className="component-copy">Non-blocking feedback messages for system events. Appears at the top right and auto-dismisses after 5 seconds.</p>
+                    <p className="component-copy"><strong>Variants:</strong> Info (red), Success (green), Warning (amber), Error (red). Each variant has an icon and left border accent.</p>
                     <p className="component-copy"><strong>Usage:</strong> Confirm saves, warn about high fatigue, notify PR achievements, or provide helpful tips.</p>
                     <p className="component-copy">Triggered via the <code>toast</code> API with optional title and message.</p>
                 </div>
             </div>
+
+            {/* badges and tags? */}
+            <div className="component-section">
+                <div className="component-visual">
+                    <div className="component-showcase"
+                    style={{
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        width: '100%',
+                        alignItems: 'center'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            gap: '0.5rem',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}>
+                            <span style={{
+                                background: 'var(--brand)',
+                                color: '#FFFFFF',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '0.375rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>NEW PR</span>
+                            <span style={{
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--foreground)',
+                                padding: '0.2rem 0.5rem',
+                                borderRadius: '0.375rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 600
+                            }}>Quadriceps</span>
+                            <span style={{
+                                background: 'rgba(255, 152, 0, 0.15)',
+                                border: '1px solid var(--warning)',
+                                color: 'var(--warning)',
+                                padding: '0.25rem 0.6rem',
+                                borderRadius: '0.375rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 600
+                            }}>High Fatigue</span>
+                            <span style={{
+                                background: 'rgba(27, 110, 31, 0.15)',
+                                border: '1px solid var(--success)',
+                                color: 'var(--success)',
+                                padding: '0.2rem 0.5rem',
+                                borderRadius: '0.375rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 600
+                            }}>Completed</span>
+                        </div>
+                        <div style={{
+                            width: '100%',
+                            maxWidth: '280px'
+                        }}><Badge name="Consistent Lifter" description="Completed 5 workouts in a week" category="Milestone" earnedAt="2026-07-20"/></div>
+
+                    </div>
+                </div>
+                <div className="component-description">
+                    {/*finish this tmr  */}
+                    <h3 className="component-title">Badges & Status Tags</h3>
+                    <p className="component-copy"><strong>Achievement Badges: </strong>Card component used in Profile page to display milestones and streaks</p>
+                    <p className="component-copy"><strong>PR Badge: </strong>Highlight personal records on past workouts and active session logs</p>
+                    <p className="component-copy"><strong>Muscle Group Tags: </strong>Tags indicating targeted muscle groups</p>
+                    <p className="component-copy"><strong>Status Indicators: </strong>Success green for completed sets and Warning amber for recover/fatigue alerts</p>
+                </div>
+            </div>
+
 
             <div className="component-section">
                 <div className="component-visual">

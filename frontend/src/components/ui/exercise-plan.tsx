@@ -1,9 +1,10 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPlannedExerciseSetText } from '@/lib/exercise-format'
 import type { ExercisePlanItem, ExercisePlanProps, ExercisePlanSet } from '@/types/exercise-plan'
+import { adaptImgUrl } from '@/lib/utils'
 
-const DEFAULT_EXERCISE_TYPE = 'weight-reps'
+const DEFAULT_EXERCISE_TYPE = 'WeightReps'
 const PLANNED_EXERCISE_SUBTITLE = 'Planned exercise'
 const DEFAULT_EMPTY_STATE = 'No exercises have been planned for this workout yet.'
 const EXERCISE_ROW_CLASS = 'grid grid-cols-[68px_minmax(0,1.45fr)_minmax(152px,11vw)] items-center gap-2 rounded-2xl border border-border bg-surface-2 px-2 py-2'
@@ -27,6 +28,7 @@ function normalizeExercise(exercise: string | ExercisePlanItem): Required<Exerci
       groupType: null,
       groupRestTime :null,
       exerciseId: null,
+      imageUrl: null,
     }
   }
 
@@ -39,6 +41,7 @@ function normalizeExercise(exercise: string | ExercisePlanItem): Required<Exerci
     groupType: exercise.groupType ?? null,
     groupRestTime: exercise.groupRestTime ?? null,
     exerciseId: exercise.exerciseId ?? null,
+    imageUrl: exercise.imageUrl ?? null,
   }
 }
 
@@ -101,7 +104,11 @@ function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Re
   return (
     <div key={`${exercise.name}-${index}`} className={EXERCISE_ROW_CLASS}>
       <Avatar className="h-[68px] w-[68px] shrink-0 border border-border bg-background">
-        <AvatarFallback className="bg-background text-transparent" />
+        {exercise.imageUrl ? (
+          <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} />
+        ) : (
+          <AvatarFallback className="bg-background text-transparent" />
+        )}
       </Avatar>
       <div className="min-w-0 pr-2">
         <button

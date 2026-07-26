@@ -19,6 +19,7 @@ export type WorkoutLogDetailExercise = Readonly<{
   primaryMuscle: string
   exerciseType: string
   orderIndex: number
+  imageUrl?: string | null
   sets: WorkoutLogDetailSet[]
 }>
 

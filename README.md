@@ -336,5 +336,8 @@ Starts the frontend, .NET Core API, and Python AI API all at once.
 - **EPI-USE** - our industry client, for the vision behind OptiLifts
 - The open-source community for the incredible tools and libraries that make this possible
 - Microsoft Azure for Students sponsorship
+**Gym Visual** - for the comprehensive exercise media assets. © Gym visual — https://gymvisual.com/
+
+> **Academic Disclaimer:** OptiLifts is strictly a non-commercial Capstone project developed by Team hatrock. All exercise media is strictly used for educational purposes.
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>

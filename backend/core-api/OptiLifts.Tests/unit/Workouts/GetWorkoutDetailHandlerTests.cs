@@ -133,7 +133,7 @@ public class GetWorkoutDetailHandlerTests
         var runningResult = result.Exercises[0];
         runningResult.Name.Should().Be("Running");
         runningResult.PrimaryMuscle.Should().Be("Quadriceps");
-        runningResult.ExerciseType.Should().Be("distance-duration");
+        runningResult.ExerciseType.Should().Be("DistanceDuration");
         runningResult.Sets.Should().HaveCount(1);
         runningResult.Sets[0].Duration.Should().Be(900);
         runningResult.Sets[0].Distance.Should().Be(5);

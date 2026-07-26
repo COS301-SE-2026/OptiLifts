@@ -82,7 +82,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
                 var totalSets = workoutSets.Count;
                 var primaryMuscles = weList.Select(we => we.MuscleName).Where(name => name != "Other").Distinct().Take(3).ToArray();
                 var exercisePreview = weList.OrderBy(we => we.OrderIndex).Select(we => we.ExerciseName).Distinct().Take(3).ToArray();
-                var exercisePreviewIds = weList.OrderBy(we => we.OrderIndex).Select(we => we.ExerciseId).Distinct().Take(3).ToArray();
+                var exercisePreviewIds = weList.OrderBy(we => we.OrderIndex).Select(we => we.ExerciseId).Distinct().Take(8).ToArray();
                 var exerciseCount = weList.Select(we => we.ExerciseId).Distinct().Count();
 
                 return new WorkoutStatRow(volume, totalSets, primaryMuscles, exercisePreview, exercisePreviewIds, exerciseCount);

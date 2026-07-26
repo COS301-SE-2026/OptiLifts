@@ -1,6 +1,7 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatLoggedExerciseSetText } from '@/lib/exercise-format'
+import { adaptImgUrl } from '@/lib/utils'
 import type {WorkoutLogExercisePlanProps } from '@/types/workout-log-exercise-plan'
 
 function getLoggedSetLabel(type: string, workingNumber: number): string | number {
@@ -35,6 +36,9 @@ export function WorkoutLogExercisePlan({
                     className="col-span-7 grid grid-cols-subgrid items-center rounded-2xl border border-border bg-surface-2 py-2"
                   >
                   <Avatar className="col-start-2 h-[68px] w-[68px] shrink-0 border border-border bg-background">
+                    {exercise.imageUrl ? (
+                      <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} />
+                    ) : null}
                     <AvatarFallback className="bg-background text-transparent" />
                   </Avatar>
 

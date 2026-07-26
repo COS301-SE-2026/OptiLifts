@@ -81,6 +81,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await _dbConnection.OpenAsync();
         _respawner = await Respawner.CreateAsync(_dbConnection, new RespawnerOptions
         {
+            DbAdapter = DbAdapter.Postgres,
             TablesToIgnore = ["__EFMigrationsHistory"]
         });
 
@@ -94,7 +95,9 @@ public sealed class DatabaseFixture : IAsyncLifetime
             .UseNpgsql(_pg.GetConnectionString())
             .Options;
         await using var db = new OptiLiftsDbContext(dbOptions);
-        await OptiLifts.Infrastructure.Database.Seeders.DatabaseSeeder.SeedAsync(db);
+
+        var mockBlob = new Mock<IBlobStorageService>();
+        await OptiLifts.Infrastructure.Database.Seeders.DatabaseSeeder.SeedAsync(db, mockBlob.Object, true);
     }
 
     public async Task DisposeAsync()

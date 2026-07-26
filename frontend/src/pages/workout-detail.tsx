@@ -28,8 +28,9 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
   return exercises.map((exercise) => ({
     name: exercise.name,
     subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
-    exerciseType: exercise.exerciseType ?? 'weight-reps',
+    exerciseType: exercise.exerciseType ?? 'WeightReps',
     exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
+    imageUrl: exercise.imageUrl,
     sets: (exercise.sets ?? []).map((set) => ({
       label: `${set.orderIndex}`,
       reps: set.reps,

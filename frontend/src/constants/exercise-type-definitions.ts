@@ -3,14 +3,14 @@ import { metricCheck } from "@/lib/weight-utils"
 
 const check = metricCheck()
 export const DEFAULT_EXERCISE_TYPE_OPTIONS: readonly ExerciseTypeDefinition[] = [
-  ["weight-reps", "Weight & Reps", "Bench Press, Dumbbell Curls", ["REPS", (check)? "KG" : "LB"]],
-  ["bodyweight-reps", "Bodyweight Reps", "Pullups, Sit ups, Burpees", ["REPS"]],
-  ["weighted-bodyweight", "Weighted Bodyweight", "Weighted Pull Ups, Weighted Dips", ["REPS", (check)? "+KG" : "+LB"]],
-  ["assisted-bodyweight", "Assisted Bodyweight", "Assisted Pullups, Assisted Dips", ["REPS", (check)? "-KG" : "-LB"]],
-  ["duration", "Duration", "Planks, Yoga, Stretching", ["TIME"]],
-  ["duration-weight", "Duration & Weight", "Weighted Plank, Wall Sit", [(check)? "KG" : "LB", "TIME"]],
-  ["distance-duration", "Distance & Duration", "Running, Cycling, Rowing", ["TIME", (check) ? "KM" : "MI"]],
-  ["weight-distance", "Weight & Distance", "Farmers walk, Suitcase Carry", [(check) ? "KG" : "LB", (check) ? "KM" : "MI"]],
+  ["WeightReps", "Weight & Reps", "Bench Press, Dumbbell Curls", ["REPS", (check)? "KG" : "LB"]],
+  ["BodyweightReps", "Bodyweight Reps", "Pullups, Sit ups, Burpees", ["REPS"]],
+  ["WeightedBodyWeight", "Weighted Bodyweight", "Weighted Pull Ups, Weighted Dips", ["REPS", (check)? "+KG" : "+LB"]],
+  ["AssistedWeightReps", "Assisted Bodyweight", "Assisted Pullups, Assisted Dips", ["REPS", (check)? "-KG" : "-LB"]],
+  ["Duration", "Duration", "Planks, Yoga, Stretching", ["TIME"]],
+  ["DurationWeight", "Duration & Weight", "Weighted Plank, Wall Sit", [(check)? "KG" : "LB", "TIME"]],
+  ["DistanceDuration", "Distance & Duration", "Running, Cycling, Rowing", ["TIME", (check) ? "KM" : "MI"]],
+  ["WeightDistance", "Weight & Distance", "Farmers walk, Suitcase Carry", [(check) ? "KG" : "LB", (check) ? "KM" : "MI"]],
 ].map(([value, label, example, metrics]) => ({
   value: value as string,
   label: label as string,

@@ -22,6 +22,7 @@ export type WorkoutDetailExercise = Readonly<{
   groupId?: string | null
   groupType?: string | null
   groupRestTime?: number | null
+  imageUrl?: string | null
 }>
 
 export type WorkoutDetailResponse = Readonly<{

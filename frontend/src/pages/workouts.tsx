@@ -182,22 +182,22 @@ export default function WorkoutsPage() {
           )}
 
           <div className="space-y-4">
-            {filtered.map((w) => (
+            {filtered.map((w, index) => (
               <Card
                 key={w.id}
                 role="button"
+                data-testid={`workout-card-${w.name}`}
                 tabIndex={0}
                 aria-pressed={w.id === selectedId}
                 className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}
                 onClick={() => {
-                  setSelectedId(w.id)
                   navigate(`/workouts/${w.id}`)
                 }}
+                onMouseEnter={() => setSelectedId(w.id)}
                 onFocus={() => setSelectedId(w.id)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    setSelectedId(w.id)
                     navigate(`/workouts/${w.id}`)
                   }
                 }}
@@ -225,7 +225,7 @@ export default function WorkoutsPage() {
                     <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
                     <p className="mt-1 text-sm text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
                   </div>
-                  <Button size="sm" onClick={(e) =>  { 
+                  <Button id={`start-workout-btn-${index}`} size="sm" onClick={(e) =>  { 
                     e.stopPropagation() 
                     navigate('/active-session', { state: { workout: w } })}}>
                     Start Workout

@@ -20,6 +20,7 @@ public sealed record WorkoutLogExerciseDetailDto(
     string PrimaryMuscle,
     string ExerciseType,
     int OrderIndex,
+    string? ImageUrl,
     WorkoutLogSetDto[] Sets);
 
 public sealed record WorkoutLogDetailDto(

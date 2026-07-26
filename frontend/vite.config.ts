@@ -45,6 +45,9 @@ export default defineConfig(({ mode }) => {
     ],
     test: {
       environment: 'jsdom',
+      coverage: {
+        reporter: ['text', 'json-summary'],
+      },
     },
     server: {
       port: frontendPort,

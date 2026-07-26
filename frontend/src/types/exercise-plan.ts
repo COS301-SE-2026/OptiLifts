@@ -16,6 +16,7 @@ export type ExercisePlanItem = Readonly<{
   groupType?: string | null
   groupRestTime? : number | null
   exerciseId?: string | null
+  imageUrl?: string | null
 }>
 
 export type ExercisePlanProps = Readonly<{

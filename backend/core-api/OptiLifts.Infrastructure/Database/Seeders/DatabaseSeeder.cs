@@ -182,7 +182,9 @@ public static class DatabaseSeeder
     {
         var exercises = new[]
         {
-            new { Name = "Barbell bench press", Muscle = "Chest" },
+            new { Name = "Back Squat", Muscle = "Quadriceps" },
+            new { Name = "Deadlift", Muscle = "Hamstrings" },
+            new { Name = "Barbell Bench Press", Muscle = "Chest" },
             new { Name = "Barbell full squat", Muscle = "Quadriceps" },
             new { Name = "Cable lat pulldown", Muscle = "Lats" },
             new { Name = "Dumbbell incline bench press", Muscle = "Chest" },

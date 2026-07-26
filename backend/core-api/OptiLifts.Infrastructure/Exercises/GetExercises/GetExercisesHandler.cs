@@ -18,7 +18,7 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
     public async Task<List<ExerciseDto>> Handle(GetExercisesQuery request, CancellationToken cancellationToken)
     {
         var query = _dbContext.Exercises
-            .Where(e => e.UserId == null || e.UserId == request.UserId);
+            .Where(e => !e.IsDeleted && (e.UserId == null || e.UserId == request.UserId));
 
         if (!string.IsNullOrWhiteSpace(request.Equipment))
         {
@@ -80,14 +80,14 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
     {
         return exerciseType switch
         {
-            ExerciseType.WeightReps => "weight-reps",
-            ExerciseType.BodyweightReps => "bodyweight-reps",
-            ExerciseType.AssistedWeightReps => "assisted-bodyweight",
-            ExerciseType.WeightedBodyweight => "weighted-bodyweight",
-            ExerciseType.Duration => "duration",
-            ExerciseType.DurationWeight => "duration-weight",
-            ExerciseType.DistanceDuration => "distance-duration",
-            ExerciseType.WeightDistance => "weight-distance",
+            ExerciseType.WeightReps => "WeightReps",
+            ExerciseType.BodyweightReps => "BodyweightReps",
+            ExerciseType.AssistedWeightReps => "AssistedWeightReps",
+            ExerciseType.WeightedBodyweight => "WeightedBodyWeight",
+            ExerciseType.Duration => "Duration",
+            ExerciseType.DurationWeight => "DurationWeight",
+            ExerciseType.DistanceDuration => "DistanceDuration",
+            ExerciseType.WeightDistance => "WeightDistance",
             _ => exerciseType.ToString()
         };
     }

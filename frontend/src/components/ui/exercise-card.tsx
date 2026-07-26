@@ -18,6 +18,7 @@ type ExerciseCardProps = Readonly<{
   onRemove: (id: string) => void
   onSetsChange: (id: string, sets: ExerciseSet[]) => void
   onRestTimeChange?: (id: string, value: number) => void
+  onOpenDetails?: (exerciseCatalogId: string) => void
 }>
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
@@ -36,38 +37,38 @@ export function getColumns(exerciseType: string): ColumnDef[] {
   const minus = isMetric ? '-KG': '-LB'
 
 const COLUMNSTYPE: Record<string, ColumnDef[]> = {
-  'weight-reps': [
+  'WeightReps': [
     {label: weightUnit, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
-  'bodyweight-reps': [
+  'BodyweightReps': [
     { label: 'Reps', field: 'reps'},
   ],
-  'weighted-bodyweight': [
+  'WeightedBodyWeight': [
     {label: plus, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
-  'assisted-bodyweight': [
+  'AssistedWeightReps': [
     {label: minus, field: 'kg'},
     { label: 'Reps', field: 'reps'},
   ],
-  'duration': [
+  'Duration': [
     { label: 'Time(s)', field: 'time'},
   ],
-  'duration-weight': [
+  'DurationWeight': [
     {label: weightUnit, field: 'kg'},
     { label: 'Time(s)', field: 'time'},
   ],
-  'distance-duration': [
+  'DistanceDuration': [
     {label: 'KM', field: 'distance'},
     { label: 'Time(s)', field: 'time'},
   ],
-  'weight-distance': [
+  'WeightDistance': [
     {label: weightUnit, field: 'kg'},
     { label: 'KM', field: 'distance'},
   ],
 }
-return COLUMNSTYPE[exerciseType] ?? COLUMNSTYPE['weight-reps']
+return COLUMNSTYPE[exerciseType] ?? COLUMNSTYPE['WeightReps']
 }
 
 function SetRow({
@@ -134,10 +135,10 @@ function SetRow({
 
 let nextSetId = 0
 
-export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange, onOpenDetails }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
-  const columns = getColumns(exercise.exerciseType ?? 'weight-reps')
+  const columns = getColumns(exercise.exerciseType ?? 'WeightReps')
 
   const updateSets = (updated: ExerciseSet[]) => {
     setSets(updated)
@@ -164,7 +165,6 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
 
   return (
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
-
       <div className="flex items-center gap-3 px-4 py-3">
         <Avatar size="lg">
           {exercise.imageUrl
@@ -176,9 +176,14 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
         </Avatar>
 
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="font-sans font-semibold text-sm text-foreground leading-tight truncate">
+          <button
+            type="button"
+            className="block w-fit max-w-full truncate text-left font-sans font-semibold text-sm text-foreground leading-tight cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
+            disabled={!onOpenDetails || !exercise.exerciseCatalogId}
+            onClick={() => { if (exercise.exerciseCatalogId) onOpenDetails?.(exercise.exerciseCatalogId) }}
+          >
             {exercise.name}
-          </span>
+          </button>
           <span className="font-sans text-xs text-muted-foreground">
             {exercise.muscle}
           </span>

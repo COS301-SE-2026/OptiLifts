@@ -21,6 +21,9 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
         builder.Property(e => e.PrimaryMuscleId).HasColumnName("primary_muscle").IsRequired();
         builder.Property(e => e.UserId).HasColumnName("user_id");
         builder.Property(e => e.ImageUrl).HasColumnName("image_url");
+        builder.Property(e => e.IsDeleted).HasColumnName("is_deleted").IsRequired().HasDefaultValue(false);
+
+        builder.HasIndex(e => new { e.UserId, e.IsDeleted });
 
         //primary muscle FK
         builder.HasOne<Muscle>()

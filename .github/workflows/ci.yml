@@ -58,6 +58,48 @@ jobs:
     - name: Run Tests
       run: pnpm test
 
+    - name: Run Coverage
+      run: pnpm test:coverage
+
+    - name: Compute combined coverage
+      id: cov
+      run: |
+        FE_JSON="frontend/coverage/coverage-summary.json"
+        FE_COVERED=$(jq '.total.lines.covered' "$FE_JSON")
+        FE_TOTAL=$(jq '.total.lines.total' "$FE_JSON")
+
+        BE_XML=$(find backend/core-api -name "coverage.cobertura.xml" | head -n1)
+        BE_COVERED=$(grep -oP 'lines-covered="\K[0-9]+' "$BE_XML")
+        BE_TOTAL=$(grep -oP 'lines-valid="\K[0-9]+' "$BE_XML")
+
+        AI_XML="backend/ai-api/coverage.xml"
+        AI_COVERED=$(grep -oP 'lines-covered="\K[0-9]+' "$AI_XML")
+        AI_TOTAL=$(grep -oP 'lines-valid="\K[0-9]+' "$AI_XML")
+
+        TOTAL_COVERED=$((FE_COVERED + BE_COVERED + AI_COVERED))
+        TOTAL_LINES=$((FE_TOTAL + BE_TOTAL + AI_TOTAL))
+        PCT=$(awk "BEGIN { printf \"%.1f\", ($TOTAL_COVERED/$TOTAL_LINES)*100 }")
+
+        COLOR="red"
+        if (( $(echo "$PCT >= 90" | bc -l) )); then COLOR="brightgreen"
+        elif (( $(echo "$PCT >= 75" | bc -l) )); then COLOR="green"
+        elif (( $(echo "$PCT >= 50" | bc -l) )); then COLOR="yellow"
+        fi
+
+        echo "percentage=$PCT" >> "$GITHUB_OUTPUT"
+        echo "color=$COLOR" >> "$GITHUB_OUTPUT"
+
+    - name: Update coverage badge gist
+      uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: fdc6c732fa17e222fdbb0cd07783dbda
+        filename: optilifts-coverage.json
+        label: Coverage
+        message: ${{ steps.cov.outputs.percentage }}%
+        color: ${{ steps.cov.outputs.color }}
+
+
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
 

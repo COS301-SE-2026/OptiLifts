@@ -10,6 +10,7 @@ import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
 import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
+import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -337,6 +338,7 @@ export default function ActiveSessionPage() {
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, setPickerOpen] = useState(false)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
+  const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!workoutId) {
@@ -457,7 +459,7 @@ export default function ActiveSessionPage() {
         groupId: null,
         groupType: null,
         groupRestTime: null,
-        exerciseType: exercise.exerciseType ?? 'weight-reps',
+        exerciseType: exercise.exerciseType ?? 'WeightReps',
         sets: [
           {
             id: createClientSetId(),
@@ -539,7 +541,9 @@ export default function ActiveSessionPage() {
     }
 
     await enqueue(load)
-    void flushOutBox()
+    if (navigator.onLine) {
+      await flushOutBox()
+    }
 
     if (navigator.onLine) {
       toast.success('Workout saved.', 'Saved')
@@ -560,7 +564,14 @@ export default function ActiveSessionPage() {
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
             <div>
-              <CardTitle className="text-base font-bold">{exercise.name}</CardTitle>
+              <button
+                type="button"
+                className="block text-left text-base font-bold leading-snug text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
+                disabled={!exercise.exerciseId}
+                onClick={() => { if (exercise.exerciseId) setDetailsExerciseId(exercise.exerciseId) }}
+              >
+                {exercise.name}
+              </button>
               <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
             </div>
           </div>
@@ -741,8 +752,11 @@ export default function ActiveSessionPage() {
             </Card>
           </div>
         </div>
-
       </div>
+            <ExerciseDetailsPopup
+        exerciseId={detailsExerciseId}
+        onClose={() => setDetailsExerciseId(null)}
+      />
       <ExercisePickerDialog
         isOpen={isPickerOpen}
         onClose={() => setPickerOpen(false)}

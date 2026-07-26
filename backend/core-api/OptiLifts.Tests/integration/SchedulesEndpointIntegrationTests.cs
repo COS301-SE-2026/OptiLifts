@@ -22,6 +22,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
     {
         var userId = await SeedUserAsync("schedule-user1@example.com");
         var workoutId = await SeedWorkoutAsync(userId, "Morning Routine");
+        Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
         var scheduledTime = DateTime.UtcNow.AddDays(1);
         var request = new SchedulesController.CreateScheduledSessionRequest(
@@ -45,6 +46,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
     {
         var userId = await SeedUserAsync("schedule-user2@example.com");
         var workoutId = await SeedWorkoutAsync(userId, "Evening workout");
+        Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
         var scheduledTime = DateTime.UtcNow.AddDays(2);
         var request = new SchedulesController.CreateScheduledSessionRequest(
@@ -55,7 +57,9 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
         var creatresp = await Client.PostAsJsonAsync("/api/users/me/schedule/sessions", request);
         creatresp.EnsureSuccessStatusCode();
 
-        var response = await Client.GetAsync("/api/users/me/schedule");
+        var startDate = scheduledTime.Date.ToString("yyyy-MM-dd");
+        var endDate = scheduledTime.Date.ToString("yyyy-MM-dd");
+        var response = await Client.GetAsync($"/api/users/me/schedule?startDate={startDate}&endDate={endDate}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<ScheduledEntryDto[]>();
@@ -70,6 +74,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
     {
         var userId = await SeedUserAsync("schedule-user3@example.com");
         var workoutId = await SeedWorkoutAsync(userId, "Cardio time");
+        Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
 
         var scheduledTime = DateTime.UtcNow.AddDays(3);
@@ -98,6 +103,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
     {
         var userId = await SeedUserAsync("schedule-user4@example.com");
         var workoutId = await SeedWorkoutAsync(userId, "Legs");
+        Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
 
         var scheduledTime = DateTime.UtcNow.AddDays(4);
@@ -113,7 +119,9 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
         var response = await Client.DeleteAsync($"/api/users/me/schedule/sessions/{createdresult!.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await Client.GetAsync("/api/users/me/schedule");
+        var startDate = scheduledTime.Date.ToString("yyyy-MM-dd");
+        var endDate = scheduledTime.Date.ToString("yyyy-MM-dd");
+        var result = await Client.GetAsync($"/api/users/me/schedule?startDate={startDate}&endDate={endDate}");
         var schedule = await result.Content.ReadFromJsonAsync<ScheduledEntryDto[]>();
         schedule.Should().BeEmpty();
     }

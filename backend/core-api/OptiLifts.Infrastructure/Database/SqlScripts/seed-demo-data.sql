@@ -1,27 +1,6 @@
 BEGIN;
 
-INSERT INTO muscles (muscle_id, name)
-SELECT gen_random_uuid(), v.name
-FROM (VALUES
-    ('Abdominals'),
-    ('Abductors'),
-    ('Adductors'),
-    ('Biceps'),
-    ('Calves'),
-    ('Chest'),
-    ('Forearms'),
-    ('Glutes'),
-    ('Hamstrings'),
-    ('Lats'),
-    ('Lower Back'),
-    ('Middle Back'),
-    ('Quadriceps'),
-    ('Shoulders'),
-    ('Traps'),
-    ('Triceps')
-) AS v(name)
-LEFT JOIN muscles m ON m.name = v.name
-WHERE m.muscle_id IS NULL;
+
 
 CREATE TEMP TABLE seed_constants (
     exercise_bench_id uuid NOT NULL,
@@ -92,17 +71,17 @@ CREATE TEMP TABLE seed_constants (
 
 INSERT INTO seed_constants
 VALUES (
-    '11111111-1111-1111-1111-111111111111',
-    '11111111-1111-1111-1111-111111111112',
-    '11111111-1111-1111-1111-111111111113',
-    '11111111-1111-1111-1111-111111111114',
-    '11111111-1111-1111-1111-111111111115',
-    '11111111-1111-1111-1111-111111111116',
-    '11111111-1111-1111-1111-111111111117',
-    '11111111-1111-1111-1111-111111111118',
-    '11111111-1111-1111-1111-111111111119',
-    'Barbell Bench Press',
-    'Pull Up',
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell Bench Press' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell Back Squat' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Cable lat pulldown%' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Dumbbell incline bench press' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Cable seated row' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell romanian deadlift' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Walking lunge' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Barbell seated overhead press' LIMIT 1),
+    (SELECT exercise_dict_id FROM exercise_dictionary WHERE name ILIKE 'Standing calf raise' LIMIT 1),
+    'Barbell bench press',
+    'Pull-up',
     '22222222-2222-2222-2222-222222222222',
     '22222222-2222-2222-2222-222222222223',
     '33333333-3333-3333-3333-333333333333',
@@ -158,105 +137,7 @@ VALUES (
     'Milestone'
 );
 
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_bench_id, c.exercise_bench_press_name, c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_chest
-ON CONFLICT (exercise_dict_id) DO NOTHING;
 
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_incline_id, 'Incline Dumbbell Press', c.mechanic_compound, c.equipment_dumbbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_chest
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_row_id, 'Seated Cable Row', c.mechanic_compound, c.equipment_cable, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_middle_back
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_rdl_id, 'Romanian Deadlift', c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_hamstrings
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_lunge_id, 'Walking Lunge', c.mechanic_complex, c.equipment_dumbbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_quadriceps
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_ohp_id, 'Overhead Press', c.mechanic_compound, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_shoulders
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_calf_id, 'Standing Calf Raise', c.mechanic_isolated, c.equipment_machine, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_calves
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_squat_id, 'Back Squat', c.mechanic_complex, c.equipment_barbell, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_quadriceps
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT c.exercise_pulldown_id, 'Lat Pulldown', c.mechanic_isolated, c.equipment_machine, c.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c JOIN muscles m ON m.name = c.muscle_lats
-ON CONFLICT (exercise_dict_id) DO NOTHING;
-
-WITH exercise_types AS (
-    SELECT
-        'BodyweightReps'::text AS bodyweight_reps,
-        'WeightedBodyweight'::text AS weighted_bodyweight,
-        'AssistedWeightReps'::text AS assisted_weight_reps,
-    'Duration'::text AS duration_type,
-        'DurationWeight'::text AS duration_weight,
-        'DistanceDuration'::text AS distance_duration,
-        'WeightDistance'::text AS weight_distance
-)
-INSERT INTO exercise_dictionary (exercise_dict_id, name, mechanic, equipment, exercise_type, primary_muscle, user_id, image_url)
-SELECT gen_random_uuid(), v.name, v.mechanic, v.equipment, v.exercise_type, m.muscle_id, NULL, NULL
-FROM seed_constants c
-CROSS JOIN exercise_types t
-CROSS JOIN LATERAL (VALUES
-    (c.exercise_pull_up_name, c.mechanic_compound, c.equipment_bodyweight, t.bodyweight_reps,   c.muscle_lats),
-    (concat('Weighted ', c.exercise_pull_up_name), c.mechanic_compound, c.equipment_bodyweight, t.weighted_bodyweight, c.muscle_lats),
-    (concat('Assisted ', c.exercise_pull_up_name), c.mechanic_compound, c.equipment_machine,    t.assisted_weight_reps, c.muscle_lats),
-    ('Deadlift',            c.mechanic_compound, c.equipment_barbell,    c.exercise_type,    c.muscle_hamstrings),
-    ('Dumbbell Bicep Curl', c.mechanic_isolated, c.equipment_dumbbell,   c.exercise_type,    c.muscle_biceps),
-    ('Tricep Pushdown',     c.mechanic_isolated, c.equipment_cable,      c.exercise_type,    c.muscle_triceps),
-    ('Plank',               c.mechanic_isolated, c.equipment_bodyweight, t.duration_type,    c.muscle_abdominals),
-    ('Weighted Plank',      c.mechanic_isolated, c.equipment_dumbbell,   t.duration_weight,   c.muscle_abdominals),
-    ('Running',             c.mechanic_compound, c.equipment_bodyweight, t.distance_duration, c.muscle_quadriceps),
-    ('Suitcase Carry',      c.mechanic_compound, c.equipment_dumbbell,   t.weight_distance,   c.muscle_lower_back)
-) AS v(name, mechanic, equipment, exercise_type, muscle_name)
-JOIN muscles m ON m.name = v.muscle_name
-LEFT JOIN exercise_dictionary e ON e.name = v.name AND e.user_id IS NULL
-WHERE e.exercise_dict_id IS NULL;
-
-INSERT INTO sec_muscles (sec_muscle_id, muscle_id, exercise_id)
-SELECT gen_random_uuid(), m.muscle_id, e.exercise_id
-FROM seed_constants c
-CROSS JOIN LATERAL (VALUES
-    (c.exercise_bench_id,    c.muscle_triceps),
-    (c.exercise_bench_id,    c.muscle_shoulders),
-    (c.exercise_incline_id,  c.muscle_shoulders),
-    (c.exercise_incline_id,  c.muscle_triceps),
-    (c.exercise_row_id,      c.muscle_biceps),
-    (c.exercise_row_id,      c.muscle_shoulders),
-    (c.exercise_rdl_id,      c.muscle_glutes),
-    (c.exercise_rdl_id,      c.muscle_lower_back),
-    (c.exercise_lunge_id,    c.muscle_glutes),
-    (c.exercise_lunge_id,    c.muscle_hamstrings),
-    (c.exercise_lunge_id,    c.muscle_calves),
-    (c.exercise_ohp_id,      c.muscle_triceps),
-    (c.exercise_ohp_id,      c.muscle_chest),
-    (c.exercise_squat_id,    c.muscle_glutes),
-    (c.exercise_squat_id,    c.muscle_hamstrings),
-    (c.exercise_pulldown_id, c.muscle_biceps)
-) AS e(exercise_id, muscle_name)
-JOIN muscles m ON m.name = e.muscle_name
-LEFT JOIN sec_muscles s ON s.exercise_id = e.exercise_id AND s.muscle_id = m.muscle_id
-WHERE s.sec_muscle_id IS NULL;
 
 INSERT INTO folders (folder_id, user_id, name, description, created_at)
 SELECT c.folder_push_id, u.user_id, 'Starter Push', 'Demo folder for local testing', NOW()
@@ -679,14 +560,14 @@ BEGIN
     FOR rec IN
         SELECT t.* FROM seed_constants c
         CROSS JOIN LATERAL (VALUES
-            (v_pull, 'Lat Pulldown',            1, 5, 12, 45::real),
-            (v_pull, 'Seated Cable Row',        2, 4, 10, 50::real),
+            (v_pull, 'Cable lat pulldown full range of motion',            1, 5, 12, 45::real),
+            (v_pull, 'Cable seated row',        2, 4, 10, 50::real),
             (v_pull, c.exercise_pull_up_name,   3, 4, 8,   0::real),
-            (v_pull, 'Dumbbell Bicep Curl',     4, 3, 12, 14::real),
+            (v_pull, 'Dumbbell Alternate Bicep Curl',     4, 3, 12, 14::real),
             (v_push, c.exercise_bench_press_name, 1, 4, 8,  60::real),
-            (v_push, 'Overhead Press',          2, 4, 8,  40::real),
-            (v_push, 'Incline Dumbbell Press',   3, 4, 10, 30::real),
-            (v_push, 'Tricep Pushdown',          4, 4, 12, 25::real)
+            (v_push, 'Barbell seated overhead press',          2, 4, 8,  40::real),
+            (v_push, 'Dumbbell incline bench press',   3, 4, 10, 30::real),
+            (v_push, 'Cable triceps pushdown (v-bar)',          4, 4, 12, 25::real)
         ) AS t(workout_id, ex_name, ord, n_sets, reps, weight)
     LOOP
         SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
@@ -708,12 +589,10 @@ BEGIN
         CROSS JOIN LATERAL (VALUES
             (v_full_body, c.exercise_bench_press_name,  1, 1,    8,   NULL::integer, 60::real,   NULL::real),
             (v_full_body, c.exercise_pull_up_name,      2, 1,   10,   NULL::integer, NULL::real,  0::real),
-            (v_full_body, concat('Weighted ', c.exercise_pull_up_name), 3, 1,    6,   NULL::integer, 10::real,    NULL::real),
-            (v_full_body, concat('Assisted ', c.exercise_pull_up_name), 4, 1,    8,   NULL::integer, 20::real,    NULL::real),
-            (v_full_body, 'Plank',                5, 1, NULL::integer, 60,     NULL::real,  NULL::real),
-            (v_full_body, 'Weighted Plank',       6, 1, NULL::integer, 45,     12::real,    NULL::real),
-            (v_full_body, 'Running',              7, 1, 1800,   900,          NULL::real,   5::real),
-            (v_full_body, 'Suitcase Carry',       8, 1,   30,    NULL::integer, 40::real,    30::real)
+            (v_full_body, 'Weighted pull-up', 3, 1,    6,   NULL::integer, 10::real,    NULL::real),
+            (v_full_body, 'Machine assisted pull-up', 4, 1,    8,   NULL::integer, 20::real,    NULL::real),
+            (v_full_body, 'Weighted front plank',       5, 1, NULL::integer, 60,     NULL::real,  NULL::real),
+            (v_full_body, 'Barbell deadlift',            6, 1, 8,   NULL::integer,   60::real,   NULL::real)
         ) AS t(workout_id, ex_name, ord, n_sets, reps, duration, weight, distance)
     LOOP
         SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
@@ -730,9 +609,9 @@ BEGIN
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
-    -- ~51 logged sessions spread across 2026-03-23 .. mid-June (calendar / hours / streak / count)
-    FOR i IN 0..50 LOOP
-        v_day := TIMESTAMP '2026-03-23 17:00:00' + (i * INTERVAL '41 hours');
+    -- makes it such that the user always has a month long streak
+    FOR i IN 0..17 LOOP
+        v_day := NOW() - INTERVAL '30 days' + (i * INTERVAL '41 hours');
         PERFORM seed_logged_workout(
             alex_id,
             CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END,
@@ -748,7 +627,7 @@ BEGIN
         );
     END LOOP;
 
-    v_day := TIMESTAMP '2026-03-23 17:00:00' + (51 * INTERVAL '41 hours');
+    v_day := NOW() - INTERVAL '30 days' + (18 * INTERVAL '41 hours');
 
     PERFORM seed_logged_workout(
         alex_id,

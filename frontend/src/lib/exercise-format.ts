@@ -103,14 +103,14 @@ function formatPlannedWeightDistance(set: PlannedExerciseSet, includeRestTime: b
 }
 
 const PLANNED_EXERCISE_FORMATTERS: Record<string, (set: PlannedExerciseSet, includeRestTime: boolean) => string> = {
-  'bodyweight-reps': (set, includeRestTime) => formatPlannedBodyweightReps(set, includeRestTime),
-  'weighted-bodyweight': (set, includeRestTime) => formatPlannedWeightedBodyweight(set, includeRestTime, '+'),
-  'assisted-bodyweight': (set, includeRestTime) => formatPlannedWeightedBodyweight(set, includeRestTime, '-'),
-  duration: (set, includeRestTime) => appendRestTime(formatDurationValue(set.duration), set.restTime, includeRestTime),
-  'duration-weight': (set, includeRestTime) => formatPlannedDurationWeight(set, includeRestTime),
-  'distance-duration': (set, includeRestTime) => formatPlannedDistanceDuration(set, includeRestTime),
-  'weight-distance': (set, includeRestTime) => formatPlannedWeightDistance(set, includeRestTime),
-  'weight-reps': (set, includeRestTime) => formatPlannedWeightReps(set, includeRestTime),
+  'BodyweightReps': (set, includeRestTime) => formatPlannedBodyweightReps(set, includeRestTime),
+  'WeightedBodyWeight': (set, includeRestTime) => formatPlannedWeightedBodyweight(set, includeRestTime, '+'),
+  'AssistedWeightReps': (set, includeRestTime) => formatPlannedWeightedBodyweight(set, includeRestTime, '-'),
+  Duration: (set, includeRestTime) => appendRestTime(formatDurationValue(set.duration), set.restTime, includeRestTime),
+  'DurationWeight': (set, includeRestTime) => formatPlannedDurationWeight(set, includeRestTime),
+  'DistanceDuration': (set, includeRestTime) => formatPlannedDistanceDuration(set, includeRestTime),
+  'WeightDistance': (set, includeRestTime) => formatPlannedWeightDistance(set, includeRestTime),
+  'WeightReps': (set, includeRestTime) => formatPlannedWeightReps(set, includeRestTime),
 }
 
 export function formatPlannedExerciseSetText(
@@ -118,7 +118,7 @@ export function formatPlannedExerciseSetText(
   set: PlannedExerciseSet,
   options?: Readonly<{ includeRestTime?: boolean }>,
 ) {
-  const formatter = PLANNED_EXERCISE_FORMATTERS[exerciseType] ?? PLANNED_EXERCISE_FORMATTERS['weight-reps']
+  const formatter = PLANNED_EXERCISE_FORMATTERS[exerciseType] ?? PLANNED_EXERCISE_FORMATTERS['WeightReps']
   return formatter(set, options?.includeRestTime !== false)
 }
 
@@ -126,23 +126,29 @@ export function formatLoggedExerciseSetText(exerciseType: string, set: LoggedExe
   const reps = `${set.reps}`
   const weight = formatWeight(set.weight)
   const rpe = formatRpe(set.rpe)
+  const duration = formatDurationValue(set.duration)
+  const distance = formatDistanceValue(set.distance)
 
   switch (exerciseType) {
-    case 'bodyweight-reps':
+    case 'BodyweightReps':
       return `${reps} reps @ ${rpe} RPE`
-    case 'weighted-bodyweight':
+    case 'WeightedBodyWeight':
       return `${reps} reps (+${weight}) @ ${rpe} RPE`
-    case 'assisted-bodyweight':
+    case 'AssistedWeightReps':
       return `${reps} reps (-${weight}) @ ${rpe} RPE`
-    case 'duration':
-      return `${reps}s @ ${rpe} RPE`
-    case 'duration-weight':
-      return `${reps}s + ${weight} @ ${rpe} RPE`
-    case 'distance-duration':
-      return `${reps}m @ ${rpe} RPE`
-    case 'weight-distance':
-      return `${weight} for ${reps}m @ ${rpe} RPE`
-    case 'weight-reps':
+    case 'Duration':
+      return `${duration || '--'} @ ${rpe} RPE`
+    case 'DurationWeight':
+      return `${duration || '--'} + ${weight} @ ${rpe} RPE`
+    case 'DistanceDuration': {
+      const durationPart = duration ? ` in ${duration}` : ''
+      return `${distance || '--'}${durationPart} @ ${rpe} RPE`
+    }
+    case 'WeightDistance': {
+      const distancePart = distance ? ` for ${distance}` : ''
+      return `${weight}${distancePart} @ ${rpe} RPE`
+    }
+    case 'WeightReps':
     default:
       return `${weight} x ${reps} reps @ ${rpe} RPE`
   }

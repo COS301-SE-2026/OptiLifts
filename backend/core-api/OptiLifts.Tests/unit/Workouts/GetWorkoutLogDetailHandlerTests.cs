@@ -135,7 +135,7 @@ public class GetWorkoutLogDetailHandlerTests
         result.PrimaryMuscleGroups.Should().ContainSingle().Which.Should().Be("Quadriceps");
         result.ExercisePreview.Should().ContainSingle().Which.Should().Be("Running");
         result.Exercises.Should().HaveCount(1);
-        result.Exercises[0].ExerciseType.Should().Be("distance-duration");
+        result.Exercises[0].ExerciseType.Should().Be("DistanceDuration");
         result.Exercises[0].Sets.Should().HaveCount(1);
         result.Exercises[0].Sets[0].Reps.Should().Be(1800);
         result.Exercises[0].Sets[0].Weight.Should().Be(0);

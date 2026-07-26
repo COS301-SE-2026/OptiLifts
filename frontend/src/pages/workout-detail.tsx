@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import ExercisePlan from '@/components/ui/exercise-plan'
@@ -9,6 +9,7 @@ import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 import type { ExercisePlanItem } from '@/types/exercise-plan'
 import type { MuscleName } from '@/types/workout'
+import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
@@ -26,9 +27,11 @@ function formatRestTime(restTimeSeconds: number) {
 function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanItem[] {
   return exercises.map((exercise) => ({
     name: exercise.name,
-    subtitle: exercise.primaryMuscle,
-    exerciseType: exercise.exerciseType,
-    sets: exercise.sets.map((set) => ({
+    subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
+    exerciseType: exercise.exerciseType ?? 'WeightReps',
+    exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
+    imageUrl: exercise.imageUrl,
+    sets: (exercise.sets ?? []).map((set) => ({
       label: `${set.orderIndex}`,
       reps: set.reps,
       weight: set.weight,
@@ -36,9 +39,9 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
       distance: set.distance,
       restTime: formatRestTime(set.restTime),
     })),
-      groupId: exercise.groupId,
-      groupType: exercise.groupType,
-      groupRestTime: exercise.groupRestTime,
+    groupId: exercise.groupId,
+    groupType: exercise.groupType,
+    groupRestTime: exercise.groupRestTime,
   }))
 }
 
@@ -52,6 +55,12 @@ export default function WorkoutDetailPage() {
   const [workout, setWorkout] = useState<WorkoutDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleWorkoutChanged = useCallback(() => {
+    setRefreshKey((prev) => prev + 1)
+  }, [])
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated || !workoutId) {
@@ -60,7 +69,7 @@ export default function WorkoutDetailPage() {
 
     let mounted = true
 
-    const loadWorkout = async () => {
+    const fetchWorkout = async () => {
       setIsLoading(true)
       setError(null)
 
@@ -97,12 +106,12 @@ export default function WorkoutDetailPage() {
       }
     }
 
-    void loadWorkout()
+    void fetchWorkout()
 
     return () => {
       mounted = false
     }
-  }, [isAuthenticated, isHydrated, workoutId])
+  }, [isAuthenticated, isHydrated, workoutId, refreshKey])
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow
@@ -117,32 +126,44 @@ export default function WorkoutDetailPage() {
     }
   }, [])
 
-  const workoutLabel = workout?.name ?? 'Workout'
-  const plannedExercises = workout ? toExercisePlanItems(workout.exercises) : []
-  const highlightedMuscles = (workout?.primaryMuscleGroups ?? []) as MuscleName[]
-  const workoutStats = useMemo(() => {
+  const workoutLabel = workout?.name ?? 'Workout Detail'
+  const plannedExercises = useMemo(
+    () => (workout ? toExercisePlanItems(workout.exercises) : []),
+    [workout]
+  )
+
+  const totalSets = useMemo(
+    () => workout?.exercises.reduce((sum, item) => sum + item.sets.length, 0) ?? 0,
+    [workout]
+  )
+
+  const totalVolume = useMemo(() => {
     if (!workout) {
-      return { volume: '0 kg', sets: '0' }
+      return 0
     }
 
-    const totalVolume = workout.exercises.reduce((exerciseTotal, exercise) => {
-      return (
-        exerciseTotal +
-        exercise.sets.reduce((setTotal, set) => {
-          const reps = set.reps ?? 0
-          const weight = set.weight ?? 0
-          return setTotal + reps * weight
-        }, 0)
-      )
+    return workout.exercises.reduce((exerciseSum, item) => {
+      const exerciseVolume = item.sets.reduce((setSum, set) => {
+        const weight = set.weight ?? 0
+        const reps = set.reps ?? 0
+        return setSum + weight * reps
+      }, 0)
+
+      return exerciseSum + exerciseVolume
     }, 0)
+  }, [workout])
 
-    const totalSets = workout.exercises.reduce((exerciseTotal, exercise) => exerciseTotal + exercise.sets.length, 0)
-
+  const workoutStats = useMemo(() => {
     return {
       volume: formatVolume(totalVolume),
       sets: `${totalSets}`,
     }
-  }, [workout])
+  }, [totalVolume, totalSets])
+
+  const highlightedMuscles = useMemo(
+    () => (workout?.primaryMuscleGroups ?? []) as MuscleName[],
+    [workout]
+  )
 
   return (
     <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
@@ -179,6 +200,7 @@ export default function WorkoutDetailPage() {
               exercises={plannedExercises}
               subtitle={workout.primaryMuscleGroups.join(', ')}
               className="min-h-0"
+              onOpenDetails={setDetailsExerciseId}
             />
           ) : null
         }
@@ -190,6 +212,11 @@ export default function WorkoutDetailPage() {
             </>
           ) : null
         }
+      />
+      <ExerciseDetailsPopup
+        exerciseId={detailsExerciseId}
+        onClose={() => setDetailsExerciseId(null)}
+        onChanged={handleWorkoutChanged}
       />
     </section>
   )

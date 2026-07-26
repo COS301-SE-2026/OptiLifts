@@ -15,6 +15,8 @@ export type ExercisePlanItem = Readonly<{
   groupId?: string |null
   groupType?: string | null
   groupRestTime? : number | null
+  exerciseId?: string | null
+  imageUrl?: string | null
 }>
 
 export type ExercisePlanProps = Readonly<{
@@ -23,4 +25,5 @@ export type ExercisePlanProps = Readonly<{
   exercises: Array<string | ExercisePlanItem>
   className?: string
   emptyState?: React.ReactNode
+  onOpenDetails?: (exerciseId: string) => void
 }>

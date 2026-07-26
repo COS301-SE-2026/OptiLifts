@@ -9,6 +9,7 @@ import { PageTitle } from '@/components/ui/page-title'
 import { CreateExercise } from '@/components/ui/create-exercise'
 import { SearchInput } from '@/components/ui/search-input'
 import { CircularProfileImage } from '@/components/ui/circular-image'
+import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import {
   Card,
   CardContent,
@@ -25,6 +26,8 @@ import type { WorkoutExercise, SetType, ExerciseSet } from '@/types/create-worko
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
+import { MUSCLE_GROUPS } from '@/constants/muscles'
+import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 
 type CatalogExercise = {
   id: string
@@ -108,7 +111,7 @@ function buildSegs(exercises: SelectedWorkoutExercise[]): WorkoutSegment[] {
   return segments
 }
 
-const MUSCLE_OPTIONS = ['All Muscles', 'Biceps', 'Triceps', 'Lats', 'Hamstrings', 'Chest', 'Shoulders'] as const
+const MUSCLE_OPTIONS = ['All Muscles', ...MUSCLE_GROUPS] as const
 
 function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
   return(
@@ -222,7 +225,7 @@ export default function CreateWorkoutPage() {
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All Equipment')
   const [searchQuery, setSearchQuery] = useState('')
- 
+  const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [exercisesError, setExercisesError] = useState<string | null>(null)
@@ -446,7 +449,7 @@ export default function CreateWorkoutPage() {
   
   const [isCreateExerciseOpen, setIsCreateExerciseOpen] = useState(false)
 
-  const EQUIPMENT_OPTIONS = ['All Equipment', ...Array.from(new Set(allExercises.map(e => e.equipment).filter(Boolean) as string[])).map(e => e.charAt(0).toUpperCase() + e.slice(1))]
+  const EQUIPMENT_OPTIONS = ['All Equipment', ...DEFAULT_EQUIPMENT_OPTIONS]
 
   const filteredExercises = allExercises.filter((ex) => {
     const q = searchQuery.trim().toLowerCase()
@@ -478,7 +481,14 @@ export default function CreateWorkoutPage() {
           fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-foreground">{ex.name}</div>
+          <button
+            type="button"
+            className="block w-fit max-w-full truncate text-left text-sm font-semibold text-foreground cursor-pointer hover:underline"
+            onClick={() => setDetailsExerciseId(ex.id)}
+            aria-label={`View details for ${ex.name}`}
+          >
+            {ex.name}
+          </button>
           <div className="text-xs text-muted-foreground">{ex.muscleGroup} • {ex.equipment}</div>
         </div>
         <Button type="button" variant="icon" size="icon" aria-label={`Add ${ex.name}`} onClick={() => addExercise(ex)} className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border">
@@ -554,7 +564,7 @@ export default function CreateWorkoutPage() {
                 return (
                   <Fragment key={seg.exercise.id}>
                     <ExerciseCard exercise={seg.exercise} restTime={seg.exercise.restTime} onRemove={removeExercise} 
-                    onSetsChange={updateSets} onRestTimeChange={updateExerciseRestTime} />
+                    onSetsChange={updateSets} onRestTimeChange={updateExerciseRestTime} onOpenDetails={setDetailsExerciseId} />
                     {chainAfter}
                   </Fragment>
                 )
@@ -598,7 +608,7 @@ export default function CreateWorkoutPage() {
                     </div>
                     {seg.members.map((m, mi) => (
                       <Fragment key={m.exercise.id}> 
-                        <ExerciseCard exercise={m.exercise} onRemove={removeExercise} onSetsChange={updateSets} />
+                        <ExerciseCard exercise={m.exercise} onRemove={removeExercise} onSetsChange={updateSets} onOpenDetails={setDetailsExerciseId}/>
                         {mi < seg.members.length - 1 && (
                           <ChainLink linked onClick={() => toggleLink(m.index)} />
                         )}
@@ -632,7 +642,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
                   {MUSCLE_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedMuscle(o)}>{o}</DropdownMenuItem>
                   ))}
@@ -643,7 +653,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedEquipment}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
                   {EQUIPMENT_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedEquipment(o)}>{o}</DropdownMenuItem>
                   ))}
@@ -671,6 +681,11 @@ export default function CreateWorkoutPage() {
         </div>
         </div>
       </div>
+      <ExerciseDetailsPopup
+        exerciseId={detailsExerciseId}
+        onClose={() => setDetailsExerciseId(null)}
+        onChanged={handleExerciseSaved}
+      />
       <CreateExercise
         isOpen={isCreateExerciseOpen}
         onCancel={() => setIsCreateExerciseOpen(false)}

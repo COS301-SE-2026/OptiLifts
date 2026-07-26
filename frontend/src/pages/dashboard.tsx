@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { UpcomingWorkoutsCard } from '@/components/ui/upcoming-workouts'
 import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
@@ -6,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import streakFlame from '@/assets/streak_flame.png'
 import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
+import { WORKOUT_LOG_SYNC_EVENT } from '@/lib/offline/workout-logs'
 import { useAuth } from '@/context/auth-context'
 import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
@@ -55,8 +57,12 @@ const MUSCLE_CATEGORY_MAP: Record<string, 'Chest' | 'Core' | 'Shoulders' | 'Arms
     Lats: 'Back',
     'Lower Back': 'Back',
     'Middle Back': 'Back',
+    'Upper Back': 'Back',
     Trapezius: 'Back',
     Shoulders: 'Shoulders',
+    'Front Deltoid': 'Shoulders',
+    'Middle Deltoid': 'Shoulders',
+    'Rear Deltoid': 'Shoulders',
     Biceps: 'Arms',
     Forearms: 'Arms',
     Triceps: 'Arms',
@@ -67,6 +73,7 @@ const MUSCLE_CATEGORY_MAP: Record<string, 'Chest' | 'Core' | 'Shoulders' | 'Arms
     Abductors: 'Legs',
     Adductors: 'Legs',
     Abdominals: 'Core',
+    Obliques: 'Core',
 }
 
 const MUSCLE_KEYS = ['Chest', 'Core', 'Shoulders', 'Arms', 'Legs', 'Back'] as const
@@ -88,6 +95,12 @@ function startOfWeek(date: Date) {
 function addDays(date: Date, days: number) {
     const next = new Date(date)
     next.setDate(next.getDate() + days)
+    return next
+}
+
+function endOfDay(date: Date) {
+    const next = new Date(date)
+    next.setHours(23, 59, 59, 999)
     return next
 }
 
@@ -138,7 +151,7 @@ function buildChartBuckets(period: VolumeChartPeriod): ChartBucket[] {
 }
 
 function getEntryDate(entry: ScheduledEntry) {
-    return new Date(entry.completedAt ?? entry.startedAt ?? entry.scheduled)
+    return startOfDay(new Date(entry.completedAt ?? entry.startedAt ?? entry.scheduled))
 }
 
 function buildVolumeChartData(entries: readonly ScheduledEntry[], period: VolumeChartPeriod, muscleFilter: MuscleFilter): ChartPoint[] {
@@ -165,16 +178,6 @@ function buildVolumeChartData(entries: readonly ScheduledEntry[], period: Volume
     })
 }
 
-function getDayPillClass(index: number) {
-    const palette = [
-        'bg-brand/15 text-brand border-brand/30',
-        'bg-foreground/10 text-foreground border-border',
-        'bg-surface-2 text-foreground border-border',
-    ]
-
-    return palette[index % palette.length]
-}
-
 function formatUpcomingDate(dateString: string) {
     const today = startOfDay(new Date())
     const scheduledDate = startOfDay(new Date(dateString))
@@ -190,6 +193,7 @@ function formatUpcomingDate(dateString: string) {
 }
 
 export default function DashboardPage() {
+    const navigate = useNavigate()
     const { isAuthenticated, isHydrated } = useAuth()
     const [volumePeriod, setVolumePeriod] = useState<VolumeChartPeriod>('Week')
     const [volumeMuscleGroup, setVolumeMuscleGroup] = useState<MuscleFilter>('All')
@@ -200,6 +204,7 @@ export default function DashboardPage() {
     const [analytics, setAnalytics] = useState<ScheduleAnalyticsResponse | null>(null)
     const [isFetching, setIsFetching] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [refreshToken, setRefreshToken] = useState(0)
 
     useEffect(() => {
         if (!isHydrated || !isAuthenticated){
@@ -220,7 +225,7 @@ export default function DashboardPage() {
                 completedRangeStart.setFullYear(completedRangeStart.getFullYear() - 1)
                 completedRangeStart.setDate(1)
                 completedRangeStart.setHours(0, 0, 0, 0)
-                const completedRangeEnd = today
+                const completedRangeEnd = endOfDay(new Date())
 
                 const [profileResponse, scheduleResponse, completedResponse, analyticsResponse] = await Promise.all([
                     customFetch('/api/profile/overview', { headers: { Accept: 'application/json' }}),
@@ -281,9 +286,18 @@ export default function DashboardPage() {
 
         void loadDashboard()
 
+        const handleWorkoutSync = () => {
+            if (isActive) {
+                setRefreshToken((current) => current + 1)
+            }
+        }
+
+        globalThis.addEventListener(WORKOUT_LOG_SYNC_EVENT, handleWorkoutSync)
+
         return () => {
             isActive = false
-        }}, [isAuthenticated, isHydrated])
+            globalThis.removeEventListener(WORKOUT_LOG_SYNC_EVENT, handleWorkoutSync)
+        }}, [isAuthenticated, isHydrated, refreshToken])
 
     const displayProfile = profileData?.profile
     const displayChartTitle = 'Completed Workout Volume'
@@ -410,7 +424,7 @@ export default function DashboardPage() {
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
-                                window.location.href = `/workouts/${upcomingWorkouts[0].workoutId}`
+                                navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
                         className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
@@ -420,7 +434,15 @@ export default function DashboardPage() {
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
-                                window.location.href = `/session/${upcomingWorkouts[0].id}`
+                                navigate('/active-session', {
+                                    state: {
+                                        workout: {
+                                            id: upcomingWorkouts[0].workoutId,
+                                            name: upcomingWorkouts[0].name,
+                                            primaryMuscleGroups: [],
+                                        },
+                                    },
+                                })
                             }
                         }}
                         className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
@@ -475,17 +497,6 @@ export default function DashboardPage() {
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
                         <h3 className="text-[30px] font-medium text-foreground text-center">Days exercised this week</h3>
-                        <div className="mt-1 flex flex-wrap justify-center gap-2">
-                            {streakDays.length > 0 &&
-                                streakDays.map((day, index) => (
-                                    <span
-                                        key={day}
-                                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getDayPillClass(index)}`}
-                                    >
-                                        {day}
-                                    </span>
-                                ))}
-                        </div>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img

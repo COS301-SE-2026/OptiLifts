@@ -23,7 +23,8 @@ type ScheduledEntryDto = {
     totalSets: number
     startedAt?: string
     completedAt?: string
-    recordsCount?: number
+    recordCount?: number
+    prCount?: number
     logId?: string
 }
 
@@ -183,7 +184,7 @@ export default function PastWorkoutsPage() {
                                     <span className="text-lg font-bold text-foreground">{workout.exerciseCount}</span>
                                 </div>
                                 <div className="flex flex-col items-center gap-1.5">
-                                    <span className="text-sm text-muted-foreground">Records</span>
+                                    <span className="text-sm text-muted-foreground">PRs</span>
                                     <div className="flex items-center gap-1.5">
                                         <div className="relative h-[24px] w-[24px]">
                                             <img
@@ -206,7 +207,7 @@ export default function PastWorkoutsPage() {
                                                 }}
                                             />
                                         </div>
-                                        <span className="text-lg font-bold text-foreground">{workout.recordsCount}</span>
+                                        <span className="text-lg font-bold text-foreground">{workout.recordCount ?? workout.prCount ?? 0}</span>
                                     </div>
                                 </div>
                             </div>

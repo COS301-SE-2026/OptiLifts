@@ -541,7 +541,9 @@ export default function ActiveSessionPage() {
     }
 
     await enqueue(load)
-    void flushOutBox()
+    if (navigator.onLine) {
+      await flushOutBox()
+    }
 
     if (navigator.onLine) {
       toast.success('Workout saved.', 'Saved')

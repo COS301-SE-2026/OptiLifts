@@ -7,3 +7,6 @@ config:
     secure: AAABAA2H+rT4uVKEFwdabUlXtlJsLtf6c1xFLs+5n309guY8ByoK7z/TzzqD3un6udRxZ5fQRn6u2sNc9O3eUWn7THUf4R3dR4ZbFQ==
   infrastructure:devSeeding: "true"
   infrastructure:jwtExpMin: "1440"
+  namedotcom:token:
+    secure: AAABACBdbD8KnEgs+afV9EBIeRrnZXTw+QriLVpWrj9ewC2ozExjNCF173hfhthVr4dApv9zN7BJEFOvAswNCUsgwUf5aerj
+  namedotcom:username: u24664155

@@ -387,32 +387,33 @@ function ColourPaletteSection(){
     );
 }
 function TypographySection(){
+    //added missing details eg exact scale values and font sources + licensing
     return (
         <div className="section-row">
             <div>
                 <h2 className="section-heading">Typography</h2>
                 <div className="typography-section">
-                    <p className="type-body">OptiLifts uses a two-font system: a display font for headings and a high-legibility UI font for body and interface text. Below is a concise, scannable reference of roles and canonical values.</p>
+                    <p className="type-body">OptiLifts uses a two-font system: a display font for headings and a high-legibility UI font for body and interface text.</p>
 
                     <div className="typography-grid">
                         <Card className="typography-item">
                             <CardContent>
                                 <div className="type-page-title">Page Title - OPTILIFTS</div>
-                                <div className="type-meta">Bebas Neue · 42px · 400 · +2px · Page titles, wordmarks</div>
+                                <div className="type-meta">Bebas Neue · 42px (2.625rem) · 400 · +2px · Page titles, wordmarks</div>
                             </CardContent>
                         </Card>
 
                         <Card className="typography-item">
                             <CardContent>
                                 <div className="type-section-title">Section Title</div>
-                                <div className="type-meta">Bebas Neue · 18px · 400 · +1.5px</div>
+                                <div className="type-meta">Bebas Neue · 18px (1.125rem) · 400 · +1.5px</div>
                             </CardContent>
                         </Card>
 
                         <Card className="typography-item">
                             <CardContent>
-                                <div className="type-card-value">Card Value</div>
-                                <div className="type-meta">Bebas Neue · 40px · 400 · +1px</div>
+                                <div className="text-base font-semibold text-foreground">Card Header (H3)</div>
+                                <div className="type-meta">Barlow · 16px (1.0rem) · 600 · Exercise titles, card headers</div>
                             </CardContent>
                         </Card>
 
@@ -433,7 +434,33 @@ function TypographySection(){
                         <Card className="typography-item">
                             <CardContent>
                                 <div className="type-label">LABEL / META</div>
-                                <div className="type-meta">Barlow · 10–12px · 600–700 · Uppercase</div>
+                                <div className="type-meta">Barlow · 11-12px (0.6875rem) · 600–700 · Uppercase · Form labels, tags</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <h3 className="type-section-title" style={{ marginTop: '2rem' }}>Font Licensing</h3>
+                    <div className="goals-grid" style={{
+                        marginTop: '0.75rem'
+                    }}>
+                        <Card className="goal-card">
+                            <CardContent>
+                                <div className="goal-title">Display Font: Bebas Neue</div>
+                                <p className="goal-copy">
+                                    <strong>Source: </strong>Google Fonts<br/>
+                                    <strong>License: </strong>SIL Open Font License v1.1 (Free for commercial & personal use)<br/>
+                                    <strong>Fallback Stack: </strong><code>sans-serif</code>
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card className="goal-card">
+                            <CardContent>
+                                <div className="goal-title">Body & UI Font: Barlow</div>
+                                <p className="goal-copy">
+                                    <strong>Source: </strong>Google Fonts<br/>
+                                    <strong>License: </strong>SIL Open Font License v1.1 (Free for commercial & personal use)<br/>
+                                    <strong>Fallback Stack: </strong><code>system-ui, -apple-system, sans-serif</code>
+                                </p>
                             </CardContent>
                         </Card>
                     </div>

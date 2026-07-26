@@ -12,6 +12,7 @@ import { BarChart } from '@/components/ui/barchart';
 import { VolumeChart } from '@/components/ui/volume-chart';
 import { SpiderGraph } from '@/components/ui/spider-graph';
 import { Calendar } from '@/components/ui/calendar';
+import { paletteData } from "./brand-data";
 
 function BrandHeader() {
     return(
@@ -117,137 +118,6 @@ function BrandIntroSection() {
 //for every colour that needs to be shown. tis easier
 
 function ColourPaletteSection(){
-    const paletteData=[
-        {
-            name: "Primary Brand/Action",
-            variable: "--brand/--primary",
-            usage:"Primary CTA buttons, active state indicators, key brand accents, and focus rings.",
-            lightHex: "#CC0022",
-            lightRgb: "204, 0, 34",
-            lightHsl:"350, 100%, 40%",
-            darkHex: "#CC0022",
-            darkRgb: "204, 0, 34",
-            darkHsl: "350, 100%, 40%",
-            contrastLight: "5.85:1 (Passes AA)", //calculation
-            contrastDark: "2.91:1 (Safe for UI/large text)",
-            swatchClass: "swatch--brand"
-        },
-        {
-            name: "Brand Secondary/Hover Accent",
-            variable: "--brand-2",
-            usage:"Hover state for primary actions (Light)/High visibility secondary brand accent (Dark)",
-            lightHex: "#AA0018",
-            lightRgb:"170,0,24",
-            lightHsl: "351, 100%, 33%",
-            darkHex:"#D94060",
-            darkRgb: "217, 64, 96",
-            darkHsl:"347, 67%, 55%",
-            contrastLight:"8.71:1 (Passes AAA)",
-            contrastDark:"3.93:1 (Passes for large text)",
-            swatchClass:"swatch--brand-2"
-        },
-        {
-            name:"Background",
-            variable: "--background",
-            usage:"Main page view container background.", 
-            lightHex:"#FAF8F8",
-            lightRgb:"250, 248, 248",
-            lightHsl:"0, 20%, 98%",
-            darkHex:"#1C1C1F",
-            darkRgb:"28, 28, 31",
-            darkHsl:"240, 5%, 11%",
-            contrastLight: "15.8:1 (Passes AAA)",
-            contrastDark: "13.2:1 (Passes AAA)",
-            swatchClass: "swatch--background"
-        },
-        {
-            name: "Surface/Card",
-            variable:"--surface/--card",
-            usage: "Card components, modals, popovers, and elevated containers.",
-            lightHex: "#FFFFFF",
-            lightRgb:"255, 255, 255",
-            lightHsl: "0, 0%, 100%",
-            darkHex: "#26262B",
-            darkRgb: "38, 38, 43",
-            darkHsl:"240, 6%, 16%",
-            contrastLight: "16.1:1 (Passes AAA)",
-            contrastDark: "11.4:1 (Passes AAA)",
-            swatchClass: "swatch--background"
-        },
-        {
-            name: "Secondary surface/ Container",
-            variable: "--surface-2 /--secondary",
-            usage: "Table headers, secondary button fills, input background accents",
-            lightHex: "#F5F0F0",
-            lightRgb:"245, 240, 240",
-            lightHsl: "0, 20%, 95%",
-            darkHex: "#2E2E34",
-            darkRgb: "46, 46, 52",
-            darkHsl:"240, 6%, 19%",
-            contrastLight:"14.9:1 (Passes AAA)",
-            contrastDark: "9.8:1 (Passes AAA)",
-            swatchClass: "swatch--border"
-        },
-        {
-            name:"Foreground/Primary Text",
-            variable: "--foreground",
-            usage:"Primary body text, card titles, section headings, and main UI labels",
-            lightHex: "#1A1A1A",
-            lightRgb: "26, 26, 26",
-            lightHsl:"0, 0%, 10%",
-            darkHex: "#E8E8EC",
-            darkRgb: "232, 232, 236",
-            darkHsl:"240, 11%, 92%",
-            contrastLight:"15.8:1 (Passes AAA)",
-            contrastDark: "11.4:1 (Passes AAA)",
-            swatchClass: "swatch--foreground"
-        },
-        {
-            name:"Muted Text",
-            variable: "--muted-text/--muted-foreground",
-            usage: "Secondary labels, captions, metadata, timestamps and disabled text placeholders",
-            lightHex: "#666666",
-            lightRgb:"102, 102, 102",
-            lightHsl: "0, 0%, 40%",
-            darkHex: "#9A9AA8",
-            darkRgb: "154, 154, 168",
-            darkHsl:"240, 8%, 63%",
-            contrastLight:"5.3:1 (Passes AA)",
-            contrastDark: "5.8:1 (Passes AA)",
-            swatchClass: "swatch--muted-text"
-        },
-        {
-            name:"Success status",
-            variable: "--success",
-            usage:"PR achievements, completed workout sets, positive progress indicators",
-            lightHex: "#1B6E1F",
-            lightRgb: "27, 110, 31",
-            lightHsl: "123, 61%, 27%",
-            darkHex: "#4CAF50",
-            darkRgb:"76, 175, 80",
-            darkHsl: "122, 39%, 49%",
-            contrastLight: "5.38:1 (Passes AA)",
-            contrastDark: "6.76:1 (Passes AA)",
-            swatchClass: "swatch--success"
-        },
-        {
-            name: "Warning Status",
-            variable: "--warning",
-            usage:"Fatigue warnings, unsaved session alerts, cautions",
-            lightHex:"#B35C00",
-            lightRgb: "179, 92, 0",
-            lightHsl:"31, 100%, 35%",
-            darkHex:"#FF9800",
-            darkRgb: "255, 152, 0",
-            darkHsl: "36, 100%, 50%",
-            contrastLight: "4.46:1 (Passes AA)",
-            contrastDark:"8.5:1 (Passes AAA)",
-            swatchClass: "swatch--warning"
-        }
-    ];
-
-
-
     return (
         <div className="section-row">
             <div>
@@ -473,7 +343,7 @@ function TypographySection(){
 
                     <div style={{ marginTop: '1rem' }}>
                         <h3 className="type-section-title">Typeface connotations</h3>
-                        <p className="type-body">The 'Bebas Neue' font is condensed and bold, conveying athleticism and impact. An excellent font for headlines, it portrays our brands character. 'Barlow' is a highly legible font, chosen for its contribution to a clear UI hierarchy, and comfortable reading. Together, these two fonts create a balance of boldness and usability.
+                        <p className="type-body">The 'Bebas Neue' font is condensed and bold, conveying athleticism and impact. An excellent font for headlines, it portrays our brand's character. 'Barlow' is a highly legible font, chosen for its contribution to a clear UI hierarchy, and comfortable reading. Together, these two fonts create a balance of boldness and usability.
                         </p>
                     </div>
                 </div>
@@ -524,7 +394,7 @@ function LogoIconographySection(){
                         <li>Source icons from <strong>Lucide Icons</strong> for consistency (the repo uses <code>lucide-react</code>).</li>
 
                         <li>Render icons at <strong>18×18px</strong> in sidebars/navigation; buttons may use 20px for balance.</li>
-                        <li>Use a consistent sizing scale; <code>16px</code> (tables/badges), <code>18px</code> (sidebards/nav), <code>20px</code> (button actions), <code>24px</code> (empty states)</li>
+                        <li>Use a consistent sizing scale; <code>16px</code> (tables/badges), <code>18px</code> (sidebars/nav), <code>20px</code> (button actions), <code>24px</code> (empty states)</li>
                         <li>Stroke weight: standard <code>2px</code> stroke width (<code>strokeWidth={2}</code>)</li>
                         <li>Use <code>currentColor</code> so icons inherit parent colour tokens.</li>
                         <li>Ensure minimum touch target of <strong>44×44px</strong> on mobile.</li>
@@ -681,7 +551,7 @@ function ComponentLibrarySection(){
                 </div>
                 <div className="component-description">
                     <h3 className="component-title">Button</h3>
-                    <p className="component-copy"><strong>Variants: </strong>Primary (brand call-to-action), Secondary (surface fill), Outling (dashed/bordered actions) and Ghost</p>
+                    <p className="component-copy"><strong>Variants: </strong>Primary (brand call-to-action), Secondary (surface fill), Outline (dashed/bordered actions) and Ghost</p>
                     <p className="component-copy"><strong>States: </strong>Default, Hover, Focus-visible, Active/Pressed, Disabled, and Loading (spinner.wait cursor)</p>
                     {/* <p className="component-copy"><strong>Primary:</strong> Call-to-action buttons for main workflows (Start Session, Save Workout). Uses brand colour with hover and focus states.</p>
                     <p className="component-copy"><strong>Secondary:</strong> Alternative actions with lower visual weight. Uses surface colour.</p>
@@ -755,7 +625,7 @@ function ComponentLibrarySection(){
                 <div className="component-description">
                     <h3 className="component-title">Alert / Toast</h3>
                     <p className="component-copy">Non-blocking feedback messages for system events. Appears at the top right and auto-dismisses after 5 seconds.</p>
-                    <p className="component-copy"><strong>Variants:</strong> Info (red), Success (green), Warning (amber), Error (red). Each variant has an icon and left border accent.</p>
+                    <p className="component-copy"><strong>Variants:</strong> Info (brand), Success (green), Warning (amber), Error (red). Each variant has an icon and left border accent.</p>
                     <p className="component-copy"><strong>Usage:</strong> Confirm saves, warn about high fatigue, notify PR achievements, or provide helpful tips.</p>
                     <p className="component-copy">Triggered via the <code>toast</code> API with optional title and message.</p>
                 </div>
@@ -1012,7 +882,7 @@ function GraphSection(){
                     <Card className="goal-card" style={{gridColumn: '1/-1'}}>
                         <CardContent className="p-4">
                             <h3 className="goal-title mb-2">Volume Chart</h3>
-                            <p className="goal-copy mb-2">Total weight colume line chart over time</p>
+                            <p className="goal-copy mb-2">Total weight volume line chart over time</p>
                             <VolumeChart title="Total Volume" data={volumeChartData} showFilters={false} />
                         </CardContent>
                     </Card>
@@ -1034,7 +904,7 @@ function AccessibilitySection(){
             <div className="accessibility-grid">
                 <div className="accessibility-left">
                     <div className="type-section-title">Colour Contrast</div>
-                    <p className="type-body" style={{ marginTop: '0.25rem' }}>All primary text/background combinations meet WCAG 2.1 AA (4.5:1 minimum for normal text, 3:1 for large text and UI components). Key verified pairs are shown below.</p>
+                    <p className="type-body" style={{ marginTop: '0.25rem' }}>All primary text/background combinations meet WCAG 2.1 AA (4.5:1 minimum for normal text, 3:1 for large text and UI components).</p>
 
                     {/*i have moved specifically colour accessibility into the table in the colour section */}
                     <h3 className="type-section-title">Keyboard Navigability</h3>
@@ -1103,67 +973,15 @@ function DesignTokenSection(){
                                 <th style={{ padding: '0.6rem 0.75rem' }}>Tailwind Mapping</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--background</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#FAF8F8</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#1C1C1F</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>bg-background</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--surface</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#FFFFFF</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#26262B</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>bg-surface/bg-card</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--surface-2</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#F5F0F0</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#2E2E34</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>bg-surface-2/bg-secondary</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--border</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#E8DEDE</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#3A3A42</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>border-border</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--brand</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#CC0022</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#CC0022</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>bg-brand/text-brand/bg-primary</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--brand-2</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#AA0018</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#D94060</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>bg-brand-2/text-brand-2</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--foreground</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#1A1A1A</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#E8E8EC</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>text-foreground</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--muted-text</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#666666</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#9A9AA8</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>text-muted-foreground</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--background</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#FAF8F8</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#1C1C1F</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>bg-background</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border)'}}>
-                                <td style={{padding: '0.5rem 0.75rem'}}><code>--warning</code></td>
-                                <td style={{padding: '0.5rem 0.75rem',fontFamily: 'monospace'}}>#B35C00</td>
-                                <td style={{padding: '0.5rem 0.75rem', fontFamily: 'monospace'}}>#FF9800</td>
-                                <td style={{padding: '0.5rem 0.75rem'}}>text-warning</td>
-                            </tr>
+                        <tbody style={{ borderBottom: '1px solid var(--border)'}}>
+                                {paletteData.map((item)=>(
+                                    <tr key={item.variable} style={{borderBottom: '1px solid var(--border)'}}>
+                                        <td style={{ padding: '0.5rem 0.75rem' }}><code>{item.variable.split('/')[0]}</code></td>
+                                        <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace' }}>{item.lightHex}</td>
+                                        <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace' }}>{item.darkHex}</td>
+                                        <td style={{ padding: '0.5rem 0.75rem' }}>{item.tailwindClass}</td>
+                                    </tr>
+                                ))}                                
                         </tbody>
                     </table>
                 </div>
@@ -1228,7 +1046,7 @@ function LayoutSection(){
     const spacingScale=[
         {
             token: "0.25rem",
-            px: "4x",
+            px: "4px",
             usage: "Tight gaps, badge padding, micro element offsets"
         },
         {
@@ -1287,7 +1105,7 @@ function LayoutSection(){
             <div>
                 <h2 className="section-heading">Layout & Spacing</h2>
                 <p className="type-body" style={{marginBottom: '1.5rem'}}>
-                    Optilifts uses a responsive 12 column grid and a 4px (0.25rem) base spacing scale. Layouts adapt across modile, table and desktop views.
+                    Optilifts uses a responsive 12 column grid and a 4px (0.25rem) base spacing scale. Layouts adapt across mobile, table and desktop views.
                 </p>
 
                 <h3 className="type-section-title">Spacing Scale</h3>
@@ -1364,7 +1182,7 @@ function LayoutSection(){
                             }}>
                                 <li>Multi-column grid views</li>
                                 <li>Sticky header with link navigation</li>
-                                <li>Analytics are side by side (spider graph, colume charts, etc.)</li>
+                                <li>Analytics are side by side (spider graph, volume charts, etc.)</li>
                             </ul>
                         </CardContent>
                     </Card>
@@ -1392,7 +1210,7 @@ function ChangelogSection(){
         },
         {
             title: "Graph Visualisations and Components",
-            description: "Added interactive showcases for muscle diagams, volume charts, spider graphs, and UI controls",
+            description: "Added interactive showcases for muscle diagrams, volume charts, spider graphs, and UI controls",
             rationale: "Interactive charts break down complex workout data into easy-to-digest summaries, rather than overwhelming fitness stats"
         }
     ];

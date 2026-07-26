@@ -55,7 +55,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                 workoutExercise.OrderIndex,
                 ExerciseName = exercise.Name,
                 PrimaryMuscleName = muscle.Name,
-                ExerciseType = exercise.ExerciseType, 
+                ExerciseType = exercise.ExerciseType,
                 ImageUrl = exercise.ImageUrl
             })
             .ToListAsync(cancellationToken);

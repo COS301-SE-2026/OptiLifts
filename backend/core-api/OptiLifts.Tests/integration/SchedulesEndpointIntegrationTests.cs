@@ -48,7 +48,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
         var workoutId = await SeedWorkoutAsync(userId, "Evening workout");
         Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
-        var scheduledTime = DateTime.UtcNow.AddDays(2);
+        var scheduledTime = DateTime.UtcNow.AddHours(0.1);
         var request = new SchedulesController.CreateScheduledSessionRequest(
             WorkoutId: workoutId,
             ScheduledAt: scheduledTime,
@@ -106,7 +106,7 @@ public sealed class SchedulesEndpointIntegrationTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
 
-        var scheduledTime = DateTime.UtcNow.AddDays(4);
+        var scheduledTime = DateTime.UtcNow.AddHours(0.1);
         var request = new SchedulesController.CreateScheduledSessionRequest(
             WorkoutId: workoutId,
             ScheduledAt: scheduledTime,

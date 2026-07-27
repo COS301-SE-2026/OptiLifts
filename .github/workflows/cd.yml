@@ -46,14 +46,20 @@ jobs:
             docker build -t ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}} -f backend/ai-api/Dockerfile backend/ai-api
             docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}}
 
+        - name: Install pnpm
+          uses: pnpm/action-setup@v4
+          with: 
+            version: 9
+
         - name: Setup Node
           uses: actions/setup-node@v4
           with: 
             node-version: '24'
+            cache: 'pnpm'
 
         - name: Install Pulumi
           working-directory: infrastructure
-          run: npm install
+          run: pnpm install --frozen-lockfile
 
         - name: Deploy via Pulumi
           uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f

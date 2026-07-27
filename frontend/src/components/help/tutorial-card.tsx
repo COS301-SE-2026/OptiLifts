@@ -17,7 +17,7 @@ interface TutorialCardProps{
 
 export function TutorialCard({video}: TutorialCardProps){
     const [isModalOpen, setIsModelOpen] = useState(false)
-    const [useLocalFallback, setUseLocalFallback] = useState(false)
+    const [useLocalFallback] = useState(false) //setUseLocalFallback if fallback used
     return (
         <>
         <div className="group rounded-xl border border-border bg-surface overflow-hidden flex flex-col hover:border-brand transition-all duration-200 shadow-sm hover:shadow-md">
@@ -85,7 +85,7 @@ export function TutorialCard({video}: TutorialCardProps){
                     <div className="p-4 border-t border-border bg-surface flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
                         <p className="line-clamp-1">{video.description}</p>
 
-                        {/* TODO: put the fallback btn here if we decide to have one*/}
+                        {/* put the fallback btn here if we decide to have one*/}
 
                     </div>
                 </div>

@@ -7,7 +7,6 @@ import { TutorialCard, type TutorialVideo } from "@/components/help/tutorial-car
 import { ResourcePanel } from "@/components/help/resource-panel";
 
 const FAQ_DATA: readonly FaqItem[] = [
-    // TODO
     {
         id: 'faq-1',
         category: 'Workouts',
@@ -17,26 +16,26 @@ const FAQ_DATA: readonly FaqItem[] = [
     {
         id: 'faq-2',
         category: 'Offline Sync',
-        question: '',
-        answer: '',
+        question: 'What happens if I lose internet connection during an active workout?',
+        answer: 'OptiLifts has full offline logging capabilities. Your sets, weights, and reps are automatically stored locally in your bwoser. When your connection is restored, your information sync back to the server.',
     },
     {
         id: 'faq-3',
         category: 'Schedule',
-        question: '',
-        answer: '',
+        question: 'How do I schedule workout sessions on specific days?',
+        answer: 'Go to the "Schedule" page to view your weekly calendar. Click on the day you wish to assign a workout to, and select the routine to schedule.',
     },
     {
         id: 'faq-4',
         category: 'Profile',
-        question: '',
-        answer: '',
+        question: 'Where can I view my workout history and total lifting stats?',
+        answer: 'Go to the "Profile" page to see your logged sections, and click on "View All" to see total volume lifted, and summaries of each of your completed sessions. ',
     },
 ]
 
 // tutorial data
 const TUTORIAL_DATA: readonly TutorialVideo[] =[
-    // TODO
+    // TODO - record + put video links
     {
         id: 'tut-1',
         title: 'Creating & Managing Workout Routines',
@@ -47,17 +46,17 @@ const TUTORIAL_DATA: readonly TutorialVideo[] =[
     },
     {
         id: 'tut-2',
-        title: '',
-        description: '',
-        duration: '',
+        title: 'Active Session Logging & Offline Mode',
+        description: 'A step-by-step walkthrough of starting an active workout session, logging sets, and syncing offline logs.',
+        duration: '0:00',
         youtubeId: '',
         fallbackVideoUrl: '',
     },
     {
         id: 'tut-3',
-        title: '',
-        description: '',
-        duration: '',
+        title: 'Weekly Schedule Management',
+        description: 'Discover how to map routines across your week and keep your fitness consistency on track.',
+        duration: '0:00',
         youtubeId: '',
         fallbackVideoUrl: '',
     }

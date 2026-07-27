@@ -33,7 +33,7 @@ jobs:
           env:
             SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           run: |
-            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} --secret id=sentry_auth_token -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{ github.sha }} -f frontend/Dockerfile .
+            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{ github.sha }} -f frontend/Dockerfile .
             docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{github.sha}}
 
         - name: Build and push core-api image

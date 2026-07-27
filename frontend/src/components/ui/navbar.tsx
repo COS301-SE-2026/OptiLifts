@@ -10,7 +10,7 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/workouts',  label: 'Workouts'  },
   { to: '/schedule',  label: 'Schedule'  },
-  { to: '/progress',  label: 'Progress'  },
+  { to: '/help',  label: 'Help'  },
   { to: '/profile',   label: 'Profile'   },
 ]
 

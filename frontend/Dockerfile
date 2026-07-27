@@ -22,9 +22,6 @@ WORKDIR /app/frontend
 RUN --mount=type=secret,id=sentry_auth_token \
     SENTRY_AUTH_TOKEN=$(cat /run/secrets/sentry_auth_token) pnpm run build
 
-WORKDIR /app/frontend
-RUN pnpm run build
-
 FROM nginxinc/nginx-unprivileged:1.25
 COPY frontend/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/frontend/dist /usr/share/nginx/html

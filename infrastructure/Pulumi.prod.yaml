@@ -12,3 +12,5 @@ config:
   namedotcom:username: u24664155
   infrastructure:bindDomains: "true"
   infrastructure:domainStage: bind
+  infrastructure:coreApiSentryDsn:
+    secure: AAABAN7B+dbp1skyqkGpzzEkSF3BxZu+jGhlGgj1HB62AKwIvXVOQCOGaRtsSjvDhRlLD78RBlvTqzjjnwuMJ4mtH7YUbNwKaQ3rFQ3IGgvl3UBQxJOztw685X18JzPzVpDfp8G2dcnZ0879gs8R+xQ9yMfHvy/TfbPKP5eRRQ==

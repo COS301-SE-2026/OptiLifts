@@ -24,6 +24,7 @@ const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
+const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
 
 const domainStage = config.get("domainStage") ?? "none";
 
@@ -229,6 +230,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 name: "storage-connection-string",
                 value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
             },
+            { name: "core-api-sentry-dsn", value: coreApiSentryDsn ?? "" }
         ],
 
         registries: [{
@@ -261,6 +263,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
                 { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
+                { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" }
             ],
         }],
     },

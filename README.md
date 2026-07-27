@@ -268,48 +268,40 @@ pnpm run setup
 </details>
 
 <details>
-<summary><strong>4. Start the Database</strong></summary>
+
+<summary><strong>4. Run the Application</strong></summary>
 <br>
 
-Starts the PostgreSQL and Redis Docker containers:
+You can run the system locally on your machine or via Docker.
 
+**Option A: Local Development**
 ```bash
-pnpm db
+pnpm dev
 ```
+Starts the frontend, .NET Core API, and Python AI API all at once.
+
+**Option B: Docker Development**
+```bash
+pnpm prod
+```
+Builds and starts the application via Docker Compose.
 
 </details>
 
 <details>
-<summary><strong>5. Seed Demo Data</strong></summary>
+
+<summary><strong>5. Seed Demo Data (Optional)</strong></summary>
 <br>
 
-Start the backend - it will run migrations and seed the demo user automatically on first startup:
-
-```bash
-pnpm dev:backend
-```
-
-Once it is running and you see the API ready, open a second terminal and load the demo workout data:
+The system automatically runs the seeder on startup. If you ever want to re-seed deleted/manipulated data, use the following whilst the databsase is running:
 
 ```bash
 pnpm db:seed:sql
 ```
 
-Then stop the backend with `Ctrl+C`.
-
 </details>
 
-<details>
-<summary><strong>6. Start Development</strong></summary>
-<br>
 
-```bash
-pnpm dev
-```
-
-Starts the frontend, .NET Core API, and Python AI API all at once.
-
-</details>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

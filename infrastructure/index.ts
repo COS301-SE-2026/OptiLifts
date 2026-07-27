@@ -263,7 +263,8 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
                 { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
-                { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" }
+                { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
+                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
             ],
         }],
     },

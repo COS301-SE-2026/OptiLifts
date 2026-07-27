@@ -32,9 +32,10 @@ jobs:
         - name: Build and push frontend image
           env:
             SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+            VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           run: |
-            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} --build-arg SENTRY_RELEASE=${{ github.sha }} --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{ github.sha }} -f frontend/Dockerfile .
-            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:${{github.sha}}
+            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=$VITE_SENTRY_DSN --build-arg SENTRY_RELEASE=$GITHUB_SHA --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA -f frontend/Dockerfile .
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA
 
         - name: Build and push core-api image
           run: |
@@ -47,19 +48,19 @@ jobs:
             docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}}
 
         - name: Install pnpm
-          uses: pnpm/action-setup@v4
+          uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
           with: 
             version: 9
 
         - name: Setup Node
-          uses: actions/setup-node@v4
+          uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
           with: 
             node-version: '24'
             cache: 'pnpm'
 
         - name: Install Pulumi
           working-directory: infrastructure
-          run: pnpm install --frozen-lockfile
+          run: pnpm install --frozen-lockfile --ignore-scripts
 
         - name: Deploy via Pulumi
           uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f

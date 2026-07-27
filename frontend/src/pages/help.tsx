@@ -90,7 +90,7 @@ export default function HelpPage(){
     ] as const
 
     return (
-        <section className="mx-auto max-w-6xl px-6 py-12 min-h-[calc(100dvh-5rem)] flex flex-col gap-8">
+        <section className="mx-auto max-w-6xl px-6 py-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6">
                 <div>
                     <div className="mb-6">
@@ -115,7 +115,7 @@ export default function HelpPage(){
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <aside className="lg:col-span-1 flex flex-col gap-2">
+                <aside className="lg:col-span-1 flex flex-col gap-2 lg:sticky lg:top-28 lg:self-start">
                     <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 px-3 font-sans">Navigation</div>
                     {tabs.map((tab)=> {
                         const Icon = tab.icon
@@ -140,6 +140,7 @@ export default function HelpPage(){
                             <span>NEED MORE HELP?</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">Do you have a question other than the ones here? Reach out to us during the demonstration periods, or check our resource links.</p>
+                        <p className="mt-2 text-xs font-bold text-foreground font-sans">Contact: <a href="mailto:hatrock26@gmail.com" className="text-foreground underline hover:text-brand">hatrock26@gmail.com</a></p>
                     </div>
                 </aside>
 
@@ -157,13 +158,24 @@ export default function HelpPage(){
                     {activeTab === 'tutorials' && (
                         <div className="flex flex-col gap-4">
                             <h2 className="font-display text-2xl text-foreground tracking-wide">VIDEO TUTORIALS</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {TUTORIAL_DATA.filter((v) => v.title.toLowerCase().includes(searchQuery.toLowerCase())
+                            {TUTORIAL_DATA.filter((v) => v.title.toLowerCase().includes(searchQuery.toLowerCase())
                                 || v.description.toLowerCase().includes(searchQuery.toLowerCase())
-                                ).map((video) => (
-                                    <TutorialCard key={video.id} video={video}/>
-                                ))}
-                            </div>
+                            ).length === 0 ? (
+                                <div className="rounded x-1 border border-border bg-surface p-8 text-center">
+                                    <Video className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                                    <h3 className="font-display text-xl text-foreground mb-1">NO MATCHING TUTORIALS FOUND</h3>
+                                    <p className="text-sm text-muted-foreground">Try searching for a different keyword, such as 'workout' or 'schedule'.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {TUTORIAL_DATA.filter((v) =>
+                                        v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        v.description.toLowerCase().includes(searchQuery.toLowerCase())
+                                    ).map((video) => (
+                                        <TutorialCard key={video.id} video={video} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 

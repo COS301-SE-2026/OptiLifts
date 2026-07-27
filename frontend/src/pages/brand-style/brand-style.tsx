@@ -1,5 +1,5 @@
 import "./brand-style.css";
-import { Plus, MoreHorizontal, X, Eye, LogOut, ChevronDown, User, Dumbbell, Info, Sun, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Plus, MoreHorizontal, X, Eye, LogOut, ChevronDown, User, Dumbbell, Info, Sun, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input, NumericalUnderscoreInput } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { VolumeChart } from '@/components/ui/volume-chart';
 import { SpiderGraph } from '@/components/ui/spider-graph';
 import { Calendar } from '@/components/ui/calendar';
 import { paletteData } from "./brand-data";
+import { useNavigate } from 'react-router-dom'
 
 function BrandHeader() {
     return(
@@ -1241,8 +1242,20 @@ function ChangelogSection(){
 
 
 export default function BrandStylePage() {
+    const navigate = useNavigate()
     return (
         <section className="brand-style-page">
+            <div className="mb-4">
+                <Button 
+                variant="text"
+                size="sm"
+                onClick={() => navigate('/help')}
+                className="inline-flex items-center gap-2 py-2 text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Help</span>
+              </Button>
+              </div>
             <BrandHeader/>
             <h1 className="section-heading">Brand Style</h1>
             {/* tone is in the intro - take it out? */}

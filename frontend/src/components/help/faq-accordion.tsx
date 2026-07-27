@@ -45,10 +45,11 @@ export function FaqAccordion({
                         <button type="button" onClick={() => toggleAccordion(item.id)}
                         className="w-full flex items-center justify-between p-5 text-left focus:outline-none" aria-expanded={isOpen}>
                             <div className="flex items-center gap-3 pr-4">
-                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-brand-fill text-brand flex items-center gap-1">
+                                <span className="font-semibold text-foreground text-base font-sans">{item.question}</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-surface-2 text-brand border border-border flex items-center gap-1">
                                     <Tag className="h-3 w-3"/>{item.category}
                                 </span>
-                                <span className="font-semibold text-foreground text-base font-sans">{item.question}</span>
+                                
                             </div>
                             <ChevronDown className={`h-5 w-5 text-muted-foreground flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-brand': ''}`}/>
                         </button>

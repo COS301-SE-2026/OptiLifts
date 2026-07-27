@@ -4,6 +4,7 @@ import { FaqAccordion } from "@/components/help/faq-accordion";
 import type { FaqItem } from "@/components/help/faq-accordion";
 import { Search, HelpCircle, Video, BookOpen, Sparkles } from "lucide-react";
 import { TutorialCard, type TutorialVideo } from "@/components/help/tutorial-card";
+import { ResourcePanel } from "@/components/help/resource-panel";
 
 const FAQ_DATA: readonly FaqItem[] = [
     // TODO
@@ -89,10 +90,13 @@ export default function HelpPage(){
     ] as const
 
     return (
-        <section className="mx-auto max-w-7xl px-6 py-10 min-h-[calc(100dvh-5rem)] flex flex-col gap-8">
+        <section className="mx-auto max-w-6xl px-6 py-12 min-h-[calc(100dvh-5rem)] flex flex-col gap-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6">
                 <div>
-                    <PageTitle title="HELP MENU"/>
+                    <div className="mb-6">
+                        <PageTitle title="HELP MENU"/>
+                    </div>
+                    
                     <p className="mt-2 text-sm text-muted-foreground font-sans">
                         Find answers to FAQs, watch tutorials, and access resources.
                     </p>
@@ -166,7 +170,7 @@ export default function HelpPage(){
                     {activeTab === 'resources' && (
                         <div className="flex flex-col gap-4">
                             <h2 className="font-display text-2xl text-foreground tracking-wide">HELP CENTRE & RESOURCES</h2>
-                            {/* TODO: put the resource panel hier */}
+                            <ResourcePanel/>
                         </div>
                     )}
                 </main>

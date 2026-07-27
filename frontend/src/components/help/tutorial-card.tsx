@@ -59,7 +59,7 @@ export function TutorialCard({video}: TutorialCardProps){
         {/* video modal */}
         {isModalOpen && (
             <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-surface border border-border rounded-xl w-full max-4-4xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-surface border border-border rounded-xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
                     <div className="p-4 border-b border-border flex items-center justify-between bg-surface-2">
                         <div className="flex items-center gap-3">
                             <span className="w-1 h-6 bg-brand rounded-full"/>
@@ -75,7 +75,7 @@ export function TutorialCard({video}: TutorialCardProps){
                     <div className="relative aspect-video bg-black flex items-center justify-center">
                         {!useLocalFallback && video.youtubeId ? (
                             <iframe title={video.title} src={`https://www.youtube-nocookie.com/embed/${video.youtubeId}?autoplay=1`}
-                            className="w-full h-full" allow="accelerometer; autoplay; clipboard-writel encrypted-media; gryroscope; picture-in-picture" allowFullScreen/>
+                            className="w-full h-full" allow="accelerometer; autoplay; clipboard-write encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
                         ):(
                             <video controls autoPlay src={video.fallbackVideoUrl || '/videos/sample-tutorial.mp4'} //should probbaly make this - will we have fallbacks in the repo?
                             className="w-full h-full object-contain">Your browser does not support the video player</video>

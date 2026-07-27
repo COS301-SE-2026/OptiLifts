@@ -16,7 +16,7 @@ export function FaqAccordion({
     items,
     searchQuery
 }: FaqAccordionProps){
-    const [openId, setOpenId]= useState<string | null>(items[0].id ?? null)
+    const [openId, setOpenId]= useState<string | null>(items[0]?.id ?? null)
 
     const filteredItems = items.filter(
         (item) => item.question.toLowerCase().includes(searchQuery.toLowerCase())
@@ -30,8 +30,8 @@ export function FaqAccordion({
         return (
             <div className="rounded-xl border border-border bg-surface p-8 text-center">
                 <HelpCircle className="mx-auto h-10 w-10 text-muted-foreground mb-3"/>
-                <h3 className="font-display text-x1 text-foreground mb-1">No matching FAQs found</h3>
-                <p className="text-sem text-muted-foreground">Try searching for a different keyword, such as 'workout', 'schedule' or 'offline'.</p>
+                <h3 className="font-display text-xl text-foreground mb-1">No matching FAQs found</h3>
+                <p className="text-sm text-muted-foreground">Try searching for a different keyword, such as 'workout', 'schedule' or 'offline'.</p>
             </div>
         )
     }

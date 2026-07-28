@@ -27,9 +27,9 @@ test.describe('Active Session Page', () => {
         await startButton.click();
 
         await expect(page.getByRole('heading', { name: workoutName })).toBeVisible();
-        await expect(page.getByText('Duration')).toBeVisible();
-        await expect(page.getByText('Volume')).toBeVisible();
-        await expect(page.getByText('Sets')).toBeVisible();
+        await expect(page.locator('p', { hasText: /^Duration$/ })).toBeVisible();
+        await expect(page.locator('p', { hasText: /^Volume$/ })).toBeVisible();
+        await expect(page.locator('p', { hasText: /^Sets$/ })).toBeVisible();
 
         const finishButton = page.getByRole('button', { name: 'Finish' });
         await expect(finishButton).toBeDisabled();

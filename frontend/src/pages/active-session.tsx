@@ -11,6 +11,10 @@ import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload
 import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
+import MusclesSummary from '@/components/ui/muscles-summary'
+import MuscleDiagram from '@/components/ui/muscle-diagram'
+import { MUSCLE_GROUPS } from '@/constants/muscles'
+import type { MuscleName } from '@/types/workout'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -338,6 +342,7 @@ export default function ActiveSessionPage() {
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, setPickerOpen] = useState(false)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
+  const [primaryMuscleGroups, setPrimaryMuscleGroups] = useState<string[]>(sessionState?.workout?.primaryMuscleGroups ?? [])
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -366,6 +371,7 @@ export default function ActiveSessionPage() {
         }
 
         setWorkoutName(data.name)
+        setPrimaryMuscleGroups(data.primaryMuscleGroups ?? [])
         setStartedAtMs(Date.now())
 
         const mappedExercises: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
@@ -493,6 +499,11 @@ export default function ActiveSessionPage() {
       totalVolume,
     }
   }, [exercises])
+
+  const highlightedMuscles = useMemo(
+    () => primaryMuscleGroups.filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName)),
+    [primaryMuscleGroups]
+  )
 
   const allowedFinish = summary.completedSets > 0
 
@@ -720,37 +731,18 @@ export default function ActiveSessionPage() {
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-5 min-w-0">
-          <div className="flex w-full flex-col gap-4 lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto lg:[scrollbar-gutter:stable]">
-            <Card className="border-border bg-card rounded-xl">
-              <CardHeader className="pb-2 px-4 pt-4">
-                <CardTitle className="text-sm font-bold">Recommended</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between px-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-surface-2 border border-border" />
-                  <div>
-                    <p className="text-sm font-bold leading-tight">Bicep curl</p>
-                    <p className="text-xs text-muted-foreground">Biceps</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="icon" className="h-7 w-7 rounded-md bg-surface-2 border-border">
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-card rounded-xl">
-              <CardHeader className="pb-1 px-4 pt-4">
-                <CardTitle className="text-sm font-bold">Why?</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Based on your RPE, this would be a good alternative for your next exercise.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="col-span-12 min-w-0 lg:col-span-5 lg:min-h-0">
+          <Card className="flex h-full min-h-0 flex-col rounded-xl border-border bg-card">
+            <CardHeader>
+              <CardTitle className="text-[1.05rem] font-bold">Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="flex min-h-0 flex-1 flex-col">
+              <div className="exercise-summary-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-2 text-sm text-muted-foreground">
+                <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+                <MusclesSummary exercises={exercises} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
             <ExerciseDetailsPopup

@@ -5,6 +5,7 @@ import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import streakFlame from '@/assets/streak_flame.png'
 import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
@@ -437,17 +438,18 @@ export default function DashboardPage() {
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">
-                    <button 
+                    <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
                                 navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
-                        className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
+                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                    >
                         View Workout
-                    </button>
-                    <button 
+                    </Button>
+                    <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
@@ -462,9 +464,10 @@ export default function DashboardPage() {
                                 })
                             }
                         }}
-                        className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
+                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                    >
                         Start Session
-                    </button>
+                    </Button>
                 </div>
             </div>
             

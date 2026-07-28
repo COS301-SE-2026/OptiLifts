@@ -53,7 +53,7 @@ export default function PastWorkoutsPage() {
     const [selectedWeek, setSelectedWeek] = useState(() => {
         if (dateParam) {
             const d = new Date(dateParam)
-            if (!isNaN(d.getTime())) {
+            if (!Number.isNaN(d.getTime())) {
                 return getWeekStart(d)
             }
         }
@@ -64,7 +64,7 @@ export default function PastWorkoutsPage() {
         setPrevDateParam(dateParam)
         if (dateParam) {
             const d = new Date(dateParam)
-            if (!isNaN(d.getTime())) {
+            if (!Number.isNaN(d.getTime())) {
                 setSelectedWeek(getWeekStart(d))
             }
         }

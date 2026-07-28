@@ -20,6 +20,7 @@ const ProfilePage = lazy(() => import('@/pages/profile'))
 const PastWorkoutsPage = lazy(() => import('@/pages/past-workouts'))
 const SchedulePage = lazy(() => import('@/pages/schedule'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
+const LandingPage = lazy(() => import('@/pages/landing'))
 function AppLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -62,6 +63,25 @@ function RequireAuth() {
   return <Outlet />
 }
 
+function RequireGuest({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isHydrated } = useAuth()
+
+  if (!isHydrated) {
+    return (
+      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl items-center justify-center px-6 py-16">
+        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Checking session</p>
+      </section>
+    )
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
+
 type PlaceholderPageProps = Readonly<{
   title: string
   description: string
@@ -82,9 +102,8 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<Navigate to="/register" replace />} />
-        <Route path="register" element={<RegisterPage />} />
-        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RequireGuest><RegisterPage /></RequireGuest>} />
+        <Route path="login" element={<RequireGuest><LoginPage /></RequireGuest>} />
         <Route element={<RequireAuth />}>
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="workouts" element={<WorkoutsPage />} />
@@ -100,6 +119,17 @@ function App() {
         </Route>
       </Route>
 
+      <Route path="/" element={
+        <RequireGuest>
+          <Suspense fallback={
+            <div className="flex min-h-dvh items-center justify-center bg-background">
+              <Loader2 className="h-8 w-8 animate-spin text-brand" />
+            </div>
+          }>
+            <LandingPage />
+          </Suspense>
+        </RequireGuest>
+      } />
 
       <Route path="brand-style" element={
         <Suspense fallback={

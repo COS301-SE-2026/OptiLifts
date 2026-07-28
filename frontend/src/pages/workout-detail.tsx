@@ -220,10 +220,12 @@ export default function WorkoutDetailPage() {
         }
         summaryContent={
           workout ? (
-            <>
-              <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
-              <MusclesSummary exercises={workout.exercises} />
-            </>
+            <MusclesSummary exercises={workout.exercises} />
+          ) : null
+        }
+        muscleDiagram={
+          workout ? (
+            <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
           ) : null
         }
       />

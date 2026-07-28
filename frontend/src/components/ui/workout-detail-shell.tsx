@@ -9,6 +9,7 @@ type WorkoutDetailShellProps = Readonly<{
   notFoundTitle: string
   notFoundDescription: string
   mainContent: ReactNode
+  muscleDiagram?: ReactNode
   summaryContent: ReactNode
 }>
 
@@ -20,6 +21,7 @@ export function WorkoutDetailShell({
   notFoundTitle,
   notFoundDescription,
   mainContent,
+  muscleDiagram,
   summaryContent,
 }: WorkoutDetailShellProps) {
   return (
@@ -48,11 +50,12 @@ export function WorkoutDetailShell({
       )}
 
       {!isLoading && !error && hasContent && (
-        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(360px,1.05fr)]">
-          <div className="flex min-h-0 flex-col gap-4">{mainContent}</div>
+        <div className="grid min-h-0 flex-1 gap-6 grid-cols-12">
+          <div className="col-span-7 flex min-h-0 flex-col gap-4">{mainContent}</div>
 
-          <aside className="min-h-0">
-            <Card className="flex min-h-0 h-full flex-col">
+          <aside className="col-span-5 flex min-h-0 flex-col gap-6 overflow-y-auto">
+            {muscleDiagram}
+            <Card className="flex min-h-0 flex-1 flex-col">
               <CardHeader>
                 <CardTitle className="text-[1.05rem] font-bold">Summary</CardTitle>
               </CardHeader>

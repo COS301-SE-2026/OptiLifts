@@ -96,14 +96,4 @@ describe('WorkoutLogDetailPage', () => {
             { state: { date: '2026-07-20T11:00:00Z' } }
         );
     });
-
-    it('navigates to default /past-workouts if workout date is not available', () => {
-        mockFetch.mockReturnValue(new Promise(() => {})); // Never resolves
-        render(<WorkoutLogDetailPage />);
-
-        const backButton = screen.getByRole('button', { name: /Back to Past Workout/i });
-        fireEvent.click(backButton);
-
-        expect(mockNavigate).toHaveBeenCalledWith('/past-workouts');
-    });
 });

@@ -6,11 +6,16 @@ import { customFetch } from '@/lib/custom-fetch';
 //mocking dependencies -> prevents network requests + isolates component
 
 const mockNavigate = vi.fn();
+let mockLocationState: any = null;
+let mockQueryDate: string | null = null;
+
 vi.mock('react-router-dom', async() => {
     const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
     return {
         ...actual,
         useNavigate: () => mockNavigate, 
+        useLocation: () => ({ state: mockLocationState }),
+        useSearchParams: () => [new URLSearchParams(mockQueryDate ? { date: mockQueryDate } : {})],
     };
 });
 
@@ -89,7 +94,7 @@ describe('PastWorkoutsPage', () => {
         });
         fireEvent.click(card);
 
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1/logs/l-1');
+        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1/logs/l-1', expect.anything());
     });
 
     it('renders placeholder when list is empty', async () => {
@@ -115,5 +120,14 @@ describe('PastWorkoutsPage', () => {
         await waitFor(() => {
             expect(screen.getByText(/You have not completed any workouts this week/i)).toBeDefined();
         });
+    });
+
+    it('fetches schedule for week corresponding to date query param', async () => {
+        mockQueryDate = '2026-06-17T09:00:00Z';
+        render(<PastWorkoutsPage />);
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/users/me/schedule?startDate=2026-06-15T'));
+        });
+        mockQueryDate = null;
     });
 });

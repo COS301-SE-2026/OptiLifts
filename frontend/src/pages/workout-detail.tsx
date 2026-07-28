@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
+import { Button } from '@/components/ui/button'
 import ExercisePlan from '@/components/ui/exercise-plan'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
@@ -51,6 +52,7 @@ function formatVolume(totalVolume: number) {
 
 export default function WorkoutDetailPage() {
   const { workoutId } = useParams()
+  const navigate = useNavigate()
   const { isAuthenticated, isHydrated } = useAuth()
   const [workout, setWorkout] = useState<WorkoutDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -174,7 +176,7 @@ export default function WorkoutDetailPage() {
         </div>
 
         <div className="flex flex-col items-start gap-4 lg:items-end">
-          <div className="grid grid-cols-2 gap-8 text-left lg:text-right">
+          <div className="flex flex-wrap items-center gap-8 text-left lg:text-right">
             <div>
               <p className="text-base text-muted-foreground">Volume</p>
               <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.volume}</p>
@@ -183,6 +185,18 @@ export default function WorkoutDetailPage() {
               <p className="text-base text-muted-foreground">Sets</p>
               <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.sets}</p>
             </div>
+            <Button
+              id="start-workout-btn"
+              size="sm"
+              disabled={!workout || isLoading}
+              onClick={() => {
+                if (workout) {
+                  navigate('/active-session', { state: { workout } })
+                }
+              }}
+            >
+              Start Workout
+            </Button>
           </div>
         </div>
       </div>

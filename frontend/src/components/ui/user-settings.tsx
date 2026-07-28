@@ -721,8 +721,16 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     };
 
     return (
-        <div onClick={handleClosePopup} className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <button
+                type="button"
+                className="absolute inset-0 block w-full cursor-default outline-none bg-black/50 backdrop-blur-sm"
+                aria-label="Close settings"
+                onClick={handleClosePopup}
+                tabIndex={-1}
+            />
+            
+            <div className="relative z-10 w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <h2 className="text-xl font-bold font-display uppercase tracking-wider text-foreground">Settings</h2>

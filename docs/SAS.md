@@ -1221,3 +1221,13 @@ Update the status of an existing scheduled workout session
 ---
 
 # Deployment
+
+## Deployment Diagram
+
+### Development Environment
+
+![Development Environment](images/deployment/DevelopmentEnviro.png)
+
+### Production Environment
+
+![Production Environment](images/deployment/ProductionEnviro.png)

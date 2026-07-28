@@ -6,7 +6,7 @@ import { customFetch } from '@/lib/custom-fetch';
 //mocking dependencies -> prevents network requests + isolates component
 
 const mockNavigate = vi.fn();
-let mockLocationState: any = null;
+const mockLocationState: unknown = null;
 let mockQueryDate: string | null = null;
 
 vi.mock('react-router-dom', async() => {

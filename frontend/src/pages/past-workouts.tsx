@@ -49,6 +49,7 @@ export default function PastWorkoutsPage() {
 
     const dateParam = (location.state as { date?: string } | null)?.date || searchParams.get('date') || searchParams.get('week')
 
+    const [prevDateParam, setPrevDateParam] = useState(dateParam)
     const [selectedWeek, setSelectedWeek] = useState(() => {
         if (dateParam) {
             const d = new Date(dateParam)
@@ -59,18 +60,19 @@ export default function PastWorkoutsPage() {
         return getWeekStart(new Date())
     })
 
-    const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
-    const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
-    const [loading, setLoading] = useState(false)
-
-    useEffect(() => {
+    if (dateParam !== prevDateParam) {
+        setPrevDateParam(dateParam)
         if (dateParam) {
             const d = new Date(dateParam)
             if (!isNaN(d.getTime())) {
                 setSelectedWeek(getWeekStart(d))
             }
         }
-    }, [dateParam])
+    }
+
+    const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
+    const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const fetchWorkouts = async () => {

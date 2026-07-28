@@ -19,6 +19,9 @@ SAS introduction
 	- [Global & Custom Exercises](#global-and-custom-exercises)
 	- [Scheduling](#scheduling)
 - [Deployment](#Deployment)
+	- [Deployment Diagrams](#deployment-diagrams)
+	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
+	- [Rollback Strategy](#rollback-strategy)
 
 
 ## Architectural Requirements
@@ -1218,3 +1221,33 @@ Update the status of an existing scheduled workout session
 ---
 
 # Deployment
+
+## Deployment Diagrams
+
+### Development Environment
+
+![Development Environment](images/deployment/DevelopmentEnviro.png)
+
+### Production Environment
+
+![Production Environment](images/deployment/ProductionEnviro.png)
+
+## CI/CD Pipeline Diagrams
+
+### CI Pipeline
+![CI Pipeline](images/deployment/CIPipeline.png)
+
+### CD Pipeline
+![CD Pipeline](images/deployment/CDPipeline.png)
+
+### Rollback Strategy
+
+#### During Deployment: Blue-Green Deployment
+When new deployments are triggered in production, new revisioins of the apps are made ( the green images) whilst the current apps continue to run and have traffic routed to them (the blue images). Once the new revisions are fully deployed and health checks pass, traffic is routed to the new (green) images. If the new revisions were to crash or fail health checks then traffic would never be routed to them and the previous working revision (blue revision) continues to handle all traffic. 
+
+#### Afer Deployment: Image Tag Pinning
+If an error is noticed after deployment, rollbacks are done via Image tag pinning. All revisions of the apps are tagged with their git commit hash and stored in the Azure Container Registry. This means if a rollback is needed we are able change to a previous revision instantly via the azure portal, alternatively we are able to roll it back via the CD by either creating a revert commit on main or by running the CD on a previous commit.
+
+#### Daily Database Backups
+Azure Database for PostgresSQL provides automated continous backups for the database. The backups are run daily and streams transaction logs every 5 minutes. These backups are retained for 10 days. This allows us to restore the database to any point in time in the last 10 days allowing us to recover from accidental data loss and destructive migrations instantly via the azure portal. 
+

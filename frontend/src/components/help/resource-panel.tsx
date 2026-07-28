@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink, MessageCircle, MessageSquare, Sparkles, Terminal, Palette, HelpCircle } from 'lucide-react'
+import { BookOpen, ExternalLink, Sparkles, Palette, HelpCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function ResourcePanel(){

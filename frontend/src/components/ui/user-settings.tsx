@@ -373,7 +373,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             errors = true;
         }
 
-        if (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilepicDeteled) {
+        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilepicDeteled)) {
             window.location.reload();
         }
         setIsSaving(false);

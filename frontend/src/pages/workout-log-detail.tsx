@@ -154,7 +154,7 @@ export default function WorkoutLogDetailPage() {
             variant="text"
             size="sm"
             onClick={handleBackToPastWorkouts}
-            className="-ml-1 mb-2 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+            className="mb-2 flex items-center gap-1 self-start px-0 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Past Workout</span>
@@ -202,12 +202,10 @@ export default function WorkoutLogDetailPage() {
         }
         summaryContent={
           workout ? (
-            <MusclesSummary exercises={workout.exercises} />
-          ) : null
-        }
-        muscleDiagram={
-          workout ? (
-            <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+            <>
+              <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+              <MusclesSummary exercises={workout.exercises} />
+            </>
           ) : null
         }
       />

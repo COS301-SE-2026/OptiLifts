@@ -81,6 +81,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
 
     const [initialProfilePicUrl, setInitialProfilePicUrl] = useState<string | null>(null);
+    const [profilepicDeteled, setProfilePicDeleted] = useState<boolean>(false);
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
@@ -137,6 +138,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             method: "DELETE"
         });
 
+        setProfilePicDeleted(true);
+
         if (!res.ok) {
             throw new Error("Failed to delete profile picture.");
         }
@@ -161,6 +164,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             setProfileChanged(false);
             setPreferenceChanged(false);
             setSecurityChanged(false);
+            setProfilePicDeleted(false);
 
             setProfileError(null);
             setPreferencesError(null);
@@ -266,8 +270,6 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
         localStorage.setItem("theme", preferences.theme);
         localStorage.setItem("units", preferences.units);
-
-        window.location.reload();
     };
 
     const savePassword = async () => {
@@ -371,6 +373,9 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             errors = true;
         }
 
+        if (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilepicDeteled) {
+            window.location.reload();
+        }
         setIsSaving(false);
 
         if (!errors) {
@@ -729,7 +734,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                 onClick={handleClosePopup}
                 tabIndex={-1}
             />
-            
+
             <div className="relative z-10 w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 <div className="flex items-center justify-between border-b border-border p-4">

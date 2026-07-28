@@ -195,7 +195,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 [![Coding Standards](https://img.shields.io/badge/Coding_Standards-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/CODING_STANDARDS.md)
 [![Testing Policy](https://img.shields.io/badge/Testing_Policy-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/TESTING_POLICY.md)
 [![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/USER_MANUAL.md)
-[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/brand-style-webpage.pdf)
+[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/demo2-brandstyle.pdf)
 [![Figma](https://img.shields.io/badge/Figma-View_Panels-B01030?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/site/xHXj3tG6pv2UuKHFgeug8s/OptiLifts--Copy-?node-id=0-1&p=f)
 
 </div>

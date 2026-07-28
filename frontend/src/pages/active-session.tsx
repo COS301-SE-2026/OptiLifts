@@ -10,7 +10,7 @@ import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
 import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
-import { saveDraft, clearDraft } from '@/lib/session-drafts'
+import { saveDraft, getDraft, clearDraft } from '@/lib/session-drafts'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -344,6 +344,7 @@ export default function ActiveSessionPage() {
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, setPickerOpen] = useState(false)
   const [exitOpen, setExitOpen] = useState(false)
+  const [pendingNavTo, setPendingNavTo] = useState<string | null>(null)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
 
   useEffect(() => {
@@ -353,20 +354,29 @@ export default function ActiveSessionPage() {
 
     let isMounted = true
 
-    const loadWorkout = async () => {
-      setIsLoading(true)
-      setError(null)
+      const loadWorkout = async () => {
+        setIsLoading(true)
+        setError(null)
+
+        const sessdraft = getDraft<SessionDraft>(workoutId)
+        if (sessdraft) {
+          setWorkoutName(sessdraft.workoutName)
+          setStartedAtMs(sessdraft.startedAtMs)
+          setExercises(sessdraft.exercises)
+          setIsLoading(false)
+          return
+        }
 
       try {
-        const response = await customFetch(`/api/workouts/${workoutId}`, {
+        const resp = await customFetch(`/api/workouts/${workoutId}`, {
           headers: { Accept: 'application/json' },
         })
 
-        if (!response.ok) {
-          throw new Error(`Failed to load workout details (${response.status})`)
+        if (!resp.ok) {
+          throw new Error(`Failed to load this workout's details (${resp.status})`)
         }
 
-        const data = (await response.json()) as WorkoutDetailsResponse
+        const data = (await resp.json()) as WorkoutDetailsResponse
         if (!isMounted) {
           return
         }
@@ -374,16 +384,19 @@ export default function ActiveSessionPage() {
         setWorkoutName(data.name)
         setStartedAtMs(Date.now())
 
-        const mappedExercises: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
+        const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
-        setExercises(mappedExercises)
-      } catch (loadError) {
+        setExercises(mappedExers)
+        
+      } 
+      catch (loadError) {
         if (!isMounted) {
           return
         }
 
         setError(loadError instanceof Error ? loadError.message : 'Failed to load workout details.')
-      } finally {
+      } 
+      finally {
         if (isMounted) {
           setIsLoading(false)
         }
@@ -402,39 +415,56 @@ export default function ActiveSessionPage() {
     return () => clearInterval(interval)
   }, [])
 
+  //autosave on any exercise change
   useEffect(() => {
-    //browser/hardware backing now shows dialog rather than leaving.
-    window.history.pushState(null, '', window.location.href)
-
-    const reload = () => {
-      window.history.pushState(null, '', window.location.href)
-      setExitOpen(true)
-    }
-
-    //closing or refreshing tab auto-keeps
-    const closing = (event: BeforeUnloadEvent) => {
-      if (workoutId && exercises.length > 0) {
-        saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
-        event.preventDefault()
-      }
-    }
-
-    window.addEventListener('popstate', reload)
-    window.addEventListener('beforeunload', closing)
-    
-    return () => {
-      window.removeEventListener('popstate', reload)
-      window.removeEventListener('beforeunload', closing)
+    if (workoutId && exercises.length > 0) {
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
     }
   }, [workoutId, workoutName, startedAtMs, logId, exercises])
 
+  //listener on whole doc for any sort of clicks that link to other pages
+  //prompts the keep/discard dialog 
+  useEffect(() => {
+    if (!workoutId || exercises.length === 0) {
+      return
+    }
 
-  const secondsElapsed = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
+    const interceptNavbar = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return
+      }
 
-  const formatTime = (totalSeconds: number) => {
-    const h = Math.floor(totalSeconds / 3600)
-    const m = Math.floor((totalSeconds % 3600) / 60)
-    if (h > 0) return `${h}h ${m}min`
+      const anchor = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor || (anchor.target && anchor.target !== '_self')) {
+        return
+      }
+
+      const url = new URL(anchor.href, window.location.origin)
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) {
+        return
+      }
+
+      event.preventDefault()
+
+      setPendingNavTo(url.pathname + url.search)
+      setExitOpen(true)
+    }
+
+    document.addEventListener('click', interceptNavbar, true)
+    return () => document.removeEventListener('click', interceptNavbar, true)
+
+  }, [workoutId, exercises.length])
+
+  const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
+
+  const formattedTime = (totalSecs: number) => {
+    const h = Math.floor(totalSecs / 3600)
+    const m = Math.floor((totalSecs % 3600) / 60)
+
+    if (h > 0) {
+      return `${h}h ${m}min`
+    }
+
     return `${m}m`
   }
 
@@ -442,7 +472,7 @@ export default function ActiveSessionPage() {
     exerciseId: string,
     setId: string,
     updater: (current: SetData) => SetData
-  ) => {
+    ) => {
     const applySet = (set: SetData): SetData => (set.id === setId ? updater(set) : set)
     const applyExercise = (exercise: ExerciseData): ExerciseData => exercise.id === exerciseId ? { ...exercise, sets: exercise.sets.map(applySet) } : exercise
     setExercises((current) => current.map(applyExercise))
@@ -588,12 +618,13 @@ export default function ActiveSessionPage() {
     navigate('/workouts')
   }
 
-  const keep = () => {
+    const keep = () => {
     if (workoutId) {
       saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
     }
 
-    navigate('/workouts')
+    navigate(pendingNavTo ?? '/workouts')
+    setPendingNavTo(null)
   }
 
   const discard = () => {
@@ -601,11 +632,12 @@ export default function ActiveSessionPage() {
       clearDraft(workoutId)
     }
 
-    navigate('/workouts')
+    navigate(pendingNavTo ?? '/workouts')
+    setPendingNavTo(null)
   }
 
 
-  const blankInputs = () => exercises.some((exercise) => {
+  const blanks = () => exercises.some((exercise) => {
       if (!exercise.exerciseId) return false
 
       const cols = getColumns(exercise.exerciseType)
@@ -615,9 +647,9 @@ export default function ActiveSessionPage() {
       )
     })
 
-  const allowedFinish = summary.completedSets > 0 && !blankInputs()
+  const allowedFinish = summary.completedSets > 0 && !blanks()
 
-  const renderExerciseCard = (exercise: ExerciseData) => {
+  const renderExerCard = (exercise: ExerciseData) => {
 
     const cols = getColumns(exercise.exerciseType)
     const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 5rem`
@@ -707,7 +739,7 @@ export default function ActiveSessionPage() {
               <div className="flex items-center gap-6 text-center">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Duration</p>
-                  <p className="text-sm font-bold">{formatTime(secondsElapsed)}</p>
+                  <p className="text-sm font-bold">{formattedTime(secElaps)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Volume</p>
@@ -739,7 +771,7 @@ export default function ActiveSessionPage() {
             <div className="flex flex-col gap-4">
               {buildSessionSegs(exercises).map((seg) => {
                 if (seg.kind === 'single') {
-                  return renderExerciseCard(seg.exercise)
+                  return renderExerCard(seg.exercise)
                 }
 
                 return (
@@ -757,7 +789,7 @@ export default function ActiveSessionPage() {
                         </span>
                       )}
                     </div>
-                    {seg.members.map((member) => renderExerciseCard(member))}
+                    {seg.members.map((member) => renderExerCard(member))}
                   </div>
                 )
               })}

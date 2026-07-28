@@ -19,6 +19,8 @@ SAS introduction
 	- [Global & Custom Exercises](#global-and-custom-exercises)
 	- [Scheduling](#scheduling)
 - [Deployment](#Deployment)
+	- [Deployment Diagrams](#deployment-diagrams)
+	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
 
 
 ## Architectural Requirements
@@ -1222,7 +1224,7 @@ Update the status of an existing scheduled workout session
 
 # Deployment
 
-## Deployment Diagram
+## Deployment Diagrams
 
 ### Development Environment
 
@@ -1231,3 +1233,11 @@ Update the status of an existing scheduled workout session
 ### Production Environment
 
 ![Production Environment](images/deployment/ProductionEnviro.png)
+
+## CI/CD Pipeline Diagrams
+
+### CI Pipeline
+![CI Pipeline](images/deployment/CIPipeline.png)
+
+### CD Pipeline
+![CD Pipeline](images/deployment/CDPipeline.png)

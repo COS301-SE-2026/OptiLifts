@@ -459,7 +459,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer text-white"
+                        className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/60 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none transition-opacity duration-200 cursor-pointer text-white"
                         aria-label="Change profile picture"
                     >
                         <ImagePlus size={20} className="mb-1" />
@@ -721,8 +721,8 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     };
 
     return (
-        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div onClick={handleClosePopup} className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <h2 className="text-xl font-bold font-display uppercase tracking-wider text-foreground">Settings</h2>
@@ -767,7 +767,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                         <div className="space-y-4 pt-2">
                             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Account Management</h3>
                             <div className="flex items-center justify-between gap-4">
-                                <span className="text-sm text-muted-foreground">Log out of your current session on this device.</span>
+                                <span className="text-sm text-muted-foreground focus-visible:outline-brand">Log out of your current session on this device.</span>
                                 <Button
                                     type="button"
                                     variant="outline"

@@ -19,7 +19,7 @@ export function Navbar() {
   const { isAuthenticated} = useAuth()
 
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
-  const homeLink = isAuthenticated ? '/workouts' : '/register'
+  const homeLink = isAuthenticated ? '/dashboard' : '/'
 
   return (
     <header className="sticky top-0 z-[100] w-full h-20 bg-background border-b-2 border-brand flex items-center px-8 box-border">

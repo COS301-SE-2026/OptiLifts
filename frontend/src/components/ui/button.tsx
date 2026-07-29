@@ -18,7 +18,7 @@ export interface ButtonProps
 }
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-[0.5rem] border border-transparent bg-clip-padding whitespace-nowrap transition-all duration-200 outline-none cursor-pointer select-none font-sans font-bold uppercase tracking-[0.05em] leading-none text-sm focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none",
+  "inline-flex items-center justify-center gap-2 rounded-[0.5rem] border border-transparent bg-clip-padding whitespace-nowrap transition-all duration-200 outline-none cursor-pointer select-none font-sans font-bold uppercase tracking-[0.05em] leading-none text-sm focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none",
   {
     variants: {
       variant: {

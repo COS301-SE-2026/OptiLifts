@@ -147,6 +147,32 @@ public class GetProfileOverviewHandlerTests
             LoggedAt = new DateTime(2026, 6, 18, 8, 10, 0, DateTimeKind.Utc)
         });
 
+        var loggedSetId = context.WorkoutLogSets.Local.Single().Id;
+
+        context.ExercisePrs.AddRange(
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ExerciseId = exercise.Id,
+                WorkoutLogSetId = loggedSetId,
+                PrType = ExercisePrType.MaxWeight,
+                PrValue = 100,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            },
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ExerciseId = exercise.Id,
+                WorkoutLogSetId = loggedSetId,
+                PrType = ExercisePrType.MaxSetVolume,
+                PrValue = 800,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            });
+
         await context.SaveChangesAsync();
 
         var handler = new GetProfileOverviewHandler(context);
@@ -155,12 +181,115 @@ public class GetProfileOverviewHandlerTests
         result.Profile.Name.Should().Be("Profile User");
         result.Profile.Email.Should().Be("profile@example.com");
         result.Profile.Bio.Should().Be("Built for testing");
-        result.Stats.Should().HaveCount(3);
         result.Badges.Should().HaveCount(1);
-        result.Badges[0].Name.Should().Be("First Workout");
+        result.Badges[0].Name.Should().Be("1 WORKOUTS");
         result.RecentWorkouts.Should().HaveCount(1);
         result.RecentWorkouts[0].Name.Should().Be("Push Day");
+        result.RecentWorkouts[0].Prs.Should().Be("2 PRs");
         result.ChartData.Should().HaveCount(12);
-        result.ChartTitle.Should().Be("Workout volume");
+        result.ChartTitle.Should().Be("Weekly Hours");
+    }
+
+    [Fact]
+    public async Task Handle_WithVeryShortCompletedSession_FormatsDurationAsLessThanOneMinute()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "profile@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "Profile User",
+            Bio = "Built for testing",
+            CreatedAt = new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc)
+        };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Quick Circuit",
+            CreatedBy = user.Id,
+            CreatedAt = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc)
+        };
+
+        var entry = new ScheduledEntry
+        {
+            Id = Guid.NewGuid(),
+            WorkoutId = workout.Id,
+            UserId = user.Id,
+            Scheduled = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc),
+            Status = ScheduleStatus.Completed
+        };
+
+        var log = new WorkoutLog
+        {
+            Id = Guid.NewGuid(),
+            EntryId = entry.Id,
+            StartedAt = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc),
+            CompletedAt = new DateTime(2026, 6, 18, 8, 0, 30, DateTimeKind.Utc),
+            AiModified = false,
+            Notes = "quick run"
+        };
+
+        context.Users.Add(user);
+        context.Workouts.Add(workout);
+        await context.SaveChangesAsync();
+
+        context.ScheduledEntries.Add(entry);
+        await context.SaveChangesAsync();
+
+        context.WorkoutLogs.Add(log);
+        await context.SaveChangesAsync();
+
+        var handler = new GetProfileOverviewHandler(context);
+        var result = await handler.Handle(new GetProfileOverviewQuery(user.Id), CancellationToken.None);
+
+        result.RecentWorkouts.Should().ContainSingle();
+        result.RecentWorkouts[0].Duration.Should().Be("<1m");
+        result.ChartTitle.Should().Be("Weekly Hours");
+        result.ChartData.Should().ContainSingle(point => point.Value > 0);
+        result.ChartData.Single(point => point.Value > 0).Value.Should().BeLessThan(0.1);
+    }
+
+    [Fact]
+    public async Task Handle_WithoutCompletedSessions_DoesNotReturnPlannedWorkouts()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "profile@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "Profile User",
+            Bio = "Built for testing",
+            CreatedAt = new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc)
+        };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Push Day",
+            CreatedBy = user.Id,
+            CreatedAt = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc)
+        };
+
+        context.Users.Add(user);
+        context.Workouts.Add(workout);
+        await context.SaveChangesAsync();
+
+        var handler = new GetProfileOverviewHandler(context);
+        var result = await handler.Handle(new GetProfileOverviewQuery(user.Id), CancellationToken.None);
+
+        result.RecentWorkouts.Should().BeEmpty();
     }
 }

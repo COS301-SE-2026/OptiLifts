@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Domain.Users;
@@ -57,6 +58,49 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         db.Folders.Add(new Folder { Name = "Default", UserId = userId });
         await db.SaveChangesAsync();
         return userId;
+    }
+
+    protected async Task<Guid> SeedWorkoutAsync(Guid userId, string name)
+    {
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        var workout = new Workout
+        {
+            Name = name,
+            CreatedBy = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+        db.Workouts.Add(workout);
+        await db.SaveChangesAsync();
+        return workout.Id;
+    }
+
+    protected async Task<Guid> SeedExerciseAsync(string name)
+    {
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+
+        var primaryMuscle = await db.Muscles.FirstOrDefaultAsync()
+        ?? new Muscle
+        {
+            Id = Guid.NewGuid(),
+            Name = "Chest"
+        };
+        if (db.Entry(primaryMuscle).State == EntityState.Detached)
+        {
+            db.Muscles.Add(primaryMuscle);
+        }
+        var exercise = new Exercise
+        {
+            Name = name,
+            ExerciseType = default,
+            Mechanic = "compound",
+            Equipment = "bodyweight",
+            PrimaryMuscleId = primaryMuscle.Id
+        };
+        db.Exercises.Add(exercise);
+        await db.SaveChangesAsync();
+        return exercise.Id;
     }
 
     protected string GenerateToken(Guid userId)

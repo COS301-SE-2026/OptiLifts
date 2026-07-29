@@ -2,7 +2,6 @@ namespace OptiLifts.Application.Profile;
 
 public sealed record ProfileOverviewDto(
     ProfileUserDto Profile,
-    IReadOnlyList<ProfileStatDto> Stats,
     IReadOnlyList<ProfileBadgeDto> Badges,
     IReadOnlyList<ProfileWorkoutDto> RecentWorkouts,
     string ChartTitle,
@@ -20,9 +19,8 @@ public sealed record ProfileStatDto(
 
 public sealed record ProfileBadgeDto(
     string Name,
-    string Description,
+    string Description, //for in the future, if we add the ability to click on a badge to get more information
     string Category,
-    string? IconUrl,
     DateTime EarnedAt);
 
 public sealed record ProfileWorkoutDto(

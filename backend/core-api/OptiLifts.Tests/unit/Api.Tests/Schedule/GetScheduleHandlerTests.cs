@@ -137,6 +137,130 @@ public sealed class GetScheduleHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ReturnsPrCount_ForCompletedWorkout()
+    {
+        var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<OptiLiftsDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using var db = new OptiLiftsDbContext(options);
+        await db.Database.EnsureCreatedAsync();
+
+        var userId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Email = "completed@example.com",
+            PasswordHash = "x",
+            DisplayName = "Completed Person"
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var chest = new Muscle { Name = "Chest" };
+        db.Muscles.Add(chest);
+        await db.SaveChangesAsync();
+
+        var exercise = new Exercise
+        {
+            Name = "Bench",
+            ExerciseType = ExerciseType.WeightReps,
+            PrimaryMuscleId = chest.Id
+        };
+        db.Exercises.Add(exercise);
+        await db.SaveChangesAsync();
+
+        var workout = new Workout
+        {
+            Name = "Hypertrophy",
+            CreatedBy = userId
+        };
+        db.Workouts.Add(workout);
+        await db.SaveChangesAsync();
+
+        var workoutExercise = new WorkoutExercise
+        {
+            WorkoutId = workout.Id,
+            ExerciseId = exercise.Id,
+            OrderIndex = 0
+        };
+        db.WorkoutExercises.Add(workoutExercise);
+        await db.SaveChangesAsync();
+
+        var log = new WorkoutLog
+        {
+            Id = Guid.NewGuid(),
+            EntryId = Guid.NewGuid(),
+            StartedAt = new DateTime(2026, 6, 27, 8, 0, 0, DateTimeKind.Utc),
+            CompletedAt = new DateTime(2026, 6, 27, 9, 0, 0, DateTimeKind.Utc),
+            AiModified = false
+        };
+        db.ScheduledEntries.Add(new ScheduledEntry
+        {
+            Id = log.EntryId ?? Guid.NewGuid(),
+            UserId = userId,
+            WorkoutId = workout.Id,
+            Scheduled = new DateTime(2026, 6, 27, 10, 0, 0, DateTimeKind.Utc),
+            Status = ScheduleStatus.Completed
+        });
+        db.WorkoutLogs.Add(log);
+        await db.SaveChangesAsync();
+
+        var loggedSet = new WorkoutSetLog
+        {
+            Id = Guid.NewGuid(),
+            LogId = log.Id,
+            ExerciseId = exercise.Id,
+            WorkoutExerciseId = workoutExercise.Id,
+            Type = SetType.Normal,
+            Reps = 8,
+            Weight = 100,
+            RestTime = 90,
+            GroupNumber = 0,
+            Rpe = 8,
+            OrderIndex = 0,
+            AiSuggested = false,
+            LoggedAt = DateTime.UtcNow
+        };
+        db.WorkoutLogSets.Add(loggedSet);
+        await db.SaveChangesAsync();
+
+        db.ExercisePrs.AddRange(
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ExerciseId = exercise.Id,
+                WorkoutLogSetId = loggedSet.Id,
+                PrType = ExercisePrType.MaxWeight,
+                PrValue = 100,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            },
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ExerciseId = exercise.Id,
+                WorkoutLogSetId = loggedSet.Id,
+                PrType = ExercisePrType.MaxSetVolume,
+                PrValue = 800,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            });
+        await db.SaveChangesAsync();
+
+        var handler = new GetScheduleHandler(db);
+        var result = await handler.Handle(
+            new GetScheduleQuery(userId, new DateTime(2026, 6, 25, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 6, 28, 0, 0, 0, DateTimeKind.Utc), ScheduleStatus.Completed), CancellationToken.None);
+
+        result.Should().HaveCount(1);
+        result[0].RecordCount.Should().Be(2);
+    }
+
+    [Fact]
     public async Task Handle_FiltersEntries_OutsideDateRange()
     {
         var conn = new SqliteConnection("DataSource=:memory:");

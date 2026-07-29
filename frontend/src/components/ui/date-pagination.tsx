@@ -8,60 +8,55 @@ type DatePaginationProps = Readonly<{
     className?: string
 }>
 
-const getWeekStart = (date: Date) => {
-    const now = new Date(date);
-    const day = now.getDay();
-    let diff = now.getDate()-day;
-    if (day === 0) {
-        diff -= 6; 
-    } else {
-        diff += 1; 
-    }
-    return new Date(now.setDate(diff));
+export const getWeekStart = (date: Date) => {
+    const d = new Date(date)
+    const year = d.getUTCFullYear()
+    const month = d.getUTCMonth()
+    const dayOfMonth = d.getUTCDate()
+    const dayOfWeek = d.getUTCDay()
+
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+    return new Date(Date.UTC(year, month, dayOfMonth + diffToMonday))
 }
 
 const weekFormat = (date: Date) => {
     const start = getWeekStart(date)
-    const end = new Date(start); 
-    end.setDate(start.getDate() + 6); 
+    const end = new Date(start)
+    end.setUTCDate(start.getUTCDate() + 6)
 
-    //we have to unfortunately use the US here
-    const formatter = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long' })
+    const formatter = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', timeZone: 'UTC' })
     return `${formatter.format(start)} - ${formatter.format(end)}`
 }
 
 const monthFormat = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date)
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date)
 }
+
 export function DatePagination({ currentDate, onChange, type = 'week', className }: DatePaginationProps) {
     const getPrev = () => {
         const prev = new Date(currentDate)
         if (type === 'week') {
-            prev.setDate(prev.getDate() - 7)
+            prev.setUTCDate(prev.getUTCDate() - 7)
             onChange(getWeekStart(prev))
         } else {
-            prev.setMonth(prev.getMonth() - 1)
-            prev.setDate(1)
-            prev.setHours(0, 0, 0, 0)
+            prev.setUTCMonth(prev.getUTCMonth() - 1)
+            prev.setUTCDate(1)
+            prev.setUTCHours(0, 0, 0, 0)
             onChange(prev)
         }
-
-        onChange(prev)
     }
 
     const getNext = () => {
         const next = new Date(currentDate)
         if (type === 'week') {
-            next.setDate(next.getDate() + 7)
+            next.setUTCDate(next.getUTCDate() + 7)
             onChange(getWeekStart(next))
         } else {
-            next.setMonth(next.getMonth() + 1)
-            next.setDate(1)
-            next.setHours(0, 0, 0, 0)
+            next.setUTCMonth(next.getUTCMonth() + 1)
+            next.setUTCDate(1)
+            next.setUTCHours(0, 0, 0, 0)
             onChange(next)
         }
-
-        onChange(next)
     }
 
     const displayText = (type === 'week') ? weekFormat(currentDate) : monthFormat(currentDate)
@@ -86,8 +81,4 @@ export function DatePagination({ currentDate, onChange, type = 'week', className
             </button>
         </div>
     )
-
 }
-
-
-

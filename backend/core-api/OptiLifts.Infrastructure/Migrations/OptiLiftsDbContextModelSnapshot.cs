@@ -273,6 +273,12 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("image_url");
 
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
                     b.Property<string>("Mechanic")
                         .HasColumnType("text")
                         .HasColumnName("mechanic");
@@ -295,7 +301,7 @@ namespace OptiLifts.Infrastructure.Migrations
 
                     b.HasIndex("PrimaryMuscleId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsDeleted");
 
                     b.ToTable("exercise_dictionary", (string)null);
                 });
@@ -325,6 +331,53 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasIndex("WorkoutId");
 
                     b.ToTable("exercise_groups", (string)null);
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExercisePr", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("pr_id");
+
+                    b.Property<int>("AchievedReps")
+                        .HasColumnType("integer")
+                        .HasColumnName("achieved_reps");
+
+                    b.Property<float>("AchievedWeight")
+                        .HasColumnType("real")
+                        .HasColumnName("achieved_weight");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_id");
+
+                    b.Property<string>("PrType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("pr_type");
+
+                    b.Property<float>("PrValue")
+                        .HasColumnType("real")
+                        .HasColumnName("pr_value");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("WorkoutLogSetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workout_log_set_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("WorkoutLogSetId");
+
+                    b.HasIndex("UserId", "ExerciseId", "PrType");
+
+                    b.ToTable("exercise_prs", (string)null);
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Folder", b =>
@@ -771,6 +824,27 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Workouts.Workout", null)
                         .WithMany()
                         .HasForeignKey("WorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExercisePr", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Workouts.WorkoutSetLog", null)
+                        .WithMany()
+                        .HasForeignKey("WorkoutLogSetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

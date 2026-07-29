@@ -58,7 +58,7 @@ export function Toaster() {
 
   return (
     <div
-      className="fixed top-5 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-[420px] pointer-events-none"
+      className="fixed top-22 right-5 z-[999] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-[420px] pointer-events-none"
       aria-live="polite"
     >
       {toasts.map(item => {

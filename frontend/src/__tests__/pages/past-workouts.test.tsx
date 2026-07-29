@@ -6,11 +6,16 @@ import { customFetch } from '@/lib/custom-fetch';
 //mocking dependencies -> prevents network requests + isolates component
 
 const mockNavigate = vi.fn();
+const mockLocationState: unknown = null;
+let mockQueryDate: string | null = null;
+
 vi.mock('react-router-dom', async() => {
     const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
     return {
         ...actual,
         useNavigate: () => mockNavigate, 
+        useLocation: () => ({ state: mockLocationState }),
+        useSearchParams: () => [new URLSearchParams(mockQueryDate ? { date: mockQueryDate } : {})],
     };
 });
 
@@ -32,7 +37,7 @@ describe('PastWorkoutsPage', () => {
     beforeEach(() => { //runs each 'it' test block + resets spy functions
         vi.clearAllMocks();
         mockFetch.mockImplementation(async (url: string) => {
-            if(url.includes('/api/exercises/allImages')){
+            if(url.includes('/api/exercises/images')){
                 return {
                     ok: true,
                     json: async() => ({
@@ -50,12 +55,12 @@ describe('PastWorkoutsPage', () => {
                             logId: 'l-1',
                             workoutName: 'Morning Bench Routine',
                             startedAt: '2026-07-17T09:00:00Z',
-                            completedAt: '2026-07-17T10:00:00Z',
+                            completedAt: '2026-07-17T09:00:20Z',
                             primaryMuscleGroups: ['Chest'],
                             exerciseCount: 3,
                             exercisePreview: ['Bench Press'],
                             totalVolume: 4500,
-                            recordsCount: 2,
+                            recordCount: 2,
                         },
                     ],
                 };
@@ -79,6 +84,7 @@ describe('PastWorkoutsPage', () => {
             expect(screen.getByText('Morning Bench Routine')).toBeDefined();
         });
 
+        expect(screen.getByText('<1m')).toBeDefined();
         expect(screen.getByText('Muscles: Chest')).toBeDefined();
         expect(screen.getByText('3')).toBeDefined();
         expect(screen.getByText('2')).toBeDefined();
@@ -88,12 +94,12 @@ describe('PastWorkoutsPage', () => {
         });
         fireEvent.click(card);
 
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1/logs/l-1');
+        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1/logs/l-1', expect.anything());
     });
 
     it('renders placeholder when list is empty', async () => {
         mockFetch.mockImplementation(async (url: string) => {
-            if (url.includes('/api/exercises/allImages')){
+            if (url.includes('/api/exercises/images')){
                 return {
                     ok: true,
                     json: async() => ({})
@@ -114,5 +120,14 @@ describe('PastWorkoutsPage', () => {
         await waitFor(() => {
             expect(screen.getByText(/You have not completed any workouts this week/i)).toBeDefined();
         });
+    });
+
+    it('fetches schedule for week corresponding to date query param', async () => {
+        mockQueryDate = '2026-06-17T09:00:00Z';
+        render(<PastWorkoutsPage />);
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/users/me/schedule?startDate=2026-06-15T'));
+        });
+        mockQueryDate = null;
     });
 });

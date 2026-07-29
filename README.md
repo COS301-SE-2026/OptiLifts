@@ -27,12 +27,12 @@
 
 <div align="center">
 
-<!-- CI & Status -->
 [![Build](https://img.shields.io/github/actions/workflow/status/COS301-SE-2026/OptiLifts/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=Build&labelColor=1C1C1F&color=B01030)](https://github.com/COS301-SE-2026/OptiLifts/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-Pending-D94060?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1C1C1F)](https://github.com/COS301-SE-2026/OptiLifts)
+[![Coverage](https://img.shields.io/endpoint?style=for-the-badge&url=https://gist.githubusercontent.com/AlessandroParavano/fdc6c732fa17e222fdbb0cd07783dbda/raw/optilifts-coverage.json&labelColor=1C1C1F)](https://github.com/COS301-SE-2026/OptiLifts)
 [![Issues](https://img.shields.io/github/issues/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=github&logoColor=white&label=Issues&labelColor=1C1C1F&color=D94060)](https://github.com/COS301-SE-2026/OptiLifts/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=git&logoColor=white&label=Last%20Commit&labelColor=1C1C1F&color=B01030)](https://github.com/COS301-SE-2026/OptiLifts/commits/main)
-[![Uptime](https://img.shields.io/badge/Uptime-Pending-D94060?style=for-the-badge&logo=uptimerobot&logoColor=white&labelColor=1C1C1F)](https://github.com/COS301-SE-2026/OptiLifts)
+[![Uptime](https://img.shields.io/uptimerobot/ratio/m803591570-47d32da3e7fd2f4c530c09b5?style=for-the-badge&logo=uptimerobot&logoColor=white&labelColor=1C1C1F&color=B01030&label=Uptime)](https://stats.uptimerobot.com/65K4aFGFCx)
+
 
 </div>
 
@@ -90,13 +90,13 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 | :--- | :--- | :--- |
 | **Frontend** | <img src="https://skillicons.dev/icons?i=react,vite" valign="middle" /> | React SPA with React Router, built and bundled by Vite with PWA support. |
 | **Core API** | <img src="https://skillicons.dev/icons?i=dotnet" valign="middle" /> | ASP.NET Core with EF Core and MediatR for clean CQRS-style command/query handling. |
-| **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service using LiteLLM as a unified LLM gateway, with Langfuse for observability. |
-| **Machine Learning** | ![XGBoost](https://img.shields.io/badge/XGBoost-Plateau%20Detection-EC6C2D?style=flat-square) | XGBoost gradient-boosted model for plateau detection and progression recommendation. |
-| **LLM** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Azure OpenAI - GPT-4o mini for natural language coaching and intelligent suggestions. |
+| **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service |
 | **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure - App Service, Container Registry, and managed PostgreSQL. |
 | **IaC** | <img src="https://cdn.simpleicons.org/pulumi/8A3391" width="40" valign="middle" /> | Pulumi for defining and provisioning all Azure infrastructure as code. |
 | **CI/CD** | <img src="https://skillicons.dev/icons?i=githubactions" valign="middle" /> | GitHub Actions pipelines for automated testing, linting, and deployment. |
 | **Containerisation** | <img src="https://skillicons.dev/icons?i=docker" valign="middle" /> | Docker Compose for local development orchestration of all services. |
+| **Database** | <img src="https://skillicons.dev/icons?i=postgres" valign="middle" /> | PostgreSQL for structured relational data storage. |
+| **Testing** | | Vitest for frontend unit tests,Xunit and Pytest for backend tests, Moq and TestContainers for integration tests, Playwright for end-to-end tests.|
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -184,16 +184,41 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 
 ## <img src="docs/images/images.svg" width="24" height="24" style="vertical-align: middle;"> Documentation
 
+<details open>
+<summary><strong>Demo 2 Documentation</strong></summary>
+<br>
+
 <div align="center">
 
 [![Functional Requirements](https://img.shields.io/badge/Functional_Requirements-View_SRS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/SRS.md)
-[![Design Specification](https://img.shields.io/badge/Design_Specification-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/DESIGN.md)
+[![Architecture Specification](https://img.shields.io/badge/Architecture_Specification-View_SAS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/SAS.md)
+[![Coding Standards](https://img.shields.io/badge/Coding_Standards-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/CODING_STANDARDS.md)
+[![Testing Policy](https://img.shields.io/badge/Testing_Policy-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/TESTING_POLICY.md)
+[![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/USER_MANUAL.md)
 [![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/brand-style-webpage.pdf)
+[![Figma](https://img.shields.io/badge/Figma-View_Panels-B01030?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/site/xHXj3tG6pv2UuKHFgeug8s/OptiLifts--Copy-?node-id=0-1&p=f)
+
+</div>
+
+</details>
+
+<details>
+<summary><strong>Demo 1 Documentation</strong></summary>
+<br>
+
+<div align="center">
+
+[![Functional Requirements](https://img.shields.io/badge/Functional_Requirements-View_SRS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo1docs/SRS.md)
+[![Design Specification](https://img.shields.io/badge/Design_Specification-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo1docs/DESIGN.md)
+[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo1docs/brand-style/brand-style-webpage.pdf)
+[![Design Specification](https://img.shields.io/badge/Design_Specification-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/DESIGN.md)
 [![Repo Guidelines](https://img.shields.io/badge/Repo_Guidelines-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/REPO.md)
 [![Project Board](https://img.shields.io/badge/Project_Board-GitHub-B01030?style=for-the-badge&logo=github&logoColor=white)](https://github.com/orgs/COS301-SE-2026/projects)
 [![Demo 1 Video](https://img.shields.io/badge/Demo_1-View_Video-B01030?style=for-the-badge&logo=google&logoColor=white)](https://drive.google.com/file/d/1My1plbRG86EpTqbXTdhLJthhue0KC19o/view?usp=sharing)
 
 </div>
+
+</details>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -243,48 +268,40 @@ pnpm run setup
 </details>
 
 <details>
-<summary><strong>4. Start the Database</strong></summary>
+
+<summary><strong>4. Run the Application</strong></summary>
 <br>
 
-Starts the PostgreSQL and Redis Docker containers:
+You can run the system locally on your machine or via Docker.
 
+**Option A: Local Development**
 ```bash
-pnpm db
+pnpm dev
 ```
+Starts the frontend, .NET Core API, and Python AI API all at once.
+
+**Option B: Docker Development**
+```bash
+pnpm prod
+```
+Builds and starts the application via Docker Compose.
 
 </details>
 
 <details>
-<summary><strong>5. Seed Demo Data</strong></summary>
+
+<summary><strong>5. Seed Demo Data (Optional)</strong></summary>
 <br>
 
-Start the backend - it will run migrations and seed the demo user automatically on first startup:
-
-```bash
-pnpm dev:backend
-```
-
-Once it is running and you see the API ready, open a second terminal and load the demo workout data:
+The system automatically runs the seeder on startup. If you ever want to re-seed deleted/manipulated data, use the following whilst the databsase is running:
 
 ```bash
 pnpm db:seed:sql
 ```
 
-Then stop the backend with `Ctrl+C`.
-
 </details>
 
-<details>
-<summary><strong>6. Start Development</strong></summary>
-<br>
 
-```bash
-pnpm dev
-```
-
-Starts the frontend, .NET Core API, and Python AI API all at once.
-
-</details>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -301,6 +318,8 @@ Starts the frontend, .NET Core API, and Python AI API all at once.
 | `pnpm db:seed:sql` | Loads the demo workout data from the SQL script |
 | `pnpm dev` | Starts the Frontend, .NET Core API, and Python AI API all at once |
 | `pnpm test` | Runs all tests at once |
+| `pnpm test:coverage` | Runs all tests with coverage collection across frontend, backend, and AI API |
+
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -309,5 +328,8 @@ Starts the frontend, .NET Core API, and Python AI API all at once.
 - **EPI-USE** - our industry client, for the vision behind OptiLifts
 - The open-source community for the incredible tools and libraries that make this possible
 - Microsoft Azure for Students sponsorship
+**Gym Visual** - for the comprehensive exercise media assets. © Gym visual — https://gymvisual.com/
+
+> **Academic Disclaimer:** OptiLifts is strictly a non-commercial Capstone project developed by Team hatrock. All exercise media is strictly used for educational purposes.
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>

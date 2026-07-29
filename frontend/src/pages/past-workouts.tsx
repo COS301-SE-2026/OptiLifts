@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import badgeIcon from '@/assets/badge.png'
 import { PageTitle } from '@/components/ui/page-title'
 import { Card } from '@/components/ui/card'
-import { DatePagination } from '@/components/ui/date-pagination'
+import { DatePagination, getWeekStart } from '@/components/ui/date-pagination'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { customFetch } from '@/lib/custom-fetch'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 
@@ -18,18 +18,20 @@ type ScheduledEntryDto = {
     primaryMuscleGroups: string[]
     exerciseCount: number
     exercisePreview: string[]
+    exercisePreviewIds: string[]
     totalVolume: number
     totalSets: number
     startedAt?: string
     completedAt?: string
-    recordsCount?: number
+    recordCount?: number
+    prCount?: number
     logId?: string
 }
 
 const formatDuration = (start: string, end: string) => {
     const dif = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 600000);
     if (dif < 1) {
-        return '<1 min'
+        return '<1m'
     } else if (dif < 60) {
         return `${dif} min`
     } else {
@@ -41,38 +43,66 @@ const formatDuration = (start: string, end: string) => {
 }
 
 export default function PastWorkoutsPage() {
-    const [selectedWeek, setSelectedWeek] = useState(() => new Date())
+    const location = useLocation()
+    const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
+
+    const dateParam = (location.state as { date?: string } | null)?.date || searchParams.get('date') || searchParams.get('week')
+
+    const [prevDateParam, setPrevDateParam] = useState(dateParam)
+    const [selectedWeek, setSelectedWeek] = useState(() => {
+        if (dateParam) {
+            const d = new Date(dateParam)
+            if (!Number.isNaN(d.getTime())) {
+                return getWeekStart(d)
+            }
+        }
+        return getWeekStart(new Date())
+    })
+
+    if (dateParam !== prevDateParam) {
+        setPrevDateParam(dateParam)
+        if (dateParam) {
+            const d = new Date(dateParam)
+            if (!Number.isNaN(d.getTime())) {
+                setSelectedWeek(getWeekStart(d))
+            }
+        }
+    }
+
     const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
-    const navigate = useNavigate()
-
-    useEffect(() => {
-        const getImages = async () => {
-            try {
-                const response = await customFetch(`/api/exercises/allImages`)
-                if (response.ok) {
-                    const out = await response.json();
-                    setExerciseImages(out)
-                }
-            } catch (e) {
-                console.error('Error fetching exercise images:', e)
-            }
-        }
-        void getImages();
-    }, [])
 
     useEffect(() => {
         const fetchWorkouts = async () => {
             setLoading(true)
             try {
-                const start = new Date(selectedWeek)
+                const start = getWeekStart(selectedWeek)
                 const end = new Date(start)
-                end.setDate(start.getDate() + 6)
+                end.setUTCDate(start.getUTCDate() + 6)
+                end.setUTCHours(23, 59, 59, 999)
                 const response = await customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}&status=Completed`)
                 if (response.ok) {
                     const out = await response.json()
                     setWorkouts(out)
+
+                    const exercises = Array.from(new Set(
+                        out.flatMap((workout: ScheduledEntryDto) => workout.exercisePreviewIds || [])
+                    )) as string[];
+
+                    if (exercises.length > 0) {
+                        const imgRes = await customFetch('/api/exercises/images', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ exerciseIds: exercises })
+                        });
+
+                        if (imgRes.ok) {
+                            const imgDetails = await imgRes.json();
+                            setExerciseImages(imgDetails)
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching workouts:', error)
@@ -103,8 +133,8 @@ export default function PastWorkoutsPage() {
             <div className="space-y-5">
                 {workouts.map((workout) => {
                     //map exercise names to images via dictionary
-                    const allImages = (workout.exercisePreview || [])
-                        .map(name => exerciseImages[name])
+                    const allImages = (workout.exercisePreviewIds || [])
+                        .map(id => exerciseImages[id])
                         .filter(Boolean);
 
                     const exerImages = allImages.slice(0, 8);
@@ -116,16 +146,21 @@ export default function PastWorkoutsPage() {
                         workoutDate = "Unknown date"
                     }
 
+                    const logDate = workout.completedAt || workout.startedAt || workout.scheduled
+                    const openLogDetail = () => {
+                        navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}`, { state: { date: logDate } })
+                    }
+
                     return (
                         <Card
                             key={workout.id}
                             role="button"
                             tabIndex={0}
-                            onClick={() => { navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}`); }}
+                            onClick={openLogDetail}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
-                                    navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}`);
+                                    openLogDetail();
                                 }
                             }}
                             className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between border-border cursor-pointer transition-shadow hover:ring-2 hover:ring-brand focus-visible:ring-2 focus-visible:ring-brand"
@@ -180,7 +215,7 @@ export default function PastWorkoutsPage() {
                                     <span className="text-lg font-bold text-foreground">{workout.exerciseCount}</span>
                                 </div>
                                 <div className="flex flex-col items-center gap-1.5">
-                                    <span className="text-sm text-muted-foreground">Records</span>
+                                    <span className="text-sm text-muted-foreground">PRs</span>
                                     <div className="flex items-center gap-1.5">
                                         <div className="relative h-[24px] w-[24px]">
                                             <img
@@ -203,7 +238,7 @@ export default function PastWorkoutsPage() {
                                                 }}
                                             />
                                         </div>
-                                        <span className="text-lg font-bold text-foreground">{workout.recordsCount}</span>
+                                        <span className="text-lg font-bold text-foreground">{workout.recordCount ?? workout.prCount ?? 0}</span>
                                     </div>
                                 </div>
                             </div>

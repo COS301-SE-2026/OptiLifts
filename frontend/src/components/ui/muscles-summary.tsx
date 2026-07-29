@@ -2,7 +2,8 @@ import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { cn } from '@/lib/utils'
 
 type MuscleSummaryExercise = Readonly<{
-  primaryMuscle: string
+  primaryMuscle?: string
+  muscleGroup?: string
   sets: readonly unknown[]
 }>
 
@@ -26,11 +27,12 @@ function buildRows(exercises: readonly MuscleSummaryExercise[]): MuscleSummaryRo
   const setsByMuscle = new Map<string, number>(MUSCLE_GROUPS.map((muscle) => [muscle, 0]))
 
   for (const exercise of exercises) {
-    if (!setsByMuscle.has(exercise.primaryMuscle)) {
+    const muscleName = exercise.primaryMuscle ?? exercise.muscleGroup ?? ''
+    if (!setsByMuscle.has(muscleName)) {
       continue
     }
 
-    setsByMuscle.set(exercise.primaryMuscle, (setsByMuscle.get(exercise.primaryMuscle) ?? 0) + exercise.sets.length)
+    setsByMuscle.set(muscleName, (setsByMuscle.get(muscleName) ?? 0) + exercise.sets.length)
   }
 
   return [...MUSCLE_GROUPS]

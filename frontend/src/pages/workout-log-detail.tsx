@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/ui/page-title'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
@@ -29,7 +31,7 @@ function formatDurationAsHours(duration: string | null) {
   }
 
   if (hours === 0) {
-    return `${minutes}m`
+    return minutes === 0 ? '<1m' : `${minutes}m`
   }
 
   return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
@@ -45,10 +47,22 @@ function formatCompletedDate(date: string) {
 
 export default function WorkoutLogDetailPage() {
   const { workoutId, logId } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated, isHydrated } = useAuth()
   const [workout, setWorkout] = useState<WorkoutLogDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleBackToPastWorkouts = () => {
+    const locationDate = (location.state as { date?: string } | null)?.date
+    const date = workout?.completedAt ?? locationDate ?? workout?.createdAt
+    if (date) {
+      navigate(`/past-workouts?date=${encodeURIComponent(date)}`, { state: { date } })
+    } else {
+      navigate('/past-workouts')
+    }
+  }
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated || !workoutId || !logId) {
@@ -136,6 +150,15 @@ export default function WorkoutLogDetailPage() {
     <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
+          <Button
+            variant="text"
+            size="sm"
+            onClick={handleBackToPastWorkouts}
+            className="mb-2 flex items-center gap-1 self-start px-0 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Past Workout</span>
+          </Button>
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout Log</p>
           <PageTitle title={workoutLabel} />
           {workout?.completedAt ? (

@@ -7,222 +7,286 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 - [User Stories / User Characteristics](#user-stories--user-characteristics)
 - [Use Cases](#use-cases)
 - [Functional Requirements](#functional-requirements)
+- [Non-Functional Requirements](#non-functional-requirements)
 - [High-level Use Case Diagrams](#high-level-use-case-diagrams)
 - [Domain Model](#domain-model)
 
 ## User Stories / User Characteristics
 
-### Workout Creator & Editor
-* As a user, I want to enter a search query into the exercise database search bar so that the system displays a list of exercises that match my query.
-* As a user, I want to apply filter criteria like equipment or muscles trained so that the system updates the displayed list to show only matching items.
-* As a user, I want to select an exercise from the database so that it is successfully added to my new workout draft or appended to my existing workout.
-* As a user, I want to select the delete option for an exercise in my draft or saved workout so that it is successfully removed from the workout's sequence.
-* As a user, I want to select a specific exercise within a workout to modify its parameters, such as sets, reps, or rest time, so that the new parameters are updated in the editor.
-* As a user, I want to click the save button after finalising or editing my workout routine so that the system successfully stores the new workout or overwrites the old data in my profile.
-* As a user, I want to choose the delete option for an entire saved workout so that it is permanently removed from my account.
+### Workout Creator
+*   **Search for exercise:** As a user, I want to enter a search query into the exercise database search bar so that the system displays a list of exercises that match my query.
+*   **Add exercise:** As a user, I want to select an exercise from the database so that it is successfully added to my new workout draft.
+*   **Filter exercises:** As a user, I want to apply filter criteria like equipment or muscles trained so that the system updates the displayed list to show only matching items.
+*   **Remove exercise:** As a user, I want to select the remove option for an exercise in my draft so that it is successfully removed from the workout's sequence.
+*   **Create exercise:** As a user, I want to define and save a custom movement so that I can add personalized exercises to my workout.
 
-### Schedule Planner
-* As a user, I want to select a date in the schedule to assign a workout so that it is successfully mapped to the selected block.
-* As a user, I want to select an existing scheduled session to change the session's date so that I can keep to my routine.
-* As a user, I want to select an existing scheduled session to swap its assigned workout so that the new workout replaces the old one in the schedule.
-* As a user, I want to apply filter criteria by folder or muscles trained so that I can find a specific saved workout.
-* As a user, I want to tap on a scheduled workout so that I can see its summary and exercise list.
-* As a user, I want to select a scheduled workout and choose to unschedule it so that it is successfully cleared from the calendar planner.
+### Workout Editor
+*   **Search for exercise:** As a user, I want to search for an exercise so that I can easily find new movements to append to my existing workout.
+*   **Add exercise:** As a user, I want to select an exercise so that it is appended to my currently saved workout.
+*   **Remove exercise:** As a user, I want to select the remove option for an exercise in my saved workout so that it is permanently removed from the sequence.
+*   **Filter exercises:** As a user, I want to filter the exercise database by equipment or target muscles so that I can narrow down my choices while editing.
+*   **Edit exercise:** As a user, I want to select a specific exercise within a workout to modify its parameters (such as sets, reps, or rest time) so that the new parameters are updated in the editor.
+*   **Create exercise:** As a user, I want to create a brand-new custom exercise from within the editor so that I can immediately include it in the routine I am modifying.
 
-### Workout Overview & Active Session
-* As a user, I want to navigate to a specific workout's overview page so that I can see its high-level details, estimated time, and exercise list.
-* As a user, I want to click the "Start" button from the overview screen so that the system transitions into the active mode and begins tracking the session.
-* As a user, I want to click the "Edit" button on the overview screen so that the system opens the chosen workout inside the editor.
-* As a user, I want to select "Add" to perform an extra exercise during an active workout so that the new exercise is dynamically added to the current session.
-* As a user, I want to select the remove option to skip an exercise so that it is dropped from the active session without affecting the saved template.
-* As a user, I want to click on an exercise to see instructions, history, or a video demonstration so that the system displays the educational details.
-* As a user, I want to input the completed reps and weight for a specific set and mark it as done so that the system records the data and highlights the set as completed.
-* As a user, I want to press the button to finish my current active training session so that the system saves the completed data and displays a post-workout summary.
+### Workouts
+*   **View workouts:** As a user, I want to view a comprehensive list of my saved workouts so that I can browse my available training routines.
+*   **View muscle heatmap:** As a user, I want to view a muscle heatmap for my workouts so that I can visually analyze which muscle groups are being targeted most effectively.
+*   **View workout summary:** As a user, I want to view a high-level summary of a specific workout so that I can quickly gauge its difficulty and duration.
+*   **Start workout:** As a user, I want to click the start button on a workout so that I can begin logging my training session.
+*   **Duplicate workout:** As a user, I want to duplicate an existing workout so that I can use it as a foundational template for a new routine.
+*   **Edit workout:** As a user, I want to select the edit option for a workout so that I can adjust its structure and exercise list.
+*   **Delete workout:** As a user, I want to choose the delete option for an entire saved workout so that it is permanently removed from my account.
+*   **Create workout:** As a user, I want to click a creation button so that I can start building a new workout from scratch.
+*   **Search workout:** As a user, I want to search through my workout library so that I can locate a specific routine by its name.
 
-### Custom Exercises
-* As a user, I want to select a custom-made exercise from my personal library so that the system displays its details, notes, and tracking history.
-* As a user, I want to choose to modify the name, instructions, or primary muscles of my custom exercise so that the updated parameters are successfully saved.
-* As a user, I want to select a custom exercise to permanently remove from my library so that it is deleted and no longer appears in search results.
+### Schedule
+*   **Schedule workout:** As a user, I want to assign a saved workout to a specific date in the calendar so that I can plan my upcoming training.
+*   **Schedule repeated workouts:** As a user, I want to set a workout to repeat on specified days so that I can establish a recurring training routine.
+*   **Remove workout:** As a user, I want to remove a scheduled workout from my calendar so that I can adjust my schedule when my plans change.
+*   **Change schedule view:** As a user, I want to toggle between different calendar views (e.g., daily, weekly, monthly) so that I can get an appropriate overview of my training timeline.
+*   **View summary:** As a user, I want to view a summary of my scheduled training block so that I can assess my planned workload.
+*   **View muscle balance chart:** As a user, I want to view a muscle balance chart based on my schedule so that I can ensure I am not overtraining or neglecting specific muscle groups.
+*   **View workout:** As a user, I want to click on a calendar entry to view the full workout details so that I know exactly what is planned for that day.
+*   **Filter by date:** As a user, I want to filter my schedule using date ranges so that I can quickly look at past or future training blocks.
 
-### User Management & Profile
-* As a user, I want to enter my credentials and hit submit so that the system authenticates me and grants access to my dashboard.
-* As a user, I want to fill out the registration form so that the system creates my new user profile in the database and logs me in.
-* As a user, I want to select the log-out option from the app menu so that the system securely ends my active session and returns me to the login screen.
-* As a user, I want to request account deletion and confirm the action so that the system permanently wipes all my personal data and credentials from the database.
-* As a user, I want to navigate to the profile section so that the system displays my personal details, stats, and settings.
-* As a user, I want to modify my profile information and submit the details so that the system enables input fields and securely updates and stores my new data.
+### Profile
+*   **View profile:** As a user, I want to navigate to my profile page so that I can review my personal fitness details and account information.
+*   **Edit user profile details:** As a user, I want to update my profile details (like weight, height, or goals) so that the application maintains my most current metrics.
+*   **Configure app preferences:** As a user, I want to access a settings menu to configure app preferences so that the platform behaves according to my personal needs (e.g., unit measurements, theme).
+*   **View past workouts:** As a user, I want to browse a history log of my past workouts so that I can review my consistency over time.
+*   **Sign out:** As a user, I want to select a sign-out button so that my account session is securely terminated on the device.
 
-### Use Cases
+### Active Session
+*   **Add exercise:** As a user, I want to add an exercise while a session is active so that I can adapt my training on the fly.
+*   **Remove exercise:** As a user, I want to remove an exercise during an active session so that I can skip movements if necessary.
+*   **View exercise:** As a user, I want to tap on the current exercise so that I can view detailed instructions and historical performance data for it.
+*   **Add set:** As a user, I want to append an additional set to the current exercise so that I can increase my volume beyond the planned routine.
+*   **Log set:** As a user, I want to enter the weight lifted and reps completed for a set so that the system records my actual performance.
+*   **View workout summary:** As a user, I want to pull up a summary of my active session so that I can track my overall progress before finishing.
+
+### Workout Detail
+*   **View workout:** As a user, I want to open the detailed page for a workout so that I can inspect the full sequence of planned exercises and sets.
+*   **View workout summary:** As a user, I want to read the high-level summary on the detail page so that I can quickly review total volume and estimated time.
+*   **Start workout:** As a user, I want to launch the active session directly from the detail view so that I can jump straight into training.
+*   **Edit workout:** As a user, I want to click the edit button from the detail view so that I can be redirected to the Workout Editor for modifications.
+*   **Delete workout:** As a user, I want to select delete from the detail view so that the routine is permanently discarded from my library.
+
+### Dashboard
+*   **View today's scheduled workout:** As a user, I want to see the workout assigned for today immediately upon opening the app so that my immediate goal is clear.
+*   **Start today's scheduled session:** As a user, I want a quick-start button on my dashboard so that I can begin today's training with a single tap.
+*   **View dashboard statistics:** As a user, I want to see a snapshot of my fitness statistics on the main dashboard so that I can monitor my weekly progress at a glance.
+*   **View upcoming workouts:** As a user, I want to see a brief list of the workouts scheduled for the next few days so that I can mentally prepare for my training week.
+
+### Custom Exercise View
+*   **View exercise:** As a user, I want to open the details of a custom exercise I previously created so that I can review its parameters.
+*   **Edit exercise:** As a user, I want to edit a custom exercise's details (such as its name or target muscle group) so that I can correct or update the information.
+*   **Delete exercise:** As a user, I want to delete a custom exercise from my personal database so that it no longer appears in my search results.
+
+### Completed Workouts
+*   **View workout summary:** As a user, I want to view the final summary of a past completed workout so that I can quickly gauge how well I performed.
+*   **View workout:** As a user, I want to open a completed workout log so that I can review the exact weights and reps I achieved on that specific day.
+*   **Filter by week:** As a user, I want to filter my completed workouts by week so that I can navigate my training history efficiently.
+
+### Landing
+*   **Register:** As a new user, I want to input my email and create a password on the landing page so that I can create a new account.
+*   **Sign in:** As a returning user, I want to enter my credentials on the landing page so that I can authenticate and access my personalized dashboard.
+*   **View app information:** As a visitor, I want to read information about the application's features on the landing page so that I can decide if it meets my fitness tracking needs.
+
+### Help Menu *(Based on image_62a813.png)*
+*   **Search FAQs and tutorials:** As a user, I want to enter a query to search FAQs and tutorials so that I can quickly find answers to my questions.
+*   **View FAQs:** As a user, I want to view frequently asked questions so that I can read solutions to common inquiries.
+*   **View tutorials:** As a user, I want to view tutorials so that I can learn how to navigate and best utilize the application's features.
+*   **View help centre and resources:** As a user, I want to access the help centre and its resources so that I can find comprehensive support documentation and contact information.
+
+## Use Cases
 
 ### Workouts Management
 
 **View workouts**
-* TUCBW the user navigates to the Workouts management screen.
-* TUCEW the system displays the authenticated user's saved workouts.
+*   TUCBW the user navigates to the Workouts management screen.
+*   TUCEW the system displays the authenticated user's saved workouts.
 
 **View muscle heatmap**
-* TUCBW the user requests a muscle heatmap for a selected workout or for their workout history.
-* TUCEW the system displays a visual heatmap highlighting targeted muscle groups and their relative emphasis based on exercises, sets, and assigned loads.
+*   TUCBW the user requests a muscle heatmap for a selected workout or for their workout history.
+*   TUCEW the system displays a visual heatmap highlighting targeted muscle groups and their relative emphasis based on exercises, sets, and assigned loads.
 
 **View workout summary**
-* TUCBW the user selects a specific workout from the list to view its summary.
-* TUCEW the system displays the workout's high-level details, estimated time, targeted muscle groups, and the full exercise list with counts.
+*   TUCBW the user selects a specific workout from the list to view its summary.
+*   TUCEW the system displays the workout's high-level details, estimated time, targeted muscle groups, and the full exercise list with counts.
 
 ### Workout Creator
 
 **Search for exercise**
-* TUCBW the user enters a search query into the exercise database search bar.
-* TUCEW the system displays a list of exercises that match the user's query.
+*   TUCBW the user enters a search query into the exercise database search bar.
+*   TUCEW the system displays a list of exercises that match the user's query.
 
 **Add exercise**
-* TUCBW the user selects an exercise from the database to include in their new workout.
-* TUCEW the selected exercise is successfully added to the current workout draft.
+*   TUCBW the user selects an exercise from the database to include in their new workout.
+*   TUCEW the selected exercise is successfully added to the current workout draft.
 
 **Filter exercises**
-* TUCBW the user applies one or more filter criteria (e.g., equipment, muscles trained, recommended, or template).
-* TUCEW the system updates the displayed exercise list to show only items matching the selected filters.
+*   TUCBW the user applies one or more filter criteria (e.g., equipment, muscles trained, recommended, or template).
+*   TUCEW the system updates the displayed exercise list to show only items matching the selected filters.
 
 **Remove exercise**
-* TUCBW the user selects an exercise currently in their workout draft and chooses the delete option.
-* TUCEW the exercise is successfully removed from the workout draft.
+*   TUCBW the user selects an exercise currently in their workout draft and chooses the delete option.
+*   TUCEW the exercise is successfully removed from the workout draft.
 
 **Save workout**
-* TUCBW the user clicks the save button after finalising their workout routine.
-* TUCEW the system successfully stores the new workout to the user's profile.
+*   TUCBW the user clicks the save button after finalising their workout routine.
+*   TUCEW the system successfully stores the new workout to the user's profile.
 
 ### Workout Editor
 
 **Search for exercise**
-* TUCBW the user enters a search query while editing an existing workout.
-* TUCEW the system displays matching exercises available to add to the workout.
+*   TUCBW the user enters a search query while editing an existing workout.
+*   TUCEW the system displays matching exercises available to add to the workout.
 
 **Add exercise**
-* TUCBW the user selects a new exercise to add to an already saved workout.
-* TUCEW the exercise is appended to the workout being edited.
+*   TUCBW the user selects a new exercise to add to an already saved workout.
+*   TUCEW the exercise is appended to the workout being edited.
 
 **Remove exercise**
-* TUCBW the user selects an exercise to delete from the saved workout.
-* TUCEW the exercise is removed from the workout's sequence.
+*   TUCBW the user selects an exercise to delete from the saved workout.
+*   TUCEW the exercise is removed from the workout's sequence.
 
 **Filter exercises**
-* TUCBW the user applies filters to narrow down the exercise list within the editor.
-* TUCEW the list refreshes to reflect the filtered criteria.
+*   TUCBW the user applies filters to narrow down the exercise list within the editor.
+*   TUCEW the list refreshes to reflect the filtered criteria.
 
 **Edit exercise**
-* TUCBW the user selects a specific exercise within the workout to modify its parameters (e.g., changing sets, reps, or rest time).
-* TUCEW the new parameters for that specific exercise are updated in the editor.
+*   TUCBW the user selects a specific exercise within the workout to modify its parameters (e.g., changing sets, reps, or rest time).
+*   TUCEW the new parameters for that specific exercise are updated in the editor.
 
 **Save changes**
-* TUCBW the user clicks the save button to finalise their edits.
-* TUCEW the system overwrites the old workout data with the updated information.
+*   TUCBW the user clicks the save button to finalise their edits.
+*   TUCEW the system overwrites the old workout data with the updated information.
 
 **Delete workout**
-* TUCBW the user chooses the delete option for the entire saved workout.
-* TUCEW the workout is permanently removed from the user's account.
+*   TUCBW the user chooses the delete option for the entire saved workout.
+*   TUCEW the workout is permanently removed from the user's account.
 
 ### Schedule Planner
 
 **Set session workout**
-* TUCBW the user selects a date or time block in the schedule to assign a workout.
-* TUCEW the chosen workout is successfully mapped to the selected schedule block.
+*   TUCBW the user selects a date or time block in the schedule to assign a workout.
+*   TUCEW the chosen workout is successfully mapped to the selected schedule block.
 
 **Change a session's workout**
-* TUCBW the user selects an existing scheduled session to swap its assigned workout.
-* TUCEW the new workout replaces the old one in the schedule.
+*   TUCBW the user selects an existing scheduled session to swap its assigned workout.
+*   TUCEW the new workout replaces the old one in the schedule.
 
 **Filter workouts**
-* TUCBW the user applies filter criteria (by folder or muscles trained) to find a specific saved workout.
-* TUCEW the system displays the user's saved workouts that match the filter.
+*   TUCBW the user applies filter criteria (by folder or muscles trained) to find a specific saved workout.
+*   TUCEW the system displays the user's saved workouts that match the filter.
 
 **View workout**
-* TUCBW the user taps on a scheduled workout to see its contents.
-* TUCEW the system displays the summary and exercise list for that specific workout.
+*   TUCBW the user taps on a scheduled workout to see its contents.
+*   TUCEW the system displays the summary and exercise list for that specific workout.
 
 **Remove workout**
-* TUCBW the user selects a scheduled workout and chooses to unschedule it.
-* TUCEW the workout is successfully cleared from the calendar planner.
+*   TUCBW the user selects a scheduled workout and chooses to unschedule it.
+*   TUCEW the workout is successfully cleared from the calendar planner.
 
 ### Workout Overview
 
 **View workout**
-* TUCBW the user navigates to a specific workout's overview page.
-* TUCEW the system displays the high-level details, estimated time, and exercise list.
+*   TUCBW the user navigates to a specific workout's overview page.
+*   TUCEW the system displays the high-level details, estimated time, and exercise list.
 
 **Start workout**
-* TUCBW the user clicks the "Start" button from the overview screen.
-* TUCEW the system transitions into the active "Workout View" mode and begins tracking the session.
+*   TUCBW the user clicks the "Start" button from the overview screen.
+*   TUCEW the system transitions into the active "Workout View" mode and begins tracking the session.
 
 **Edit workout**
-* TUCBW the user clicks the "Edit" button on the overview screen.
-* TUCEW the system opens the chosen workout inside the "Workout Editor."
+*   TUCBW the user clicks the "Edit" button on the overview screen.
+*   TUCEW the system opens the chosen workout inside the "Workout Editor."
 
 ### Profile
 
 **View profile**
-* TUCBW the user navigates to the profile section of the application.
-* TUCEW the system displays the user's personal details, stats, and settings.
+*   TUCBW the user navigates to the profile section of the application.
+*   TUCEW the system displays the user's personal details, stats, and settings.
 
 **Edit profile**
-* TUCBW the user taps the option to modify their profile information.
-* TUCEW the system enables input fields, allowing the user to type in new personal data.
+*   TUCBW the user taps the option to modify their profile information.
+*   TUCEW the system enables input fields, allowing the user to type in new personal data.
 
 **Save profile**
-* TUCBW the user submits their updated profile details.
-* TUCEW the system securely updates and stores the new profile data.
+*   TUCBW the user submits their updated profile details.
+*   TUCEW the system securely updates and stores the new profile data.
 
 ### Workout View (Active Session)
 
 **Add exercise**
-* TUCBW the user realises they want to perform an extra exercise during an active workout and selects "Add."
-* TUCEW the new exercise is dynamically added to the current active session.
+*   TUCBW the user realises they want to perform an extra exercise during an active workout and selects "Add."
+*   TUCEW the new exercise is dynamically added to the current active session.
 
 **Remove exercise**
-* TUCBW the user decides to skip an exercise and selects the remove option.
-* TUCEW the exercise is dropped from the active session without affecting the saved template.
+*   TUCBW the user decides to skip an exercise and selects the remove option.
+*   TUCEW the exercise is dropped from the active session without affecting the saved template.
 
 **View exercise**
-* TUCBW the user clicks on an exercise to see instructions, past history, or a video demonstration.
-* TUCEW the system displays the requested educational details for that exercise.
+*   TUCBW the user clicks on an exercise to see instructions, past history, or a video demonstration.
+*   TUCEW the system displays the requested educational details for that exercise.
 
 **Log set**
-* TUCBW the user inputs the completed reps and weight for a specific set and marks it as done.
-* TUCEW the system records the data and highlights the set as completed.
+*   TUCBW the user inputs the completed reps and weight for a specific set and marks it as done.
+*   TUCEW the system records the data and highlights the set as completed.
 
 **End workout**
-* TUCBW the user presses the button to finish their current active training session.
-* TUCEW the system saves the completed session data and displays a post-workout summary.
+*   TUCBW the user presses the button to finish their current active training session.
+*   TUCEW the system saves the completed session data and displays a post-workout summary.
 
 ### User Management
 
 **Login**
-* TUCBW the user enters their credentials (username/email and password) and hits submit.
-* TUCEW the system authenticates the credentials and grants access to the user's dashboard.
+*   TUCBW the user enters their credentials (username/email and password) and hits submit.
+*   TUCEW the system authenticates the credentials and grants access to the user's dashboard.
 
 **Register**
-* TUCBW the user fills out the registration form to create a new account.
-* TUCEW the system creates the new user profile in the database and logs them in.
+*   TUCBW the user fills out the registration form to create a new account.
+*   TUCEW the system creates the new user profile in the database and logs them in.
 
 **Sign out**
-* TUCBW the user selects the log-out option from the app menu.
-* TUCEW the system securely ends the active session and returns the user to the login screen.
+*   TUCBW the user selects the log-out option from the app menu.
+*   TUCEW the system securely ends the active session and returns the user to the login screen.
 
 **Delete account**
-* TUCBW the user requests account deletion and confirms the irreversible action.
-* TUCEW the system permanently wipes all of the user's personal data and credentials from the database.
+*   TUCBW the user requests account deletion and confirms the irreversible action.
+*   TUCEW the system permanently wipes all of the user's personal data and credentials from the database.
 
 ### Custom Exercise Overview
 
 **View exercise**
-* TUCBW the user selects a custom-made exercise from their personal library.
-* TUCEW the system displays the details, notes, and tracking history for that custom movement.
+*   TUCBW the user selects a custom-made exercise from their personal library.
+*   TUCEW the system displays the details, notes, and tracking history for that custom movement.
 
 **Edit exercise**
-* TUCBW the user chooses to modify the name, instructions, or primary muscles of their custom exercise.
-* TUCEW the updated custom exercise parameters are successfully saved.
+*   TUCBW the user chooses to modify the name, instructions, or primary muscles of their custom exercise.
+*   TUCEW the updated custom exercise parameters are successfully saved.
 
 **Delete exercise**
-* TUCBW the user selects a custom exercise to permanently remove from their library.
-* TUCEW the custom exercise is successfully deleted and will no longer appear in search results.
+*   TUCBW the user selects a custom exercise to permanently remove from their library.
+*   TUCEW the custom exercise is successfully deleted and will no longer appear in search results.
+
+### Help Menu
+
+**Search FAQs and tutorials**
+*   TUCBW the user inputs a search query into the help menu's search function.
+*   TUCEW the system presents a filtered list of FAQs and tutorials that match the user's query.
+
+**View FAQs**
+*   TUCBW the user selects the option to view FAQs.
+*   TUCEW the system displays a list of frequently asked questions and their corresponding answers.
+
+**View tutorials**
+*   TUCBW the user navigates to the tutorials section.
+*   TUCEW the system displays guides or instructional materials on how to use the application.
+
+**View help centre and resources**
+*   TUCBW the user clicks on the help centre and resources link.
+*   TUCEW the system opens the main help hub containing comprehensive support documentation and contact channels.
 
 ***
 
@@ -305,6 +369,34 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR5.2.3: The system will allow the user to mark a set as complete or uncomplete.
 4. FR5.2.4: The system will allow the user to add or remove exercises during an active session.
 5. FR5.2.5: The system will allow the user to end and save the workout or cancel the session.
+
+## Non-Functional Requirements
+
+### NFR1: Performance
+1. NFR1.1: The system will respond to Core api requests within 1.5 seconds for 95% of requests.
+2. NFR1.2: The system will respond to ai-api requests within 3 seconds for 95% of requests.
+3. NFR1.3: The system will support 100 concurrent users with minimal performance loss.
+
+## NFR2: Scalability
+1. NFR2.1: The system will supoort an increase in workload of up to 200% with no more than a 10% decrease in response time.
+
+## NFR3: Security
+1. NFR3.1: The stystem will encrypt sensitive user using AES-256 encryption at rest. 
+2. NFR3.2: The system will hash user passwords when stored in the database using bcrypt with a salt factor of 12.
+3. NFR3.3: The system will use HTTPS for all data transmission between the client and server.
+4. NFR3.4: The system will prevent access to the business logic and data of the app without proper authentication and autherization.
+
+## NFR4: Maintainability
+1. NFR4.1: New features or bug fixes will be deployable to production within 30 minutes.
+2. NFR4.2: The system will have an automated test coverage of atleast 80%.
+
+## NFR5: Usability
+1. NFR5.1: The system will allow users to register an account/log in, and be able to create a workout within 5 minutes of first use.
+2. NFR5.2: The system will provide a user-friendly interface that is keyboard and mouse accessible. 
+3. NFR5.3: The system will achieve at least an 85% user satisfaction rating via a System Usability Scale (SUS) questionnaire.
+
+
+
 
 ## Domain Model
 

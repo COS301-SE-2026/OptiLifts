@@ -51,7 +51,7 @@ const TUTORIAL_DATA: readonly TutorialVideo[] =[
     {
         id: 'tut-3', title: 'Weekly Schedule Management',
         description: 'Discover how to map routines across your week and keep your fitness consistency on track.',
-        duration: '0:00', youtubeId: '',
+        duration: '2:56', youtubeId: '7LVbhVXriP8',
         fallbackVideoUrl: '',
     },
     {

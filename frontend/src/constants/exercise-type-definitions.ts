@@ -17,3 +17,15 @@ export const DEFAULT_EXERCISE_TYPE_OPTIONS: readonly ExerciseTypeDefinition[] = 
   example: example as string,
   metrics: metrics as readonly string[],
 })) as readonly ExerciseTypeDefinition[]
+
+export function formatExerciseType(exerciseType: string | null | undefined): string {
+  if (!exerciseType) {
+    return '-'
+  }
+  const match = DEFAULT_EXERCISE_TYPE_OPTIONS.find(
+    (option) =>
+      option.value.toLowerCase() === exerciseType.toLowerCase() ||
+      option.label.toLowerCase() === exerciseType.toLowerCase()
+  )
+  return match?.label ?? exerciseType
+}

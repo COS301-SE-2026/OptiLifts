@@ -7,6 +7,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 - [User Stories / User Characteristics](#user-stories--user-characteristics)
 - [Use Cases](#use-cases)
 - [Functional Requirements](#functional-requirements)
+- [Non-Functional Requirements](#non-functional-requirements)
 - [High-level Use Case Diagrams](#high-level-use-case-diagrams)
 - [Domain Model](#domain-model)
 
@@ -368,6 +369,34 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR5.2.3: The system will allow the user to mark a set as complete or uncomplete.
 4. FR5.2.4: The system will allow the user to add or remove exercises during an active session.
 5. FR5.2.5: The system will allow the user to end and save the workout or cancel the session.
+
+## Non-Functional Requirements
+
+### NFR1: Performance
+1. NFR1.1: The system will respond to Core api requests within 1.5 seconds for 95% of requests.
+2. NFR1.2: The system will respond to ai-api requests within 3 seconds for 95% of requests.
+3. NFR1.3: The system will support 100 concurrent users with minimal performance loss.
+
+## NFR2: Scalability
+1. NFR2.1: The system will supoort an increase in workload of up to 200% with no more than a 10% decrease in response time.
+
+## NFR3: Security
+1. NFR3.1: The stystem will encrypt sensitive user using AES-256 encryption at rest. 
+2. NFR3.2: The system will hash user passwords when stored in the database using bcrypt with a salt factor of 12.
+3. NFR3.3: The system will use HTTPS for all data transmission between the client and server.
+4. NFR3.4: The system will prevent access to the business logic and data of the app without proper authentication and autherization.
+
+## NFR4: Maintainability
+1. NFR4.1: New features or bug fixes will be deployable to production within 30 minutes.
+2. NFR4.2: The system will have an automated test coverage of atleast 80%.
+
+## NFR5: Usability
+1. NFR5.1: The system will allow users to register an account/log in, and be able to create a workout within 5 minutes of first use.
+2. NFR5.2: The system will provide a user-friendly interface that is keyboard and mouse accessible. 
+3. NFR5.3: The system will achieve at least an 85% user satisfaction rating via a System Usability Scale (SUS) questionnaire.
+
+
+
 
 ## Domain Model
 

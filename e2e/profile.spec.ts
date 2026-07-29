@@ -42,7 +42,6 @@ test.describe('Profile Page', () => {
 
     await Promise.all([page.waitForResponse(res => res.url().includes('api/users/me/profileDetails') && (res.request().method() === 'PATCH') && res.status() >= 200 && res.status() < 300), page.getByRole('button', { name: 'Save Changes' }).click()]);
 
-    await page.goto('/profile');
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText('Axel', { exact: true })).toBeVisible();

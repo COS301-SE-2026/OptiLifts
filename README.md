@@ -90,13 +90,13 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 | :--- | :--- | :--- |
 | **Frontend** | <img src="https://skillicons.dev/icons?i=react,vite" valign="middle" /> | React SPA with React Router, built and bundled by Vite with PWA support. |
 | **Core API** | <img src="https://skillicons.dev/icons?i=dotnet" valign="middle" /> | ASP.NET Core with EF Core and MediatR for clean CQRS-style command/query handling. |
-| **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service using LiteLLM as a unified LLM gateway, with Langfuse for observability. |
-| **Machine Learning** | ![XGBoost](https://img.shields.io/badge/XGBoost-Plateau%20Detection-EC6C2D?style=flat-square) | XGBoost gradient-boosted model for plateau detection and progression recommendation. |
-| **LLM** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Azure OpenAI - GPT-4o mini for natural language coaching and intelligent suggestions. |
+| **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service |
 | **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure - App Service, Container Registry, and managed PostgreSQL. |
 | **IaC** | <img src="https://cdn.simpleicons.org/pulumi/8A3391" width="40" valign="middle" /> | Pulumi for defining and provisioning all Azure infrastructure as code. |
 | **CI/CD** | <img src="https://skillicons.dev/icons?i=githubactions" valign="middle" /> | GitHub Actions pipelines for automated testing, linting, and deployment. |
 | **Containerisation** | <img src="https://skillicons.dev/icons?i=docker" valign="middle" /> | Docker Compose for local development orchestration of all services. |
+| **Database** | <img src="https://skillicons.dev/icons?i=postgres" valign="middle" /> | PostgreSQL for structured relational data storage. |
+| **Testing** | | Vitest for frontend unit tests,Xunit and Pytest for backend tests, Moq and TestContainers for integration tests, Playwright for end-to-end tests.|
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -268,48 +268,40 @@ pnpm run setup
 </details>
 
 <details>
-<summary><strong>4. Start the Database</strong></summary>
+
+<summary><strong>4. Run the Application</strong></summary>
 <br>
 
-Starts the PostgreSQL and Redis Docker containers:
+You can run the system locally on your machine or via Docker.
 
+**Option A: Local Development**
 ```bash
-pnpm db
+pnpm dev
 ```
+Starts the frontend, .NET Core API, and Python AI API all at once.
+
+**Option B: Docker Development**
+```bash
+pnpm prod
+```
+Builds and starts the application via Docker Compose.
 
 </details>
 
 <details>
-<summary><strong>5. Seed Demo Data</strong></summary>
+
+<summary><strong>5. Seed Demo Data (Optional)</strong></summary>
 <br>
 
-Start the backend - it will run migrations and seed the demo user automatically on first startup:
-
-```bash
-pnpm dev:backend
-```
-
-Once it is running and you see the API ready, open a second terminal and load the demo workout data:
+The system automatically runs the seeder on startup. If you ever want to re-seed deleted/manipulated data, use the following whilst the databsase is running:
 
 ```bash
 pnpm db:seed:sql
 ```
 
-Then stop the backend with `Ctrl+C`.
-
 </details>
 
-<details>
-<summary><strong>6. Start Development</strong></summary>
-<br>
 
-```bash
-pnpm dev
-```
-
-Starts the frontend, .NET Core API, and Python AI API all at once.
-
-</details>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

@@ -19,6 +19,9 @@ SAS introduction
 	- [Global & Custom Exercises](#global-and-custom-exercises)
 	- [Scheduling](#scheduling)
 - [Deployment](#Deployment)
+	- [Deployment Diagrams](#deployment-diagrams)
+	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
+	- [Rollback Strategy](#rollback-strategy)
 
 
 ## Architectural Requirements
@@ -215,62 +218,59 @@ This pattern applies wherever an object behaves differently depending on what ph
 * **Zero-Cost Implementation:** The project must be designed and implemented without incurring any costs. 
 * **Infrastructure Limitations:** The system architecture should consist of open-source technologies and free-tier cloud services, such as our Azure for Students sponsorship.
 
-**2. LLM Cost Constraints**
-* **Cost Management:** API calls to any used LLM must be carefully managed and must make use of cost-saving strategies such as caching and rate limiting.
-* **Bot Behavior:** The application must account for the ethical implications of AI-generated content. We must ensure the AI operates within safe boundaries and that bot content does not negatively affect the accuracy of the models or the user's physical training.
+**2. AI Implementation Constraints**
+* **Model Behavior:** The application must account for the ethical implications of AI-generated content. We must ensure the AI operates within safe boundaries and that bot content does not negatively affect the accuracy of the models or the user's physical training.
 
-**3. Availability Constraints**
-* **System Uptime:** The OptiLifts platform must ensure an uptime of approximately 90%.
-
-**4. Security & Regulatory Constraints**
+**3. Security & Regulatory Constraints**
 * **Data Privacy (POPIA):** User health and fitness data must be handled responsibly and in strict compliance with privacy best practices and the POPI Act.
 * **Anonymity & Encryption:** The system must implement encrypted authentication and data storage. User anonymity must be prioritized, and data obfuscation must be enforced.
 
-## Technology Requirements
+**4. Deployment Constraints**
+* **Deployment Methodology:** The system must be deployable via Infrastructure as Code (IaC) and a CI/CD pipeline, "Click Ops" deployment is not permitted.
 
-The technologie were chosen to fulfill specific architectural and quality requirements, with a strong focus on performance, zero-budget cost constraints, and maintainability.
+## Technology Requirements
 
 #### Frontend & Presentation Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **Framework** | React + React Router | Component-based structure ensures a highly responsive Single Page Application (SPA). |
 | **Build Tool & PWA** | Vite + vite-plugin-pwa | Fast hot-module replacement for ease of development and built-in support for offline Progressive Web App capabilities. |
-| **Design System** | Shadcn/ui + Tailwind CSS | Provides an easily customizable, and responsive UI whilst still keeping the application lightweight. |
+| **Design System** | Shadcn/ui + Tailwind CSS | Provides an easily customizable, and responsive UI whilst still keeping the application lightweight suporting ease of development. |
 
 #### Core API & Application Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
-| **Core Framework** | .NET ASP.NET Core | High-performance framework utilizing strong typing and robust built-in authorization mechanisms to ensure secure endpoints. It naturally supports Domain-Driven Design (DDD) principles, allowing for clear domain models to handle complex hierarchical workout data. |
+| **Core Framework** | .NET ASP.NET Core | High-performance framework that handles CRUD operations well within a 2-second timeframe and utilizes robust built-in authorization mechanisms to ensure secure endpoints. |
 | **Data Access** | Entity Framework (EF) Core | Object-Relational Mapper (ORM) that makes database interactions and migrations easier to manage accross the team. |
 | **Architecture Pattern** | MediatR | Implements logical CQRS to decouple services, separating read queries from write commands allowing for easier backend decoupling and maintainability. |
 | **Caching** | Redis | Caching ensures high-speed retrieval of session data and minimizes database hits . |
 
-#### AI & Machine Learning Layer
+#### AI Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **API Framework** | Python + FastAPI | Lightweight and highly performant with extensive libararies, ideal for serving machine learning models and AI endpoints. |
-| **Machine Learning** | XGBoost | Efficienct gradient boosting library for structured, tabular data. Chosen to analyze training history, predict performance thresholds, and back the plateau detection sub-system. |
-| **LLM Provider** | Azure OpenAI (GPT-4o mini) | Azure LLM to translate structured engine analytics into human-readable text summaries and conversational feedback. |
-| **LLM Gateway & Observability** | LiteLLM & Langfuse | Used to  manage key access, track prompt latency, and monitor token costs to adhere to zero-budget. |
+| **Optimization Engine** | Genetic Algorithm (DEAP) | Provides a deterministic, light weight solution for the dynamic scheduler and time contraints mode via its GA supprot an dintegrates with the FastAPI backend.  |
+
 
 #### Persistence Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **Relational Database** | PostgreSQL | Open-source relational database perfectly suited for the complex, hierarchical structures of workout plans and historical logs. |
+| **Object Storage** | Azure Blob Storage | Provides a scalable storage for our exercise images and profile pictures. Is included in the Azure student package ensuring zero-cost storage. |
 
 #### Infrastructure, DevOps & CI/CD
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
-| **Cloud Hosting** | Microsoft Azure | Centralizes services under the Azure for Students tier, targeting 90%+ availability. |
-| **Infrastructure as Code** | Pulumi | Automates the provisioning and tear-down of Azure resources, ensuring a reproducible deployment environment. |
+| **Cloud Hosting** | Microsoft Azure | Centralizes services under the Azure for Students tier, targeting 90%+ availability. Built in load balancing and resource allocation support the need for scalability. |
+| **Infrastructure as Code** | Pulumi | Automates the provisioning and tear-down of Azure resources, ensuring a reproducible deployment environment directly improving maintainability and ease of development. |
 | **CI/CD Pipeline** | GitHub Actions | Automates the testing and deployment pipelines directly from the repository. |
-| **Containerization** | Docker Compose | Ensures environment parity between local development and end-to-end testing environments. |
+| **Containerization** | Docker Compose | Ensures environment parity between local development and end-to-end testing environments improving ease of development. |
 | **Package Manager** | pnpm | Efficient dependency management with strong monorepo workspace support. |
 
 #### Quality Assurance & Testing
 | Testing Scope | Technologies Used |
 | :--- | :--- |
-| **.NET Backend** | xUnit (unit tests), Moq (interface mocking), TestContainers (shortlived PostgreSQL test containers), FluentAssertions. |
+| **.NET Backend** | xUnit (unit tests), Moq (interface mocking), TestContainers (shortlived PostgreSQL test containers),Respawn (Integration test database rollback) , FluentAssertions. |
 | **React Frontend** | Vitest (unit testing), React Testing Library (component interactions). |
 | **Python AI API** | pytest (unit tests), httpx (simulating web requests). |
 | **End-to-End (E2E)** | Playwright (browser simulation) integrated with Docker Compose. |
@@ -1221,3 +1221,33 @@ Update the status of an existing scheduled workout session
 ---
 
 # Deployment
+
+## Deployment Diagrams
+
+### Development Environment
+
+![Development Environment](images/deployment/DevelopmentEnviro.png)
+
+### Production Environment
+
+![Production Environment](images/deployment/ProductionEnviro.png)
+
+## CI/CD Pipeline Diagrams
+
+### CI Pipeline
+![CI Pipeline](images/deployment/CIPipeline.png)
+
+### CD Pipeline
+![CD Pipeline](images/deployment/CDPipeline.png)
+
+### Rollback Strategy
+
+#### During Deployment: Blue-Green Deployment
+When new deployments are triggered in production, new revisioins of the apps are made ( the green images) whilst the current apps continue to run and have traffic routed to them (the blue images). Once the new revisions are fully deployed and health checks pass, traffic is routed to the new (green) images. If the new revisions were to crash or fail health checks then traffic would never be routed to them and the previous working revision (blue revision) continues to handle all traffic. 
+
+#### Afer Deployment: Image Tag Pinning
+If an error is noticed after deployment, rollbacks are done via Image tag pinning. All revisions of the apps are tagged with their git commit hash and stored in the Azure Container Registry. This means if a rollback is needed we are able change to a previous revision instantly via the azure portal, alternatively we are able to roll it back via the CD by either creating a revert commit on main or by running the CD on a previous commit.
+
+#### Daily Database Backups
+Azure Database for PostgresSQL provides automated continous backups for the database. The backups are run daily and streams transaction logs every 5 minutes. These backups are retained for 10 days. This allows us to restore the database to any point in time in the last 10 days allowing us to recover from accidental data loss and destructive migrations instantly via the azure portal. 
+

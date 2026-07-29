@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
+import { Button } from '@/components/ui/button'
 import ExercisePlan from '@/components/ui/exercise-plan'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
@@ -12,6 +13,9 @@ import type { MuscleName } from '@/types/workout'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { MoreVertical } from 'lucide-react'
+import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -51,16 +55,39 @@ function formatVolume(totalVolume: number) {
 
 export default function WorkoutDetailPage() {
   const { workoutId } = useParams()
+  const navigate = useNavigate()
   const { isAuthenticated, isHydrated } = useAuth()
   const [workout, setWorkout] = useState<WorkoutDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const handleWorkoutChanged = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
   }, [])
+
+  const handleDelete = async (targetId: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${targetId}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to delete workout (${response.status})`)
+      }
+      navigate('/workouts')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete workout')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated || !workoutId) {
@@ -174,7 +201,7 @@ export default function WorkoutDetailPage() {
         </div>
 
         <div className="flex flex-col items-start gap-4 lg:items-end">
-          <div className="grid grid-cols-2 gap-8 text-left lg:text-right">
+          <div className="flex flex-wrap items-center gap-8 text-left lg:text-right">
             <div>
               <p className="text-base text-muted-foreground">Volume</p>
               <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.volume}</p>
@@ -182,6 +209,33 @@ export default function WorkoutDetailPage() {
             <div>
               <p className="text-base text-muted-foreground">Sets</p>
               <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.sets}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                id="start-workout-btn"
+                size="sm"
+                disabled={!workout || isLoading}
+                onClick={() => {
+                  if (workout) {
+                    navigate('/active-session', { state: { workout } })
+                  }
+                }}
+              >
+                Start Workout
+              </Button>
+              {workout && (
+                <DropdownMenu>
+                  <DropdownMenuEllipsisTrigger aria-label="Options">
+                    <MoreVertical />
+                  </DropdownMenuEllipsisTrigger>
+                  <DropdownMenuEllipsisContent align="end">
+                    <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuEllipsisContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
@@ -217,6 +271,23 @@ export default function WorkoutDetailPage() {
         exerciseId={detailsExerciseId}
         onClose={() => setDetailsExerciseId(null)}
         onChanged={handleWorkoutChanged}
+      />
+      <ConfirmDialog
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        isLoading={isLoading}
+        variant="danger"
+        title="Delete Workout"
+        description="Are you certain you want to delete this workout?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          if (deleteTargetId) {
+            const id = deleteTargetId
+            setDeleteTargetId(null)
+            await handleDelete(id)
+          }
+        }}
       />
     </section>
   )

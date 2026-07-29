@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Domain.Users;
@@ -37,6 +38,12 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
         db.Users.Add(user);
         await db.SaveChangesAsync();
         return user;
+    }
+
+    private static string ExtractCookiePair(IEnumerable<string> setCookieHeaders, string cookieName)
+    {
+        var cookie = setCookieHeaders.First(header => header.StartsWith($"{cookieName}=", StringComparison.OrdinalIgnoreCase));
+        return cookie.Split(';', 2)[0];
     }
 
     [Fact]
@@ -124,11 +131,10 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
         loginResponse.EnsureSuccessStatusCode();
 
         var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
-        var refreshC = cookies.FirstOrDefault(c => c.Contains("refresh_token="));
-        refreshC.Should().NotBeNull();
+        var refreshCookie = ExtractCookiePair(cookies, "refresh_token");
 
         var refreshReq = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
-        refreshReq.Headers.Add("Cookie", refreshC);
+        refreshReq.Headers.Add("Cookie", refreshCookie);
 
         var refreshResponse = await Client.SendAsync(refreshReq);
         refreshResponse.EnsureSuccessStatusCode();
@@ -138,13 +144,26 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task InvalidRefreshToken_ReturnsUnauthorized()
+    public async Task Refresh_MissingCookie_ReturnsUnauthorized()
+    {
+        var refreshResponse = await Client.PostAsync("/api/auth/refresh", null);
+
+        refreshResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task InvalidRefreshToken_ReturnsUnauthorizedAndClearsCookies()
     {
         var refreshReq = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
         refreshReq.Headers.Add("Cookie", "refresh_token=lol");
 
         var refreshResponse = await Client.SendAsync(refreshReq);
         refreshResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+        refreshResponse.Headers.Contains("Set-Cookie").Should().BeTrue();
+
+        var cookies = refreshResponse.Headers.GetValues("Set-Cookie").ToList();
+        cookies.Should().Contain(c => c.Contains("access_token=;"));
+        cookies.Should().Contain(c => c.Contains("refresh_token=;"));
     }
 
     [Fact]
@@ -158,11 +177,10 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
         loginResponse.EnsureSuccessStatusCode();
 
         var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
-        var refreshC = cookies.FirstOrDefault(c => c.Contains("refresh_token="));
-        refreshC.Should().NotBeNull();
+        var accessCookie = ExtractCookiePair(cookies, "access_token");
 
         var meReq = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
-        meReq.Headers.Add("Cookie", refreshC);
+        meReq.Headers.Add("Cookie", accessCookie);
 
         var meResponse = await Client.SendAsync(meReq);
 
@@ -172,6 +190,44 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
         userDto.Email.Should().Be(email);
         userDto.DisplayName.Should().Be("Jordan");
 
+    }
+
+    [Fact]
+    public async Task Logout_AuthenticatedUser_ClearsCookiesAndInvalidatesRefreshToken()
+    {
+        var email = "jordan-logout@optilifts.com";
+        var password = "Password123!";
+        var user = await SeedAuthUserAsync(email, "Jordan", password);
+
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
+        loginResponse.EnsureSuccessStatusCode();
+
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
+        var accessCookie = ExtractCookiePair(cookies, "access_token");
+        var refreshCookie = ExtractCookiePair(cookies, "refresh_token");
+
+        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");
+        logoutRequest.Headers.Add("Cookie", $"{accessCookie}; {refreshCookie}");
+
+        var logoutResponse = await Client.SendAsync(logoutRequest);
+
+        logoutResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        logoutResponse.Headers.Contains("Set-Cookie").Should().BeTrue();
+        var clearedCookies = logoutResponse.Headers.GetValues("Set-Cookie").ToList();
+        clearedCookies.Should().Contain(c => c.Contains("access_token=;"));
+        clearedCookies.Should().Contain(c => c.Contains("refresh_token=;"));
+
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
+        refreshRequest.Headers.Add("Cookie", refreshCookie);
+        var refreshResponse = await Client.SendAsync(refreshRequest);
+
+        refreshResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        var persistedUser = await db.Users.FirstAsync(existingUser => existingUser.Id == user.Id);
+        persistedUser.RefreshTokenHash.Should().BeNull();
+        persistedUser.RefreshTokenExpiryTime.Should().BeNull();
     }
 
     [Fact]

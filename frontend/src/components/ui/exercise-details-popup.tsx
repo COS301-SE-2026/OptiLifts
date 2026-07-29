@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { CreateExercise } from '@/components/ui/create-exercise'
 import { toast } from '@/components/ui/alert'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
+import { formatExerciseType } from '@/constants/exercise-type-definitions'
 import { customFetch } from '@/lib/custom-fetch'
 import type { CreateExerciseFormData, ExerciseDetails } from '@/types/exercise'
 
@@ -27,10 +28,18 @@ type ExerciseDetailsPopupProps = Readonly<{
   onChanged?: () => void | Promise<void>
 }>
 
+const formatMechanic = (mechanic: string | null | undefined): string | null => {
+  if (!mechanic) {
+    return null
+  }
+
+  return mechanic.charAt(0).toUpperCase() + mechanic.slice(1)
+}
+
 const toDetails = (dto: ExerciseDetsResponse): ExerciseDetails => ({
   id: dto.id,
   name: dto.name,
-  mechanic: dto.mechanic ?? null,
+  mechanic: formatMechanic(dto.mechanic),
   equipment: dto.equipment ?? null,
   exerciseType: dto.category,
   primaryMuscles: dto.primaryMuscles,
@@ -316,12 +325,12 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Type</p>
-                      <p className="text-foreground">{details.exerciseType}</p>
+                      <p className="text-foreground">{formatExerciseType(details.exerciseType)}</p>
                     </div>
                     {details.mechanic && (
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Mechanic</p>
-                        <p className="text-foreground">{details.mechanic}</p>
+                        <p className="text-foreground capitalize">{details.mechanic}</p>
                       </div>
                     )}
                   </div>

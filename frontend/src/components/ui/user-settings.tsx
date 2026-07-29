@@ -81,7 +81,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
 
     const [initialProfilePicUrl, setInitialProfilePicUrl] = useState<string | null>(null);
-    const [profilepicDeteled, setProfilePicDeleted] = useState<boolean>(false);
+    const [profilePicDeleted, setProfilePicDeleted] = useState<boolean>(false);
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
@@ -373,7 +373,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             errors = true;
         }
 
-        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilepicDeteled)) {
+        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilePicDeleted)) {
             window.location.reload();
         }
         setIsSaving(false);

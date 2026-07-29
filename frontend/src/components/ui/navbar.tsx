@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { getDraftFromStorage } from '@/lib/session-drafts'
 
@@ -19,11 +18,7 @@ const LINKS = [
 export function Navbar() {
   const { pathname } = useLocation()
   const { isAuthenticated} = useAuth()
-  const [ activeDraft, setActiveDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
-
-  useEffect(() => {
-    setActiveDraft(getDraftFromStorage())
-  }, [pathname])
+  const activeDraft = getDraftFromStorage()
 
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
   const homeLink = isAuthenticated ? '/workouts' : '/register'

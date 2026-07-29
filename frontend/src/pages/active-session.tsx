@@ -570,8 +570,6 @@ export default function ActiveSessionPage() {
     [primaryMuscleGroups]
   )
 
-  const allowedFinish = summary.completedSets > 0
-
   const buildLogPayload = (): WorkoutLogPayload | null => {
     if (!workoutId) return null
 

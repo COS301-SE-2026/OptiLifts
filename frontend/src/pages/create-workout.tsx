@@ -216,6 +216,34 @@ function mapApiExercises(
 })
 }
 
+function MemListOfGroups({
+  members,
+  onRemove,
+  onSetsChange,
+  onOpenDetails,
+  onToggleLink,
+}: Readonly<{
+  members: Array<{ exercise: SelectedWorkoutExercise; index: number }>
+  onRemove: (id: string) => void
+  onSetsChange: (id: string, sets: WorkoutExercise['sets']) => void
+  onOpenDetails: (exerciseCatalogId: string) => void
+  onToggleLink: (index: number) => void
+}>) {
+  return (
+    <>
+      {members.map((m, mi) => (
+        <Fragment key={m.exercise.id}>
+          <ExerciseCard exercise={m.exercise} onRemove={onRemove} onSetsChange={onSetsChange} onOpenDetails={onOpenDetails} />
+          {mi < members.length - 1 && (
+            <ChainLink linked onClick={() => onToggleLink(m.index)} />
+          )}
+        </Fragment>
+      ))}
+    </>
+  )
+}
+
+
 export default function CreateWorkoutPage() {
   const navigate = useNavigate()
   const [workoutName, setWorkoutName] = useState('')
@@ -606,14 +634,13 @@ export default function CreateWorkoutPage() {
                         </label>
                       </div>
                     </div>
-                    {seg.members.map((m, mi) => (
-                      <Fragment key={m.exercise.id}> 
-                        <ExerciseCard exercise={m.exercise} onRemove={removeExercise} onSetsChange={updateSets} onOpenDetails={setDetailsExerciseId}/>
-                        {mi < seg.members.length - 1 && (
-                          <ChainLink linked onClick={() => toggleLink(m.index)} />
-                        )}
-                      </Fragment>
-                    ))}
+                    <MemListOfGroups
+                      members={seg.members}
+                      onRemove={removeExercise}
+                      onSetsChange={updateSets}
+                      onOpenDetails={setDetailsExerciseId}
+                      onToggleLink={toggleLink}
+                    />
                   </div>
                   {chainAfter}
                 </Fragment>

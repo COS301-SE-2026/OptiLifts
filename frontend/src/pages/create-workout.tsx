@@ -394,6 +394,7 @@ export default function CreateWorkoutPage() {
         id: `ex-${nextExerciseId++}`,
         name: exercise.name,
         muscle: exercise.muscleGroup,
+        imageUrl: exercise.imageUrl,
         sets: [],
         exerciseCatalogId: exercise.id,
         exerciseType: exercise.exerciseType

@@ -59,34 +59,42 @@ Quality requirments dictate the holistic quality of OptiLifts by specifying the 
 
 ### Architectural Patterns
 
-For this project we model a 5-tier N architecture that maps to the existing codebase:
+For this project we model an explicit 5-tier architecture:
 
-- Presentation (frontend SPA)
-- API / Controller (OptiLifts.API)
-- Application / Use-case layer (OptiLifts.Application)
-- Domain / Business objects (OptiLifts.Domain)
-- Infrastructure / Persistence (OptiLifts.Infrastructure & DB)
+- Presentation Tier
+- API / Controller Tier
+- Application Tier
+- Domain Tier
+- Infrastructure / Persistence Tier
 
-Mermaid diagram (N = 5):
+---
+
+#### Application Tier vs. Domain Tier Separation
+
+Clean Architecture strictly separates the **Application Tier** from the **Domain Tier**:
+
+- **Domain Tier (`OptiLifts.Domain`)**: Core enterprise business logic, entities, and calculation rules. Framework-agnostic and invariant. *(Answers: "What are the core domain rules?")*
+- **Application Tier (`OptiLifts.Application`)**: Use-case orchestration, CQRS command/query handling, Mediator dispatching, and infrastructure interfaces. *(Answers: "How does the system execute a user operation?")*
+
+This separation ensures domain rules remain 100% testable in isolation, protected from framework, database, or API changes.
+
+---
+
+#### System Architecture Diagram
 
 ```mermaid
 flowchart LR
-	User((User))
-	Frontend["Presentation - frontend (SPA)"]
-	API["API / Controller - OptiLifts.API"]
-	Application["Application / Use-cases - OptiLifts.Application"]
-	Domain["Domain / Business - OptiLifts.Domain"]
-	Infra["Infrastructure / Persistence - OptiLifts.Infrastructure & DB"]
+    Tier1["Presentation Tier"]
+    Tier2["API / Controller Tier"]
+    Tier3["Application Tier"]
+    Tier4["Domain Tier"]
+    Tier5["Infrastructure / Persistence Tier"]
 
-	User --> Frontend
-	Frontend --> API
-	API --> Application
-	Application --> Domain
-	Domain --> Infra
+    Tier1 --> Tier2
+    Tier2 --> Tier3
+    Tier3 --> Tier4
+    Tier4 --> Tier5
 ```
-
-
-This diagram shows how requests flow from the client (frontend) through the API and application layers into the domain and persistence layers.
 
 ### Design Patterns
 

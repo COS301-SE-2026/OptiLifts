@@ -43,6 +43,7 @@ describe('ActiveSessionPage summary section', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
     locationState = {
       workout: {
         id: 'workout-1',
@@ -54,6 +55,7 @@ describe('ActiveSessionPage summary section', () => {
 
   afterEach(() => {
     cleanup()
+    localStorage.clear()
   })
 
   it('renders summary card with muscle diagram and set breakdown', async () => {

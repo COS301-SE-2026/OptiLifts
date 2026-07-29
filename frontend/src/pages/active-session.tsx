@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
@@ -8,8 +8,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft } from 'lucide-react'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
+import { saveDraft, getDraft, clearDraft } from '@/lib/session-drafts'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
@@ -84,6 +85,14 @@ type WorkoutDetailsResponse = Readonly<{
     groupRestTime?: number | null
   }>
 }>
+
+type SessionDraft = {
+  workoutId: string
+  workoutName: string
+  startedAtMs: number | null
+  logId: string
+  exercises: ExerciseData[]
+}
 
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
@@ -274,7 +283,7 @@ const secureRandomHex = (): string => {
 
 const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): WorkoutLogSetPayload[] => {
   const sets: WorkoutLogSetPayload[] = []
-  let orderIdx = 0
+  let orderIdx = 1
 
   for (const set of exerciseSets) {
     if (!set.completed) continue
@@ -294,6 +303,18 @@ const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): Workout
   return sets
 }
 
+function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
+  return set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
+}
+
+function exerciseGotBlanks(exercise: ExerciseData): boolean {
+  if (!exercise.exerciseId) {
+    return false
+  }
+
+  const cols = getColumns(exercise.exerciseType)
+  return exercise.sets.some((set) => hasBlankReqFields(set, cols))
+}
 
 const toNumericValue = (value: number | string) => {
   if (typeof value === 'number') {
@@ -335,12 +356,12 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(() =>
     workoutId ? null : 'No workout was selected. Start a workout from the workouts page.'
   )
-  const logRefId = useRef<string | null>(null)
-  logRefId.current ??= globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`
-  const logId = logRefId.current
+  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, setPickerOpen] = useState(false)
+  const [exitOpen, setExitOpen] = useState(false)
+  const [pendingNavTo, setPendingNavTo] = useState<string | null>(null)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
   const [primaryMuscleGroups, setPrimaryMuscleGroups] = useState<string[]>(sessionState?.workout?.primaryMuscleGroups ?? [])
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
@@ -352,20 +373,29 @@ export default function ActiveSessionPage() {
 
     let isMounted = true
 
-    const loadWorkout = async () => {
-      setIsLoading(true)
-      setError(null)
+      const loadWorkout = async () => {
+        setIsLoading(true)
+        setError(null)
+
+        const sessdraft = getDraft<SessionDraft>(workoutId)
+        if (sessdraft) {
+          setWorkoutName(sessdraft.workoutName)
+          setStartedAtMs(sessdraft.startedAtMs)
+          setExercises(sessdraft.exercises)
+          setIsLoading(false)
+          return
+        }
 
       try {
-        const response = await customFetch(`/api/workouts/${workoutId}`, {
+        const resp = await customFetch(`/api/workouts/${workoutId}`, {
           headers: { Accept: 'application/json' },
         })
 
-        if (!response.ok) {
-          throw new Error(`Failed to load workout details (${response.status})`)
+        if (!resp.ok) {
+          throw new Error(`Failed to load this workout's details (${resp.status})`)
         }
 
-        const data = (await response.json()) as WorkoutDetailsResponse
+        const data = (await resp.json()) as WorkoutDetailsResponse
         if (!isMounted) {
           return
         }
@@ -374,16 +404,19 @@ export default function ActiveSessionPage() {
         setPrimaryMuscleGroups(data.primaryMuscleGroups ?? [])
         setStartedAtMs(Date.now())
 
-        const mappedExercises: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
+        const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
-        setExercises(mappedExercises)
-      } catch (loadError) {
+        setExercises(mappedExers)
+        
+      } 
+      catch (loadError) {
         if (!isMounted) {
           return
         }
 
         setError(loadError instanceof Error ? loadError.message : 'Failed to load workout details.')
-      } finally {
+      } 
+      finally {
         if (isMounted) {
           setIsLoading(false)
         }
@@ -402,12 +435,56 @@ export default function ActiveSessionPage() {
     return () => clearInterval(interval)
   }, [])
 
-  const secondsElapsed = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
+  //autosave on any exercise change
+  useEffect(() => {
+    if (workoutId && exercises.length > 0) {
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
+    }
+  }, [workoutId, workoutName, startedAtMs, logId, exercises])
 
-  const formatTime = (totalSeconds: number) => {
-    const h = Math.floor(totalSeconds / 3600)
-    const m = Math.floor((totalSeconds % 3600) / 60)
-    if (h > 0) return `${h}h ${m}min`
+  //listener on whole doc for any sort of clicks that link to other pages
+  //prompts the keep/discard dialog 
+  useEffect(() => {
+    if (!workoutId || exercises.length === 0) {
+      return
+    }
+
+    const interceptNavbar = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return
+      }
+
+      const anchor = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor || (anchor.target && anchor.target !== '_self')) {
+        return
+      }
+
+      const url = new URL(anchor.href, window.location.origin)
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) {
+        return
+      }
+
+      event.preventDefault()
+
+      setPendingNavTo(url.pathname + url.search)
+      setExitOpen(true)
+    }
+
+    document.addEventListener('click', interceptNavbar, true)
+    return () => document.removeEventListener('click', interceptNavbar, true)
+
+  }, [workoutId, exercises.length])
+
+  const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
+
+  const formattedTime = (totalSecs: number) => {
+    const h = Math.floor(totalSecs / 3600)
+    const m = Math.floor((totalSecs % 3600) / 60)
+
+    if (h > 0) {
+      return `${h}h ${m}min`
+    }
+
     return `${m}m`
   }
 
@@ -415,7 +492,7 @@ export default function ActiveSessionPage() {
     exerciseId: string,
     setId: string,
     updater: (current: SetData) => SetData
-  ) => {
+    ) => {
     const applySet = (set: SetData): SetData => (set.id === setId ? updater(set) : set)
     const applyExercise = (exercise: ExerciseData): ExerciseData => exercise.id === exerciseId ? { ...exercise, sets: exercise.sets.map(applySet) } : exercise
     setExercises((current) => current.map(applyExercise))
@@ -505,8 +582,6 @@ export default function ActiveSessionPage() {
     [primaryMuscleGroups]
   )
 
-  const allowedFinish = summary.completedSets > 0
-
   const buildLogPayload = (): WorkoutLogPayload | null => {
     if (!workoutId) return null
 
@@ -522,7 +597,7 @@ export default function ActiveSessionPage() {
       if (sets.length === 0) continue
 
       exercisesLog.push({ exerciseId: exercise.exerciseId, workoutExerciseId: exercise.sourceWorkoutExerciseId,
-        orderIndex: exercisesLog.length, groupNumber: groupNum, sets,
+        orderIndex: exercisesLog.length + 1, groupNumber: groupNum, sets,
       })
     }
 
@@ -544,9 +619,9 @@ export default function ActiveSessionPage() {
     setExercises((currentExercises) => currentExercises.filter((exercise) => exercise.id !== exerciseId))
   }
 
-
   const finishWorkout = async () => {
     const load = buildLogPayload()
+
     if (!load) {
       return
     }
@@ -558,17 +633,45 @@ export default function ActiveSessionPage() {
 
     if (navigator.onLine) {
       toast.success('Workout saved.', 'Saved')
-    } else {
+    } 
+    else {
       toast.info("Workout saved but will sync when you're back online.", 'Saved offline')
     }
+
+    if (workoutId) {
+      clearDraft(workoutId)
+    }
+
     navigate('/workouts')
   }
 
-    const renderExerciseCard = (exercise: ExerciseData) => {
+    const keep = () => {
+    if (workoutId) {
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
+    }
+
+    navigate(pendingNavTo ?? '/workouts')
+    setPendingNavTo(null)
+  }
+
+  const discard = () => {
+    if (workoutId) {
+      clearDraft(workoutId)
+    }
+
+    navigate(pendingNavTo ?? '/workouts')
+    setPendingNavTo(null)
+  }
+
+  const blanks = () => exercises.some(exerciseGotBlanks)
+
+  const allowedFinish = summary.completedSets > 0 && !blanks()
+
+  const renderExerCard = (exercise: ExerciseData) => {
 
     const cols = getColumns(exercise.exerciseType)
     const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 5rem`
-    
+      
     return (
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
@@ -645,7 +748,7 @@ export default function ActiveSessionPage() {
             <Button
               variant="text"
               size="sm"
-              onClick={() => navigate('/workouts')}
+              onClick={() => setExitOpen(true)}
               className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -661,7 +764,7 @@ export default function ActiveSessionPage() {
               <div className="flex items-center gap-6 text-center">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Duration</p>
-                  <p className="text-sm font-bold">{formatTime(secondsElapsed)}</p>
+                  <p className="text-sm font-bold">{formattedTime(secElaps)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Volume</p>
@@ -693,7 +796,7 @@ export default function ActiveSessionPage() {
             <div className="flex flex-col gap-4">
               {buildSessionSegs(exercises).map((seg) => {
                 if (seg.kind === 'single') {
-                  return renderExerciseCard(seg.exercise)
+                  return renderExerCard(seg.exercise)
                 }
 
                 return (
@@ -711,7 +814,7 @@ export default function ActiveSessionPage() {
                         </span>
                       )}
                     </div>
-                    {seg.members.map((member) => renderExerciseCard(member))}
+                    {seg.members.map((member) => renderExerCard(member))}
                   </div>
                 )
               })}
@@ -754,6 +857,26 @@ export default function ActiveSessionPage() {
         onClose={() => setPickerOpen(false)}
         onSelect={selectedExercise}
       />
+      {exitOpen && (
+        <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center p-4">
+          <button type="button" aria-label="Stay" className="absolute inset-0 bg-foreground/50" onClick={() => setExitOpen(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-bold text-foreground">Leave session?</h2>
+              <button type="button" aria-label="Stay" onClick={() => setExitOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Do you want to keep this session or discard it permanently?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={discard}>Discard</Button>
+              <Button variant="default" className="flex-1" onClick={keep}>Keep</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

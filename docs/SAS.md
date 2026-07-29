@@ -222,7 +222,7 @@ This pattern applies wherever an object behaves differently depending on what ph
 | Encrypted data at rest | Encryption layer in API that encrypts data writen to the database and decrypts data fetched from the database |
 | Authenticated access | Stateless JSON JWTs communicated and stored via HTTP-only cookies | 
 | Deployment within 30 minutes | A CI/CD pipeline incorperated with IaC limits any manual overhead allowing the pipeline to deploy within 30 minutes |
-| Keyboard accessibility and User satisfaction | Using a brand-style guide, and  components we have made that are designed to be user friendly and keyboard accessible. Using an SPA allows for better user experience and navigation as there are no full page reloads |
+| Keyboard accessibility and User satisfaction | Using a brand-style guide that aligns with the WCAG standards, and  components we have made that are designed to be user friendly and keyboard accessible. Using an SPA allows for better user experience and navigation as there are no full page reloads |
 
 ### Constraints
 

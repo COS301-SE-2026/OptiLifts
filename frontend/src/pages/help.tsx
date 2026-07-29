@@ -37,44 +37,34 @@ const FAQ_DATA: readonly FaqItem[] = [
 const TUTORIAL_DATA: readonly TutorialVideo[] =[
     //NOSONAR
     {
-        id: 'tut-1',
-        title: 'Creating a Workout',
+        id: 'tut-1', title: 'Creating a Workout',
         description: 'Learn how to build custom workout templates, and configure sets and reps.',
         duration: '4:19',
         youtubeId: 'A1WpR8i2ebo',
         fallbackVideoUrl: '',
     },
     {
-        id: 'tut-2',
-        title: 'Active Session Logging & Offline Mode',
-        description: 'A step-by-step walkthrough of starting an active workout session, logging sets, and syncing offline logs.',
-        duration: '0:00',
-        youtubeId: '',
-        fallbackVideoUrl: '',
+        id: 'tut-2', title: 'Active Session Logging & Offline Mode',
+        description: 'A step-by-step walkthrough of starting an active workout session, logging sets, and syncing offline logs.', duration: '0:00',
+        youtubeId: '', fallbackVideoUrl: '',
     },
     {
-        id: 'tut-3',
-        title: 'Weekly Schedule Management',
+        id: 'tut-3', title: 'Weekly Schedule Management',
         description: 'Discover how to map routines across your week and keep your fitness consistency on track.',
-        duration: '0:00',
-        youtubeId: '',
+        duration: '0:00', youtubeId: '',
         fallbackVideoUrl: '',
     },
     {
-        id: 'tut-4',
-        title: 'Editing a Workout',
-        description: 'Tutorial on how to update your workout routine, including its name, sets, reps and exercises.',
-        duration: '1:19',
-        youtubeId: 'IpNvgS0drxo',
-        fallbackVideoUrl: '',
+        id: 'tut-4', title: 'Editing a Workout',
+        description: 'Tutorial on how to update your workout routine, including its name, sets, reps and exercises.', duration: '1:19',
+        youtubeId: 'IpNvgS0drxo', fallbackVideoUrl: '',
     },
     {
         id: 'tut-5',
         title: 'Configuring User Settings',
         description: 'Learn how to update your personal details, password, and app settings.',
         duration: '2:07',
-        youtubeId: 'Zq-3h3d25ww',
-        fallbackVideoUrl: '',
+        youtubeId: 'Zq-3h3d25ww', fallbackVideoUrl: '',
     }
 ]
 

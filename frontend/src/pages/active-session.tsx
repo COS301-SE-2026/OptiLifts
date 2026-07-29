@@ -303,6 +303,18 @@ const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): Workout
   return sets
 }
 
+function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
+  return set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
+}
+
+function exerciseGotBlanks(exercise: ExerciseData): boolean {
+  if (!exercise.exerciseId) {
+    return false
+  }
+
+  const cols = getColumns(exercise.exerciseType)
+  return exercise.sets.some((set) => hasBlankReqFields(set, cols))
+}
 
 const toNumericValue = (value: number | string) => {
   if (typeof value === 'number') {
@@ -651,16 +663,7 @@ export default function ActiveSessionPage() {
     setPendingNavTo(null)
   }
 
-
-  const blanks = () => exercises.some((exercise) => {
-      if (!exercise.exerciseId) return false
-
-      const cols = getColumns(exercise.exerciseType)
-
-      return exercise.sets.some(
-        (set) => set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
-      )
-    })
+  const blanks = () => exercises.some(exerciseGotBlanks)
 
   const allowedFinish = summary.completedSets > 0 && !blanks()
 

@@ -13,6 +13,9 @@ import type { MuscleName } from '@/types/workout'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { MoreVertical } from 'lucide-react'
+import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -59,10 +62,32 @@ export default function WorkoutDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const handleWorkoutChanged = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
   }, [])
+
+  const handleDelete = async (targetId: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${targetId}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to delete workout (${response.status})`)
+      }
+      navigate('/workouts')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete workout')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated || !workoutId) {
@@ -185,18 +210,33 @@ export default function WorkoutDetailPage() {
               <p className="text-base text-muted-foreground">Sets</p>
               <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.sets}</p>
             </div>
-            <Button
-              id="start-workout-btn"
-              size="sm"
-              disabled={!workout || isLoading}
-              onClick={() => {
-                if (workout) {
-                  navigate('/active-session', { state: { workout } })
-                }
-              }}
-            >
-              Start Workout
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                id="start-workout-btn"
+                size="sm"
+                disabled={!workout || isLoading}
+                onClick={() => {
+                  if (workout) {
+                    navigate('/active-session', { state: { workout } })
+                  }
+                }}
+              >
+                Start Workout
+              </Button>
+              {workout && (
+                <DropdownMenu>
+                  <DropdownMenuEllipsisTrigger aria-label="Options">
+                    <MoreVertical />
+                  </DropdownMenuEllipsisTrigger>
+                  <DropdownMenuEllipsisContent align="end">
+                    <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuEllipsisContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -231,6 +271,23 @@ export default function WorkoutDetailPage() {
         exerciseId={detailsExerciseId}
         onClose={() => setDetailsExerciseId(null)}
         onChanged={handleWorkoutChanged}
+      />
+      <ConfirmDialog
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        isLoading={isLoading}
+        variant="danger"
+        title="Delete Workout"
+        description="Are you certain you want to delete this workout?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          if (deleteTargetId) {
+            const id = deleteTargetId
+            setDeleteTargetId(null)
+            await handleDelete(id)
+          }
+        }}
       />
     </section>
   )

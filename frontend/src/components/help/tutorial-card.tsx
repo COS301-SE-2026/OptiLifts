@@ -16,7 +16,7 @@ interface TutorialCardProps{
 }
 
 export function TutorialCard({video}: TutorialCardProps){
-    const [isModalOpen, setIsModelOpen] = useState(false)
+    const [isModalOpen, setisModalOpen] = useState(false)
     const [useLocalFallback] = useState(false) //setUseLocalFallback if fallback used
     return (
         <>
@@ -35,7 +35,7 @@ export function TutorialCard({video}: TutorialCardProps){
                     <Clock className="h-3 w-3 text-brand"/>{video.duration}
                 </span>
 
-                <button type="button" onClick={() => setIsModelOpen(true)}
+                <button type="button" onClick={() => setisModalOpen(true)}
                 className="absolute inset-0 bg-background/40 group-hover:bg-background/20 transition-colors flex items-center justify-center focus:outline-none"
                 aria-label={`Play ${video.title}`}>
                     <div className="h-12 w-12 rounded-full bg-brand text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
@@ -49,7 +49,7 @@ export function TutorialCard({video}: TutorialCardProps){
                     <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{video.description}</p>
                 </div>
 
-                <button type="button" onClick={() => setIsModelOpen(true)}
+                <button type="button" onClick={() => setisModalOpen(true)}
                 className="w-full py-2.5 px-4 rounded-lg bg-surface-2 hover:bg-brand hover:text-white text-foreground text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 border border-border hover:border-brand">
                     <Play className="h-3.5 w-3.5 fill-current"/>Watch Tutorial
                 </button>
@@ -65,7 +65,7 @@ export function TutorialCard({video}: TutorialCardProps){
                             <span className="w-1 h-6 bg-brand rounded-full"/>
                             <h2 className="font-display text-2xl text-foreground tracking-wide">{video.title}</h2>
                         </div>
-                        <button type="button" onClick={() => setIsModelOpen(false)}
+                        <button type="button" onClick={() => setisModalOpen(false)}
                         className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
                         aria-label="Close modal">
                             <X className="h-6 w-6"/>
@@ -78,7 +78,9 @@ export function TutorialCard({video}: TutorialCardProps){
                             className="w-full h-full" allow="accelerometer; autoplay; clipboard-write encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
                         ):(
                             <video controls autoPlay src={video.fallbackVideoUrl || '/videos/sample-tutorial.mp4'} //should probbaly make this - will we have fallbacks in the repo?
-                            className="w-full h-full object-contain">Your browser does not support the video player</video>
+                            className="w-full h-full object-contain">
+                                <track kind="captions" src="" srcLang="en" label="English"/>
+                                Your browser does not support the video player</video>
                         )}
                     </div>
 

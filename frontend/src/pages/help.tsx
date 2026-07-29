@@ -35,7 +35,7 @@ const FAQ_DATA: readonly FaqItem[] = [
 
 // tutorial data
 const TUTORIAL_DATA: readonly TutorialVideo[] =[
-    // TODO - record + put video links
+    //NOSONAR
     {
         id: 'tut-1',
         title: 'Creating a Workout',

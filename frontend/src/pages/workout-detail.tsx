@@ -13,6 +13,7 @@ import type { MuscleName } from '@/types/workout'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { MoreVertical } from 'lucide-react'
 import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -224,8 +225,10 @@ export default function WorkoutDetailPage() {
               </Button>
               {workout && (
                 <DropdownMenu>
-                  <DropdownMenuEllipsisTrigger aria-label="Options" />
-                  <DropdownMenuEllipsisContent>
+                  <DropdownMenuEllipsisTrigger aria-label="Options">
+                    <MoreVertical />
+                  </DropdownMenuEllipsisTrigger>
+                  <DropdownMenuEllipsisContent align="end">
                     <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
                       Delete

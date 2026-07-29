@@ -93,7 +93,7 @@ function DropdownMenuEllipsisContent({
   sideOffset = 4,
   ...props
 }: Readonly<React.ComponentProps<typeof DropdownMenuPrimitive.Content>>) {
-  return <DropdownMenuContent sideOffset={sideOffset} align={align} className={className} {...props} />
+  return <DropdownMenuContent sideOffset={sideOffset} align={align} className={cn("min-w-24", className)} {...props} />
 }
 
 function DropdownMenuGroup(props: Readonly<React.ComponentProps<typeof DropdownMenuPrimitive.Group>>) {
@@ -297,6 +297,7 @@ function DropdownMenuSubContent({
 
 function DropdownMenuEllipsisTrigger({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   return (
@@ -305,7 +306,7 @@ function DropdownMenuEllipsisTrigger({
       className={cn(className)}
       {...props}
     >
-      <MoreHorizontal />
+      {children ?? <MoreHorizontal />}
     </DropdownMenuPrimitive.Trigger>
   )
 }

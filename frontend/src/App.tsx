@@ -63,7 +63,7 @@ function RequireAuth() {
   return <Outlet />
 }
 
-function RequireGuest({ children }: { children: React.ReactNode }) {
+function RequireGuest({ children }: Readonly<{ children: React.ReactNode }>) {
   const { isAuthenticated, isHydrated } = useAuth()
 
   if (!isHydrated) {

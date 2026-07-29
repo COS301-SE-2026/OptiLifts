@@ -124,8 +124,8 @@ function ColourPaletteSection(){
                 <h3 className="type-section-title">Light Theme</h3>
                 <ul className="palette-grid" aria-label="Light Colour palette">
                     {paletteData.map((colour) => (
-                        <li key={`light-${colour.name}`} className={`swatch ${colour.swatchClass}`}>
-                        <div className="swatch__color" />
+                        <li key={`light-${colour.name}`} className="swatch">
+                        <div className="swatch__color" style={{ backgroundColor: colour.lightHex }}/>
                         <div className="swatch__hex">{colour.lightHex}</div>
                         <div className="swatch__role">{colour.name.split('/')[0]}</div>
                     </li>
@@ -135,8 +135,8 @@ function ColourPaletteSection(){
                 <h3 className="type-section-title">Dark Mode Palette</h3>
                 <ul className="palette-grid palette-grid--dark" aria-label="Dark Colour palette">
                     {paletteData.map((colour) => (
-                        <li key={`dark-${colour.name}`} className={`swatch ${colour.swatchClass}`}>
-                        <div className="swatch__color" />
+                        <li key={`dark-${colour.name}`} className="swatch">
+                        <div className="swatch__color" style={{ backgroundColor: colour.darkHex }}/>
                         <div className="swatch__hex">{colour.darkHex}</div>
                         <div className="swatch__role">{colour.name.split('/')[0]}</div>
                     </li>

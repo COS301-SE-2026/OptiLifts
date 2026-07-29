@@ -38,10 +38,10 @@ const TUTORIAL_DATA: readonly TutorialVideo[] =[
     // TODO - record + put video links
     {
         id: 'tut-1',
-        title: 'Creating & Managing Workout Routines',
+        title: 'Creating a Workout',
         description: 'Learn how to build custom workout templates, and configure sets and reps.',
-        duration: '2:15', //replace with actual data obv
-        youtubeId: '',
+        duration: '4:19',
+        youtubeId: 'A1WpR8i2ebo',
         fallbackVideoUrl: '',
     },
     {
@@ -58,6 +58,22 @@ const TUTORIAL_DATA: readonly TutorialVideo[] =[
         description: 'Discover how to map routines across your week and keep your fitness consistency on track.',
         duration: '0:00',
         youtubeId: '',
+        fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-4',
+        title: 'Editing a Workout',
+        description: 'Tutorial on how to update your workout routine, including its name, sets, reps and exercises.',
+        duration: '1:19',
+        youtubeId: 'IpNvgS0drxo',
+        fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-5',
+        title: 'Configuring User Settings',
+        description: 'Learn how to update your personal details, password, and app settings.',
+        duration: '2:07',
+        youtubeId: 'Zq-3h3d25ww',
         fallbackVideoUrl: '',
     }
 ]

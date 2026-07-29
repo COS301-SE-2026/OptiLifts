@@ -45,8 +45,8 @@ const TUTORIAL_DATA: readonly TutorialVideo[] =[
     },
     {
         id: 'tut-2', title: 'Active Session Logging & Offline Mode',
-        description: 'A step-by-step walkthrough of starting an active workout session, logging sets, and syncing offline logs.', duration: '0:00',
-        youtubeId: '', fallbackVideoUrl: '',
+        description: 'A step-by-step walkthrough of starting an active workout session, logging sets, and syncing offline logs.', 
+        duration: '3:36', youtubeId: 'qbOXVDvbRLU', fallbackVideoUrl: '',
     },
     {
         id: 'tut-3', title: 'Weekly Schedule Management',

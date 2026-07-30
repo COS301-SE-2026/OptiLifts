@@ -706,13 +706,14 @@ Creates a user-defined exercise and assigns it to the authenticated user.
 
 **Inputs:**
 
-- `name`: string - The exercise name.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+- `name`: string - Required exercise name.
 - `mechanic`: string | null - Optional exercise mechanic.
 - `equipment`: string | null - Optional equipment name.
-- `category`: string - The exercise category.
-- `primaryMuscles`: array of string - Primary muscles targeted.
-- `secondaryMuscles`: array of string - Secondary muscles assisted.
-- Authentication token: string - Bearer token identifying the current user.
+- `category`: string - Required exercise type/category (for example, `WeightReps`, `Duration`, `DistanceDuration`).
+- `primaryMuscles`: array of string - Required list containing at least one primary muscle (muscle name or GUID).
+- `secondaryMuscles`: array of string - Optional list of secondary muscles (muscle names or GUIDs).
+- `image`: file | null - Optional exercise image file.
 
 **Outputs:**
 
@@ -720,21 +721,17 @@ Creates a user-defined exercise and assigns it to the authenticated user.
 
 **Usage / Interaction Rules:**
 
-- Clients must send a POST request to `/api/exercises/custom` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The request body must include the exercise `name`, `category`, `primaryMuscles`, and `secondaryMuscles`.
+- Clients must send a POST request to `/api/exercises/custom` as `multipart/form-data`.
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint returns `401 Unauthorized` if the cookie is missing or invalid.
+- Invalid or unsupported exercise category/type values return `400 Bad Request`.
+- Missing/unknown primary muscle values return `400 Bad Request`.
 
 **Example Response:**
 
 ```json
 {
-	"id": "string",
-	"name": "string",
-	"description": "string",
-	"equipment": ["string"],
-	"muscles": ["string"],
-	"instructions": "string",
-	"createdBy": "userId"
+	"id": "string"
 }
 ```
 
@@ -747,13 +744,14 @@ Returns the authenticated user's exercise catalog, including built-in and custom
 
 **Inputs:**
 
-- None in the request body.
-
-- Authentication token: string - Bearer token identifying the current user.
+- `search`: string | null - Optional text search filter.
+- `muscle`: string | null - Optional primary muscle filter.
+- `equipment`: string | null - Optional equipment filter.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
 
 **Outputs:**
 
-- `exercises`: array of `ExerciseDto` - The list of exercises available to the user.
+- Array of `ExerciseDto` - The list of exercises available to the user.
 
 ExerciseDto fields:
 
@@ -765,31 +763,31 @@ ExerciseDto fields:
 - `primaryMuscles`: array of string - Primary muscles trained.
 - `secondaryMuscles`: array of string - Secondary muscles assisted.
 - `isCustom`: boolean - Indicates whether the exercise was created by the user.
+- `imageUrl`: string | null - URL of the exercise image if present.
 
 **Usage / Interaction Rules:**
 
-- Clients must send a GET request to `/api/exercises` with a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The response is a JSON object containing an `exercises` array of exercise objects.
+- Clients must send a GET request to `/api/exercises`.
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
+- The response is a JSON array of exercise objects (not a paginated wrapper object).
 
 **Example Response:**
 
 ```json
-{
-	"exercises": [
-		{
-			"id": "string",
-			"name": "string",
-			"description": "string",
-			"equipment": ["string"],
-			"muscles": ["string"],
-			"isCustom": false
-		}
-	],
-	"total": 0,
-	"page": 1,
-	"limit": 25
-}
+[
+	{
+		"id": "string",
+		"name": "Bench Press",
+		"mechanic": "Compound",
+		"equipment": "Barbell",
+		"category": "WeightReps",
+		"primaryMuscles": ["Chest"],
+		"secondaryMuscles": ["Triceps", "Front Delts"],
+		"isCustom": false,
+		"imageUrl": "https://storage.optilifts.com/exercises/bench-press.png"
+	}
+]
 ```
 
 ---
@@ -886,28 +884,25 @@ Adds an existing exercise to a specific workout owned by the authenticated user.
 
 - `workoutId`: Guid - The workout to update (path parameter).
 - `exerciseId`: Guid - The exercise to add to the workout (request body).
-- Authentication token: string - Bearer token identifying the current user.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
 
 **Outputs:**
 
-- No content on success.
-- `404` response if the workout or exercise cannot be added.
+- No content on success (`204 No Content`).
+- Returns `404 Not Found` if the workout does not exist for the user or the exercise does not exist.
 
 **Usage / Interaction Rules:**
 
-- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
 - The request body must contain a valid `exerciseId` value.
 - A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
 
 **Example Response:**
 
-```json
-{
-	"id": "string",
-	"name": "string",
-	"exercises": [ /* updated exercises array */ ]
-}
+```http
+HTTP/1.1 204 No Content
 ```
 
 

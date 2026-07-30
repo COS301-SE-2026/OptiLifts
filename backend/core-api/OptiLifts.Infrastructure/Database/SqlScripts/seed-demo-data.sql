@@ -587,7 +587,7 @@ BEGIN
     END LOOP;
 
     -- makes it such that the user always has a 6 week long streak
-    FOR i IN 0..23 LOOP
+    FOR i IN 0..24 LOOP
         v_day := NOW() - INTERVAL '42 days' + (i * INTERVAL '41 hours');
         PERFORM seed_logged_workout(
             alex_id,
@@ -601,7 +601,7 @@ BEGIN
             NULL,
             exercise_mode,
             NULL,
-            (i / 3)
+            (i / 4)
         );
     END LOOP;
 END $$;
@@ -744,60 +744,38 @@ MaxWeights AS (
     SELECT user_id, exercise_id, MAX(weight) as max_weight
     FROM UserSets
     GROUP BY user_id, exercise_id
-)
-SELECT DISTINCT ON (mw.user_id, mw.exercise_id)
-    gen_random_uuid(),
-    us.user_id,
-    us.exercise_id,
-    us.log_set_id,
-    0, -- MaxWeight
-    us.weight,
-    us.weight,
-    us.reps
-FROM MaxWeights mw
-JOIN UserSets us ON us.user_id = mw.user_id AND us.exercise_id = mw.exercise_id AND us.weight = mw.max_weight
-ON CONFLICT DO NOTHING;
-
-INSERT INTO exercise_prs (pr_id, user_id, exercise_id, workout_log_set_id, pr_type, pr_value, achieved_weight, achieved_reps)
-WITH DemoUsers AS (
-    SELECT u.user_id
-    FROM users u
-    CROSS JOIN seed_constants c
-    WHERE u.email_hash IN (
-        encode(sha256(c.test_user_email::bytea), c.hex_enc),
-        encode(sha256(c.demo_user_email::bytea), c.hex_enc),
-        encode(sha256(c.alex_user_email::bytea), c.hex_enc)
-    )
-),
-UserSets AS (
-    SELECT 
-        se.user_id,
-        wls.exercise_id,
-        wls.log_set_id,
-        wls.weight,
-        wls.reps,
-        (wls.weight * wls.reps) as volume
-    FROM workout_log_sets wls
-    JOIN workout_logs wl ON wl.log_id = wls.log_id
-    JOIN scheduled_entries se ON se.entry_id = wl.entry_id
-    JOIN DemoUsers du ON du.user_id = se.user_id
 ),
 MaxVolumes AS (
     SELECT user_id, exercise_id, MAX(volume) as max_volume
     FROM UserSets
     GROUP BY user_id, exercise_id
 )
-SELECT DISTINCT ON (mv.user_id, mv.exercise_id)
-    gen_random_uuid(),
-    us.user_id,
-    us.exercise_id,
-    us.log_set_id,
-    1, -- set volume
-    us.volume,
-    us.weight,
-    us.reps
-FROM MaxVolumes mv
-JOIN UserSets us ON us.user_id = mv.user_id AND us.exercise_id = mv.exercise_id AND us.volume = mv.max_volume
+SELECT gen_random_uuid(), user_id, exercise_id, log_set_id, pr_type, pr_value, achieved_weight, achieved_reps
+FROM (
+    SELECT DISTINCT ON (mw.user_id, mw.exercise_id)
+        mw.user_id,
+        mw.exercise_id,
+        us.log_set_id,
+        0 AS pr_type,
+        us.weight AS pr_value,
+        us.weight AS achieved_weight,
+        us.reps AS achieved_reps
+    FROM MaxWeights mw
+    JOIN UserSets us ON us.user_id = mw.user_id AND us.exercise_id = mw.exercise_id AND us.weight = mw.max_weight
+
+    UNION ALL
+
+    SELECT DISTINCT ON (mv.user_id, mv.exercise_id)
+        mv.user_id,
+        mv.exercise_id,
+        us.log_set_id,
+        1 AS pr_type,
+        us.volume AS pr_value,
+        us.weight AS achieved_weight,
+        us.reps AS achieved_reps
+    FROM MaxVolumes mv
+    JOIN UserSets us ON us.user_id = mv.user_id AND us.exercise_id = mv.exercise_id AND us.volume = mv.max_volume
+) sub
 ON CONFLICT DO NOTHING;
 
 COMMIT;

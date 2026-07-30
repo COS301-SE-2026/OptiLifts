@@ -5,9 +5,11 @@ import * as dbforpostgresql from "@pulumi/azure-native/dbforpostgresql";
 
 import * as containerregistry from "@pulumi/azure-native/containerregistry";
 import * as app from "@pulumi/azure-native/app";
+import * as namedotcom from "@pulumi/namedotcom";
 
 const stackName = pulumi.getStack();
 
+const rootDomain = "optilifts.app";
 const frontendDomain = (stackName === "prod") ? "app.optilifts.app" : "staging-app.optilifts.app";
 const backendDomain = (stackName === "prod") ? "api.optilifts.app" : "staging-api.optilifts.app";
 
@@ -22,7 +24,14 @@ const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
+const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
+
+const domainStage = config.get("domainStage") ?? "none";
+
 const imageTag = process.env.IMAGE_TAG;
+if (!imageTag) {
+    throw new Error("IMAGE_TAG is not set.");
+}
 
 const resourceGroup = new resources.ResourceGroup("rgoptilifts", {
     location: "SouthAfricaNorth"
@@ -142,6 +151,26 @@ const containerAppEnv = new app.ManagedEnvironment("cae-optilifts", {
     location: resourceGroup.location,
 });
 
+const managedCert = (name: string, subjectName: string) =>
+    new app.ManagedCertificate(name, {
+        resourceGroupName: resourceGroup.name,
+        environmentName: containerAppEnv.name,
+        location: resourceGroup.location,
+        properties: {
+            subjectName,
+            domainControlValidation: app.ManagedCertificateDomainControlValidation.CNAME,
+        },
+    });
+
+const frontendCert = domainStage === "bind" ? managedCert("frontend-cert", frontendDomain) : undefined;
+const backendCert = domainStage === "bind" ? managedCert("core-api-cert", backendDomain) : undefined;
+
+const customDomain = (domain: string, cert?: app.ManagedCertificate) => domainStage === "none" ? undefined : [{
+    name: domain,
+    bindingType: cert ? "SniEnabled" : "Disabled",
+    certificateId: cert?.id,
+}];
+
 // frontend container app
 const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
@@ -150,6 +179,7 @@ const frontendApp = new app.ContainerApp("frontend", {
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
+            customDomains: customDomain(frontendDomain, frontendCert),
         },
         registries: [{
             server: acrServer,
@@ -173,8 +203,6 @@ const frontendApp = new app.ContainerApp("frontend", {
 
         }],
     },
-}, {
-    ignoreChanges: ["configuration.ingress.customDomains"]
 });
 
 // copre-api container app
@@ -185,7 +213,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
         ingress: {
             external: true, //give public url
             targetPort: 8080,
-            
+            customDomains: customDomain(backendDomain, backendCert),
         },
 
         secrets: [
@@ -196,12 +224,13 @@ const coreApiApp = new app.ContainerApp("core-api", {
             { name: "postgres-password", value: postgressPassword },
             {
                 name: "postgres-connection-string",
-                value: pulumi.interpolate`Host=${pgServer.fullyQualifiedDomainName};Port=${pgPort};Database=${pgDatabase.name};Username=optilifts_admin;Password=${postgressPassword};SslMode=Require;TrustServerCertificate=true;`
+                value: pulumi.interpolate`Host=${pgServer.fullyQualifiedDomainName};Port=${pgPort};Database=${pgDatabase.name};Username=optilifts_admin;Password=${postgressPassword};SslMode=VerifyFull;`
             },
             {
                 name: "storage-connection-string",
                 value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
             },
+            { name: "core-api-sentry-dsn", value: coreApiSentryDsn ?? "" }
         ],
 
         registries: [{
@@ -234,11 +263,11 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
                 { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
+                { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
+                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
             ],
         }],
     },
-}, { 
-    ignoreChanges: ["configuration.ingress.customDomains"] 
 });
 
 const aiApiApp = new app.ContainerApp("ai-api", {
@@ -274,5 +303,16 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     },
 });
 
-export const frontendAzureUrl = pulumi.interpolate`https://${frontendApp.configuration.apply(c => c?.ingress?.fqdn)}`;
+const dnsRecord = (name: string, host: string, recordType: string, answer: pulumi.Input<string>) =>
+    new namedotcom.Record(name, { domainName: rootDomain, host, recordType, answer });
+
+const hostOf = (domain: string) => domain.slice(0, -(rootDomain.length + 1));
+const fqdnOf = (a: app.ContainerApp) => a.configuration.apply(c => c!.ingress!.fqdn!);
+
+dnsRecord("frontend-cname", hostOf(frontendDomain), "CNAME", fqdnOf(frontendApp));
+dnsRecord("core-api-cname", hostOf(backendDomain), "CNAME", fqdnOf(coreApiApp));
+dnsRecord("frontend-asuid", `asuid.${hostOf(frontendDomain)}`, "TXT", frontendApp.customDomainVerificationId);
+dnsRecord("core-api-asuid", `asuid.${hostOf(backendDomain)}`, "TXT", coreApiApp.customDomainVerificationId);
+
+export const frontendAzureUrl = pulumi.interpolate`https://${fqdnOf(frontendApp)}`;
 export const acrLoginServer = acr.loginServer;

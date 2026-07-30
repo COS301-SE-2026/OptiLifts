@@ -113,7 +113,7 @@ The following design patterns are applied in OptiLifts, grouped by the GoF (Gang
 
 Where: Backend - Database layer
 
-Instead of setting up a database table mapping all at once, the Builder pattern lets the system configure it one step at a time through a chain of method calls. Each call sets one rule, such as which field is the primary key or which column must be unique.
+Instead of having to setup database mapping, the Builder pattern lets the system configure each column and key step-by-step. Each call will set one rule.
 
 ```csharp
 builder.HasKey(u => u.Id);
@@ -123,23 +123,11 @@ builder.HasIndex(u => u.Email).IsUnique();
 
 ---
 
-##### Singleton
-
-Where: Backend - Authentication
-
-Only one instance of the JWT token service is ever created. Every part of the system shares it instead of creating its own copy. This works because the service only holds the secret key and token expiry time, which never change while the application is running.
-
-```csharp
-builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
-```
-
----
-
 ##### Facade
 
 Where: Backend - API layer
 
-Each controller hides all the internal complexity behind a single endpoint. The client sends a request and gets a response. It has no knowledge of the handlers, database queries, or validation logic that runs behind the scenes.
+Controller hide the underlying complexity of endpoints. The user will simply send a request and get a response without ever getting knowledge of the handlers, database queries or validation logic that runs behind the scenes.
 
 ```csharp
 [HttpPost]
@@ -156,7 +144,7 @@ public async Task<IActionResult> CreateWorkout(CreateWorkoutRequest request)
 
 Where: Backend - Authentication
 
-The password hashing algorithm is defined behind an interface so it can be swapped out without changing any other code. If the hashing method needs to be replaced in the future, only one new class needs to be written and one line in the configuration needs to change.
+The password hashing algorithm is defined behind an interface so we are able to swap it out in case of any vulnerabilities, without affecting other code. 
 
 ```csharp
 public interface IPasswordHasher
@@ -172,13 +160,11 @@ public interface IPasswordHasher
 
 Where: Backend - Application layer
 
-Instead of different parts of the system calling each other directly, all requests go through a central object called the mediator. The controller that sends a request has no knowledge of which handler processes it, and the handler has no knowledge of who sent it.
+Instead of having all different parts of the system calling on each other directly, all requests must communicate through a  central object called the mediator. Controllers have no idea which handler is processing their request and the handler has no idea which controller sent the request.
 
 ```csharp
-// Controller sends, has no idea who handles it
 var result = await _mediator.Send(new CreateWorkoutCommand(...));
 
-// Handler processes, has no idea who sent it
 public class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand, CreateWorkoutResult>
 ```
 
@@ -188,7 +174,7 @@ public class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand, Create
 
 Where: Frontend - Auth state management
 
-One central object holds the login state. Any screen or component that needs to know whether the user is logged in subscribes to it. When the user logs in or out, all subscribed components are automatically updated without needing to check manually.
+One object holds the login state to know the current login status of the user. Any screen or component that needs to know whether an user is logged in or not will subscribe to the object (Observer). When an user access the screen or components, the observer will instantly notify the pages and update/rerender them.
 
 ```tsx
 // One place holds the auth state
@@ -204,25 +190,25 @@ const { isAuthenticated, user } = useAuth()
 
 ##### Decorator
 
-This pattern could be applied anywhere cross-cutting concerns such as logging, performance monitoring, or input validation need to run around existing logic. Rather than duplicating that code in every place it is needed, the Decorator wraps the existing logic and adds the extra behaviour around it automatically.
+This pattern could be applied to our algorithms and formulas. We have base formulas that could have additional calculations and layers which are optional to the user. An example of this is RPE. Adding RPE can just add additional calculation rather than duplicate code.
 
 ---
 
 ##### Template Method
 
-This pattern is applicable wherever multiple components share the same overall structure but differ in specific steps. In OptiLifts this applies to request handlers, but it could also apply to AI processing pipelines, report generation, or any workflow that follows a fixed sequence with variable internals.
+This design pattern can be applied to any sort of component that has a simular structure to others. Our frontend has tons of components with similar use and could be templated.
 
 ---
 
 ##### Chain of Responsibility
 
-This pattern is useful wherever a request needs to pass through several independent checks before being processed, such as authentication, authorisation, rate limiting, or input sanitisation. Each check is isolated and the chain can be extended or reordered without affecting the others.
+This pattern can be used if we have a request that needs to pass through multiple independent checks before being allowed tobe processed. Stages such as authentication, authorisation, rate limiting or input sanitisation. Each check is isolated and can be reorder or adjusted in anyways, making it more loosely coupled.
 
 ---
 
 ##### State
 
-This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts the most direct application is the active workout session, which moves through idle, active, resting, and completed states. It could also apply to AI suggestion states or onboarding flows where the available actions change at each stage.
+This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts, our active session page can use it as you go through multiple different states whilst in a workout. For example you have busy, resting or complete. State design pattern can be used anywhere in which we need to track the user's current state in order to re-render or adapt our pages.
 
 ### Mapping Quality Requirements to Architectural Decisions
 
@@ -1041,17 +1027,14 @@ Returns full details of a workout that is owned by an user. This includes everyt
 
 WorkoutDetailDto fields:
 
-- `id`: Guid - Unique workout identifier.
-- `name`: string - Workout name.
-- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
-- `exerciseCount`: integer - Number of exercises in the workout.
-- `exercisePreview`: array of string - Short preview of exercise names.
-- `createdAt`: datetime - When the workout was created.
+- `id`: Guid, `name`: string, `folderId`: Guid | null, `dayIndex`: int | null, `createdAt`: datetime.
+- `primaryMuscleGroups`: array of string, `exercisePreview`: array of string.
+- `exercises`: array of `WorkoutExerciseDetailDto` - `id`, `exerciseId`, `name`, `primaryMuscle`, `exerciseType`, `orderIndex`, `sets` (array of `WorkoutSetDto`), `groupId`, `groupType`, `groupRestTime`, `imageUrl`.
 
 
 **Usage / Interaction Rules:**
 
-- Clients must send a GET request to `/api/workouts/{workoutId}` wiwith the `access_token` cookie attached.
+- Clients must send a GET request to `/api/workouts/{workoutId}` with the `access_token` cookie attached.
 - Returns `401` if the cookie is missing or invalid.
 - Returns `404` if the workout does not exist or is not owned by the user.
 

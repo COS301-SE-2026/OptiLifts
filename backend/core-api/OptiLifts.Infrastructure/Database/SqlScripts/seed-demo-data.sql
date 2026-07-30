@@ -232,6 +232,8 @@ CROSS JOIN LATERAL (VALUES
 JOIN workout_exercises we ON we.workout_exercise_id = v.we_id
 ON CONFLICT (set_id) DO NOTHING;
 
+DROP FUNCTION IF EXISTS seed_logged_workout;
+
 CREATE OR REPLACE FUNCTION seed_logged_workout(
     p_user_id uuid,
     p_workout_id uuid,
@@ -419,12 +421,12 @@ BEGIN
             rec.scheduled_at,
             rec.scheduled_at + INTERVAL '55 minutes',
             false,
-            NULL,
+            NULL::text,
             CASE WHEN rec.workout_id = v_push THEN 'd6d19f21-8c17-49d1-b7eb-7a8c59dca1cd'::uuid ELSE NULL END,
             CASE WHEN rec.workout_id = v_push THEN '58597dd0-e02c-416c-a4b0-cba560f21045'::uuid ELSE NULL END,
-            NULL,
+            NULL::integer,
             exercise_mode,
-            NULL
+            NULL::integer
         );
     END LOOP;
 END $$;

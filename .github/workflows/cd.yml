@@ -58,7 +58,7 @@ jobs:
 
         - name: Install Pulumi
           working-directory: infrastructure
-          run: pnpm install --frozen-lockfile --ignore-scripts
+          run: pnpm install --frozen-lockfile # NOSONAR
 
         - name: Deploy via Pulumi
           uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f

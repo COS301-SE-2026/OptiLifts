@@ -21,7 +21,7 @@ export function Navbar() {
   const activeDraft = getDraftFromStorage()
 
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
-  const homeLink = isAuthenticated ? '/workouts' : '/register'
+  const homeLink = isAuthenticated ? '/dashboard' : '/'
 
   const linkClass = (to: string) =>
     [

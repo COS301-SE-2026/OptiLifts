@@ -1,5 +1,5 @@
 import "./brand-style.css";
-import { Plus, MoreHorizontal, X, Eye, LogOut, ChevronDown, User, Dumbbell, Info, Sun, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Plus, MoreHorizontal, X, Eye, LogOut, ChevronDown, User, Dumbbell, Info, Sun, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input, NumericalUnderscoreInput } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { VolumeChart } from '@/components/ui/volume-chart';
 import { SpiderGraph } from '@/components/ui/spider-graph';
 import { Calendar } from '@/components/ui/calendar';
 import { paletteData } from "./brand-data";
+import { useNavigate } from 'react-router-dom'
 
 function BrandHeader() {
     return(
@@ -114,8 +115,6 @@ function BrandIntroSection() {
         </div>
     );
 }
-//going to make a separate const for the details, as theres a lot of info
-//for every colour that needs to be shown. tis easier
 
 function ColourPaletteSection(){
     return (
@@ -125,8 +124,8 @@ function ColourPaletteSection(){
                 <h3 className="type-section-title">Light Theme</h3>
                 <ul className="palette-grid" aria-label="Light Colour palette">
                     {paletteData.map((colour) => (
-                        <li key={`light-${colour.name}`} className={`swatch ${colour.swatchClass}`}>
-                        <div className="swatch__color" />
+                        <li key={`light-${colour.name}`} className="swatch">
+                        <div className="swatch__color" style={{ backgroundColor: colour.lightHex }}/>
                         <div className="swatch__hex">{colour.lightHex}</div>
                         <div className="swatch__role">{colour.name.split('/')[0]}</div>
                     </li>
@@ -136,8 +135,8 @@ function ColourPaletteSection(){
                 <h3 className="type-section-title">Dark Mode Palette</h3>
                 <ul className="palette-grid palette-grid--dark" aria-label="Dark Colour palette">
                     {paletteData.map((colour) => (
-                        <li key={`dark-${colour.name}`} className={`swatch ${colour.swatchClass}`}>
-                        <div className="swatch__color" />
+                        <li key={`dark-${colour.name}`} className="swatch">
+                        <div className="swatch__color" style={{ backgroundColor: colour.darkHex }}/>
                         <div className="swatch__hex">{colour.darkHex}</div>
                         <div className="swatch__role">{colour.name.split('/')[0]}</div>
                     </li>
@@ -893,18 +892,52 @@ function GraphSection(){
     )
 }
 function AccessibilitySection(){
+    const auditScores=[
+        {
+            page: "Brand Style Guide",
+            theme: "Light",
+            score: "93",
+            imgSrc: "/brandstyle-lighthouse-light.png",
+            alt: "Lighthouse accessibility audit score for Brand Style page"
+        },
+        {
+            page: "Workouts",
+            theme: "Light",
+            score: "100",
+            imgSrc: "/workouts-lighthouse-light.png",
+            alt: "Lighthouse accessibility audit score for Workouts page"
+        },
+        {
+            page: "Brand Style Guide",
+            theme: "Dark",
+            score: "93",
+            imgSrc: "/brandstyle-lighthouse-dark.png",
+            alt: "Lighthouse accessibility audit score for Brand Style page"
+        },
+        {
+            page: "Workouts",
+            theme: "Dark",
+            score: "96",
+            imgSrc: "/workouts-lighthouse-dark.png",
+            alt: "Lighthouse accessibility audit score for Workouts page"
+        }
+    ];
     return (
         <section className="accessibility-section">
             <h2 className="section-heading">Accessibility</h2>
 
             <p className="type-body" style={{ maxWidth: 920, margin: '0.25rem 0 1rem' }}>
-                OptiLifts targets WCAG 2.1 AA as the minimum standard across all screens and both themes. The implementation is split across Colour Contrast, Keyboard Navigability, Screen Reader Compatibility, and WCAG compliance mappings.
+                OptiLifts targets WCAG 2.2 AA as the minimum standard across all screens and both colour themes. Our implementation includes strict colour contrast guarantees, visible focus indicators, screen reader ARIA mappings and minimal motion.
             </p>
             {/* i do want to try make this section look nicer */}
             <div className="accessibility-grid">
                 <div className="accessibility-left">
-                    <div className="type-section-title">Colour Contrast</div>
-                    <p className="type-body" style={{ marginTop: '0.25rem' }}>All primary text/background combinations meet WCAG 2.1 AA (4.5:1 minimum for normal text, 3:1 for large text and UI components).</p>
+                    <h3 className="type-section-title">Colour Contrast & Focus Indicators</h3>
+                    <ul className="access-list">
+                        <li><strong>WCAG 2.2 AA Baseline:</strong> All primary text/background combinations meet WCAG 2.2 AA (4.5:1 minimum for normal text, 3:1 for large text and UI components)</li>
+                        <li><strong>Focus Indicator Style:</strong> Interactive elements show a high-visibility focus ring using <code>outline: 2px solid var(--brand)</code> or Tailwind <code>ring-2 ring-brand/50 ring-offset-2</code> to guarantee a 3:1 contrast ratio against all backgrounds.</li>
+                        <li><strong>Color Independence:</strong> Information, status alerts, and chart data never rely solely on color; icons, text labels, and patterns are always provided alongside hues.</li>
+                    </ul>
 
                     {/*i have moved specifically colour accessibility into the table in the colour section */}
                     <h3 className="type-section-title">Keyboard Navigability</h3>
@@ -913,12 +946,14 @@ function AccessibilitySection(){
                         <li>Radix/shadcn modals and sheets trap focus and return it on close.</li>
                         <li>Roving tabindex on ToggleGroups; arrow keys move, Enter/Space selects.</li>
                         <li>Custom components implement <code>role</code>, <code>tabIndex</code>=0 and key handlers for Enter/Space.</li>
-                        <li>All interactive elements show visible focus with <code>focus-visible</code> ring styling.</li>
                     </ul>
                 </div>
 
                 <div className="accessibility-right">
-                    
+                    <h3 className="type-section-title">Motion Support</h3>
+                    <ul className="access-list">
+                        <li><strong>No Flashing Content:</strong> No UI elements flash or pulse more than 3 times per second, preventing seizure triggers.</li>
+                    </ul>
 
                     <h3 className="type-section-title">Screen Reader Compatibility</h3>
                     <ul className="access-list">
@@ -929,16 +964,46 @@ function AccessibilitySection(){
                         <li>Non-standard interactive controls expose correct roles and state via ARIA attributes.</li>
                     </ul>
 
-                    <h3 className="type-section-title">WCAG 2.1 AA Mappings</h3>
-                    <ul className="access-list">
-                        <li><strong>1.4.3 Contrast</strong>: All theme colour pairs verified (see table).</li>
-                        <li><strong>1.4.4 Resize text</strong>: rem-based sizing; pages scale to 200% without layout breakage.</li>
-                        <li><strong>2.1.1 Keyboard operable</strong>: All interactions are keyboard-accessible.</li>
-                        <li><strong>2.4.7 Focus visible</strong>: focus-visible ring applied to interactive elements.</li>
-                        <li><strong>3.3.1 Error identification</strong>: Inline errors surfaced and announced to assistive tech.</li>
-                    </ul>
                 </div>
             </div>
+            <h3 className="type-section-title" style={{ marginTop: '2rem', marginBottom: '0.5rem'}}>Automated Audit Scores (Lighthouse)</h3>
+                <p className="type-body" style={{
+                    fontSize: '0.875rem',
+                    marginBottom: '1.25rem'
+                }}>Automated accessibility audits are performed continuously using Google Lighthouse across primary pages in both Light and Dark themes.</p>
+                <div className="goals-grid" style={{
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '1.5rem'
+                }}>
+                    {auditScores.map((item)=>(
+                        <Card key={item.page} className="goal-card flex flex-col justify-between">
+                        <CardContent className="p-4 flex flex-col h-full justify-between gap-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-bold text-sm text-foreground">{item.page}</h4>
+                                    <span className="text-[11px] text-muted-foreground">{item.theme}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-600 font-extrabold text-xs">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
+                                    <span>{item.score}</span>
+                                </div>
+                            </div>
+
+                            <div className="border border-border rounded-lg overflow-hidden bg-surface-2 mt-1">
+                                <img src={item.imgSrc} alt={item.alt} className="w-full h-40 object-cover object-top rounded-md transition-transform duration-200 hover:scale-105"
+                                onError={(e) => {
+                                    const target = e.target as HTMLElement;
+                                    target.style.display = 'none';
+                                    if (target.parentElement){
+                                        target.parentElement.innerHTML = `<div class="p-6 text-center text-xs text-muted-foreground font-mono">Screenshot: ${item.page} ${item.score}/100</div>`;
+                                    }
+                                }}/>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    ))}
+                    
+                </div>
         </section>
     );
 }
@@ -1241,8 +1306,20 @@ function ChangelogSection(){
 
 
 export default function BrandStylePage() {
+    const navigate = useNavigate()
     return (
         <section className="brand-style-page">
+            <div className="mb-4">
+                <Button 
+                variant="text"
+                size="sm"
+                onClick={() => navigate('/help')}
+                className="inline-flex items-center gap-2 py-2 text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Help</span>
+              </Button>
+              </div>
             <BrandHeader/>
             <h1 className="section-heading">Brand Style</h1>
             {/* tone is in the intro - take it out? */}

@@ -834,7 +834,7 @@ Returns the authenticated user's workouts as summary cards.
 **Inputs:**
 
 - None in the request body.
-- Authentication token: string - Bearer token identifying the current user.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
 
 **Outputs:**
 
@@ -851,8 +851,9 @@ WorkoutCardDto fields:
 
 **Usage / Interaction Rules:**
 
-- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- Clients must send a GET request to `/api/workouts`
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
 - The response is a JSON object containing a `workouts` array of workout summary objects.
 
 **Example Response:**

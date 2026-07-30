@@ -8,3 +8,10 @@ config:
   pulumi:tags:
     value:
       pulumi:template: azure-typescript
+packages:
+  namedotcom:
+    source: pulumi/pulumi/terraform-provider
+    version: 1.2.1
+    parameters:
+      - lexfrei/namedotcom
+      - 4.1.0

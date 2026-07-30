@@ -20,25 +20,53 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
         {
             FolderId = request.FolderId,
             Name = request.Name,
-            DayIndex = request.DayIndex,
             CreatedBy = request.CreatedBy,
             CreatedAt = DateTime.UtcNow
         };
 
         _dbContext.Workouts.Add(workout);
 
-        var sets = request.Sets.Select(s => new WorkoutSet
+        var groupKeyToId = new Dictionary<string, Guid>();
+        foreach (var group in request.Groups)
         {
-            WorkoutId = workout.Id,
-            ExerciseId = s.ExerciseId,
-            Type = Enum.Parse<SetType>(s.Type, ignoreCase: true),
-            Reps = s.Reps,
-            Weight = s.Weight,
-            OrderIndex = s.OrderIndex,
-            RestTime = s.RestTime
-        });
+            var exerciseGroup = new ExerciseGroup
+            {
+                WorkoutId = workout.Id,
+                Type = ParseGroupType(group.Type),
+                RestTime = group.RestTime
+            };
+            _dbContext.ExerciseGroups.Add(exerciseGroup);
+            groupKeyToId[group.GroupKey] = exerciseGroup.Id;
+        }
 
-        _dbContext.Sets.AddRange(sets);
+        foreach (var exercise in request.Exercises)
+        {
+            Guid? groupId = exercise.GroupKey is not null && groupKeyToId.TryGetValue(exercise.GroupKey, out var resolvedId)
+            ? resolvedId : null;
+
+            var workoutExercise = new WorkoutExercise
+            {
+                WorkoutId = workout.Id,
+                ExerciseId = exercise.ExerciseId,
+                OrderIndex = exercise.OrderIndex,
+                GroupId = groupId
+            };
+            _dbContext.WorkoutExercises.Add(workoutExercise);
+
+
+            var sets = exercise.Sets.Select(s => new WorkoutSet
+            {
+                WorkoutExerciseId = workoutExercise.Id,
+                Type = ParseSetType(s.Type),
+                Reps = s.Reps,
+                Weight = s.Weight,
+                Duration = s.Duration,
+                Distance = s.Distance,
+                OrderIndex = s.OrderIndex,
+                RestTime = s.RestTime
+            });
+            _dbContext.Sets.AddRange(sets);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -46,8 +74,14 @@ public sealed class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand,
             workout.Id,
             workout.Name,
             workout.FolderId,
-            workout.DayIndex,
             workout.CreatedAt
         );
     }
+    private static SetType ParseSetType(string value) =>
+        Enum.TryParse<SetType>(value, ignoreCase: true, out var type) ? type : SetType.Normal;
+
+    private static ExerciseGroupType ParseGroupType(string value) =>
+        Enum.TryParse<ExerciseGroupType>(value, ignoreCase: true, out var type) ? type : ExerciseGroupType.Circuit;
 }
+
+

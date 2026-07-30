@@ -1,10 +1,10 @@
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using FluentAssertions;
-using OptiLifts.Infrastructure.Database;
-using OptiLifts.Domain.Workouts;
-using OptiLifts.Infrastructure.Workouts;
 using OptiLifts.Application.Workouts.CreateWorkout;
+using OptiLifts.Domain.Workouts;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Workouts;
 
 namespace OptiLifts.Tests.Api.Tests;
 
@@ -51,14 +51,13 @@ public class CreateWorkoutHandlerTests
         var (userId, folderId) = await SeedUserAndFolder(db, "a@example.com");
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Push Day A", 1, userId, []);
+        var command = new CreateWorkoutCommand(folderId, "Push Day A", userId, [], []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.WorkoutId.Should().NotBeEmpty();
         result.Name.Should().Be("Push Day A");
         result.FolderId.Should().Be(folderId);
-        result.DayIndex.Should().Be(1);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         var saved = await db.Workouts.FindAsync(result.WorkoutId);
@@ -76,28 +75,39 @@ public class CreateWorkoutHandlerTests
 
         var (userId, folderId) = await SeedUserAndFolder(db, "b@example.com");
 
-        var exercise = new Exercise { Name = "Bench", PrimaryMuscles = ["Chest"], Category = "Strength" };
+        var muscle = new Muscle { Name = "Chest" };
+        db.Muscles.Add(muscle);
+        await db.SaveChangesAsync();
+
+        var exercise = new Exercise { Name = "Bench", ExerciseType = ExerciseType.WeightReps, PrimaryMuscleId = muscle.Id };
         db.Exercises.Add(exercise);
         await db.SaveChangesAsync();
         exercise = await db.Exercises.FirstAsync(e => e.Name == "Bench");
 
-        var sets = new List<CreateWorkoutSetDto>
+        var exercises = new List<CreateWorkoutExerciseDto>
         {
-            new(exercise.Id, "Normal", 10, 60f, 0, 90),
-            new(exercise.Id, "Normal", 8,  70f, 1, 90),
+            new(exercise.Id, 0, null, new List<CreateWorkoutSetDto>
+            {
+                new("Normal", 10, 60f, null, null, 0, 90),
+                new("Normal", 8,  70f, null, null, 1, 90),
+            })
         };
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Push Day B", null, userId, sets);
+        var command = new CreateWorkoutCommand(folderId, "Push Day B", userId, exercises, []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.WorkoutId.Should().NotBeEmpty();
-        result.DayIndex.Should().BeNull();
 
-        var savedSets = db.Sets.Where(s => s.WorkoutId == result.WorkoutId).ToList();
+        var workoutExerciseIds = db.WorkoutExercises
+            .Where(we => we.WorkoutId == result.WorkoutId)
+            .Select(we => we.Id)
+            .ToList();
+        workoutExerciseIds.Should().HaveCount(1);
+
+        var savedSets = db.Sets.Where(s => workoutExerciseIds.Contains(s.WorkoutExerciseId)).ToList();
         savedSets.Should().HaveCount(2);
-        savedSets.Should().AllSatisfy(s => s.ExerciseId.Should().Be(exercise.Id));
     }
 
     [Fact]
@@ -110,7 +120,7 @@ public class CreateWorkoutHandlerTests
         var (userId, folderId) = await SeedUserAndFolder(db, "c@example.com");
 
         var handler = new CreateWorkoutHandler(db);
-        var command = new CreateWorkoutCommand(folderId, "Leg Day", 3, userId, []);
+        var command = new CreateWorkoutCommand(folderId, "Leg Day", userId, [], []);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -119,6 +129,5 @@ public class CreateWorkoutHandlerTests
         saved!.Id.Should().Be(result.WorkoutId);
         saved.Name.Should().Be(result.Name);
         saved.FolderId.Should().Be(result.FolderId);
-        saved.DayIndex.Should().Be(result.DayIndex);
     }
 }

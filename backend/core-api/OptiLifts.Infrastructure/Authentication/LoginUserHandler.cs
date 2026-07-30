@@ -1,9 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Auth.Login;
 using OptiLifts.Application.Auth.Register;
-using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Security;
 
 namespace OptiLifts.Infrastructure.Authentication;
 
@@ -27,11 +28,16 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
 
     public async Task<AuthResponseDto> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        var email = request.Email?.Trim();
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new InvalidCredentialsException();
+        }
+
+        var email = request.Email.Trim();
+        var emailHash = EmailHasher.HashEmail(email);
 
         var user = await _dbContext.Users
-            .AsNoTracking()
-            .SingleOrDefaultAsync(u => u.Email == email, cancellationToken);
+            .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
         if (user == null)
         {
@@ -46,7 +52,13 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         }
 
         var token = _jwtTokenService.CreateToken(user);
+        var refreshToken = TokenHelper.GenerateRefreshToken();
 
-        return new AuthResponseDto(token, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt));
+        user.RefreshTokenHash = TokenHelper.HashToken(refreshToken);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme));
     }
 }

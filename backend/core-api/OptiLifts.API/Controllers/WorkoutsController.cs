@@ -1,11 +1,18 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MediatR;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.OpenApi.Expressions;
 using OptiLifts.Application.Workouts.AddExerciseToWorkout;
-using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Application.Workouts.CreateWorkout;
+using OptiLifts.Application.Workouts.DeleteWorkout;
+using OptiLifts.Application.Workouts.DuplicateWorkout;
+using OptiLifts.Application.Workouts.GetWorkoutDetail;
+using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
+using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.UpdateWorkout;
 
 namespace OptiLifts.API.Controllers;
 
@@ -15,6 +22,7 @@ namespace OptiLifts.API.Controllers;
 [Authorize]
 public sealed class WorkoutsController : ControllerBase
 {
+    private const string NotFoundTitle = "Not Found";
     private readonly ISender _sender;
 
     public sealed record AddExerciseToWorkoutRequest(Guid ExerciseId);
@@ -36,6 +44,90 @@ public sealed class WorkoutsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{workoutId:guid}")]
+    public async Task<ActionResult<WorkoutDetailDto>> GetWorkoutDetail(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Workout was not found for this user."
+            });
+        }
+
+        return Ok(result);
+    }
+
+    [HttpGet("{workoutId:guid}/logs/{logId:guid}")]
+    public async Task<ActionResult<WorkoutLogDetailDto>> GetWorkoutLogDetail(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid logId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _sender.Send(new GetWorkoutLogDetailQuery(workoutId, logId, userId), cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = "Not Found",
+                message = "Workout log was not found for this user."
+            });
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("{workoutId:guid}/logs")]
+    public async Task<ActionResult<CreateWorkoutLogRes>> CreateWorkoutLog(
+        [FromRoute] Guid workoutId,
+        [FromBody] CreateWorkoutLogReq request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized();
+
+        var cmd = new CreateWorkoutLogCom(
+            userId,
+            workoutId,
+            request.LogId,
+            request.EntryId,
+            request.Notes,
+            request.StartedAt,
+            request.CompletedAt,
+            request.Exercises);
+
+        var res = await _sender.Send(cmd, cancellationToken);
+
+        if (res is null)
+        {
+            return NotFound(new { message = "Workout log could not be created for this specific user." });
+        }
+        if (res.AlreadyExisted)
+        {
+            return Ok(res);
+        }
+
+        return CreatedAtAction(nameof(GetWorkoutLogDetail), new { workoutId, logId = res.LogId }, res);
+    }
+
     [HttpPost]
     public async Task<ActionResult<CreateWorkoutResult>> CreateWorkout(
         [FromBody] CreateWorkoutRequest request,
@@ -44,11 +136,26 @@ public sealed class WorkoutsController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized();
 
-        var sets = request.Sets
-            .Select(s => new CreateWorkoutSetDto(s.ExerciseId, s.Type, s.Reps, s.Weight, s.OrderIndex, s.RestTime))
+        var errors = CreateWorkoutValidator.Validate(request);
+        if (errors.Count > 0)
+        {
+            return BadRequest(new { errors });
+        }
+
+        var exercises = request.Exercises
+            .Select(e => new CreateWorkoutExerciseDto(
+                e.ExerciseId,
+                e.OrderIndex,
+                e.GroupKey,
+                e.Sets.Select(s => new CreateWorkoutSetDto(
+                    s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.OrderIndex, s.RestTime)).ToList()))
             .ToList();
 
-        var command = new CreateWorkoutCommand(request.FolderId, request.Name, request.DayIndex, userId, sets);
+        var groups = (request.Groups ?? [])
+            .Select(g => new CreateWorkoutGroupDto(g.GroupKey, g.Type, g.RestTime))
+            .ToList();
+
+        var command = new CreateWorkoutCommand(request.FolderId, request.Name, userId, exercises, groups);
         var result = await _sender.Send(command, cancellationToken);
 
         return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);
@@ -79,4 +186,85 @@ public sealed class WorkoutsController : ControllerBase
 
         return Guid.TryParse(userIdValue, out userId);
     }
+
+    [HttpDelete("{workoutId:guid}")]
+    public async Task<IActionResult> DeleteWorkout(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var deleted = await _sender.Send(new DeleteWorkoutCommand(workoutId, userId), cancellationToken);
+
+        if (!deleted)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout was not found for this user."
+            });
+
+        }
+        return Ok(new { message = "Workout deleted successfully." });
+
+    }
+
+    [HttpPost("{workoutId:guid}/duplicate")]
+    public async Task<ActionResult<DuplicateWorkoutResult>> DuplicateWorkout(
+        [FromRoute] Guid workoutId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var result = await _sender.Send(new DuplicateWorkoutCommand(workoutId, userId), cancellationToken);
+
+        if (result == null)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Source workout was not found for this user."
+            });
+        }
+        return CreatedAtAction(nameof(GetWorkouts), new { id = result.WorkoutId }, result);
+
+    }
+
+
+    [HttpPut("{workoutId:guid}")]
+    public async Task<IActionResult> UpdateWorkout(
+        [FromRoute] Guid workoutId,
+        [FromBody] UpdateWorkoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new UpdateWorkoutCommand(
+            workoutId,
+            userId,
+            request.FolderId,
+            request.Name,
+            request.Exercises,
+            request.Groups);
+        var success = await _sender.Send(command, cancellationToken);
+        if (!success)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout not found or unable to update."
+            });
+        }
+        return Ok(new { message = "Workout updated successfully." });
+    }
+
 }

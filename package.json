@@ -11,6 +11,11 @@
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
     "dev:ai": "cd backend/ai-api && ./venv/bin/uvicorn main:app --reload --port 8000",
 
+    "prod": "docker compose -f docker-compose.prod.yml up --build -d",
+    "prod:stop": "docker compose -f docker-compose.prod.yml stop",
+    "prod:down": "docker compose -f docker-compose.prod.yml down",
+    "prod:down:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
+
     "db": "docker compose up -d",
     "db:start": "docker compose start",
     "db:stop": "docker compose stop",
@@ -23,6 +28,21 @@
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd backend/core-api && dotnet test",
     "test:ai": "cd backend/ai-api && ./venv/bin/pytest",
+    
+    "test:e2e": "bash -lc 'set -euo pipefail; started_services=0; cleanup() { status=$?; if [ \"$started_services\" = \"1\" ]; then pnpm e2e:services:down; fi; exit \"$status\"; }; trap cleanup EXIT; if [ \"${E2E_USE_EXISTING_SERVICES:-0}\" = \"1\" ]; then pnpm exec playwright test --config=e2e/playwright.config.ts; else started_services=1; AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} pnpm e2e:services:up:detached; pnpm exec playwright test --config=e2e/playwright.config.ts; fi'",
+    "test:e2e:ui": "bash -lc 'set -euo pipefail; started_services=0; cleanup() { status=$?; if [ \"$started_services\" = \"1\" ]; then pnpm e2e:services:down; fi; exit \"$status\"; }; trap cleanup EXIT; if [ \"${E2E_USE_EXISTING_SERVICES:-0}\" = \"1\" ]; then pnpm exec playwright test --config=e2e/playwright.config.ts --ui; else started_services=1; AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} pnpm e2e:services:up:detached; pnpm exec playwright test --config=e2e/playwright.config.ts --ui; fi'",
+    "e2e:services:build": "docker compose -f docker-compose.prod.yml build",
+    "e2e:services:up": "docker compose -f docker-compose.prod.yml up",
+    "e2e:services:webserver": "bash -lc 'export AUTH_COOKIE_SECURE=\"${AUTH_COOKIE_SECURE:-false}\"; trap \"docker compose -f docker-compose.prod.yml down -v --remove-orphans\" EXIT; docker compose -f docker-compose.prod.yml up'",
+    "e2e:services:up:detached": "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} docker compose -f docker-compose.prod.yml up -d",
+    "e2e:services:down": "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} docker compose -f docker-compose.prod.yml down -v --remove-orphans",
+    "e2e:services:rebuild": "pnpm e2e:services:build && pnpm e2e:services:up:detached",
+    "e2e:ci": "bash ./scripts/e2e-ci.sh ci",
+
+    "cov": "concurrently \"pnpm cov:frontend\" \"pnpm cov:backend\" \"pnpm cov:ai\"",
+    "cov:frontend": "pnpm --filter frontend cov",
+    "cov:backend": "cd backend/core-api && dotnet test /p:CollectCoverage=true",
+    "cov:ai": "cd backend/ai-api && ./venv/bin/pytest --cov=. --cov-report=term",
     
     "build:frontend": "pnpm --filter frontend build",
     "build:backend": "cd backend/core-api && dotnet build -c Release",
@@ -38,13 +58,20 @@
     "lint:ai:fix": "cd backend/ai-api && ./venv/bin/ruff format . && ./venv/bin/ruff check . --fix",
     
     "lint": "pnpm lint:frontend && pnpm lint:backend && pnpm lint:ai",
-    "lint:fix": "pnpm lint:frontend:fix && pnpm lint:backend:fix && pnpm lint:ai:fix"
+    "lint:fix": "pnpm lint:frontend:fix && pnpm lint:backend:fix && pnpm lint:ai:fix",
+
+    "test:coverage": "concurrently \"pnpm test:coverage:frontend\" \"pnpm test:coverage:backend\" \"pnpm test:coverage:ai\"",
+    "test:coverage:frontend": "pnpm --filter frontend cov",
+    "test:coverage:backend": "cd backend/core-api && dotnet test --collect:\"XPlat Code Coverage\"",
+    "test:coverage:ai": "cd backend/ai-api && ./venv/bin/pytest --cov --cov-report=xml"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@9.15.0",
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1",
     "concurrently": "^9.2.1"
   }
 }

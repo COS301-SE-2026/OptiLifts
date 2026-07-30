@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { PageTitle } from '@/components/ui/page-title'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
@@ -14,64 +14,121 @@ import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { useAuth } from '@/context/auth-context'
 import type { Workout, WorkoutSummary } from '@/types/workout'
 import { Plus } from 'lucide-react'
+import { customFetch } from '@/lib/custom-fetch'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 export default function WorkoutsPage() {
-  const { token, isHydrated } = useAuth()
+  const { isAuthenticated, isHydrated } = useAuth()
   const navigate = useNavigate()
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
-  const authError = isHydrated && !token ? 'Please log in to view your workouts.' : null
+  const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
+
+  const loadWorkouts = useCallback(async (selectIdAfterLoad?: string) => {
+    
+    await Promise.resolve()
+    setIsFetching(true)
+    setError(null)
+
+    try {
+      const response = await customFetch('/api/workouts', {
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to load workouts (${response.status})`)
+      }
+
+      const data = (await response.json()) as Workout[]
+      setWorkouts(data)
+
+      if (selectIdAfterLoad) {
+        setSelectedId(selectIdAfterLoad)
+      } else {
+        setSelectedId((currentId) => {
+          if (data.some((w) => w.id === currentId)) {
+            return currentId
+          }
+          return data[0]?.id ?? null
+        })
+      }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
+    } finally {
+      setIsFetching(false)
+    }
+  }, [])
 
   useEffect(() => {
-    if (!isHydrated || !token) {
+    if (!isHydrated || !isAuthenticated) {
       return
     }
+    const triggerInitial = async () => {
+      await loadWorkouts()
+    }
+    void triggerInitial()
+  }, [isHydrated, isAuthenticated, loadWorkouts])
 
-    let isActive = true
-    async function loadWorkouts() {
-      setIsFetching(true)
-      setError(null)
-
-      try {
-        const response = await fetch('/api/workouts', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        })
-        if (!response.ok) {
-          throw new Error(`Failed to load workouts (${response.status})`)
-        }
-
-        const data = (await response.json()) as Workout[]
-
-        if (isActive) {
-          setWorkouts(data)
-          setSelectedId((currentId) => currentId ?? data[0]?.id ?? null)
-        }
-      } catch (loadError) {
-        if (isActive) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
-        }
-      } finally {
-        if (isActive) {
-          setIsFetching(false)
-        }
+  //duplication
+  const handleDuplicate = async (workoutId: string) => {
+    setIsFetching(true)
+    setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${workoutId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to duplicate workout (${response.status})`)
       }
+      const dupeResult = (await response.json()) as { workoutId: string }
+      await loadWorkouts(dupeResult.workoutId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate workout.')
+      setIsFetching(false)
+    }
+  }
+
+  //deletions
+  const handleDelete = async (workoutId: string) => {
+    setIsFetching(true)
+    setError(null)
+    try {
+      const response = await customFetch(`/api/workouts/${workoutId}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to delete workout (${response.status})`)
+      }
+
+      setWorkouts((prev) => {
+        const update = prev.filter((w) => w.id !== workoutId)
+        if (selectedId === workoutId) {
+          setSelectedId(update[0]?.id ?? null)
+        }
+        return update
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete workout')
+    } finally {
+      setIsFetching(false)
     }
 
-    void loadWorkouts()
+  }
 
-    return () => {
-      isActive = false
-    }
-  }, [isHydrated, token])
-
-  const visibleWorkouts = useMemo(() => (token ? workouts : []), [token, workouts])
+  //old
+  const visibleWorkouts = useMemo(() => (isAuthenticated ? workouts : []), [isAuthenticated, workouts])
   const isLoading = !isHydrated || isFetching
   const displayError = authError ?? error
 
@@ -125,40 +182,55 @@ export default function WorkoutsPage() {
           )}
 
           <div className="space-y-4">
-            {filtered.map((w) => (
+            {filtered.map((w, index) => (
               <Card
                 key={w.id}
                 role="button"
+                data-testid={`workout-card-${w.name}`}
                 tabIndex={0}
                 aria-pressed={w.id === selectedId}
                 className={`cursor-pointer transition-shadow focus-visible:ring-2 focus-visible:ring-brand ${w.id === selectedId ? 'ring-1 ring-brand' : ''}`}
-                onClick={() => setSelectedId(w.id)}
+                onClick={() => {
+                  navigate(`/workouts/${w.id}`)
+                }}
+                onMouseEnter={() => setSelectedId(w.id)}
                 onFocus={() => setSelectedId(w.id)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    setSelectedId(w.id)
+                    navigate(`/workouts/${w.id}`)
                   }
                 }}
               >
                 <CardHeader>
-                  <CardTitle className="font-bold">{w.name}</CardTitle>
-                  <CardAction>
+                  <Link to={`/workouts/${w.id}`} className="min-w-0">
+                    <CardTitle className="font-bold transition-colors hover:text-brand">
+                      {w.name}
+                    </CardTitle>
+                  </Link>
+                  <CardAction onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>
-                        <DropdownMenuItem onSelect={() => {}}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {}}>Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {}} data-variant="destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${w.id}`)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setDeleteTargetId(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
                       </DropdownMenuEllipsisContent>
                     </DropdownMenu>
                   </CardAction>
                 </CardHeader>
 
-                <CardContent>
-                  <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
-                  <p className="text-sm mt-1 text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
-                </CardContent>
+                <CardContent className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-foreground"><span className="font-semibold">Primary Muscle Groups:</span> {w.primaryMuscleGroups.join(', ')}</p>
+                    <p className="mt-1 text-sm text-foreground"><span className="font-semibold">Exercises:</span> {w.exercisePreview.join(', ')}</p>
+                  </div>
+                  <Button id={`start-workout-btn-${index}`} size="sm" onClick={(e) =>  { 
+                    e.stopPropagation() 
+                    navigate('/active-session', { state: { workout: w } })}}>
+                    Start Workout
+                  </Button>
+                </CardContent>  
               </Card>
             ))}
           </div>
@@ -184,6 +256,23 @@ export default function WorkoutsPage() {
           </Card>
         </aside>
       </div>
+      <ConfirmDialog
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        isLoading={isFetching}
+        variant="danger"
+        title="Delete Workout"
+        description="Are you certain you want to delete this workout?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          if (deleteTargetId) {
+            const id = deleteTargetId
+            setDeleteTargetId(null)
+            await handleDelete(id)
+          }
+        }}
+        />
     </section>
   )
 }

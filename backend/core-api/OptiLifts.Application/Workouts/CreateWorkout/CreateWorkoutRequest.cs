@@ -2,17 +2,31 @@ namespace OptiLifts.Application.Workouts.CreateWorkout;
 
 //request body shape from client
 public sealed record CreateWorkoutSetRequest(
-    Guid ExerciseId,
     string Type,
-    int Reps,
-    float Weight,
+    int? Reps,
+    float? Weight,
+    int? Duration,
+    float? Distance,
     int OrderIndex,
+    int RestTime
+);
+
+public sealed record CreateWorkoutExerciseRequest(
+    Guid ExerciseId,
+    int OrderIndex,
+    string? GroupKey,
+    IReadOnlyList<CreateWorkoutSetRequest> Sets
+);
+
+public sealed record CreateWorkoutGroupRequest(
+    string GroupKey,
+    string Type,
     int RestTime
 );
 
 public sealed record CreateWorkoutRequest(
     Guid? FolderId,
     string Name,
-    int? DayIndex,
-    IReadOnlyList<CreateWorkoutSetRequest> Sets
+    IReadOnlyList<CreateWorkoutExerciseRequest> Exercises,
+    IReadOnlyList<CreateWorkoutGroupRequest> Groups
 );

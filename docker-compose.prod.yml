@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: ["azurite", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0", "--skipApiVersionCheck"]
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+
+  core-api:
+    build:
+      context: ./backend/core-api
+      dockerfile: Dockerfile
+      network: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      
+    ports:
+      - "5036:8080"
+      
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING:-Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}}
+      - JWT_SECRET=${JWT_SECRET:-test_secret_key_for_integration_tests_only}
+      - JWT_EXP_MINUTES=${JWT_EXP_MINUTES:-60}
+      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-+8bGaoOpx4CEfxnMcX1RG2qrcJaT+RZO/0IIpSePZQA=}
+
+      - FRONTEND_ORIGIN=http://localhost
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
+    
+      - CONNECTIONSTRINGS__AZURESTORAGE=${CONNECTIONSTRINGS__AZURESTORAGE:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;}
+    
+      - AiApiBaseUrl=http://ai-api:8000
+      
+      - RUN_MIGRATIONS=true
+      - DEV_SEEDING=${DEV_SEEDING:-true}
+      - E2E_TESTING=${E2E_TESTING:-false}
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      azurite:
+        condition: service_started
+    restart: unless-stopped
+
+  ai-api:
+    build:
+      context: ./backend/ai-api
+      dockerfile: Dockerfile
+      network: host
+    expose:
+      - "8000"
+    restart: unless-stopped
+ 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      network: host
+      args:
+        - VITE_API_BASE=/api
+    environment:
+      - NGINX_BACKEND_URL=http://core-api:8080
+    # so application is on 5173 externally 
+    ports:
+      - "${FRONTEND_PORT:-5173}:8080"
+    depends_on:
+      - core-api
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:

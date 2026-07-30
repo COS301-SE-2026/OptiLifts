@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.Infrastructure.Database.Configurations;
@@ -8,19 +9,32 @@ public class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
 {
     public void Configure(EntityTypeBuilder<Exercise> builder)
     {
-        builder.ToTable("exercises");
+        builder.ToTable("exercise_dictionary");
 
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.Id).HasColumnName("exercise_id");
+        builder.Property(e => e.Id).HasColumnName("exercise_dict_id");
 
         builder.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(200);
         builder.Property(e => e.Mechanic).HasColumnName("mechanic");
         builder.Property(e => e.Equipment).HasColumnName("equipment");
-        builder.Property(e => e.Category).HasColumnName("category").IsRequired();
-
-        //arrays for now, we need to discuss if we should keep them vs make a new table
-        builder.Property(e => e.PrimaryMuscles).HasColumnName("primary_muscles");
-        builder.Property(e => e.SecondaryMuscles).HasColumnName("secondary_muscles");
+        builder.Property(e => e.ExerciseType).HasColumnName("exercise_type").HasConversion<string>().IsRequired();
+        builder.Property(e => e.PrimaryMuscleId).HasColumnName("primary_muscle").IsRequired();
         builder.Property(e => e.UserId).HasColumnName("user_id");
+        builder.Property(e => e.ImageUrl).HasColumnName("image_url");
+        builder.Property(e => e.IsDeleted).HasColumnName("is_deleted").IsRequired().HasDefaultValue(false);
+
+        builder.HasIndex(e => new { e.UserId, e.IsDeleted });
+
+        //primary muscle FK
+        builder.HasOne<Muscle>()
+                .WithMany()
+                .HasForeignKey(e => e.PrimaryMuscleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+        //user owner FK (nullable for public exercises)
+        builder.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
     }
 }

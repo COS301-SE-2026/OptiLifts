@@ -1,13 +1,13 @@
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using OptiLifts.API;
+using OptiLifts.Application;
+using OptiLifts.Application.Gamification.Abstraction;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
-using OptiLifts.Application;
-using OptiLifts.Application.Auth.Abstractions;
-using OptiLifts.Infrastructure.Authentication;
-using DotNetEnv;
+using OptiLifts.Infrastructure.Gamification;
+using OptiLifts.Infrastructure.Gamification.Rules;
+
 
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
 {
@@ -26,6 +26,21 @@ if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseSentry(options =>
+{
+
+    options.Dsn = Environment.GetEnvironmentVariable("CORE_API_SENTRY_DSN") ?? "";
+    options.TracesSampleRate = 1.0;
+    options.Debug = true;
+    var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+    options.Environment = envName;
+
+    if (envName == "Development" || envName == "Testing")
+    {
+        options.InitializeSdk = false;
+    }
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -57,7 +72,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(frontendOrigin)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -81,39 +97,14 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 //register MediatR handlers from Application and Infrastructure assemblies
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
+builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+
+//badges
+builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();
+builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
+
 //register auth implementations
-builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-var jwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not set.");
-var jwtExpiryMinutes = int.TryParse(builder.Configuration["JWT_EXP_MINUTES"], out var expiryMinutes)
-    ? expiryMinutes
-    : 1440;
-
-byte[] keyBytes;
-try
-{
-    keyBytes = Convert.FromBase64String(jwtSecret);
-}
-catch (FormatException)
-{
-    keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
-}
-
-builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
-        };
-    });
-
+builder.Services.AuthProgramHelper(builder.Configuration);
 var app = builder.Build();
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
@@ -122,7 +113,15 @@ if (runMigrations)
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
     await dbContext.Database.MigrateAsync();
-    await DatabaseSeeder.SeedAsync(dbContext);
+
+    var seed = string.Equals(builder.Configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
+    if (seed)
+    {
+        //if e2e testing don't add images in seeding func 
+        var isE2e = string.Equals(builder.Configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
+        var blobStorage = scope.ServiceProvider.GetRequiredService<OptiLifts.Application.Storage.IBlobStorageService>();
+        await DatabaseSeeder.SeedAsync(dbContext, blobStorage, isE2e);
+    }
 }
 
 // Swagger UI available at http://localhost:<port>/swagger
@@ -139,6 +138,8 @@ app.UseAuthentication(); //authentication middleware
 app.UseAuthorization(); //authorization middleware
 app.MapControllers();
 
+//basic health check endpoint, doesn't need a controller as just a simple get rq
+app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
 await app.RunAsync();
 
 public partial class Program

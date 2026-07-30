@@ -2,9 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FluentAssertions;
 using MediatR;
-using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using OptiLifts.API.Controllers;
@@ -113,12 +113,15 @@ public class WorkoutsControllerTests
             Name = "Push Day"
         });
 
+        var muscle = new Muscle { Name = "Chest" };
+        context.Muscles.Add(muscle);
+
         context.Exercises.Add(new Exercise
         {
             Id = exerciseId,
             Name = "Bench Press",
-            Category = "Strength",
-            PrimaryMuscles = new List<string> { "Chest" }
+            ExerciseType = ExerciseType.WeightReps,
+            PrimaryMuscleId = muscle.Id
         });
 
         context.SaveChanges();

@@ -7,14 +7,18 @@ export type ExerciseSet = Readonly<{
   type: SetType
   kg: number | ''
   reps: number | ''
+  time?: number | ''
+  distance?: number | ''
 }>
 
 export type WorkoutExercise = Readonly<{
   id: string
   name: string
-  muscle: MuscleName
-  imageUrl?: string
+  muscle: MuscleName  
   sets: ExerciseSet[]
+  imageUrl?: string
+  exerciseType?: string
+  exerciseCatalogId?: string
 }>
 
 export type ExerciseCatalogItem = Readonly<{

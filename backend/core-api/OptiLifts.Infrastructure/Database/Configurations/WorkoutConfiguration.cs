@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using OptiLifts.Domain.Workouts;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.Infrastructure.Database.Configurations;
 
@@ -16,9 +16,12 @@ public class WorkoutConfiguration : IEntityTypeConfiguration<Workout>
 
         builder.Property(w => w.FolderId).HasColumnName("folder_id").IsRequired(false);
         builder.Property(w => w.Name).HasColumnName("name").IsRequired().HasMaxLength(150);
-        builder.Property(w => w.DayIndex).HasColumnName("day_index");
-        builder.Property(w => w.CreatedBy).HasColumnName("created_by").IsRequired();
+        builder.Property(w => w.CreatedBy).HasColumnName("user_id").IsRequired();
         builder.Property(w => w.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.Property(w => w.IsDeleted).HasColumnName("is_deleted").IsRequired().HasDefaultValue(false);
+        builder.Property(w => w.DeletedAt).HasColumnName("deleted_at").IsRequired(false);
+
+        builder.HasIndex(w => new { w.CreatedBy, w.IsDeleted });
 
         //FK relationship between workout and folder
         builder.HasOne<Folder>()

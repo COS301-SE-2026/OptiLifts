@@ -1,17 +1,31 @@
 import type { ExerciseTypeDefinition } from "@/types/exercise"
+import { metricCheck } from "@/lib/weight-utils"
 
+const check = metricCheck()
 export const DEFAULT_EXERCISE_TYPE_OPTIONS: readonly ExerciseTypeDefinition[] = [
-  ["weight-reps", "Weight & Reps", "Bench Press, Dumbbell Curls", ["REPS", "KG"]],
-  ["bodyweight-reps", "Bodyweight Reps", "Pullups, Sit ups, Burpees", ["REPS"]],
-  ["weighted-bodyweight", "Weighted Bodyweight", "Weighted Pull Ups, Weighted Dips", ["REPS", "+KG"]],
-  ["assisted-bodyweight", "Assisted Bodyweight", "Assisted Pullups, Assisted Dips", ["REPS", "-KG"]],
-  ["duration", "Duration", "Planks, Yoga, Stretching", ["TIME"]],
-  ["duration-weight", "Duration & Weight", "Weighted Plank, Wall Sit", ["KG", "TIME"]],
-  ["distance-duration", "Distance & Duration", "Running, Cycling, Rowing", ["TIME", "KM"]],
-  ["weight-distance", "Weight & Distance", "Farmers walk, Suitcase Carry", ["KG", "KM"]],
+  ["WeightReps", "Weight & Reps", "Bench Press, Dumbbell Curls", ["REPS", (check)? "KG" : "LB"]],
+  ["BodyweightReps", "Bodyweight Reps", "Pullups, Sit ups, Burpees", ["REPS"]],
+  ["WeightedBodyWeight", "Weighted Bodyweight", "Weighted Pull Ups, Weighted Dips", ["REPS", (check)? "+KG" : "+LB"]],
+  ["AssistedWeightReps", "Assisted Bodyweight", "Assisted Pullups, Assisted Dips", ["REPS", (check)? "-KG" : "-LB"]],
+  ["Duration", "Duration", "Planks, Yoga, Stretching", ["TIME"]],
+  ["DurationWeight", "Duration & Weight", "Weighted Plank, Wall Sit", [(check)? "KG" : "LB", "TIME"]],
+  ["DistanceDuration", "Distance & Duration", "Running, Cycling, Rowing", ["TIME", (check) ? "KM" : "MI"]],
+  ["WeightDistance", "Weight & Distance", "Farmers walk, Suitcase Carry", [(check) ? "KG" : "LB", (check) ? "KM" : "MI"]],
 ].map(([value, label, example, metrics]) => ({
   value: value as string,
   label: label as string,
   example: example as string,
   metrics: metrics as readonly string[],
 })) as readonly ExerciseTypeDefinition[]
+
+export function formatExerciseType(exerciseType: string | null | undefined): string {
+  if (!exerciseType) {
+    return '-'
+  }
+  const match = DEFAULT_EXERCISE_TYPE_OPTIONS.find(
+    (option) =>
+      option.value.toLowerCase() === exerciseType.toLowerCase() ||
+      option.label.toLowerCase() === exerciseType.toLowerCase()
+  )
+  return match?.label ?? exerciseType
+}

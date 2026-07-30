@@ -1,8 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useAuth } from '@/context/auth-context'
+import { getDraftFromStorage } from '@/lib/session-drafts'
 
 const PUBLIC_LINKS = [
   { to: '/register', label: 'Register' },
@@ -13,31 +11,23 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/workouts',  label: 'Workouts'  },
   { to: '/schedule',  label: 'Schedule'  },
-  { to: '/progress',  label: 'Progress'  },
+  { to: '/help',  label: 'Help'  },
   { to: '/profile',   label: 'Profile'   },
 ]
 
 export function Navbar() {
   const { pathname } = useLocation()
-  const { isHydrated, isAuthenticated, logout } = useAuth()
+  const { isAuthenticated} = useAuth()
+  const activeDraft = getDraftFromStorage()
 
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
-  const authControls = isHydrated && isAuthenticated ? (
-    <div className="ml-3 flex items-center gap-3 border-l border-border pl-4">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="px-4"
-        onClick={logout}
-      >
-        <LogOut size={14} />
-        Logout
-      </Button>
-    </div>
-  ) : null
+  const homeLink = isAuthenticated ? '/dashboard' : '/'
 
-  const homeLink = isAuthenticated ? '/workouts' : '/register'
+  const linkClass = (to: string) =>
+    [
+      'px-5 py-2 font-sans text-[13px] font-semibold uppercase tracking-[1px] whitespace-nowrap no-underline transition-colors duration-150 border-b-2 -mb-[2px]',
+      pathname.startsWith(to) ? 'text-brand border-brand' : 'text-muted-foreground border-transparent hover:text-foreground',
+    ].join(' ')
 
   return (
     <header className="sticky top-0 z-[100] w-full h-20 bg-background border-b-2 border-brand flex items-center px-8 box-border">
@@ -52,23 +42,18 @@ export function Navbar() {
 
       <nav className="flex items-center gap-2">
 
+        {isAuthenticated && activeDraft && (
+          <Link to="/active-session" state={{ workout: { id: activeDraft.workoutId, name: activeDraft.workoutName } }} className={linkClass('/active-session')}>
+            Session
+          </Link>
+        )}
+
         {navigationLinks.map(({ to, label }) => (
-          <Link
-            key={to}
-            to={to}
-            className={[
-              'px-5 py-2 font-sans text-[13px] font-semibold uppercase tracking-[1px] whitespace-nowrap no-underline transition-colors duration-150 border-b-2 -mb-[2px]',
-              pathname.startsWith(to)
-                ? 'text-brand border-brand'
-                : 'text-muted-foreground border-transparent hover:text-foreground',
-            ].join(' ')}
-          >
+          <Link key={to} to={to} className={linkClass(to)}>
             {label}
           </Link>
         ))}
-        <ThemeToggle />
         
-        {authControls} {/* shows logout if they're logged in and state is hydrated */}
       </nav>
 
     </header>

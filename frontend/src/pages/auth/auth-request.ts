@@ -1,11 +1,14 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import type { AuthSession, AuthUser } from '@/context/auth-context'
+import { customFetch } from '@/lib/custom-fetch'
 
 type BackendUserDto = Readonly<{
   id: string
   displayName: string
   email: string
+  metric: boolean
+  lightTheme: boolean
 }>
 
 type SubmitAuthRequestArgs = Readonly<{
@@ -22,7 +25,17 @@ type SubmitAuthRequestArgs = Readonly<{
 }>
 
 export function mapBackendUserToAuthUser(user: BackendUserDto): AuthUser {
-  return { id: user.id, name: user.displayName, email: user.email }
+  const theme = user.lightTheme ? 'light' : 'dark'
+  localStorage.setItem('theme', theme)
+  if (user.lightTheme) {
+    document.documentElement.classList.remove('dark')
+  } else {
+    document.documentElement.classList.add('dark')
+  }
+
+  localStorage.setItem('units', user.metric ? 'metric' : 'imperial')
+
+  return { id: user.id, name: user.displayName, email: user.email, metric: user.metric, lightTheme: user.lightTheme }
 }
 
 export async function submitAuthRequest({
@@ -41,7 +54,7 @@ export async function submitAuthRequest({
   setErrorMessage(null)
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await customFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -60,11 +73,10 @@ export async function submitAuthRequest({
       return
     }
 
-    const data = await res.json()
+    const data = await res.json() as BackendUserDto
 
     login({
-      token: data.token,
-      user: mapBackendUserToAuthUser(data.user),
+      user: mapBackendUserToAuthUser(data),
     })
 
     navigate(fromPath, { replace: true })

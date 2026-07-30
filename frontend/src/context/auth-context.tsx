@@ -1,19 +1,20 @@
 import * as React from 'react'
+import { customFetch } from '@/lib/custom-fetch'
 
 export type AuthUser = {
     id: string
     name: string
     email: string
     avatarUrl?: string
+    metric: boolean
+    lightTheme: boolean
 }
 
 export type AuthSession = {
-    token: string
     user: AuthUser | null
 }
 
 type AuthContextValue = {
-    token: string | null
     user: AuthUser | null
     isAuthenticated: boolean
     isHydrated: boolean
@@ -21,62 +22,84 @@ type AuthContextValue = {
     logout: () => void
 }
 
-const STORAGE_KEY = 'optilifts.auth.session'
-
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
-
-function readStoredSession(): AuthSession | null {
-    //the second condition checks if window exists as it's only in browswer enviroments and not in SSR or during build time
-    if (typeof globalThis === 'undefined' || !('window' in globalThis)) 
-        return null
-
-    try {
-        const raw = globalThis.localStorage.getItem(STORAGE_KEY)
-        return raw ? (JSON.parse(raw) as AuthSession) : null
-    } catch {
-        return null
-    }
-}
-
-function saveSession(session: AuthSession) {
-    if (typeof globalThis === 'undefined' || !('window' in globalThis)) 
-        return
-    try {
-        globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-    } catch {
-        return
-    }
-}
-
-function clearSession() {
-    if (typeof globalThis === 'undefined' || !('window' in globalThis)) 
-        return
-    try {
-        globalThis.localStorage.removeItem(STORAGE_KEY)
-    } catch {
-        return
-    }
-}
 
 export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) {
     const { children } = props
-    const [session, setSession] = React.useState<AuthSession | null>(() => readStoredSession())
-    const [isHydrated] = React.useState(() => typeof globalThis !== 'undefined' && 'window' in globalThis)
+    const [session, setSession] = React.useState<AuthSession | null>(null)
+    const [isHydrated, setIsHydrated] = React.useState(false)
 
     const login = React.useCallback((nextSession: AuthSession) => {
         setSession(nextSession)
-        saveSession(nextSession)
     }, [])
 
     const logout = React.useCallback(() => {
         setSession(null)
-        clearSession()
+        customFetch('/api/auth/logout', { method: 'POST' }).catch(() => {
+            //error handled in backend    
+        })
     }, [])
 
+    React.useEffect(() => {
+        async function hydrateSession() {
+            try {
+                const loggedin = await customFetch('/api/auth/me')
+                if (loggedin.ok) {
+                    const user = await loggedin.json() as {
+                        id: string;
+                        name: string;
+                        email: string;
+                        avatarUrl?: string;
+                        metric: boolean;
+                        lightTheme: boolean;
+                    };
+
+                    const theme = user.lightTheme ? 'light' : 'dark';
+                    localStorage.setItem('theme', theme);
+                    if (user.lightTheme) {
+                        document.documentElement.classList.remove('dark');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                    }
+
+                    localStorage.setItem('units', (user.metric)? 'metric' : 'imperial')
+
+                    login({
+                        user: {
+                            id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            metric: user.metric,
+                            lightTheme: user.lightTheme,
+                        }
+                    });
+                } else {
+                    setSession(null);
+                }
+            } catch {
+                setSession(null);
+            } finally {
+                setIsHydrated(true);
+            }
+        }
+        hydrateSession();
+    }, [login])
+
+    //global listiner to log them out
+    React.useEffect(() => {
+        const handleGlobalLogout = () => {
+            logout();
+        };
+
+        globalThis.addEventListener('logoutUser', handleGlobalLogout);
+        return () => {
+            globalThis.removeEventListener('logoutUser', handleGlobalLogout);
+        };
+    }, [logout]);
+
     const value = React.useMemo<AuthContextValue>(() => ({
-        token: session?.token ?? null,
         user: session?.user ?? null,
-        isAuthenticated: Boolean(session?.token),
+        isAuthenticated: Boolean(session?.user),
         isHydrated,
         login,
         logout,

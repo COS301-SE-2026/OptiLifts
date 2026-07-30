@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.28.0" />
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
@@ -16,10 +17,18 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Database/SqlScripts/seed-demo-data.sql" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup> 
+    <EmbeddedResource Include="Database\Seeders\exercises.json" />
+  </ItemGroup>
 
 </Project>

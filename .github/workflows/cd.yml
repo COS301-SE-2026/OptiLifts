@@ -1,0 +1,86 @@
+name: Optilifts CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+  # a manual trigger
+  workflow_dispatch:
+
+
+jobs:
+    build-deploy:
+      runs-on: ubuntu-latest
+      
+      steps:
+        - name: Checkout Respository
+          uses: actions/checkout@v4
+
+        - name: Azure login
+          uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d
+          with: 
+            creds: ${{secrets.AZURE_CREDENTIALS}}
+
+        - name: Get Dynamic ACR Name
+          run: |
+            ACR_NAME=$(az acr list --query "[0].name" -o tsv)
+            echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+
+        - name: Azure container regiistry login
+          run: az acr login --name ${{env.ACR_NAME}}
+
+        - name: Build and push frontend image
+          env:
+            SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+            VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          run: |
+            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=$VITE_SENTRY_DSN --build-arg SENTRY_RELEASE=$GITHUB_SHA --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA -f frontend/Dockerfile .
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA
+
+        - name: Build and push core-api image
+          run: |
+            docker build -t ${{env.ACR_NAME}}.azurecr.io/optilifts-core-api:${{github.sha}} -f backend/core-api/Dockerfile backend/core-api
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-core-api:${{github.sha}}
+
+        - name: Build and push ai-api image
+          run: |
+            docker build -t ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}} -f backend/ai-api/Dockerfile backend/ai-api
+            docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-ai-api:${{github.sha}}
+
+        - name: Install pnpm
+          uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+          with: 
+            version: 9
+
+        - name: Setup Node
+          uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+          with: 
+            node-version: '24'
+            cache: 'pnpm'
+
+        - name: Install Pulumi
+          working-directory: infrastructure
+          run: pnpm install --frozen-lockfile --ignore-scripts
+
+        - name: Deploy via Pulumi
+          uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f
+          with:
+            command: up
+            stack-name: prod
+            work-dir: infrastructure
+            refresh: true
+            
+          env:
+            PULUMI_ACCESS_TOKEN: ${{secrets.PULUMI_ACCESS_TOKEN}}
+            IMAGE_TAG: ${{github.sha}}
+            NAMEDOTCOM_USERNAME: ${{secrets.NAMEDOTCOM_USERNAME}}
+            NAMEDOTCOM_TOKEN: ${{secrets.NAMEDOTCOM_TOKEN}}
+
+
+        
+
+        
+
+    
+
+

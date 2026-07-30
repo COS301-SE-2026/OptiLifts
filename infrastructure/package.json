@@ -1,0 +1,13 @@
+{
+    "name": "infrastructure",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^18",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@pulumi/azure-native": "^3.0.0",
+        "@pulumi/namedotcom": "file:sdks/namedotcom",
+        "@pulumi/pulumi": "^3.0.0"
+    }
+}

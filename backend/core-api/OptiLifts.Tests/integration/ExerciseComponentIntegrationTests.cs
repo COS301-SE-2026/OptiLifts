@@ -1,50 +1,39 @@
-using Microsoft.AspNetCore.Hosting;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.Extensions.DependencyInjection;
+using OptiLifts.API.Controllers;
 using OptiLifts.Application.Exercises.GetExercises;
-using OptiLifts.Domain.Users;
-using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
-using Testcontainers.PostgreSql;
-using Xunit;
+using OptiLifts.Tests.Integration.IntegrationDb;
 
 namespace OptiLifts.Tests.Integration;
 
-public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesApiFixture>
+[Collection("SharedDatabase")]
+public sealed class ExerciseComponentIntegrationTests : IntegrationTestBase
 {
-    private readonly ExercisesApiFixture _fixture;
-
-    public ExerciseComponentIntegrationTests(ExercisesApiFixture fixture)
+    public ExerciseComponentIntegrationTests(DatabaseFixture fixture) : base(fixture)
     {
-        _fixture = fixture;
     }
 
     [Fact]
     public async Task CreateCustomExercise_CanBeRetrievedByGetExercises()
     {
-        var user = await _fixture.SeedUserAsync("integration-exercise-1@optilifts.com", "Exercise User One");
+        var user = await SeedUserAsync("integration-exercise-1@optilifts.com");
+        await SeedMuscleAsync("Biceps");
+        var client = CreateAuthenticatedClient(user);
 
-        var client = _fixture.GetAuthenticatedClient(user);
+        using var createContent = BuildCustomExerciseContent(
+            name: "Custom Curl",
+            mechanic: "isolation",
+            equipment: "dumbbell",
+            category: "Strength",
+            primaryMuscles: ["Biceps"],
+            secondaryMuscles: []);
 
-        var createResponse = await client.PostAsJsonAsync("/api/exercises/custom", new
-        {
-            Name = "Custom Curl",
-            Mechanic = "isolation",
-            Equipment = "dumbbell",
-            Category = "Strength",
-            PrimaryMuscles = new[] { "Biceps" },
-            SecondaryMuscles = new string[] { }
-        });
+        var createResponse = await client.PostAsync("/api/exercises/custom", createContent);
 
         createResponse.EnsureSuccessStatusCode();
 
@@ -63,32 +52,35 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
     [Fact]
     public async Task GetExercises_ReturnsOnlyAuthenticatedUsersExercises()
     {
-        var userOne = await _fixture.SeedUserAsync("integration-exercise-2@optilifts.com", "Exercise User Two");
-        var userTwo = await _fixture.SeedUserAsync("integration-exercise-3@optilifts.com", "Exercise User Three");
+        var userOne = await SeedUserAsync("integration-exercise-2@optilifts.com");
+        var userTwo = await SeedUserAsync("integration-exercise-3@optilifts.com");
 
-        var clientOne = _fixture.GetAuthenticatedClient(userOne);
-        var clientTwo = _fixture.GetAuthenticatedClient(userTwo);
+        await SeedMuscleAsync("Lats");
+        await SeedMuscleAsync("Chest");
 
-        var resp1 = await clientOne.PostAsJsonAsync("/api/exercises/custom", new
-        {
-            Name = "UserOne Exercise",
-            Mechanic = "compound",
-            Equipment = "barbell",
-            Category = "Strength",
-            PrimaryMuscles = new[] { "Back" },
-            SecondaryMuscles = new string[] { }
-        });
+        var clientOne = CreateAuthenticatedClient(userOne);
+        var clientTwo = CreateAuthenticatedClient(userTwo);
+
+        using var userOneContent = BuildCustomExerciseContent(
+            name: "UserOne Exercise",
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Lats"],
+            secondaryMuscles: []);
+
+        var resp1 = await clientOne.PostAsync("/api/exercises/custom", userOneContent);
         resp1.EnsureSuccessStatusCode();
 
-        var resp2 = await clientTwo.PostAsJsonAsync("/api/exercises/custom", new
-        {
-            Name = "UserTwo Exercise",
-            Mechanic = "compound",
-            Equipment = "barbell",
-            Category = "Strength",
-            PrimaryMuscles = new[] { "Chest" },
-            SecondaryMuscles = new string[] { }
-        });
+        using var userTwoContent = BuildCustomExerciseContent(
+            name: "UserTwo Exercise",
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Chest"],
+            secondaryMuscles: []);
+
+        var resp2 = await clientTwo.PostAsync("/api/exercises/custom", userTwoContent);
         resp2.EnsureSuccessStatusCode();
 
         var getOne = await clientOne.GetAsync("/api/exercises");
@@ -101,92 +93,59 @@ public sealed class ExerciseComponentIntegrationTests : IClassFixture<ExercisesA
     }
 
     private record CreateResult(Guid Id);
-}
 
-public sealed class ExercisesApiFixture : IAsyncLifetime
-{
-    private readonly string _dbName = $"optilifts_integration_tests_{Guid.NewGuid():N}";
-    private const string JwtSecret = "integration-test-secret-integration-test-secret";
-    private readonly PostgreSqlContainer _postgres;
-    private WebApplicationFactory<Program> _factory = null!;
-
-    public ExercisesApiFixture()
+    private static MultipartFormDataContent BuildCustomExerciseContent(
+        string name,
+        string mechanic,
+        string equipment,
+        string category,
+        IEnumerable<string> primaryMuscles,
+        IEnumerable<string> secondaryMuscles)
     {
-        _postgres = new PostgreSqlBuilder("postgres:16-alpine")
-            .WithDatabase(_dbName)
-            .WithUsername("postgres")
-            .WithPassword("postgres")
-            .Build();
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _postgres.StartAsync();
-
-        // Apply migrations and seed the fixture database directly to avoid concurrent migrations
-        var dbOptions = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<OptiLifts.Infrastructure.Database.OptiLiftsDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
-            .Options;
-
-        await using (var db = new OptiLifts.Infrastructure.Database.OptiLiftsDbContext(dbOptions))
+        var content = new MultipartFormDataContent
         {
-            await db.Database.MigrateAsync();
-            await OptiLifts.Infrastructure.Database.Seeders.DatabaseSeeder.SeedAsync(db);
+            { new StringContent(name, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Name) },
+            { new StringContent(mechanic, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Mechanic) },
+            { new StringContent(equipment, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Equipment) },
+            { new StringContent(category, Encoding.UTF8), nameof(CreateCustomExerciseRequest.Category) },
+        };
+
+        foreach (var muscle in primaryMuscles)
+        {
+            content.Add(new StringContent(muscle, Encoding.UTF8), nameof(CreateCustomExerciseRequest.PrimaryMuscles));
         }
 
-        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        foreach (var muscle in secondaryMuscles)
         {
-            builder.UseEnvironment("Testing");
-            builder.UseSetting("POSTGRES_CONNECTION_STRING", _postgres.GetConnectionString() + ";Pooling=false");
-            builder.UseSetting("JWT_SECRET", JwtSecret);
-            builder.UseSetting("JWT_EXP_MINUTES", "60");
-            builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
-            builder.UseSetting("RUN_MIGRATIONS", "false");
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigureAll<JwtBearerOptions>(options =>
-                {
-                    options.TokenValidationParameters.IssuerSigningKey =
-                        new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(JwtSecret));
-                });
-            });
-        });
+            content.Add(new StringContent(muscle, Encoding.UTF8), nameof(CreateCustomExerciseRequest.SecondaryMuscles));
+        }
+
+        return content;
     }
 
-    public async Task DisposeAsync()
+    private HttpClient CreateAuthenticatedClient(Guid userId)
     {
-        if (_factory is not null)
-            await _factory.DisposeAsync();
-        await _postgres.DisposeAsync();
-    }
-
-    public HttpClient GetAuthenticatedClient(Domain.Users.User user)
-    {
-        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        var client = Fixture.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://localhost"),
             AllowAutoRedirect = false,
         });
 
-        var tokenService = new JwtTokenService(JwtSecret, 60);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenService.CreateToken(user));
+        client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
         return client;
     }
 
-    public async Task<Domain.Users.User> SeedUserAsync(string email, string displayName)
+    private async Task<Domain.Workouts.Muscle> SeedMuscleAsync(string name)
     {
-        await using var scope = _factory.Services.CreateAsyncScope();
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
 
-        var user = new Domain.Users.User
-        {
-            Email = email,
-            DisplayName = displayName,
-            PasswordHash = "integration-hash"
-        };
+        var existing = await db.Muscles.FirstOrDefaultAsync(m => m.Name == name);
+        if (existing is not null) return existing;
 
-        db.Users.Add(user);
+        var muscle = new Domain.Workouts.Muscle { Name = name };
+        db.Muscles.Add(muscle);
         await db.SaveChangesAsync();
-        return user;
+        return muscle;
     }
 }

@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { customFetch } from '@/lib/custom-fetch'
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -77,10 +78,10 @@ export function CreateExercise({
     return [...DEFAULT_EXERCISE_TYPE_OPTIONS]
   }, [exerciseTypeOptions, exerciseTypes])
 
-  const { token } = useAuth()
+  useAuth()
 
   const [name, setName] = useState("")
-  const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "weight-reps")
+  const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "WeightReps")
   const [equipment, setEquipment] = useState<string>(equipmentOptions[0] ?? "None")
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
@@ -116,6 +117,20 @@ export function CreateExercise({
     return MUSCLE_GROUPS.filter((m) => m.toLowerCase().includes(query))
   }, [muscleSearchQuery])
 
+  const availableMuscles = useMemo(() => {
+    const excludedMuscles = new Set<string>()
+
+    if (activeMusclePicker === "primary") {
+      secondaryMuscles.forEach((muscle) => excludedMuscles.add(muscle))
+    }
+
+    if (activeMusclePicker === "secondary" && primaryMuscle) {
+      excludedMuscles.add(primaryMuscle)
+    }
+
+    return filteredMuscles.filter((muscle) => !excludedMuscles.has(muscle))
+  }, [activeMusclePicker, filteredMuscles, primaryMuscle, secondaryMuscles])
+
   const resolveExercisesEndpoint = () => {
     const apiBase = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "/api" : "http://localhost:5036")
     const normalizedBase = apiBase.replace(/\/$/, "")
@@ -133,7 +148,7 @@ export function CreateExercise({
 
     const t = setTimeout(() => {
       setName(initialValues?.name ?? "")
-      setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "weight-reps"))
+      setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps"))
       setEquipment(initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None"))
       setSelectedImageFile(null)
       setSelectedImageUrl(initialValues?.imageUrl ?? null)
@@ -227,6 +242,17 @@ export function CreateExercise({
 
   const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0] ?? null
+    
+    if (nextFile) {
+      const validTypes = ['image/png', 'image/jpeg', 'image/webp']
+      if (!validTypes.includes(nextFile.type)) {
+        setSaveError("Only PNG, JPG, and WEBP images are supported.")
+        event.target.value = ""
+        return
+      }
+    }
+    
+    setSaveError(null)
     setSelectedImageFile(nextFile)
     if (!nextFile && !selectedImageFile) setSelectedImageUrl(initialValues?.imageUrl ?? null)
     event.target.value = ""
@@ -238,9 +264,22 @@ export function CreateExercise({
   }
 
   const toggleSecondaryMuscle = (muscle: string) => {
+    if (muscle === primaryMuscle) return
+
     setSecondaryMuscles((prev) =>
       prev.includes(muscle) ? prev.filter((m) => m !== muscle) : [...prev, muscle]
     )
+  }
+
+  const handleMuscleSelect = (muscle: string) => {
+    if (activeMusclePicker === "primary") {
+      setSecondaryMuscles((prev) => prev.filter((secondaryMuscle) => secondaryMuscle !== muscle))
+      setPrimaryMuscle(muscle)
+      setActiveMusclePicker(null)
+      return
+    }
+
+    toggleSecondaryMuscle(muscle)
   }
 
   const handleSave = async (event: React.SyntheticEvent<HTMLFormElement>) => {
@@ -269,23 +308,20 @@ export function CreateExercise({
         return
       }
 
-      const payload = {
-        Name: values.name,
-        Mechanic: null,
-        Equipment: values.equipment || null,
-        Category: values.exerciseType || "Custom",
-        PrimaryMuscles: values.primaryMuscle ? [values.primaryMuscle] : [],
-        SecondaryMuscles: values.secondaryMuscles ?? [],
-      }
+      const formData = new FormData()
+      formData.append("Name", values.name)
+      if (values.equipment) formData.append("Equipment", values.equipment)
+      formData.append("Category", values.exerciseType || "Custom")
+      if (values.primaryMuscle) formData.append("PrimaryMuscles", values.primaryMuscle)
+      values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
+      if (values.imageFile) formData.append("Image", values.imageFile)
 
-      const response = await fetch(resolveExercisesEndpoint(), {
+      const response = await customFetch(resolveExercisesEndpoint(), {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: formData,
       })
 
       if (!response.ok) {
@@ -333,11 +369,14 @@ export function CreateExercise({
               </label>
 
               <div className="grid gap-1.5">
-                <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise image</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise image</span>
+                  <span className="text-xs text-muted-foreground font-medium">PNG, JPG, WEBP</span>
+                </div>
                 <div className="rounded-lg border border-dashed border-border p-3">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" onChange={onImageChange} />
+                      <input ref={fileInputRef} type="file" accept="image/png, image/jpeg, image/webp" className="sr-only" onChange={onImageChange} />
                       <button type="button" aria-label="Select exercise image" onClick={() => fileInputRef.current?.click()} className="relative flex h-20 w-20 cursor-pointer overflow-hidden rounded-lg border border-border bg-surface-2 transition-colors hover:bg-border items-center justify-center">
                         {selectedImageUrl ? (
                           <img src={selectedImageUrl} alt="Selected exercise" className="h-full w-full object-cover" />
@@ -483,21 +522,13 @@ export function CreateExercise({
             </div>
 
             <div className="overflow-y-auto px-4 py-2">
-              {filteredMuscles.map((muscle) => {
+              {availableMuscles.map((muscle) => {
                 const isSelected = activeMusclePicker === "primary" ? primaryMuscle === muscle : secondaryMuscles.includes(muscle)
                 return (
                   <button
                     key={muscle}
                     type="button"
-                    onClick={() => {
-                      if (activeMusclePicker === "primary") {
-                        setPrimaryMuscle(muscle)
-                        // If it's already in secondary, optionally we might want to remove it, but fine for now
-                        setActiveMusclePicker(null)
-                      } else {
-                        toggleSecondaryMuscle(muscle)
-                      }
-                    }}
+                    onClick={() => handleMuscleSelect(muscle)}
                     className="w-full flex items-center justify-between py-4 border-b border-border/50 last:border-0 hover:bg-surface-2 px-2 rounded-md transition-colors"
                   >
                     <div className="flex items-center gap-4">
@@ -511,7 +542,7 @@ export function CreateExercise({
                   </button>
                 )
               })}
-              {filteredMuscles.length === 0 && (
+              {availableMuscles.length === 0 && (
                 <p className="text-center text-sm text-muted-foreground py-8">No muscles found.</p>
               )}
             </div>

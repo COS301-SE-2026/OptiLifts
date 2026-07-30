@@ -434,7 +434,7 @@ export default function DashboardPage() {
                 </h1>
                 
                 <p className="mt-2 text-lg text-muted-foreground">
-                    Today&apos;s Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
+                    Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">

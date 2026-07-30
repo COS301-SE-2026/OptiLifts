@@ -243,7 +243,8 @@ CREATE OR REPLACE FUNCTION seed_logged_workout(
     p_log_id uuid DEFAULT NULL,
     p_max_order_index integer DEFAULT NULL,
     p_rpe_mode text DEFAULT 'session',
-    p_rpe_seed integer DEFAULT NULL
+    p_rpe_seed integer DEFAULT NULL,
+    p_progress_factor integer DEFAULT 0
 ) RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -285,7 +286,7 @@ BEGIN
         we.workout_exercise_id,
         s.set_id,
         s.set_type,
-        COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
+        COALESCE(s.reps + p_progress_factor, s.duration, ROUND(s.distance)::int, 1),
         COALESCE(s.weight, 0),
         s.duration,
         s.distance,
@@ -585,9 +586,9 @@ BEGIN
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
-    -- makes it such that the user always has a month long streak
-    FOR i IN 0..17 LOOP
-        v_day := NOW() - INTERVAL '30 days' + (i * INTERVAL '41 hours');
+    -- makes it such that the user always has a 6 week long streak
+    FOR i IN 0..23 LOOP
+        v_day := NOW() - INTERVAL '42 days' + (i * INTERVAL '41 hours');
         PERFORM seed_logged_workout(
             alex_id,
             CASE WHEN i % 3 = 0 THEN v_push WHEN i % 3 = 1 THEN v_pull ELSE v_legs END,
@@ -597,9 +598,10 @@ BEGIN
             NULL,
             NULL,
             NULL,
-            4,
-            'session',
-            i
+            NULL,
+            exercise_mode,
+            NULL,
+            (i / 3)
         );
     END LOOP;
 END $$;

@@ -21,6 +21,8 @@ const PastWorkoutsPage = lazy(() => import('@/pages/past-workouts'))
 const SchedulePage = lazy(() => import('@/pages/schedule'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const LandingPage = lazy(() => import('@/pages/landing'))
+const HelpPage= lazy(() => import('@/pages/help'))
+
 function AppLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -114,6 +116,7 @@ function App() {
           <Route path="active-session" element={<ActiveSessionPage />} />
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
+          <Route path="help" element={<HelpPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />
         </Route>

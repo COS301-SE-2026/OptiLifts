@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { UpcomingWorkoutsCard } from '@/components/ui/upcoming-workouts'
 import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
+import { CircularProfileImage } from '@/components/ui/circular-image'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import streakFlame from '@/assets/streak_flame.png'
 import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
@@ -12,6 +14,7 @@ import { useAuth } from '@/context/auth-context'
 import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
+import { Dumbbell } from 'lucide-react'
 
 type ScheduleAnalyticsResponse = Readonly<{
     totalWorkouts: number
@@ -342,7 +345,7 @@ export default function DashboardPage() {
 
     const favoriteExercise = useMemo(() => {
         if (completedWorkoutDetails.length === 0 || completedEntries.length === 0) {
-            return { name: 'No workouts yet', count: 0 }
+            return { name: 'No workouts yet', count: 0, imageUrl: null as string | null }
         }
 
         const completionCountsByWorkoutId = completedEntries.reduce((counts, entry) => {
@@ -351,7 +354,7 @@ export default function DashboardPage() {
         }, new Map<string, number>())
 
         const workoutById = new Map(completedWorkoutDetails.map((workout) => [workout.id, workout]))
-        const exerciseCounts = new Map<string, number>()
+        const exerciseStats = new Map<string, { count: number; imageUrl: string | null }>()
 
         completionCountsByWorkoutId.forEach((completionCount, workoutId) => {
             const workout = workoutById.get(workoutId)
@@ -360,12 +363,27 @@ export default function DashboardPage() {
             }
 
             workout.exercises.forEach((exercise) => {
-                exerciseCounts.set(exercise.name, (exerciseCounts.get(exercise.name) ?? 0) + completionCount)
+                const existing = exerciseStats.get(exercise.name)
+                if (existing) {
+                    existing.count += completionCount
+                    if (!existing.imageUrl && exercise.imageUrl) {
+                        existing.imageUrl = exercise.imageUrl
+                    }
+                    return
+                }
+
+                exerciseStats.set(exercise.name, {
+                    count: completionCount,
+                    imageUrl: exercise.imageUrl ?? null,
+                })
             })
         })
 
-        const [name, count] = [...exerciseCounts.entries()].sort((left, right) => right[1] - left[1])[0] ?? ['No workouts yet', 0]
-        return { name, count }}, [completedWorkoutDetails, completedEntries])
+        const [name, stats] = [...exerciseStats.entries()].sort((left, right) => right[1].count - left[1].count)[0]
+            ?? ['No workouts yet', { count: 0, imageUrl: null as string | null }]
+
+        return { name, count: stats.count, imageUrl: stats.imageUrl }
+    }, [completedWorkoutDetails, completedEntries])
 
     const muscleValues = useMemo(() => {
         const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
@@ -420,17 +438,18 @@ export default function DashboardPage() {
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">
-                    <button 
+                    <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
                                 navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
-                        className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
+                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                    >
                         View Workout
-                    </button>
-                    <button 
+                    </Button>
+                    <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
                             if (upcomingWorkouts[0]){
@@ -445,9 +464,10 @@ export default function DashboardPage() {
                                 })
                             }
                         }}
-                        className="rounded-md border border-border bg-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed">
+                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                    >
                         Start Session
-                    </button>
+                    </Button>
                 </div>
             </div>
             
@@ -484,7 +504,12 @@ export default function DashboardPage() {
                         </span>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-3">
-                                <div className="h-8 w-8 shrink-0 rounded-full border border-border bg-background"></div>
+                                <CircularProfileImage
+                                    src={favoriteExercise.imageUrl ?? undefined}
+                                    alt={favoriteExercise.name}
+                                    className="h-13 w-13 shrink-0 border-border"
+                                    fallbackIcon={<Dumbbell className="h-4 w-4 text-muted-foreground" />}
+                                />
                                 <span className="text-lg font-bold leading-tight text-foreground">
                                     {favoriteExercise.name}
                                 </span>

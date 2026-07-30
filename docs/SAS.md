@@ -8,6 +8,7 @@ SAS introduction
 	- [Quality Requirements](#quality-requirements)
 	- [Architectural Patterns](#architectural-patterns)
 	- [Design Patterns](#design-patterns)
+	- [Mapping Quality Requirements to Architectural Decisions](#mapping-quality-requirements-to-architectural-decisions)
 	- [Constraints](#constraints)
 
 - [Technology Requirements](#technology-requirements)
@@ -19,6 +20,9 @@ SAS introduction
 	- [Global & Custom Exercises](#global-and-custom-exercises)
 	- [Scheduling](#scheduling)
 - [Deployment](#Deployment)
+	- [Deployment Diagrams](#deployment-diagrams)
+	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
+	- [Rollback Strategy](#rollback-strategy)
 
 
 ## Architectural Requirements
@@ -56,34 +60,42 @@ Quality requirments dictate the holistic quality of OptiLifts by specifying the 
 
 ### Architectural Patterns
 
-For this project we model a 5-tier N architecture that maps to the existing codebase:
+For this project we model an explicit 5-tier architecture:
 
-- Presentation (frontend SPA)
-- API / Controller (OptiLifts.API)
-- Application / Use-case layer (OptiLifts.Application)
-- Domain / Business objects (OptiLifts.Domain)
-- Infrastructure / Persistence (OptiLifts.Infrastructure & DB)
+- Presentation Tier
+- API / Controller Tier
+- Application Tier
+- Domain Tier
+- Infrastructure / Persistence Tier
 
-Mermaid diagram (N = 5):
+---
+
+#### Application Tier vs. Domain Tier Separation
+
+Clean Architecture strictly separates the **Application Tier** from the **Domain Tier**:
+
+- **Domain Tier (`OptiLifts.Domain`)**: Core enterprise business logic, entities, and calculation rules. Framework-agnostic and invariant. *(Answers: "What are the core domain rules?")*
+- **Application Tier (`OptiLifts.Application`)**: Use-case orchestration, CQRS command/query handling, Mediator dispatching, and infrastructure interfaces. *(Answers: "How does the system execute a user operation?")*
+
+This separation ensures domain rules remain 100% testable in isolation, protected from framework, database, or API changes.
+
+---
+
+#### System Architecture Diagram
 
 ```mermaid
 flowchart LR
-	User((User))
-	Frontend["Presentation - frontend (SPA)"]
-	API["API / Controller - OptiLifts.API"]
-	Application["Application / Use-cases - OptiLifts.Application"]
-	Domain["Domain / Business - OptiLifts.Domain"]
-	Infra["Infrastructure / Persistence - OptiLifts.Infrastructure & DB"]
+    Tier1["Presentation Tier"]
+    Tier2["API / Controller Tier"]
+    Tier3["Application Tier"]
+    Tier4["Domain Tier"]
+    Tier5["Infrastructure / Persistence Tier"]
 
-	User --> Frontend
-	Frontend --> API
-	API --> Application
-	Application --> Domain
-	Domain --> Infra
+    Tier1 --> Tier2
+    Tier2 --> Tier3
+    Tier3 --> Tier4
+    Tier4 --> Tier5
 ```
-
-
-This diagram shows how requests flow from the client (frontend) through the API and application layers into the domain and persistence layers.
 
 ### Design Patterns
 
@@ -208,6 +220,17 @@ This pattern is useful wherever a request needs to pass through several independ
 
 This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts the most direct application is the active workout session, which moves through idle, active, resting, and completed states. It could also apply to AI suggestion states or onboarding flows where the available actions change at each stage.
 
+### Mapping Quality Requirements to Architectural Decisions
+
+| Quality Requirement |Architectural Decision |
+| :--- | :--- |
+|Response time <=1.5 seconds for core-api| Seperation of api into core-api and ai-api services, and planned caching in future |
+| 100 concurrent users | Container app service architecture with horizontal scaling | 
+| Increase in workload of up to 200% | Container app service architecture with horizontal scaling that has an automatic load balancer with stateless autherization meaning users are able to send requests to different replicas |
+| Encrypted data at rest | Encryption layer in API that encrypts data writen to the database and decrypts data fetched from the database |
+| Authenticated access | Stateless JSON JWTs communicated and stored via HTTP-only cookies | 
+| Deployment within 30 minutes | A CI/CD pipeline incorperated with IaC limits any manual overhead allowing the pipeline to deploy within 30 minutes |
+| Keyboard accessibility and User satisfaction | Using a brand-style guide that aligns with the WCAG standards, and  components we have made that are designed to be user friendly and keyboard accessible. Using an SPA allows for better user experience and navigation as there are no full page reloads |
 
 ### Constraints
 
@@ -215,62 +238,59 @@ This pattern applies wherever an object behaves differently depending on what ph
 * **Zero-Cost Implementation:** The project must be designed and implemented without incurring any costs. 
 * **Infrastructure Limitations:** The system architecture should consist of open-source technologies and free-tier cloud services, such as our Azure for Students sponsorship.
 
-**2. LLM Cost Constraints**
-* **Cost Management:** API calls to any used LLM must be carefully managed and must make use of cost-saving strategies such as caching and rate limiting.
-* **Bot Behavior:** The application must account for the ethical implications of AI-generated content. We must ensure the AI operates within safe boundaries and that bot content does not negatively affect the accuracy of the models or the user's physical training.
+**2. AI Implementation Constraints**
+* **Model Behavior:** The application must account for the ethical implications of AI-generated content. We must ensure the AI operates within safe boundaries and that bot content does not negatively affect the accuracy of the models or the user's physical training.
 
-**3. Availability Constraints**
-* **System Uptime:** The OptiLifts platform must ensure an uptime of approximately 90%.
-
-**4. Security & Regulatory Constraints**
+**3. Security & Regulatory Constraints**
 * **Data Privacy (POPIA):** User health and fitness data must be handled responsibly and in strict compliance with privacy best practices and the POPI Act.
 * **Anonymity & Encryption:** The system must implement encrypted authentication and data storage. User anonymity must be prioritized, and data obfuscation must be enforced.
 
-## Technology Requirements
+**4. Deployment Constraints**
+* **Deployment Methodology:** The system must be deployable via Infrastructure as Code (IaC) and a CI/CD pipeline, "Click Ops" deployment is not permitted.
 
-The technologie were chosen to fulfill specific architectural and quality requirements, with a strong focus on performance, zero-budget cost constraints, and maintainability.
+## Technology Requirements
 
 #### Frontend & Presentation Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **Framework** | React + React Router | Component-based structure ensures a highly responsive Single Page Application (SPA). |
 | **Build Tool & PWA** | Vite + vite-plugin-pwa | Fast hot-module replacement for ease of development and built-in support for offline Progressive Web App capabilities. |
-| **Design System** | Shadcn/ui + Tailwind CSS | Provides an easily customizable, and responsive UI whilst still keeping the application lightweight. |
+| **Design System** | Shadcn/ui + Tailwind CSS | Provides an easily customizable, and responsive UI whilst still keeping the application lightweight suporting ease of development. |
 
 #### Core API & Application Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
-| **Core Framework** | .NET ASP.NET Core | High-performance framework utilizing strong typing and robust built-in authorization mechanisms to ensure secure endpoints. It naturally supports Domain-Driven Design (DDD) principles, allowing for clear domain models to handle complex hierarchical workout data. |
+| **Core Framework** | .NET ASP.NET Core | High-performance framework that handles CRUD operations well within a 2-second timeframe and utilizes robust built-in authorization mechanisms to ensure secure endpoints. |
 | **Data Access** | Entity Framework (EF) Core | Object-Relational Mapper (ORM) that makes database interactions and migrations easier to manage accross the team. |
 | **Architecture Pattern** | MediatR | Implements logical CQRS to decouple services, separating read queries from write commands allowing for easier backend decoupling and maintainability. |
 | **Caching** | Redis | Caching ensures high-speed retrieval of session data and minimizes database hits . |
 
-#### AI & Machine Learning Layer
+#### AI Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **API Framework** | Python + FastAPI | Lightweight and highly performant with extensive libararies, ideal for serving machine learning models and AI endpoints. |
-| **Machine Learning** | XGBoost | Efficienct gradient boosting library for structured, tabular data. Chosen to analyze training history, predict performance thresholds, and back the plateau detection sub-system. |
-| **LLM Provider** | Azure OpenAI (GPT-4o mini) | Azure LLM to translate structured engine analytics into human-readable text summaries and conversational feedback. |
-| **LLM Gateway & Observability** | LiteLLM & Langfuse | Used to  manage key access, track prompt latency, and monitor token costs to adhere to zero-budget. |
+| **Optimization Engine** | Genetic Algorithm (DEAP) | Provides a deterministic, light weight solution for the dynamic scheduler and time contraints mode via its GA supprot an dintegrates with the FastAPI backend.  |
+
 
 #### Persistence Layer
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **Relational Database** | PostgreSQL | Open-source relational database perfectly suited for the complex, hierarchical structures of workout plans and historical logs. |
+| **Object Storage** | Azure Blob Storage | Provides a scalable storage for our exercise images and profile pictures. Is included in the Azure student package ensuring zero-cost storage. |
 
 #### Infrastructure, DevOps & CI/CD
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
-| **Cloud Hosting** | Microsoft Azure | Centralizes services under the Azure for Students tier, targeting 90%+ availability. |
-| **Infrastructure as Code** | Pulumi | Automates the provisioning and tear-down of Azure resources, ensuring a reproducible deployment environment. |
+| **Cloud Hosting** | Microsoft Azure | Centralizes services under the Azure for Students tier, targeting 90%+ availability. Built in load balancing and resource allocation support the need for scalability. |
+| **Infrastructure as Code** | Pulumi | Automates the provisioning and tear-down of Azure resources, ensuring a reproducible deployment environment directly improving maintainability and ease of development. |
 | **CI/CD Pipeline** | GitHub Actions | Automates the testing and deployment pipelines directly from the repository. |
-| **Containerization** | Docker Compose | Ensures environment parity between local development and end-to-end testing environments. |
+| **Containerization** | Docker Compose | Ensures environment parity between local development and end-to-end testing environments improving ease of development. |
 | **Package Manager** | pnpm | Efficient dependency management with strong monorepo workspace support. |
 
 #### Quality Assurance & Testing
 | Testing Scope | Technologies Used |
 | :--- | :--- |
-| **.NET Backend** | xUnit (unit tests), Moq (interface mocking), TestContainers (shortlived PostgreSQL test containers), FluentAssertions. |
+| **.NET Backend** | xUnit (unit tests), Moq (interface mocking), TestContainers (shortlived PostgreSQL test containers),Respawn (Integration test database rollback) , FluentAssertions. |
 | **React Frontend** | Vitest (unit testing), React Testing Library (component interactions). |
 | **Python AI API** | pytest (unit tests), httpx (simulating web requests). |
 | **End-to-End (E2E)** | Playwright (browser simulation) integrated with Docker Compose. |
@@ -298,137 +318,6 @@ Once the persistence and data access layers are fully validated, integration tes
 # API Service Contracts
 
 ## Authentication and User Management
-
-### POST /api/exercises/custom
-**Service Name:** Custom Exercise Creation Service
-
-**Description:**
-Creates a user-defined exercise and assigns it to the authenticated user.
-
-**Inputs:**
-
-- `name`: string - The exercise name.
-- `mechanic`: string | null - Optional exercise mechanic.
-- `equipment`: string | null - Optional equipment name.
-- `category`: string - The exercise category.
-- `primaryMuscles`: array of string - Primary muscles targeted.
-- `secondaryMuscles`: array of string - Secondary muscles assisted.
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- `id`: Guid - The newly created exercise identifier.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a POST request to `/api/exercises/custom` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The request body must include the exercise `name`, `category`, `primaryMuscles`, and `secondaryMuscles`.
-
-**Example Response:**
-
-```json
-{
-	"id": "string",
-	"name": "string",
-	"description": "string",
-	"equipment": ["string"],
-	"muscles": ["string"],
-	"instructions": "string",
-	"createdBy": "userId"
-}
-```
-
----
-
-### GET /api/workouts
-**Service Name:** Workout List Service
-
-**Description:**
-Returns the authenticated user's workouts as summary cards.
-
-**Inputs:**
-
-- None in the request body.
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- `workouts`: array of `WorkoutCardDto` - The list of workout summaries.
-
-WorkoutCardDto fields:
-
-- `id`: Guid - Unique workout identifier.
-- `name`: string - Workout name.
-- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
-- `exerciseCount`: integer - Number of exercises in the workout.
-- `exercisePreview`: array of string - Short preview of exercise names.
-- `createdAt`: datetime - When the workout was created.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The response is a JSON object containing a `workouts` array of workout summary objects.
-
-**Example Response:**
-
-```json
-{
-	"workouts": [
-		{
-			"id": "string",
-			"name": "string",
-			"folder": "string",
-			"estimatedTimeMinutes": 30,
-			"exercises": [
-				{ "id": "string", "name": "string", "sets": 3, "reps": 8 }
-			]
-		}
-	],
-	"total": 0,
-	"page": 1,
-	"limit": 25
-}
-```
-
----
-
-### POST /api/workouts/{workoutId}/exercises
-**Service Name:** Workout Exercise Assignment Service
-
-**Description:**
-Adds an existing exercise to a specific workout owned by the authenticated user.
-
-**Inputs:**
-
-- `workoutId`: Guid - The workout to update (path parameter).
-- `exerciseId`: Guid - The exercise to add to the workout (request body).
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- No content on success.
-- `404` response if the workout or exercise cannot be added.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The request body must contain a valid `exerciseId` value.
-- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
-
-**Example Response:**
-
-```json
-{
-	"id": "string",
-	"name": "string",
-	"exercises": [ /* updated exercises array */ ]
-}
-```
-
----
 
 ### POST /api/auth/register
 **Service Name:** User Registration Service
@@ -809,6 +698,47 @@ HTTP/1.1 204 No Content
 
 ## Exercise Management
 
+### POST /api/exercises/custom
+**Service Name:** Custom Exercise Creation Service
+
+**Description:**
+Creates a user-defined exercise and assigns it to the authenticated user.
+
+**Inputs:**
+
+- `name`: string - The exercise name.
+- `mechanic`: string | null - Optional exercise mechanic.
+- `equipment`: string | null - Optional equipment name.
+- `category`: string - The exercise category.
+- `primaryMuscles`: array of string - Primary muscles targeted.
+- `secondaryMuscles`: array of string - Secondary muscles assisted.
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `id`: Guid - The newly created exercise identifier.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/exercises/custom` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must include the exercise `name`, `category`, `primaryMuscles`, and `secondaryMuscles`.
+
+**Example Response:**
+
+```json
+{
+	"id": "string",
+	"name": "string",
+	"description": "string",
+	"equipment": ["string"],
+	"muscles": ["string"],
+	"instructions": "string",
+	"createdBy": "userId"
+}
+```
+
+
 ### GET /api/exercises
 **Service Name:** Exercise Catalog Service
 
@@ -894,6 +824,92 @@ ExerciseDto fields:
 ---
 
 ## Workouts
+
+### GET /api/workouts
+**Service Name:** Workout List Service
+
+**Description:**
+Returns the authenticated user's workouts as summary cards.
+
+**Inputs:**
+
+- None in the request body.
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `workouts`: array of `WorkoutCardDto` - The list of workout summaries.
+
+WorkoutCardDto fields:
+
+- `id`: Guid - Unique workout identifier.
+- `name`: string - Workout name.
+- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
+- `exerciseCount`: integer - Number of exercises in the workout.
+- `exercisePreview`: array of string - Short preview of exercise names.
+- `createdAt`: datetime - When the workout was created.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The response is a JSON object containing a `workouts` array of workout summary objects.
+
+**Example Response:**
+
+```json
+{
+	"workouts": [
+		{
+			"id": "string",
+			"name": "string",
+			"folder": "string",
+			"estimatedTimeMinutes": 30,
+			"exercises": [
+				{ "id": "string", "name": "string", "sets": 3, "reps": 8 }
+			]
+		}
+	],
+	"total": 0,
+	"page": 1,
+	"limit": 25
+}
+```
+
+### POST /api/workouts/{workoutId}/exercises
+**Service Name:** Workout Exercise Assignment Service
+
+**Description:**
+Adds an existing exercise to a specific workout owned by the authenticated user.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to update (path parameter).
+- `exerciseId`: Guid - The exercise to add to the workout (request body).
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout or exercise cannot be added.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must contain a valid `exerciseId` value.
+- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+
+**Example Response:**
+
+```json
+{
+	"id": "string",
+	"name": "string",
+	"exercises": [ /* updated exercises array */ ]
+}
+```
+
 
 ### DELETE /api/workouts/{workoutId}
 **Service Name:** Workout Deletion Service
@@ -1221,3 +1237,33 @@ Update the status of an existing scheduled workout session
 ---
 
 # Deployment
+
+## Deployment Diagrams
+
+### Development Environment
+
+![Development Environment](images/deployment/DevelopmentEnviro.png)
+
+### Production Environment
+
+![Production Environment](images/deployment/ProductionEnviro.png)
+
+## CI/CD Pipeline Diagrams
+
+### CI Pipeline
+![CI Pipeline](images/deployment/CIPipeline.png)
+
+### CD Pipeline
+![CD Pipeline](images/deployment/CDPipeline.png)
+
+### Rollback Strategy
+
+#### During Deployment: Blue-Green Deployment
+When new deployments are triggered in production, new revisioins of the apps are made ( the green images) whilst the current apps continue to run and have traffic routed to them (the blue images). Once the new revisions are fully deployed and health checks pass, traffic is routed to the new (green) images. If the new revisions were to crash or fail health checks then traffic would never be routed to them and the previous working revision (blue revision) continues to handle all traffic. 
+
+#### Afer Deployment: Image Tag Pinning
+If an error is noticed after deployment, rollbacks are done via Image tag pinning. All revisions of the apps are tagged with their git commit hash and stored in the Azure Container Registry. This means if a rollback is needed we are able change to a previous revision instantly via the azure portal, alternatively we are able to roll it back via the CD by either creating a revert commit on main or by running the CD on a previous commit.
+
+#### Daily Database Backups
+Azure Database for PostgresSQL provides automated continous backups for the database. The backups are run daily and streams transaction logs every 5 minutes. These backups are retained for 10 days. This allows us to restore the database to any point in time in the last 10 days allowing us to recover from accidental data loss and destructive migrations instantly via the azure portal. 
+

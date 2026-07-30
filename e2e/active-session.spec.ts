@@ -27,9 +27,9 @@ test.describe('Active Session Page', () => {
         await startButton.click();
 
         await expect(page.getByRole('heading', { name: workoutName })).toBeVisible();
-        await expect(page.getByText('Duration')).toBeVisible();
-        await expect(page.getByText('Volume')).toBeVisible();
-        await expect(page.getByText('Sets')).toBeVisible();
+        await expect(page.locator('p', { hasText: /^Duration$/ })).toBeVisible();
+        await expect(page.locator('p', { hasText: /^Volume$/ })).toBeVisible();
+        await expect(page.locator('p', { hasText: /^Sets$/ })).toBeVisible();
 
         const finishButton = page.getByRole('button', { name: 'Finish' });
         await expect(finishButton).toBeDisabled();
@@ -45,8 +45,14 @@ test.describe('Active Session Page', () => {
         await page.getByRole('button', { name: 'Add Barbell Back Squat' }).click();
         await expect(page.getByText('Barbell Back Squat').first()).toBeVisible();
 
-        const checkButtons = page.locator('button').filter({ has: page.locator('svg.lucide-check') });
-        await checkButtons.first().click();
+        const squatCard = page.locator('[data-slot="card"]', { hasText: 'Barbell Back Squat' });
+        const squatInputs = squatCard.getByRole('textbox');
+        await squatInputs.nth(1).fill('60'); 
+        await squatInputs.nth(2).fill('8'); 
+
+        const squatCheckButton = squatCard.locator('button').filter({ has: page.locator('svg.lucide-check') });
+        await squatCheckButton.first().click();
+
 
         await expect(finishButton).toBeEnabled();
 

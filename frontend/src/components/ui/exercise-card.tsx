@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-workout'
 import { metricCheck } from '@/lib/weight-utils'
+import { adaptImgUrl } from '@/lib/utils'
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
@@ -168,7 +169,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
       <div className="flex items-center gap-3 px-4 py-3">
         <Avatar size="lg">
           {exercise.imageUrl
-            ? <AvatarImage src={exercise.imageUrl} alt={exercise.name} />
+            ? <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} />
             : null}
           <AvatarFallback className="bg-surface-2">
             <User className="w-5 h-5 text-muted-foreground" />

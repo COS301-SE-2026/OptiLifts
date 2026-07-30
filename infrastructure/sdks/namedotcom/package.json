@@ -1,0 +1,26 @@
+{
+    "name": "@pulumi/namedotcom",
+    "version": "4.1.0",
+    "description": "A Pulumi provider dynamically bridged from namedotcom.",
+    "repository": "https://github.com/lexfrei/terraform-provider-namedotcom",
+    "main": "bin/index.js",
+    "scripts": {
+        "build": "tsc",
+        "postinstall": "node ./scripts/postinstall.js"
+    },
+    "dependencies": {
+        "@pulumi/pulumi": "^3.238.0",
+        "@types/node": "^20",
+        "typescript": "^4.7.0"
+    },
+    "pulumi": {
+        "resource": true,
+        "name": "terraform-provider",
+        "version": "1.2.1",
+        "parameterization": {
+            "name": "namedotcom",
+            "version": "4.1.0",
+            "value": "eyJyZW1vdGUiOnsidXJsIjoicmVnaXN0cnkub3BlbnRvZnUub3JnL2xleGZyZWkvbmFtZWRvdGNvbSIsInZlcnNpb24iOiI0LjEuMCJ9fQ=="
+        }
+    }
+}

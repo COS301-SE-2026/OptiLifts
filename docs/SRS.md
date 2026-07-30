@@ -296,7 +296,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## Functional Requirements
 
-### FR1: Workout Management
+### Subsystem 1: Workout Management
 
 #### FR1.1: Exercise discovery and filtering
 1. FR1.1.1: The system will allow the user to view all available exercises, including template and custom exercises.
@@ -311,11 +311,11 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR1.2.3: The system will allow the user to remove an exercise from their workout routine.
 4. FR1.2.4: The system will allow the user to change the set type for an exercise.
 5. FR1.2.5: The system will allow the user to add rest time to a specific exercise.
-6. FR1.2.6: The system will provide "Undo" functionality to revert changes made during the creation or editing process.
 7. FR1.2.7: The system will allow the user to save the workout to the database.
 8. FR1.2.8: The system will allow the user to delete a saved workout routine from the database.
+9. FR1.2.9: The system will allow the user to duplicate an existing saved workout.
 
-### FR2: Custom Exercise Creation
+### Subsystem 2: Custom Exercise Creation
 
 #### FR2.1: Exercise details
 1. FR2.1.1: The system will allow the user to add or edit a name for a custom exercise.
@@ -330,24 +330,27 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR2.2.3: The system will allow the user to save the completed exercise profile to the database.
 4. FR2.2.4: The system will allow the user to delete a custom exercise from the library.
 
-### FR3: Workout and Exercise Information
+### Subsystem 3: Workout and Exercise Information
 
 #### FR3.1: Workout summary display
 1. FR3.1.1: The system will display the name and detailed information of the selected workout.
 2. FR3.1.2: The system will display a summary of targeted muscles for the entire workout.
 3. FR3.1.3: The system will allow the user to filter workouts by folders or targeted muscles.
+4. FR3.1.4: The system will provide search functionality for the user to find a specific saved workout by name.
+5. FR3.1.5: The system will generate and display a muscle heatmap based on the selected workout or the user's workout history.
 
 #### FR3.2: Exercise information display
 1. FR3.2.1: The system will display detailed exercise information, including images and assigned muscle groups.
 2. FR3.2.2: The system will allow the user to set or edit the weight (kg) and reps for an exercise set.
 
-### FR4: User Management and Profile
+### Subsystem 4: User Management and Profile
 
 #### FR4.1: Authentication
 1. FR4.1.1: The system will allow the user to register a new account.
 2. FR4.1.2: The system will allow the user to log in to an existing account.
 3. FR4.1.3: The system will allow the user to delete their account.
 4. FR4.1.4: The system will allow the user to log out of their active session.
+5. FR4.1.5: The system will display application feature information and details to unauthenticated visitors on the landing page.
 
 #### FR4.2: Profile customisation
 1. FR4.2.1: The system will display the user's personal information.
@@ -356,12 +359,16 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 4. FR4.2.4: The system will allow the user to add or edit their age.
 5. FR4.2.5: The system will allow the user to save profile changes.
 
-### FR5: Scheduling and Session Tracking
+### Subsystem 5: Scheduling and Session Tracking
 
 #### FR5.1: Schedule management
 1. FR5.1.1: The system will display the user's workout schedule.
 2. FR5.1.2: The system will allow the user to set, change, or remove a workout for a specific session.
 3. FR5.1.3: The system will allow the user to save the updated schedule.
+4. FR5.1.4: The system will allow the user to schedule a workout to repeat on specified days.
+5. FR5.1.5: The system will allow the user to toggle the schedule view between daily, weekly, and monthly calendar formats.
+6. FR5.1.6: The system will allow the user to filter their displayed schedule using specific date ranges.
+7. FR5.1.7: The system will generate and display a muscle balance chart based on the user's scheduled training blocks.
 
 #### FR5.2: Active workout tracking
 1. FR5.2.1: The system will allow the user to start an active workout session.
@@ -369,6 +376,28 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR5.2.3: The system will allow the user to mark a set as complete or uncomplete.
 4. FR5.2.4: The system will allow the user to add or remove exercises during an active session.
 5. FR5.2.5: The system will allow the user to end and save the workout or cancel the session.
+6. FR5.2.6: The system will allow the user to append additional sets to an exercise dynamically during an active session.
+
+### Subsystem 6: Dashboard
+
+1. FR6.1: The system will display the workout scheduled for the current day immediately upon the user navigating to the dashboard.
+2. FR6.2: The system will provide a quick-start button on the dashboard to immediately launch today's scheduled active session.
+3. FR6.3: The system will display a summary snapshot of the user's weekly fitness statistics on the dashboard.
+4. FR6.4: The system will display a brief, chronological list of upcoming scheduled workouts for the next few days.
+
+### Subsystem 7: Completed Workouts and History
+
+1. FR7.1: The system will maintain and display a historical log of the user's past completed workouts.
+2. FR7.2: The system will allow the user to filter their completed workout history by specific weeks.
+3. FR7.3: The system will display a detailed post-workout summary containing the exact weights, reps, and total time achieved for any previously completed session.
+
+### Subsystem 8: Preferences and Help Menu
+
+1. FR8.1: The system will allow the user to configure app-wide preferences, including unit measurements and UI themes.
+2. FR8.2: The system will provide a search function allowing the user to query FAQs and tutorials.
+3. FR8.3: The system will display a list of frequently asked questions and their corresponding answers.
+4. FR8.4: The system will display instructional tutorials and guides on how to utilize the application's features.
+5. FR8.5: The system will provide access to a help centre containing comprehensive support documentation and contact resources.
 
 ## Non-Functional Requirements
 

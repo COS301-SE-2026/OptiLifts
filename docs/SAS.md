@@ -8,6 +8,7 @@ SAS introduction
 	- [Quality Requirements](#quality-requirements)
 	- [Architectural Patterns](#architectural-patterns)
 	- [Design Patterns](#design-patterns)
+	- [Mapping Quality Requirements to Architectural Decisions](#mapping-quality-requirements-to-architectural-decisions)
 	- [Constraints](#constraints)
 
 - [Technology Requirements](#technology-requirements)
@@ -59,34 +60,42 @@ Quality requirments dictate the holistic quality of OptiLifts by specifying the 
 
 ### Architectural Patterns
 
-For this project we model a 5-tier N architecture that maps to the existing codebase:
+For this project we model an explicit 5-tier architecture:
 
-- Presentation (frontend SPA)
-- API / Controller (OptiLifts.API)
-- Application / Use-case layer (OptiLifts.Application)
-- Domain / Business objects (OptiLifts.Domain)
-- Infrastructure / Persistence (OptiLifts.Infrastructure & DB)
+- Presentation Tier
+- API / Controller Tier
+- Application Tier
+- Domain Tier
+- Infrastructure / Persistence Tier
 
-Mermaid diagram (N = 5):
+---
+
+#### Application Tier vs. Domain Tier Separation
+
+Clean Architecture strictly separates the **Application Tier** from the **Domain Tier**:
+
+- **Domain Tier (`OptiLifts.Domain`)**: Core enterprise business logic, entities, and calculation rules. Framework-agnostic and invariant. *(Answers: "What are the core domain rules?")*
+- **Application Tier (`OptiLifts.Application`)**: Use-case orchestration, CQRS command/query handling, Mediator dispatching, and infrastructure interfaces. *(Answers: "How does the system execute a user operation?")*
+
+This separation ensures domain rules remain 100% testable in isolation, protected from framework, database, or API changes.
+
+---
+
+#### System Architecture Diagram
 
 ```mermaid
 flowchart LR
-	User((User))
-	Frontend["Presentation - frontend (SPA)"]
-	API["API / Controller - OptiLifts.API"]
-	Application["Application / Use-cases - OptiLifts.Application"]
-	Domain["Domain / Business - OptiLifts.Domain"]
-	Infra["Infrastructure / Persistence - OptiLifts.Infrastructure & DB"]
+    Tier1["Presentation Tier"]
+    Tier2["API / Controller Tier"]
+    Tier3["Application Tier"]
+    Tier4["Domain Tier"]
+    Tier5["Infrastructure / Persistence Tier"]
 
-	User --> Frontend
-	Frontend --> API
-	API --> Application
-	Application --> Domain
-	Domain --> Infra
+    Tier1 --> Tier2
+    Tier2 --> Tier3
+    Tier3 --> Tier4
+    Tier4 --> Tier5
 ```
-
-
-This diagram shows how requests flow from the client (frontend) through the API and application layers into the domain and persistence layers.
 
 ### Design Patterns
 
@@ -211,6 +220,17 @@ This pattern is useful wherever a request needs to pass through several independ
 
 This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts the most direct application is the active workout session, which moves through idle, active, resting, and completed states. It could also apply to AI suggestion states or onboarding flows where the available actions change at each stage.
 
+### Mapping Quality Requirements to Architectural Decisions
+
+| Quality Requirement |Architectural Decision |
+| :--- | :--- |
+|Response time <=1.5 seconds for core-api| Seperation of api into core-api and ai-api services, and planned caching in future |
+| 100 concurrent users | Container app service architecture with horizontal scaling | 
+| Increase in workload of up to 200% | Container app service architecture with horizontal scaling that has an automatic load balancer with stateless autherization meaning users are able to send requests to different replicas |
+| Encrypted data at rest | Encryption layer in API that encrypts data writen to the database and decrypts data fetched from the database |
+| Authenticated access | Stateless JSON JWTs communicated and stored via HTTP-only cookies | 
+| Deployment within 30 minutes | A CI/CD pipeline incorperated with IaC limits any manual overhead allowing the pipeline to deploy within 30 minutes |
+| Keyboard accessibility and User satisfaction | Using a brand-style guide that aligns with the WCAG standards, and  components we have made that are designed to be user friendly and keyboard accessible. Using an SPA allows for better user experience and navigation as there are no full page reloads |
 
 ### Constraints
 
@@ -298,137 +318,6 @@ Once the persistence and data access layers are fully validated, integration tes
 # API Service Contracts
 
 ## Authentication and User Management
-
-### POST /api/exercises/custom
-**Service Name:** Custom Exercise Creation Service
-
-**Description:**
-Creates a user-defined exercise and assigns it to the authenticated user.
-
-**Inputs:**
-
-- `name`: string - The exercise name.
-- `mechanic`: string | null - Optional exercise mechanic.
-- `equipment`: string | null - Optional equipment name.
-- `category`: string - The exercise category.
-- `primaryMuscles`: array of string - Primary muscles targeted.
-- `secondaryMuscles`: array of string - Secondary muscles assisted.
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- `id`: Guid - The newly created exercise identifier.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a POST request to `/api/exercises/custom` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The request body must include the exercise `name`, `category`, `primaryMuscles`, and `secondaryMuscles`.
-
-**Example Response:**
-
-```json
-{
-	"id": "string",
-	"name": "string",
-	"description": "string",
-	"equipment": ["string"],
-	"muscles": ["string"],
-	"instructions": "string",
-	"createdBy": "userId"
-}
-```
-
----
-
-### GET /api/workouts
-**Service Name:** Workout List Service
-
-**Description:**
-Returns the authenticated user's workouts as summary cards.
-
-**Inputs:**
-
-- None in the request body.
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- `workouts`: array of `WorkoutCardDto` - The list of workout summaries.
-
-WorkoutCardDto fields:
-
-- `id`: Guid - Unique workout identifier.
-- `name`: string - Workout name.
-- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
-- `exerciseCount`: integer - Number of exercises in the workout.
-- `exercisePreview`: array of string - Short preview of exercise names.
-- `createdAt`: datetime - When the workout was created.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The response is a JSON object containing a `workouts` array of workout summary objects.
-
-**Example Response:**
-
-```json
-{
-	"workouts": [
-		{
-			"id": "string",
-			"name": "string",
-			"folder": "string",
-			"estimatedTimeMinutes": 30,
-			"exercises": [
-				{ "id": "string", "name": "string", "sets": 3, "reps": 8 }
-			]
-		}
-	],
-	"total": 0,
-	"page": 1,
-	"limit": 25
-}
-```
-
----
-
-### POST /api/workouts/{workoutId}/exercises
-**Service Name:** Workout Exercise Assignment Service
-
-**Description:**
-Adds an existing exercise to a specific workout owned by the authenticated user.
-
-**Inputs:**
-
-- `workoutId`: Guid - The workout to update (path parameter).
-- `exerciseId`: Guid - The exercise to add to the workout (request body).
-- Authentication token: string - Bearer token identifying the current user.
-
-**Outputs:**
-
-- No content on success.
-- `404` response if the workout or exercise cannot be added.
-
-**Usage / Interaction Rules:**
-
-- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The request body must contain a valid `exerciseId` value.
-- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
-
-**Example Response:**
-
-```json
-{
-	"id": "string",
-	"name": "string",
-	"exercises": [ /* updated exercises array */ ]
-}
-```
-
----
 
 ### POST /api/auth/register
 **Service Name:** User Registration Service
@@ -809,6 +698,47 @@ HTTP/1.1 204 No Content
 
 ## Exercise Management
 
+### POST /api/exercises/custom
+**Service Name:** Custom Exercise Creation Service
+
+**Description:**
+Creates a user-defined exercise and assigns it to the authenticated user.
+
+**Inputs:**
+
+- `name`: string - The exercise name.
+- `mechanic`: string | null - Optional exercise mechanic.
+- `equipment`: string | null - Optional equipment name.
+- `category`: string - The exercise category.
+- `primaryMuscles`: array of string - Primary muscles targeted.
+- `secondaryMuscles`: array of string - Secondary muscles assisted.
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `id`: Guid - The newly created exercise identifier.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/exercises/custom` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must include the exercise `name`, `category`, `primaryMuscles`, and `secondaryMuscles`.
+
+**Example Response:**
+
+```json
+{
+	"id": "string",
+	"name": "string",
+	"description": "string",
+	"equipment": ["string"],
+	"muscles": ["string"],
+	"instructions": "string",
+	"createdBy": "userId"
+}
+```
+
+
 ### GET /api/exercises
 **Service Name:** Exercise Catalog Service
 
@@ -894,6 +824,92 @@ ExerciseDto fields:
 ---
 
 ## Workouts
+
+### GET /api/workouts
+**Service Name:** Workout List Service
+
+**Description:**
+Returns the authenticated user's workouts as summary cards.
+
+**Inputs:**
+
+- None in the request body.
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- `workouts`: array of `WorkoutCardDto` - The list of workout summaries.
+
+WorkoutCardDto fields:
+
+- `id`: Guid - Unique workout identifier.
+- `name`: string - Workout name.
+- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
+- `exerciseCount`: integer - Number of exercises in the workout.
+- `exercisePreview`: array of string - Short preview of exercise names.
+- `createdAt`: datetime - When the workout was created.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The response is a JSON object containing a `workouts` array of workout summary objects.
+
+**Example Response:**
+
+```json
+{
+	"workouts": [
+		{
+			"id": "string",
+			"name": "string",
+			"folder": "string",
+			"estimatedTimeMinutes": 30,
+			"exercises": [
+				{ "id": "string", "name": "string", "sets": 3, "reps": 8 }
+			]
+		}
+	],
+	"total": 0,
+	"page": 1,
+	"limit": 25
+}
+```
+
+### POST /api/workouts/{workoutId}/exercises
+**Service Name:** Workout Exercise Assignment Service
+
+**Description:**
+Adds an existing exercise to a specific workout owned by the authenticated user.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to update (path parameter).
+- `exerciseId`: Guid - The exercise to add to the workout (request body).
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout or exercise cannot be added.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must contain a valid `exerciseId` value.
+- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+
+**Example Response:**
+
+```json
+{
+	"id": "string",
+	"name": "string",
+	"exercises": [ /* updated exercises array */ ]
+}
+```
+
 
 ### DELETE /api/workouts/{workoutId}
 **Service Name:** Workout Deletion Service

@@ -1,6 +1,10 @@
 ## Introduction
 
-SAS introduction
+This document is a Software Architecture Specification for OptiLifts, a workout management platform that adapts by using the user's previous training sessions and current session in order to create curated suggestions to ensure progressive overloading takes place.
+
+OptiLifts is composed of three independent deployable services behind a shared PostgreSQL database. They are the React singe-page frontend application, ASP.NET Core Web API which does all non-AI data functionality through CQRS-style command/query layer and a Python FastAPI which is responsible for any AI service. All containerised and hosted in Azure via Pulumi-managed infrastructure.
+
+Whilst the SRS document explains *what* the system must do, the SAS document defines *how* the system is structured in order to satisfy those requirements.
 
 ## Index
 
@@ -737,6 +741,114 @@ Creates a user-defined exercise and assigns it to the authenticated user.
 	"createdBy": "userId"
 }
 ```
+---
+### GET /api/exercises/{exerciseId}
+**Service Name:** Exercise Detail Service
+
+**Description:**
+Returns full detail for an exercise. Used by the Exercise Details popup.
+
+**Inputs:**
+
+- `exerciseId`: Guid - the exercise to fetch (path parameter).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+`ExerciseDto` fields:
+
+- `id`: Guid, `name`: string.
+- `mechanic`: string | null, `equipment`: string | null.
+- `category`: string - the exercise type.
+- `primaryMuscles`: array of string, `secondaryMuscles`: array of string.
+- `isCustom`: boolean, `imageUrl`: string | null.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/exercises/{exerciseId}` with the `access_token` cookie attached.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if exercise doesn't exist or soft-deleted exercise doesn't belong to the user.
+
+**Example Response:**
+```json
+{
+	"id": "string",
+	"name": "Barbell Bench Press",
+	"mechanic": "compound",
+	"equipment": "Barbell",
+	"category": "WeightReps",
+	"primaryMuscles": ["Chest"],
+	"secondaryMuscles": ["Triceps", "Shoulders"],
+	"isCustom": false,
+	"imageUrl": "http://127.0.0.1:10000/devstoreaccount1/exercises/bench-press.png"
+}
+```
+---
+
+
+### PUT /api/exercises/custom/{exerciseId}
+**Service Name:** Custom Exercise Update Service
+
+**Description:**
+Updates an existing custom exercise owned by an user. But only updates exercises that names or images changes. Structural changes do soft-deletes and new creations.
+
+**Inputs:**
+
+- `exerciseId`: Guid - the custom exercise to update (path parameter).
+- `Name`: string - the exercise name (required, non-blank).
+- `Image`: file | null - optional replacement image.
+- `RemoveImage`: boolean - if true, clears the existing image.
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `204 No Content` on success.
+- `400 Bad Request` with `error` if `Name` is blank.
+- `404 Not Found` if the exercise doesn't exist or isn't owned by the user or was already been deleted.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a PUT request to `/api/exercises/custom/{exerciseId}` as `multipart/form-data`.
+- Only custom exercises owned by this user can use this service, trying to delete built-in exercises will return `404`.
+- If `Image` is supplied, it replaces the stored blob. 
+- If `RemoveImage` is true, the blob is deleted and `imageUrl` is cleared.
+- Returns `401` if the cookie is missing or invalid.
+
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
+
+### DELETE /api/exercises/custom/{exerciseId}
+**Service Name:** Custom Exercise Deletion Service
+
+**Description:**
+Soft-deletes a user's custom exercise. Used by the Delete button in the Exercise Details popup. Done for any structural changes to the exercise.
+
+**Inputs:**
+
+- `exerciseId`: Guid - the custom exercise to delete (path parameter).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `204 No Content` for success.
+- `404 Not Found` if the exercise doesn't exist or isn't owned by the user or has already been deleted.
+- `409 Conflict` with `{ "error": "..." }` if deletion is blocked.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a DELETE request to `/api/exercises/custom/{exerciseId}` with the `access_token` cookie attached.
+- The exercise is marked `IsDeleted` and doesn't remove it from the database so `WorkoutLogs` still keep it's history.
+- Once deleted, the exercise won't appear in `GET /api/exercises` 
+- `GET /api/exercises/{exerciseId}` returns `404` for it's `exerciseId`.
+- Returns `401` if the cookie is missing or invalid.
+
+
+**Example Response:**
+HTTP/1.1 204 No Content
+---
 
 
 ### GET /api/exercises
@@ -875,41 +987,107 @@ WorkoutCardDto fields:
 	"limit": 25
 }
 ```
+---
 
-### POST /api/workouts/{workoutId}/exercises
-**Service Name:** Workout Exercise Assignment Service
+### POST /api/workouts
+**Service Name:** Workout Creation Service
 
 **Description:**
-Adds an existing exercise to a specific workout owned by the authenticated user.
+Creates a new workout for the user which including its exercises, sets, and groupings. This is what the Create Workout page uses when you click *Save Workout*.
 
 **Inputs:**
 
-- `workoutId`: Guid - The workout to update (path parameter).
-- `exerciseId`: Guid - The exercise to add to the workout (request body).
-- Authentication token: string - Bearer token identifying the current user.
+- `folderId`: Guid | null - Optional folder to put the workout in.
+- `name`: string - Workout name.
+- `exercises`: array of `CreateWorkoutExerciseRequest` - `exerciseId` (Guid), `orderIndex` (int), `groupKey` (string, null if not grouped), `sets` (array of `CreateWorkoutSetRequest`: `type`, `reps`, `weight`, `duration`, `distance`, `orderIndex`, `restTime`).
+- `groups`: array of `CreateWorkoutGroupRequest` - `groupKey` (string), `type` (`Superset` | `Circuit`), `restTime` (int, seconds).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
 
 **Outputs:**
 
-- No content on success.
-- `404` response if the workout or exercise cannot be added.
+- `201 Created` with `CreateWorkoutResult` - `workoutId`, `name`, `folderId`, `createdAt`.
+- `400 Bad Request` with an `errors` array if validation fails. Examples of this are duplicate group key, invalid group type, a superset that doesn't have exactly two members and negative rest time.
 
 **Usage / Interaction Rules:**
 
-- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
-- The request body must contain a valid `exerciseId` value.
-- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+- Clients must send a POST request to `/api/workouts` with JSON data and the `access_token` cookie attached.
+- Validation is done by `CreateWorkoutValidator` before the workout is created.
+- Returns `401` if cookie is missing or invalid.
+- On success, the `Location` header points to `GET /api/workouts`.
+
+**Example Response:**
+```json
+{
+	"workoutId": "string",
+	"name": "Push Day A",
+	"folderId": null,
+	"createdAt": "2026-07-16T10:00:00Z"
+}
+```
+---
+
+### GET /api/workouts/{workoutId}
+**Service Name:** Workout Detail Service
+
+**Description:**
+Returns full details of a workout that is owned by an user. This includes everything to do with the set such as exercises, sets and groupings. This is used for both the Edit Workout page and the Active Session Page when loading a workout.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to fetch (path parameter).
+- `access_token`: cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+WorkoutDetailDto fields:
+
+- `id`: Guid - Unique workout identifier.
+- `name`: string - Workout name.
+- `primaryMuscleGroups`: array of string - Main muscle groups used by the workout.
+- `exerciseCount`: integer - Number of exercises in the workout.
+- `exercisePreview`: array of string - Short preview of exercise names.
+- `createdAt`: datetime - When the workout was created.
+
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts/{workoutId}` wiwith the `access_token` cookie attached.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if the workout does not exist or is not owned by the user.
+
 
 **Example Response:**
 
 ```json
 {
 	"id": "string",
-	"name": "string",
-	"exercises": [ /* updated exercises array */ ]
+	"name": "My Push Day",
+	"folderId": null,
+	"dayIndex": null,
+	"createdAt": "2026-07-16T10:00:00Z",
+	"primaryMuscleGroups": ["Chest", "Quadriceps"],
+	"exercisePreview": ["Barbell bench press", "Barbell Back Squat"],
+	"exercises": [
+		{
+			"id": "string",
+			"exerciseId": "string",
+			"name": "Barbell bench press",
+			"primaryMuscle": "Chest",
+			"exerciseType": "WeightReps",
+			"orderIndex": 0,
+			"sets": [
+				{ "id": "string", "type": "Normal", "reps": 6, "weight": 80, "duration": null, "distance": null, "orderIndex": 0, "restTime": 60 }
+			],
+			"groupId": null,
+			"groupType": null,
+			"groupRestTime": null,
+			"imageUrl": null
+		}
+	]
 }
-```
 
+```
+---
 
 ### DELETE /api/workouts/{workoutId}
 **Service Name:** Workout Deletion Service
@@ -936,8 +1114,37 @@ Deletes an existing workout owned by the authenticated user
 	"message": "Workout deleted successfully."
 }
 ```
+---
+
+### POST /api/workouts/{workoutId}/exercises
+**Service Name:** Workout Exercise Assignment Service
+
+**Description:**
+Adds an existing exercise to a specific workout owned by the authenticated user.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to update (path parameter).
+- `exerciseId`: Guid - The exercise to add to the workout (request body).
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout or exercise cannot be added.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must contain a valid `exerciseId` value.
+- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+
+**Example Response:**
+HTTP/1.1 204 No Content
 
 ---
+
 
 ### POST /api/workouts/{workoutId}/duplicate
 **Service Name:** Workout Duplication Service
@@ -1010,8 +1217,103 @@ HTTP/1.1 200 OK
 
 ## Workout Exercises and Sets
 
+### GET /api/workouts/{workoutId}/logs/{logId}
+**Service Name:** Workout Log Detail Service
 
-## Global and custom exercises
+**Description:**
+Returns full detail of a completed WorkoutLog. Used by the Workout Log Detail page and the Profile page's recent workouts view.
+
+**Inputs:**
+
+- `workoutId`, `logId`: Guid - path parameters.
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+`WorkoutLogDetailDto` fields:
+
+- `workoutId`, `logId`: Guid, `name`: string, `folderId`: Guid | null, `dayIndex`: int | null.
+- `createdAt`: datetime, `completedAt`: datetime | null, `duration`: string | null.
+- `primaryMuscleGroups`: array of string, `exercisePreview`: array of string.
+- `exercises`: array of `WorkoutLogExerciseDetailDto` - `id`, `exerciseId`, `name`, `primaryMuscle`, `exerciseType`, `orderIndex`, `imageUrl`, `sets` (array of `WorkoutLogSetDto`: `id`, `setId`, `type`, `reps`, `weight`, `orderIndex`, `duration`, `distance`, `restTime`, `groupNumber`, `rpe`).
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts/{workoutId}/logs/{logId}` with the `access_token` cookie attached.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if there is no log linked to the `logId` or it doesn't belong to user.
+
+**Example Response:**
+```json
+{
+	"workoutId": "string",
+	"logId": "string",
+	"name": "Push Day A",
+	"folderId": null,
+	"dayIndex": null,
+	"createdAt": "2026-07-16T10:00:00Z",
+	"completedAt": "2026-07-16T11:02:00Z",
+	"duration": "1h 23m",
+	"primaryMuscleGroups": ["Chest", "Quadriceps"],
+	"exercisePreview": ["Barbell bench press", "Barbell Back Squat"],
+	"exercises": [
+		{
+			"id": "string",
+			"exerciseId": "string",
+			"name": "Barbell bench press",
+			"primaryMuscle": "Chest",
+			"exerciseType": "WeightReps",
+			"orderIndex": 0,
+			"imageUrl": null,
+			"sets": [
+				{ 
+					"id": "string", "setId": "string", "type": "Normal", "reps": 10, "weight": 85, "orderIndex": 0, "duration": null, "distance": null, "restTime": 60, "groupNumber": 0, "rpe": 9 
+				}
+			]
+		}
+	]
+}
+```
+---
+
+### POST /api/workouts/{workoutId}/logs
+**Service Name:** WorkoutLog Creation Service 
+
+**Description:**
+Creates a completed workout log entry. This when the user hits **Finish** on the active session page. It is idempotent by `logId`meaning it is safe to retry after reconnecting after being offline (retries using the offline queue). 
+
+**Inputs:**
+
+- `workoutId`: Guid - the workout being logged (path parameter).
+- `logId`: Guid - Identifier for this specific log
+- `entryId`: Guid | null - a scheduled entry this session fulfils. If session started ad-hoc then will create a new identifier.
+- `notes`: string | null.
+- `startedAt` / `completedAt`: datetime.
+- `exercises`: array of `CreateWorkoutLogExerciseReq` - `exerciseId`, `workoutExerciseId` (null for exercises added in the session), `orderIndex`, `groupNumber`, `sets` (array of `CreateWorkoutLogSetReq`: `setId`, `type`, `reps`, `weight`, `duration`, `distance`, `restTime`, `rpe`, `orderIndex`, `groupNumber`). Only sets that you checkmark as done are included.
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `201 Created` with a `CreateWorkoutLogRes` (`logId`, `entryId`, `alreadyExisted: false`) on first submission.
+- `200 OK` with the same shape and `alreadyExisted: true` if this `logId` was already submitted - the original log is returned unchanged, nothing is duplicated.
+- `404` if the workout is not found or owned by an user, or if the `entryId` doesn't belong to this user and workout.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/logs` with the `access_token` cookie attached.
+- If `entryId` isn't included (in the cases of ad-hoc workouts)a new `ScheduledEntry` is created and marked `Completed`.
+- If `entryId` is included, that existing scheduled entry is marked `Completed`.
+- Returns `401` if the cookie is missing or invalid.
+
+**Example Response:**
+```json
+{
+	"logId": "string",
+	"entryId": "string",
+	"alreadyExisted": false
+}
+```
+---
 
 ## Scheduling
 

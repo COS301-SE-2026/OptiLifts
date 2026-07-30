@@ -115,9 +115,10 @@ type SetRowProps = Readonly<{
   columns: ReturnType<typeof getColumns>
   gridTemplate: string
   onUpdate: (updater: (current: SetData) => SetData) => void
+  onRemove: () => void
 }>
 
-function SetRow({ set, setLabel, columns, gridTemplate, onUpdate }: SetRowProps) {
+function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
@@ -160,14 +161,25 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate }: SetRowProps)
         className="text-base text-center mx-auto"
       />
 
-      <div className="flex w-full items-center justify-center gap-1">
+      <div className="flex w-full items-center">
+        <div className="flex flex-1 items-center justify-center">
+          <Button
+            variant="icon"
+            size="icon"
+            className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
+            onClick={() => onUpdate((current) => ({ ...current, completed: !current.completed }))}
+          >
+            <Check className="h-3.5 w-3.5" />
+          </Button>
+        </div>
         <Button
           variant="icon"
           size="icon"
-          className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
-          onClick={() => onUpdate((current) => ({ ...current, completed: !current.completed }))}
+          aria-label="Remove set"
+          className="h-7 w-7 rounded-md shrink-0 border-0 bg-transparent text-muted-foreground hover:text-destructive"
+          onClick={onRemove}
         >
-          <Check className="h-3.5 w-3.5" />
+          <X className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
@@ -528,7 +540,21 @@ export default function ActiveSessionPage() {
       })
     )
   }
-  
+
+  const removeSet = (exerciseId: string, setId: string) => {
+    setExercises((currentExercises) =>
+      currentExercises.map((exercise) => {
+        if (exercise.id !== exerciseId) {
+          return exercise
+        }
+
+        return {
+          ...exercise,
+          sets: exercise.sets.filter((set) => set.id !== setId),
+        }
+      })
+    )
+  }
 
   const selectedExercise = (exercise: CatalogExercise) => {
     setExercises((currentExercises) => [
@@ -670,7 +696,7 @@ export default function ActiveSessionPage() {
   const renderExerCard = (exercise: ExerciseData) => {
 
     const cols = getColumns(exercise.exerciseType)
-    const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 5rem`
+    const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 7rem`
       
     return (
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
@@ -711,7 +737,7 @@ export default function ActiveSessionPage() {
             <div>PREVIOUS</div>
             {cols.map((col) => <div key={col.field}>{col.label}</div>)}
             <div>RPE</div>
-            <div className="w-full flex justify-center"><Check className="h-4 w-4" /></div>
+            <div className="w-full flex justify-center"><Check className="mr-6 h-4 w-4" /></div>
           </div>
 
           <div className="space-y-2">
@@ -725,6 +751,7 @@ export default function ActiveSessionPage() {
                   columns={cols}
                   gridTemplate={gridTemp}
                   onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
+                  onRemove={() => removeSet(exercise.id, set.id)}
                 />
               )
             })}

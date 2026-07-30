@@ -266,6 +266,15 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
                 { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
             ],
+            probes: [{
+                type: "Startup",
+                tcpSocket: {
+                    port: 8080,
+                },
+                initialDelaySeconds: 10,
+                periodSeconds: 10,
+                failureThreshold: 30, 
+            }],
         }],
     },
 });

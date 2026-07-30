@@ -1,6 +1,10 @@
 ## Introduction
 
-SAS introduction
+This document is a Software Architecture Specification for OptiLifts, a workout management platform that adapts by using the user's previous training sessions and current session in order to create curated suggestions to ensure progressive overloading takes place.
+
+OptiLifts is composed of three independent deployable services behind a shared PostgreSQL database. They are the React singe-page frontend application, ASP.NET Core Web API which does all non-AI data functionality through CQRS-style command/query layer and a Python FastAPI which is responsible for any AI service. All containerised and hosted in Azure via Pulumi-managed infrastructure.
+
+Whilst the SRS document explains *what* the system must do, the SAS document defines *how* the system is structured in order to satisfy those requirements.
 
 ## Index
 
@@ -109,7 +113,7 @@ The following design patterns are applied in OptiLifts, grouped by the GoF (Gang
 
 Where: Backend - Database layer
 
-Instead of setting up a database table mapping all at once, the Builder pattern lets the system configure it one step at a time through a chain of method calls. Each call sets one rule, such as which field is the primary key or which column must be unique.
+Instead of having to setup database mapping, the Builder pattern lets the system configure each column and key step-by-step. Each call will set one rule.
 
 ```csharp
 builder.HasKey(u => u.Id);
@@ -119,23 +123,11 @@ builder.HasIndex(u => u.Email).IsUnique();
 
 ---
 
-##### Singleton
-
-Where: Backend - Authentication
-
-Only one instance of the JWT token service is ever created. Every part of the system shares it instead of creating its own copy. This works because the service only holds the secret key and token expiry time, which never change while the application is running.
-
-```csharp
-builder.Services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
-```
-
----
-
 ##### Facade
 
 Where: Backend - API layer
 
-Each controller hides all the internal complexity behind a single endpoint. The client sends a request and gets a response. It has no knowledge of the handlers, database queries, or validation logic that runs behind the scenes.
+Controller hide the underlying complexity of endpoints. The user will simply send a request and get a response without ever getting knowledge of the handlers, database queries or validation logic that runs behind the scenes.
 
 ```csharp
 [HttpPost]
@@ -152,7 +144,7 @@ public async Task<IActionResult> CreateWorkout(CreateWorkoutRequest request)
 
 Where: Backend - Authentication
 
-The password hashing algorithm is defined behind an interface so it can be swapped out without changing any other code. If the hashing method needs to be replaced in the future, only one new class needs to be written and one line in the configuration needs to change.
+The password hashing algorithm is defined behind an interface so we are able to swap it out in case of any vulnerabilities, without affecting other code. 
 
 ```csharp
 public interface IPasswordHasher
@@ -168,13 +160,11 @@ public interface IPasswordHasher
 
 Where: Backend - Application layer
 
-Instead of different parts of the system calling each other directly, all requests go through a central object called the mediator. The controller that sends a request has no knowledge of which handler processes it, and the handler has no knowledge of who sent it.
+Instead of having all different parts of the system calling on each other directly, all requests must communicate through a  central object called the mediator. Controllers have no idea which handler is processing their request and the handler has no idea which controller sent the request.
 
 ```csharp
-// Controller sends, has no idea who handles it
 var result = await _mediator.Send(new CreateWorkoutCommand(...));
 
-// Handler processes, has no idea who sent it
 public class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand, CreateWorkoutResult>
 ```
 
@@ -184,7 +174,7 @@ public class CreateWorkoutHandler : IRequestHandler<CreateWorkoutCommand, Create
 
 Where: Frontend - Auth state management
 
-One central object holds the login state. Any screen or component that needs to know whether the user is logged in subscribes to it. When the user logs in or out, all subscribed components are automatically updated without needing to check manually.
+One object holds the login state to know the current login status of the user. Any screen or component that needs to know whether an user is logged in or not will subscribe to the object (Observer). When an user access the screen or components, the observer will instantly notify the pages and update/rerender them.
 
 ```tsx
 // One place holds the auth state
@@ -200,25 +190,25 @@ const { isAuthenticated, user } = useAuth()
 
 ##### Decorator
 
-This pattern could be applied anywhere cross-cutting concerns such as logging, performance monitoring, or input validation need to run around existing logic. Rather than duplicating that code in every place it is needed, the Decorator wraps the existing logic and adds the extra behaviour around it automatically.
+This pattern could be applied to our algorithms and formulas. We have base formulas that could have additional calculations and layers which are optional to the user. An example of this is RPE. Adding RPE can just add additional calculation rather than duplicate code.
 
 ---
 
 ##### Template Method
 
-This pattern is applicable wherever multiple components share the same overall structure but differ in specific steps. In OptiLifts this applies to request handlers, but it could also apply to AI processing pipelines, report generation, or any workflow that follows a fixed sequence with variable internals.
+This design pattern can be applied to any sort of component that has a simular structure to others. Our frontend has tons of components with similar use and could be templated.
 
 ---
 
 ##### Chain of Responsibility
 
-This pattern is useful wherever a request needs to pass through several independent checks before being processed, such as authentication, authorisation, rate limiting, or input sanitisation. Each check is isolated and the chain can be extended or reordered without affecting the others.
+This pattern can be used if we have a request that needs to pass through multiple independent checks before being allowed tobe processed. Stages such as authentication, authorisation, rate limiting or input sanitisation. Each check is isolated and can be reorder or adjusted in anyways, making it more loosely coupled.
 
 ---
 
 ##### State
 
-This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts the most direct application is the active workout session, which moves through idle, active, resting, and completed states. It could also apply to AI suggestion states or onboarding flows where the available actions change at each stage.
+This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts, our active session page can use it as you go through multiple different states whilst in a workout. For example you have busy, resting or complete. State design pattern can be used anywhere in which we need to track the user's current state in order to re-render or adapt our pages.
 
 ### Mapping Quality Requirements to Architectural Decisions
 
@@ -734,6 +724,114 @@ Creates a user-defined exercise and assigns it to the authenticated user.
 	"id": "string"
 }
 ```
+---
+### GET /api/exercises/{exerciseId}
+**Service Name:** Exercise Detail Service
+
+**Description:**
+Returns full detail for an exercise. Used by the Exercise Details popup.
+
+**Inputs:**
+
+- `exerciseId`: Guid - the exercise to fetch (path parameter).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+`ExerciseDto` fields:
+
+- `id`: Guid, `name`: string.
+- `mechanic`: string | null, `equipment`: string | null.
+- `category`: string - the exercise type.
+- `primaryMuscles`: array of string, `secondaryMuscles`: array of string.
+- `isCustom`: boolean, `imageUrl`: string | null.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/exercises/{exerciseId}` with the `access_token` cookie attached.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if exercise doesn't exist or soft-deleted exercise doesn't belong to the user.
+
+**Example Response:**
+```json
+{
+	"id": "string",
+	"name": "Barbell Bench Press",
+	"mechanic": "compound",
+	"equipment": "Barbell",
+	"category": "WeightReps",
+	"primaryMuscles": ["Chest"],
+	"secondaryMuscles": ["Triceps", "Shoulders"],
+	"isCustom": false,
+	"imageUrl": "http://127.0.0.1:10000/devstoreaccount1/exercises/bench-press.png"
+}
+```
+---
+
+
+### PUT /api/exercises/custom/{exerciseId}
+**Service Name:** Custom Exercise Update Service
+
+**Description:**
+Updates an existing custom exercise owned by an user. But only updates exercises that names or images changes. Structural changes do soft-deletes and new creations.
+
+**Inputs:**
+
+- `exerciseId`: Guid - the custom exercise to update (path parameter).
+- `Name`: string - the exercise name (required, non-blank).
+- `Image`: file | null - optional replacement image.
+- `RemoveImage`: boolean - if true, clears the existing image.
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `204 No Content` on success.
+- `400 Bad Request` with `error` if `Name` is blank.
+- `404 Not Found` if the exercise doesn't exist or isn't owned by the user or was already been deleted.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a PUT request to `/api/exercises/custom/{exerciseId}` as `multipart/form-data`.
+- Only custom exercises owned by this user can use this service, trying to delete built-in exercises will return `404`.
+- If `Image` is supplied, it replaces the stored blob. 
+- If `RemoveImage` is true, the blob is deleted and `imageUrl` is cleared.
+- Returns `401` if the cookie is missing or invalid.
+
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
+
+### DELETE /api/exercises/custom/{exerciseId}
+**Service Name:** Custom Exercise Deletion Service
+
+**Description:**
+Soft-deletes a user's custom exercise. Used by the Delete button in the Exercise Details popup. Done for any structural changes to the exercise.
+
+**Inputs:**
+
+- `exerciseId`: Guid - the custom exercise to delete (path parameter).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `204 No Content` for success.
+- `404 Not Found` if the exercise doesn't exist or isn't owned by the user or has already been deleted.
+- `409 Conflict` with `{ "error": "..." }` if deletion is blocked.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a DELETE request to `/api/exercises/custom/{exerciseId}` with the `access_token` cookie attached.
+- The exercise is marked `IsDeleted` and doesn't remove it from the database so `WorkoutLogs` still keep it's history.
+- Once deleted, the exercise won't appear in `GET /api/exercises` 
+- `GET /api/exercises/{exerciseId}` returns `404` for it's `exerciseId`.
+- Returns `401` if the cookie is missing or invalid.
+
+
+**Example Response:**
+HTTP/1.1 204 No Content
+---
 
 
 ### GET /api/exercises
@@ -832,7 +930,7 @@ Returns the authenticated user's workouts as summary cards.
 **Inputs:**
 
 - None in the request body.
-- Authentication token: string - Bearer token identifying the current user.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
 
 **Outputs:**
 
@@ -849,8 +947,9 @@ WorkoutCardDto fields:
 
 **Usage / Interaction Rules:**
 
-- Clients must send a GET request to `/api/workouts` with a valid Bearer token.
-- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- Clients must send a GET request to `/api/workouts`
+- The browser automatically attaches the `access_token` cookie.
+- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
 - The response is a JSON object containing a `workouts` array of workout summary objects.
 
 **Example Response:**
@@ -873,38 +972,104 @@ WorkoutCardDto fields:
 	"limit": 25
 }
 ```
+---
 
-### POST /api/workouts/{workoutId}/exercises
-**Service Name:** Workout Exercise Assignment Service
+### POST /api/workouts
+**Service Name:** Workout Creation Service
 
 **Description:**
-Adds an existing exercise to a specific workout owned by the authenticated user.
+Creates a new workout for the user which including its exercises, sets, and groupings. This is what the Create Workout page uses when you click *Save Workout*.
 
 **Inputs:**
 
-- `workoutId`: Guid - The workout to update (path parameter).
-- `exerciseId`: Guid - The exercise to add to the workout (request body).
-- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+- `folderId`: Guid | null - Optional folder to put the workout in.
+- `name`: string - Workout name.
+- `exercises`: array of `CreateWorkoutExerciseRequest` - `exerciseId` (Guid), `orderIndex` (int), `groupKey` (string, null if not grouped), `sets` (array of `CreateWorkoutSetRequest`: `type`, `reps`, `weight`, `duration`, `distance`, `orderIndex`, `restTime`).
+- `groups`: array of `CreateWorkoutGroupRequest` - `groupKey` (string), `type` (`Superset` | `Circuit`), `restTime` (int, seconds).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
 
 **Outputs:**
 
-- No content on success (`204 No Content`).
-- Returns `404 Not Found` if the workout does not exist for the user or the exercise does not exist.
+- `201 Created` with `CreateWorkoutResult` - `workoutId`, `name`, `folderId`, `createdAt`.
+- `400 Bad Request` with an `errors` array if validation fails. Examples of this are duplicate group key, invalid group type, a superset that doesn't have exactly two members and negative rest time.
 
 **Usage / Interaction Rules:**
 
-- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data.
-- The browser automatically attaches the `access_token` cookie.
-- The endpoint is authenticated and returns `401 Unauthorized` if the cookie is missing or invalid.
-- The request body must contain a valid `exerciseId` value.
-- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+- Clients must send a POST request to `/api/workouts` with JSON data and the `access_token` cookie attached.
+- Validation is done by `CreateWorkoutValidator` before the workout is created.
+- Returns `401` if cookie is missing or invalid.
+- On success, the `Location` header points to `GET /api/workouts`.
+
+**Example Response:**
+```json
+{
+	"workoutId": "string",
+	"name": "Push Day A",
+	"folderId": null,
+	"createdAt": "2026-07-16T10:00:00Z"
+}
+```
+---
+
+### GET /api/workouts/{workoutId}
+**Service Name:** Workout Detail Service
+
+**Description:**
+Returns full details of a workout that is owned by an user. This includes everything to do with the set such as exercises, sets and groupings. This is used for both the Edit Workout page and the Active Session Page when loading a workout.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to fetch (path parameter).
+- `access_token`: cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+WorkoutDetailDto fields:
+
+- `id`: Guid, `name`: string, `folderId`: Guid | null, `dayIndex`: int | null, `createdAt`: datetime.
+- `primaryMuscleGroups`: array of string, `exercisePreview`: array of string.
+- `exercises`: array of `WorkoutExerciseDetailDto` - `id`, `exerciseId`, `name`, `primaryMuscle`, `exerciseType`, `orderIndex`, `sets` (array of `WorkoutSetDto`), `groupId`, `groupType`, `groupRestTime`, `imageUrl`.
+
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts/{workoutId}` with the `access_token` cookie attached.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if the workout does not exist or is not owned by the user.
+
 
 **Example Response:**
 
-```http
-HTTP/1.1 204 No Content
-```
+```json
+{
+	"id": "string",
+	"name": "My Push Day",
+	"folderId": null,
+	"dayIndex": null,
+	"createdAt": "2026-07-16T10:00:00Z",
+	"primaryMuscleGroups": ["Chest", "Quadriceps"],
+	"exercisePreview": ["Barbell bench press", "Barbell Back Squat"],
+	"exercises": [
+		{
+			"id": "string",
+			"exerciseId": "string",
+			"name": "Barbell bench press",
+			"primaryMuscle": "Chest",
+			"exerciseType": "WeightReps",
+			"orderIndex": 0,
+			"sets": [
+				{ "id": "string", "type": "Normal", "reps": 6, "weight": 80, "duration": null, "distance": null, "orderIndex": 0, "restTime": 60 }
+			],
+			"groupId": null,
+			"groupType": null,
+			"groupRestTime": null,
+			"imageUrl": null
+		}
+	]
+}
 
+```
+---
 
 ### DELETE /api/workouts/{workoutId}
 **Service Name:** Workout Deletion Service
@@ -931,8 +1096,37 @@ Deletes an existing workout owned by the authenticated user
 	"message": "Workout deleted successfully."
 }
 ```
+---
+
+### POST /api/workouts/{workoutId}/exercises
+**Service Name:** Workout Exercise Assignment Service
+
+**Description:**
+Adds an existing exercise to a specific workout owned by the authenticated user.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout to update (path parameter).
+- `exerciseId`: Guid - The exercise to add to the workout (request body).
+- Authentication token: string - Bearer token identifying the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout or exercise cannot be added.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/exercises` with JSON data and a valid Bearer token.
+- The endpoint is authenticated and returns `401` if the user cannot be identified from the token.
+- The request body must contain a valid `exerciseId` value.
+- A successful add returns `204 No Content`; a failed add returns `404 Not Found`.
+
+**Example Response:**
+HTTP/1.1 204 No Content
 
 ---
+
 
 ### POST /api/workouts/{workoutId}/duplicate
 **Service Name:** Workout Duplication Service
@@ -1005,8 +1199,103 @@ HTTP/1.1 200 OK
 
 ## Workout Exercises and Sets
 
+### GET /api/workouts/{workoutId}/logs/{logId}
+**Service Name:** Workout Log Detail Service
 
-## Global and custom exercises
+**Description:**
+Returns full detail of a completed WorkoutLog. Used by the Workout Log Detail page and the Profile page's recent workouts view.
+
+**Inputs:**
+
+- `workoutId`, `logId`: Guid - path parameters.
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+`WorkoutLogDetailDto` fields:
+
+- `workoutId`, `logId`: Guid, `name`: string, `folderId`: Guid | null, `dayIndex`: int | null.
+- `createdAt`: datetime, `completedAt`: datetime | null, `duration`: string | null.
+- `primaryMuscleGroups`: array of string, `exercisePreview`: array of string.
+- `exercises`: array of `WorkoutLogExerciseDetailDto` - `id`, `exerciseId`, `name`, `primaryMuscle`, `exerciseType`, `orderIndex`, `imageUrl`, `sets` (array of `WorkoutLogSetDto`: `id`, `setId`, `type`, `reps`, `weight`, `orderIndex`, `duration`, `distance`, `restTime`, `groupNumber`, `rpe`).
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/workouts/{workoutId}/logs/{logId}` with the `access_token` cookie attached.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if there is no log linked to the `logId` or it doesn't belong to user.
+
+**Example Response:**
+```json
+{
+	"workoutId": "string",
+	"logId": "string",
+	"name": "Push Day A",
+	"folderId": null,
+	"dayIndex": null,
+	"createdAt": "2026-07-16T10:00:00Z",
+	"completedAt": "2026-07-16T11:02:00Z",
+	"duration": "1h 23m",
+	"primaryMuscleGroups": ["Chest", "Quadriceps"],
+	"exercisePreview": ["Barbell bench press", "Barbell Back Squat"],
+	"exercises": [
+		{
+			"id": "string",
+			"exerciseId": "string",
+			"name": "Barbell bench press",
+			"primaryMuscle": "Chest",
+			"exerciseType": "WeightReps",
+			"orderIndex": 0,
+			"imageUrl": null,
+			"sets": [
+				{ 
+					"id": "string", "setId": "string", "type": "Normal", "reps": 10, "weight": 85, "orderIndex": 0, "duration": null, "distance": null, "restTime": 60, "groupNumber": 0, "rpe": 9 
+				}
+			]
+		}
+	]
+}
+```
+---
+
+### POST /api/workouts/{workoutId}/logs
+**Service Name:** WorkoutLog Creation Service 
+
+**Description:**
+Creates a completed workout log entry. This when the user hits **Finish** on the active session page. It is idempotent by `logId`meaning it is safe to retry after reconnecting after being offline (retries using the offline queue). 
+
+**Inputs:**
+
+- `workoutId`: Guid - the workout being logged (path parameter).
+- `logId`: Guid - Identifier for this specific log
+- `entryId`: Guid | null - a scheduled entry this session fulfils. If session started ad-hoc then will create a new identifier.
+- `notes`: string | null.
+- `startedAt` / `completedAt`: datetime.
+- `exercises`: array of `CreateWorkoutLogExerciseReq` - `exerciseId`, `workoutExerciseId` (null for exercises added in the session), `orderIndex`, `groupNumber`, `sets` (array of `CreateWorkoutLogSetReq`: `setId`, `type`, `reps`, `weight`, `duration`, `distance`, `restTime`, `rpe`, `orderIndex`, `groupNumber`). Only sets that you checkmark as done are included.
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `201 Created` with a `CreateWorkoutLogRes` (`logId`, `entryId`, `alreadyExisted: false`) on first submission.
+- `200 OK` with the same shape and `alreadyExisted: true` if this `logId` was already submitted - the original log is returned unchanged, nothing is duplicated.
+- `404` if the workout is not found or owned by an user, or if the `entryId` doesn't belong to this user and workout.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/workouts/{workoutId}/logs` with the `access_token` cookie attached.
+- If `entryId` isn't included (in the cases of ad-hoc workouts)a new `ScheduledEntry` is created and marked `Completed`.
+- If `entryId` is included, that existing scheduled entry is marked `Completed`.
+- Returns `401` if the cookie is missing or invalid.
+
+**Example Response:**
+```json
+{
+	"logId": "string",
+	"entryId": "string",
+	"alreadyExisted": false
+}
+```
+---
 
 ## Scheduling
 

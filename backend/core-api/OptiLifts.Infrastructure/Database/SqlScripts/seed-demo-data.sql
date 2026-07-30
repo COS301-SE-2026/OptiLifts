@@ -243,7 +243,8 @@ CREATE OR REPLACE FUNCTION seed_logged_workout(
     p_log_id uuid DEFAULT NULL,
     p_max_order_index integer DEFAULT NULL,
     p_rpe_mode text DEFAULT 'session',
-    p_rpe_seed integer DEFAULT NULL
+    p_rpe_seed integer DEFAULT NULL,
+    p_progress_factor integer DEFAULT 0
 ) RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -285,7 +286,7 @@ BEGIN
         we.workout_exercise_id,
         s.set_id,
         s.set_type,
-        COALESCE(s.reps, s.duration, ROUND(s.distance)::int, 1),
+        COALESCE(s.reps + p_progress_factor, s.duration, ROUND(s.distance)::int, 1),
         COALESCE(s.weight, 0),
         s.duration,
         s.distance,
@@ -436,13 +437,13 @@ DECLARE
     normal_set_type text;
     pull_name constant text := 'Pull';
     push_name constant text := 'Push';
-    full_body_name constant text := 'Full Body';
+    legs_name constant text := 'Legs';
     my_split_name constant text := 'My Split';
     alex_id uuid;
     v_folder uuid;
     v_pull uuid;
     v_push uuid;
-    v_full_body uuid;
+    v_legs uuid;
     v_we uuid;
     v_ex uuid;
     v_day timestamp;
@@ -498,7 +499,7 @@ BEGIN
         WHERE workout_id IN (
             SELECT workout_id
             FROM workouts
-            WHERE user_id = alex_id AND name IN (pull_name, push_name)
+            WHERE user_id = alex_id AND name IN (pull_name, push_name, legs_name)
         )
     );
 
@@ -506,11 +507,8 @@ BEGIN
     WHERE workout_id IN (
         SELECT workout_id
         FROM workouts
-        WHERE user_id = alex_id AND name IN (pull_name, push_name, full_body_name)
+        WHERE user_id = alex_id AND name IN (pull_name, push_name, legs_name)
     );
-
-    DELETE FROM workouts
-    WHERE user_id = alex_id AND name = full_body_name;
 
     SELECT folder_id INTO v_folder
     FROM folders
@@ -545,15 +543,15 @@ BEGIN
         RETURNING workout_id INTO v_push;
     END IF;
 
-    SELECT workout_id INTO v_full_body
+    SELECT workout_id INTO v_legs
     FROM workouts
-    WHERE user_id = alex_id AND name = full_body_name
+    WHERE user_id = alex_id AND name = legs_name
     LIMIT 1;
 
-    IF v_full_body IS NULL THEN
+    IF v_legs IS NULL THEN
         INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
-        VALUES (gen_random_uuid(), v_folder, full_body_name, alex_id, NOW())
-        RETURNING workout_id INTO v_full_body;
+        VALUES (gen_random_uuid(), v_folder, legs_name, alex_id, NOW())
+        RETURNING workout_id INTO v_legs;
     END IF;
 
     -- exercises + sets for each recent-workout card (volume = weight*reps, count = #sets)
@@ -567,7 +565,11 @@ BEGIN
             (v_push, c.exercise_bench_press_name, 1, 4, 8,  60::real),
             (v_push, 'Barbell seated overhead press',          2, 4, 8,  40::real),
             (v_push, 'Dumbbell incline bench press',   3, 4, 10, 30::real),
-            (v_push, 'Cable triceps pushdown (v-bar)',          4, 4, 12, 25::real)
+            (v_push, 'Cable triceps pushdown (v-bar)',          4, 4, 12, 25::real),
+            (v_legs, 'Barbell Back Squat', 1, 4, 6, 100::real),
+            (v_legs, 'Barbell romanian deadlift', 2, 4, 8, 80::real),
+            (v_legs, 'Walking lunge', 3, 3, 10, 20::real),
+            (v_legs, 'Standing calf raise', 4, 4, 15, 60::real)
         ) AS t(workout_id, ex_name, ord, n_sets, reps, weight)
     LOOP
         SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
@@ -584,64 +586,24 @@ BEGIN
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
-    FOR rec IN
-        SELECT t.* FROM seed_constants c
-        CROSS JOIN LATERAL (VALUES
-            (v_full_body, c.exercise_bench_press_name,  1, 1,    8,   NULL::integer, 60::real,   NULL::real),
-            (v_full_body, c.exercise_pull_up_name,      2, 1,   10,   NULL::integer, NULL::real,  0::real),
-            (v_full_body, 'Weighted pull-up', 3, 1,    6,   NULL::integer, 10::real,    NULL::real),
-            (v_full_body, 'Machine assisted pull-up', 4, 1,    8,   NULL::integer, 20::real,    NULL::real),
-            (v_full_body, 'Weighted front plank',       5, 1, NULL::integer, 60,     NULL::real,  NULL::real),
-            (v_full_body, 'Barbell deadlift',            6, 1, 8,   NULL::integer,   60::real,   NULL::real)
-        ) AS t(workout_id, ex_name, ord, n_sets, reps, duration, weight, distance)
-    LOOP
-        SELECT exercise_dict_id INTO v_ex FROM exercise_dictionary
-        WHERE name = rec.ex_name AND user_id IS NULL
-        LIMIT 1;
-        CONTINUE WHEN v_ex IS NULL;
-
-        INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index)
-        VALUES (gen_random_uuid(), rec.workout_id, v_ex, rec.ord)
-        RETURNING workout_exercise_id INTO v_we;
-
-        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-        SELECT gen_random_uuid(), v_we, normal_set_type, rec.reps, rec.weight, rec.duration, rec.distance, gs, 90
-        FROM generate_series(1, rec.n_sets) AS gs;
-    END LOOP;
-
-    -- makes it such that the user always has a month long streak
-    FOR i IN 0..17 LOOP
-        v_day := NOW() - INTERVAL '30 days' + (i * INTERVAL '41 hours');
+    -- makes it such that the user always has a 6 week long streak
+    FOR i IN 0..24 LOOP
+        v_day := NOW() - INTERVAL '42 days' + (i * INTERVAL '41 hours');
         PERFORM seed_logged_workout(
             alex_id,
-            CASE WHEN i % 2 = 0 THEN v_push ELSE v_pull END,
+            CASE WHEN i % 3 = 0 THEN v_push WHEN i % 3 = 1 THEN v_pull ELSE v_legs END,
             v_day,
             v_day + INTERVAL '65 minutes',
             false,
             NULL,
             NULL,
             NULL,
-            4,
-            'session',
-            i
+            NULL,
+            exercise_mode,
+            NULL,
+            (i / 4)
         );
     END LOOP;
-
-    v_day := NOW() - INTERVAL '30 days' + (18 * INTERVAL '41 hours');
-
-    PERFORM seed_logged_workout(
-        alex_id,
-        v_full_body,
-        v_day,
-        v_day + INTERVAL '82 minutes',
-        false,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        exercise_mode,
-        NULL
-    );
 END $$;
 
 -- ===========================================================================
@@ -740,5 +702,80 @@ FROM seed_constants c
 JOIN users u ON u.email_hash = encode(sha256(c.alex_user_email::bytea), c.hex_enc)
 JOIN badges b ON b.name IN ('First Workout', '10 Workouts', '50 Workouts', 'Consistent')
 ON CONFLICT (user_id, badge_id) DO NOTHING;
+
+
+DELETE FROM exercise_prs
+WHERE user_id IN (
+    SELECT u.user_id
+    FROM users u
+    CROSS JOIN seed_constants c
+    WHERE u.email_hash IN (
+        encode(sha256(c.test_user_email::bytea), c.hex_enc),
+        encode(sha256(c.demo_user_email::bytea), c.hex_enc),
+        encode(sha256(c.alex_user_email::bytea), c.hex_enc)
+    )
+);
+
+INSERT INTO exercise_prs (pr_id, user_id, exercise_id, workout_log_set_id, pr_type, pr_value, achieved_weight, achieved_reps)
+WITH DemoUsers AS (
+    SELECT u.user_id
+    FROM users u
+    CROSS JOIN seed_constants c
+    WHERE u.email_hash IN (
+        encode(sha256(c.test_user_email::bytea), c.hex_enc),
+        encode(sha256(c.demo_user_email::bytea), c.hex_enc),
+        encode(sha256(c.alex_user_email::bytea), c.hex_enc)
+    )
+),
+UserSets AS (
+    SELECT 
+        se.user_id,
+        wls.exercise_id,
+        wls.log_set_id,
+        wls.weight,
+        wls.reps,
+        (wls.weight * wls.reps) as volume
+    FROM workout_log_sets wls
+    JOIN workout_logs wl ON wl.log_id = wls.log_id
+    JOIN scheduled_entries se ON se.entry_id = wl.entry_id
+    JOIN DemoUsers du ON du.user_id = se.user_id
+),
+MaxWeights AS (
+    SELECT user_id, exercise_id, MAX(weight) as max_weight
+    FROM UserSets
+    GROUP BY user_id, exercise_id
+),
+MaxVolumes AS (
+    SELECT user_id, exercise_id, MAX(volume) as max_volume
+    FROM UserSets
+    GROUP BY user_id, exercise_id
+)
+SELECT gen_random_uuid(), user_id, exercise_id, log_set_id, pr_type, pr_value, achieved_weight, achieved_reps
+FROM (
+    SELECT DISTINCT ON (mw.user_id, mw.exercise_id)
+        mw.user_id,
+        mw.exercise_id,
+        us.log_set_id,
+        0 AS pr_type,
+        us.weight AS pr_value,
+        us.weight AS achieved_weight,
+        us.reps AS achieved_reps
+    FROM MaxWeights mw
+    JOIN UserSets us ON us.user_id = mw.user_id AND us.exercise_id = mw.exercise_id AND us.weight = mw.max_weight
+
+    UNION ALL
+
+    SELECT DISTINCT ON (mv.user_id, mv.exercise_id)
+        mv.user_id,
+        mv.exercise_id,
+        us.log_set_id,
+        1 AS pr_type,
+        us.volume AS pr_value,
+        us.weight AS achieved_weight,
+        us.reps AS achieved_reps
+    FROM MaxVolumes mv
+    JOIN UserSets us ON us.user_id = mv.user_id AND us.exercise_id = mv.exercise_id AND us.volume = mv.max_volume
+) sub
+ON CONFLICT DO NOTHING;
 
 COMMIT;

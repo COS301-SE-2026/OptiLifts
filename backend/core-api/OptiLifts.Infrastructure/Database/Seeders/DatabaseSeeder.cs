@@ -19,18 +19,15 @@ public static class DatabaseSeeder
         await SeedExercisesAsync(dbContext, blobStorage, testing, cancellationToken);
 
 
-        if (!await dbContext.Workouts.AnyAsync(cancellationToken))
+        var assembly = typeof(DatabaseSeeder).Assembly;
+        using var stream = assembly.GetManifestResourceStream("OptiLifts.Infrastructure.Database.SqlScripts.seed-demo-data.sql");
+
+        if (stream != null)
         {
-            var assembly = typeof(DatabaseSeeder).Assembly;
-            using var stream = assembly.GetManifestResourceStream("OptiLifts.Infrastructure.Database.SqlScripts.seed-demo-data.sql");
+            using var reader = new StreamReader(stream);
+            var script = await reader.ReadToEndAsync(cancellationToken);
 
-            if (stream != null)
-            {
-                using var reader = new StreamReader(stream);
-                var script = await reader.ReadToEndAsync(cancellationToken);
-
-                await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
-            }
+            await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
         }
     }
 

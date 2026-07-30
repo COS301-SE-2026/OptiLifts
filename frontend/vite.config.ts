@@ -40,6 +40,9 @@ export default defineConfig(({ mode }) => {
         authToken: process.env.SENTRY_AUTH_TOKEN,
         org: "hatrock-un",
         project: "hatrock-frontend",
+        release: {
+          name: process.env.SENTRY_RELEASE,
+        }
       }) : null,
 
     ],

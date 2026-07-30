@@ -14,8 +14,16 @@ COPY frontend/ ./frontend/
 ARG VITE_API_BASE
 ENV VITE_API_BASE=$VITE_API_BASE
 
+ARG VITE_SENTRY_DSN
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
+
 WORKDIR /app/frontend
-RUN pnpm run build
+
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN=$(cat /run/secrets/sentry_auth_token) pnpm run build
 
 FROM nginxinc/nginx-unprivileged:1.25
 COPY frontend/nginx.conf.template /etc/nginx/templates/default.conf.template

@@ -155,7 +155,7 @@ export default function WorkoutsPage() {
       </div>
 
       <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-7">
+        <div className="col-span-12 lg:col-span-7">
           <div className="mb-4 flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search workouts" />
@@ -171,7 +171,7 @@ export default function WorkoutsPage() {
             </div>
           )}
           {displayError && (
-            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-red-500">
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-destructive">
               {displayError}
             </div>
           )}
@@ -236,7 +236,7 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        <aside className="col-span-5">
+        <aside className="col-span-12 lg:col-span-5">
           <MuscleDiagram highlightedMuscles={selectedWorkout?.primaryMuscleGroups ?? []} variant="both" />
 
           <Card className="mt-6">

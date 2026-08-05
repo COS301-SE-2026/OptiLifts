@@ -112,7 +112,7 @@ export default function HelpPage(){
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                     <input type="text" placeholder="Search FAQs and tutorials" 
                     value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm focus:outline-none focus:border-brand transition-colors font-sans"/>
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand transition-colors font-sans"/>
                     {searchQuery && (
                         <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">Clear</button>
                     )}
@@ -128,13 +128,13 @@ export default function HelpPage(){
                         return (
                             <button key={tab.id} type="button" 
                             onClick={()=> setActiveTab(tab.id as ActiveTab)}
-                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-sans text-sm font-semibold transition-all duration-150 text-left border ${isActive ? 'bg-brand text-white border-brand shadow-sm': 'bg-surface text-muted-foreground border-border hover:border-brand/40 hover:text-foreground'}`}>
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-sans text-sm font-semibold transition-all duration-150 text-left border ${isActive ? 'bg-primary text-primary-foreground border-primary shadow-sm': 'bg-surface text-muted-foreground border-border hover:border-brand/40 hover:text-foreground'}`}>
                                 <div className="flex items-center gap-2.5">
-                                    <Icon className={`h-4 w-4 ${isActive ? 'text-white': 'text-brand'}`}/>
+                                    <Icon className={`h-4 w-4 ${isActive ? 'text-primary-foreground': 'text-brand'}`}/>
                                     <span>{tab.label}</span>
                                 </div>
                                 {tab.count !== undefined && (
-                                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono ${isActive ? 'bg-white/20 text-white': 'bg-surface-2 text-muted-foreground'}`}>{tab.count}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono ${isActive ? 'bg-primary-foreground/20 text-primary-foreground': 'bg-surface-2 text-muted-foreground'}`}>{tab.count}</span>
                                 )}
                             </button>
                         );

@@ -197,7 +197,7 @@ export default function PastWorkoutsPage() {
                                 </div>
                             </div>
                             {/*right side */}
-                            <div className="grid grid-cols-4 gap-6 sm:gap-8 pt-3 sm:pt-0 shrink-0 sm:w-96 md:w-[24rem]">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 pt-5 sm:pt-0 shrink-0 sm:w-[26rem] md:w-[30rem] lg:w-[30rem]">
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">Duration</span>
                                     <span className="text-lg font-bold text-foreground">
@@ -206,7 +206,7 @@ export default function PastWorkoutsPage() {
                                 </div>
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">Volume</span>
-                                    <span className="text-lg font-bold text-foreground">
+                                    <span className="text-lg font-bold text-foreground whitespace-nowrap">
                                         {outputWeight(workout.totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} {(metricCheck())? 'KG' : 'LB'}
                                     </span>
                                 </div>

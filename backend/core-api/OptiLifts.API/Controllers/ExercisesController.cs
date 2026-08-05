@@ -29,13 +29,14 @@ public class ExercisesController : ControllerBase
         [FromQuery] string? search,
         [FromQuery] string? muscle,
         [FromQuery] string? equipment,
+        [FromQuery] bool customOnly,
         CancellationToken cancellationToken)
     {
         var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
             return Unauthorized();
 
-        var query = new GetExercisesQuery(userId, search, muscle, equipment);
+        var query = new GetExercisesQuery(userId, search, muscle, equipment, customOnly);
         var exercises = await _mediator.Send(query, cancellationToken);
         return Ok(exercises);
     }

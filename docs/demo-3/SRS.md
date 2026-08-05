@@ -429,4 +429,4 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## Domain Model
 
-![Domain Model](images/DomainModel.png)
+![Domain Model](../images/DomainModel.png)

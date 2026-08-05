@@ -24,12 +24,18 @@ export interface InputProps
   extends React.ComponentProps<"input">,
     VariantProps<typeof inputVariants> {}
 
-function Input({ className, variant, type, ...props }: InputProps) {
+function Input({ className, variant, type, onWheel,...props }: InputProps) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(inputVariants({ variant, className }))}
+      onWheel={(e) => {
+        if (type === "number"){
+          e.currentTarget.blur()
+        } 
+        onWheel?.(e)
+      }}
       {...props}
     />
   )

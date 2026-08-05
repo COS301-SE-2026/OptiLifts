@@ -20,6 +20,11 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
         var query = _dbContext.Exercises
             .Where(e => !e.IsDeleted && (e.UserId == null || e.UserId == request.UserId));
 
+        if (request.CustomOnly)
+        {
+            query = query.Where(e => e.UserId != null);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Equipment))
         {
             var equipment = request.Equipment.Trim().ToLower();

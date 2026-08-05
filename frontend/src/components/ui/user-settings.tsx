@@ -102,8 +102,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     });
 
     const [preferences, setPreferences] = useState({
-        theme: "dark",
-        units: "metric"
+        theme: (typeof window !== "undefined")? (localStorage.getItem("theme") || "dark") : "dark",
+        units: (typeof window !== "undefined")? (localStorage.getItem("units") || "metric") : "metric"
     });
 
     const [security, setSecurity] = useState({
@@ -184,7 +184,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                     if (metricCheck()) {
                         formattedHeight = data.profile.height;
                     }else{
-                        formattedHeight = Math.round(data.profile.height * 0.393701 * 100) / 100
+                        formattedHeight = Math.round(data.profile.height / 2.54 * 100) / 100
                     }
                 }
 
@@ -509,7 +509,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Sex</span>
                     <DropdownMenu>
@@ -534,7 +534,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Weight ({metricCheck()? 'KG' : 'LB'})</span>
                     <Input type="number" step="0.1" value={profile.weight} onChange={(e) => updateProfile("weight", e.target.value)} />
@@ -559,7 +559,7 @@ function PreferencesSection({ preferences, updatePreferences, error }: Preferenc
     return (
         <div className="space-y-4">
             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">App Preferences</h3>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                 <span className="text-sm">Theme</span>
                 <DropdownMenu>
                     <DropdownMenuTrigger
@@ -574,7 +574,7 @@ function PreferencesSection({ preferences, updatePreferences, error }: Preferenc
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                 <span className="text-sm">Units</span>
                 <DropdownMenu>
                     <DropdownMenuTrigger
@@ -726,16 +726,16 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     };
 
     return (
-        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4 sm:p-6">
             <button
                 type="button"
-                className="absolute inset-0 block w-full cursor-default outline-none bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 block w-full cursor-default outline-none bg-transparent"
                 aria-label="Close settings"
                 onClick={handleClosePopup}
                 tabIndex={-1}
             />
 
-            <div className="relative z-10 w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-lg bg-surface border border-border rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <h2 className="text-xl font-bold font-display uppercase tracking-wider text-foreground">Settings</h2>
@@ -779,12 +779,12 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                         {/* logout */}
                         <div className="space-y-4 pt-2">
                             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Account Management</h3>
-                            <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <span className="text-sm text-muted-foreground focus-visible:outline-brand">Log out of your current session on this device.</span>
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="w-48 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
+                                    className="w-full sm:w-48 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
                                     onClick={() => setIsLogoutConfirmOpen(true)}
                                 >
                                     Log Out

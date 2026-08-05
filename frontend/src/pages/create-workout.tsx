@@ -28,6 +28,7 @@ import { customFetch } from '@/lib/custom-fetch'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type CatalogExercise = {
   id: string
@@ -259,6 +260,7 @@ export default function CreateWorkoutPage() {
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { isAuthenticated } = useAuth()
   const [groupSettings, setGroupSettings] = useState<Record<string, { restTime: number }>>({})
+  const [customOnly, setCustomOnly] = useState(false)
 
   //edit workout
   const {id: workoutId} = useParams<{id: string}>()
@@ -337,7 +339,8 @@ export default function CreateWorkoutPage() {
 
   const fetchExercises = useCallback(async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    const res = await customFetch('/api/exercises', { headers })
+    const url = `/api/exercises${customOnly ? '?customOnly=true' : ''}`
+    const res = await customFetch(url, { headers })
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
@@ -354,7 +357,7 @@ export default function CreateWorkoutPage() {
       imageUrl: ex.imageUrl,
       exerciseType: ex.exerciseType ?? ex.category
     })) as CatalogExercise[]
-  }, [])
+  }, [customOnly])
 
   useEffect(() => {
     let mounted = true
@@ -688,15 +691,22 @@ export default function CreateWorkoutPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="[&>div]:max-w-none [&>div]:w-full">
-                <SearchInput
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search"
-                  aria-label="Search exercises"
-                  className="h-8 w-full"
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+               <div className="flex-1 [&>div]:max-w-none [&>div]:w-full">
+                 <SearchInput
+                   value={searchQuery}
+                   onChange={e => setSearchQuery(e.target.value)}
+                   placeholder="Search"
+                   aria-label="Search exercises"
+                   className="h-8 w-full"
+                 />
+               </div>
+               <Checkbox 
+                  checked={customOnly} 
+                  onChange={setCustomOnly} 
+                  label="Show custom only" 
                 />
-              </div>
+             </div>
 
               <div className="mt-2 min-h-0 max-h-72 overflow-y-auto pr-1">
                 <div className="divide-y divide-border/70">

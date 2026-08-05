@@ -31,37 +31,6 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 
 ## Architectural Requirements
 
-### Quality Requirements
-
-Quality requirments dictate the holistic quality of OptiLifts by specifying the performance, reliability, scalability, security, and maintainability expectations.
-#### 1. Performance
-
-* API Response Time: Standard CRUD operations in the ASP.NET Core API, such as fetching user profiles, loading a saved workout, and updating session data, must return a response within 200 milliseconds under normal server load.
-* Algorithmic Efficiency: Core AI and scheduling tasks, specifically progressive overload recommendations and dynamic scheduling calculations, must execute and return results to the client within 2 seconds.
-* Client-Side Rendering: The React SPA must achieve a Time to Interactive (TTI) of under 1.5 seconds on broadband connections to preserve a responsive, app-like experience.
-
-#### 2. Reliability
-
-* System Uptime: The Azure-hosted core backend services must be designed for 95% availability, using built-in redundancy and failover features where applicable.
-* Offline Resilience: The SPA's PWA layer must cache active session state locally using browser storage and service-worker-backed caching. If the user loses connectivity during a workout, the system must allow the current workout to continue without data loss and synchronise the session payload within 1 minute of connection restoration.
-
-#### 3. Scalability
-
-* Elasticity: The backend must support auto-scaling or equivalent horizontal scaling controls to handle peak usage periods and support at least 500 concurrent active workout sessions without degrading the 200 millisecond API response baseline.
-* Data Volume: The database must remain performant as historical workout logs, scheduling data, and analytics records grow, using efficient indexing, pagination, and query design.
-
-#### 4. Security
-
-* Data Encryption: Sensitive user data at rest, including passwords, email addresses, and personal health metrics, must be protected using industry-standard encryption and hashing approaches.
-* Authentication: The system must use secure token-based authentication, such as JWT, with token expiry and refresh handling to prevent unauthorised access.
-* Anonymisation: In line with POPIA, personally identifiable information must be isolated from aggregate analytics data. Any data used for model improvements or reporting must be anonymised before use.
-
-#### 5. Maintainability
-
-* Architecture Standard: The backend must follow clean code and Domain-Driven Design principles so that workout-building, scheduling, and AI-assisted logic remain modular and testable.
-* Test Coverage: Core algorithmic modules, including plateau detection and scheduling, must maintain at least 80% unit test coverage.
-* Automated Deployment: Infrastructure must be defined using Infrastructure as Code, and all production deployments must pass through automated CI/CD checks, including successful test execution, before release.
-
 ### Architectural Patterns
 
 For this project we model an explicit 5-tier architecture:
@@ -1526,19 +1495,19 @@ Update the status of an existing scheduled workout session
 
 ### Development Environment
 
-![Development Environment](images/deployment/DevelopmentEnviro.png)
+![Development Environment](../images/deployment/DevelopmentEnviro.png)
 
 ### Production Environment
 
-![Production Environment](images/deployment/ProductionEnviro.png)
+![Production Environment](../images/deployment/ProductionEnviro.png)
 
 ## CI/CD Pipeline Diagrams
 
 ### CI Pipeline
-![CI Pipeline](images/deployment/CIPipeline.png)
+![CI Pipeline](../images/deployment/CIPipeline.png)
 
 ### CD Pipeline
-![CD Pipeline](images/deployment/CDPipeline.png)
+![CD Pipeline](../images/deployment/CDPipeline.png)
 
 ### Rollback Strategy
 

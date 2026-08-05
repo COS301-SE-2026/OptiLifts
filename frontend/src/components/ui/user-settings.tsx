@@ -184,7 +184,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                     if (metricCheck()) {
                         formattedHeight = data.profile.height;
                     }else{
-                        formattedHeight = Math.round(data.profile.height * 0.393701 * 100) / 100
+                        formattedHeight = Math.round(data.profile.height / 2.54 * 100) / 100
                     }
                 }
 

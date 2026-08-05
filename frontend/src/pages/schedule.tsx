@@ -19,7 +19,7 @@ import { DatePagination } from '@/components/ui/date-pagination'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 
 //styling constants for same style aspects
-const statLABEL = "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block"
+const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
 const statVALUE = "text-sm font-bold text-foreground block"
 const cardDETAIL = "text-xs text-muted-foreground leading-normal"
 

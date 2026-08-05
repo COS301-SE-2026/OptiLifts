@@ -983,8 +983,8 @@ function AccessibilitySection(){
                                     <h4 className="font-bold text-sm text-foreground">{item.page}</h4>
                                     <span className="text-[11px] text-muted-foreground">{item.theme}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-600 font-extrabold text-xs">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/15 border border-success/30 text-success font-extrabold text-xs">
+                                    <span className="w-2 h-2 rounded-full bg-success animate-pulse"/>
                                     <span>{item.score}</span>
                                 </div>
                             </div>

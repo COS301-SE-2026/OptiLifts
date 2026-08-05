@@ -28,6 +28,7 @@ import { customFetch } from '@/lib/custom-fetch'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type CatalogExercise = {
   id: string
@@ -700,21 +701,11 @@ export default function CreateWorkoutPage() {
                    className="h-8 w-full"
                  />
                </div>
-               <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer shrink-0">
-                 <input 
-                   type="checkbox" 
-                   className="h-4 w-4 rounded border-border text-brand focus:ring-brand accent-brand cursor-pointer"
-                   checked={customOnly}
-                   onChange={(e) => setCustomOnly(e.target.checked)}
-                   onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        setCustomOnly(!customOnly)
-                      }
-                    }}
-                 />
-                 <span>Show custom only</span>
-               </label>
+               <Checkbox 
+                  checked={customOnly} 
+                  onChange={setCustomOnly} 
+                  label="Show custom only" 
+                />
              </div>
 
               <div className="mt-2 min-h-0 max-h-72 overflow-y-auto pr-1">

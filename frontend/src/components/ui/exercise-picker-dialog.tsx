@@ -171,7 +171,7 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
                       }
                     }}
                 />
-                Show custom only
+                <span>Show custom only</span>
               </label>
             </div>
           </div>

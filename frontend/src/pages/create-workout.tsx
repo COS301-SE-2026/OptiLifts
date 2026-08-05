@@ -713,7 +713,7 @@ export default function CreateWorkoutPage() {
                       }
                     }}
                  />
-                 Show custom only
+                 <span>Show custom only</span>
                </label>
              </div>
 

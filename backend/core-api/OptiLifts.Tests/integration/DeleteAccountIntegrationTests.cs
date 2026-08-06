@@ -27,16 +27,16 @@ public sealed class DeleteAccountIntegrationTests : IntegrationTestBase
     {
         var userId = await SeedUserAsync("jordan@gmail.com");
         var workoutId = await SeedWorkoutAsync(userId, "Legs");
-        
+
         Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
         var response = await Client.DeleteAsync("/api/users/me");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-       
+
         var cookies = response.Headers.GetValues("Set-Cookie").ToList();
         cookies.Should().Contain(c => c.Contains("access_token=;"));
-        
+
         await using var scope = Fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
         var delUser = await db.Users.FindAsync(userId);

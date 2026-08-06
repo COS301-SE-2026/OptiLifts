@@ -77,7 +77,7 @@ public sealed class UpdateMissedSessionsHandlerTests
         };
         db.ScheduledEntries.Add(futureSession);
         await db.SaveChangesAsync();
-        
+
         var handler = new UpdateMissedSessionsHandler(db);
         var result = await handler.Handle(new UpdateMissedSessionsCommand(userId), CancellationToken.None);
         result.UpdatedCount.Should().Be(1);

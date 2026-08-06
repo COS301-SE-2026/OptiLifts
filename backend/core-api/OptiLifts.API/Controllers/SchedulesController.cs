@@ -7,9 +7,9 @@ using OptiLifts.Application.Scheduling.CreateScheduledSession;
 using OptiLifts.Application.Scheduling.DeleteScheduledSession;
 using OptiLifts.Application.Scheduling.GetSchedule;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Application.Scheduling.UpdateMissedSessions;
 using OptiLifts.Application.Scheduling.UpdateScheduledSessionStatus;
 using OptiLifts.Domain.Workouts;
-using OptiLifts.Application.Scheduling.UpdateMissedSessions;
 
 namespace OptiLifts.API.Controllers;
 

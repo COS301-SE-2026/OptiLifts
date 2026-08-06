@@ -25,12 +25,12 @@ public sealed class UpdateMissedSessionsHandler : IRequestHandler<UpdateMissedSe
         {
             return new UpdateMissedSessionsResult(0);
         }
-        foreach(var entry in missEntries)
+        foreach (var entry in missEntries)
         {
             entry.Status = ScheduleStatus.Missed;
         }
         await _dbContext.SaveChangesAsync(cancellationToken);
-        
+
         return new UpdateMissedSessionsResult(missEntries.Count);
     }
 }

@@ -655,6 +655,27 @@ HTTP/1.1 204 No Content
 **Example Response:**
 HTTP/1.1 204 No Content
 
+### DELETE /api/users/me
+**Service Name:** User Account Deletion Service
+
+**Description:** Deletes the authenticated user's account and all associated data.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a DELETE request to `/api/users/me`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- Returns `404` if the user record does not exist.
+- Because the authentication cookies are expired by the response, the frontend will automatically redirect the user to the landing page.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
 ## Exercise Management
 
 ### POST /api/exercises/custom

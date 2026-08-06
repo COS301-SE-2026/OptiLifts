@@ -185,6 +185,12 @@ export default function SchedulePage() {
         setIsLoading(true)
         setError(null)
         try {
+            //added ze marking as missed first
+            await customFetch('/api/users/me/schedule/missed', {
+                method: 'POST'
+            }).catch(() => {})
+
+
             const {start, end} = fetchRange
             const [scheduleResp, analyticsResp] = await Promise.all([
                 customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),

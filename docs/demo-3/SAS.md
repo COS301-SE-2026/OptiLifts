@@ -1540,4 +1540,3 @@ If an error is noticed after deployment, rollbacks are done via Image tag pinnin
 
 #### Daily Database Backups
 Azure Database for PostgresSQL provides automated continous backups for the database. The backups are run daily and streams transaction logs every 5 minutes. These backups are retained for 10 days. This allows us to restore the database to any point in time in the last 10 days allowing us to recover from accidental data loss and destructive migrations instantly via the azure portal. 
-

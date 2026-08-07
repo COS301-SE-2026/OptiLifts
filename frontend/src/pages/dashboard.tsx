@@ -445,7 +445,7 @@ export default function DashboardPage() {
                                 navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
                     >
                         View Workout
                     </Button>
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                                 })
                             }
                         }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
                     >
                         Start Session
                     </Button>

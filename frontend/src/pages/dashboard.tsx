@@ -6,8 +6,8 @@ import { SpiderGraph } from '@/components/ui/spider-graph'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 import streakFlame from '@/assets/streak_flame.png'
-import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
 import { WORKOUT_LOG_SYNC_EVENT } from '@/lib/offline/workout-logs'
 import { useAuth } from '@/context/auth-context'
@@ -558,26 +558,10 @@ export default function DashboardPage() {
                         <h3 className="text-[30px] font-medium text-foreground text-center">Personal records hit this week</h3>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
-                                <img
-                                    src={badgeIcon}
+                                <PrBadgeIcon
                                     alt="Personal records badge"
-                                    className="h-10 w-10 select-none object-contain opacity-85 dark:hidden"
-                                    draggable={false}
-                                />
-
-                                <span
-                                    aria-hidden="true"
-                                    className="hidden h-10 w-10 bg-white/90 dark:block"
-                                    style={{
-                                        WebkitMaskImage: `url(${badgeIcon})`,
-                                        WebkitMaskRepeat: 'no-repeat',
-                                        WebkitMaskPosition: 'center',
-                                        WebkitMaskSize: 'contain',
-                                        maskImage: `url(${badgeIcon})`,
-                                        maskRepeat: 'no-repeat',
-                                        maskPosition: 'center',
-                                        maskSize: 'contain',
-                                    }}
+                                    sizeClassName="h-10 w-10"
+                                    lightClassName="opacity-85"
                                 />
 
                                 <span className="text-4xl font-bold text-foreground">{prsThisWeek}</span>

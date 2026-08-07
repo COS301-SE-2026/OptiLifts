@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import badgeIcon from '@/assets/badge.png'
 import { PageTitle } from '@/components/ui/page-title'
 import { Card } from '@/components/ui/card'
 import { DatePagination, getWeekStart } from '@/components/ui/date-pagination'
 import { CircularProfileImage } from '@/components/ui/circular-image'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 import { customFetch } from '@/lib/custom-fetch'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
@@ -217,27 +217,11 @@ export default function PastWorkoutsPage() {
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">PRs</span>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="relative h-[24px] w-[24px]">
-                                            <img
-                                                src={badgeIcon}
-                                                alt="Record Badge"
-                                                className="h-full w-full object-contain opacity-75 dark:hidden"
-                                            />
-                                            <span
-                                                aria-hidden="true"
-                                                className="hidden h-full w-full bg-white/90 dark:block"
-                                                style={{
-                                                    WebkitMaskImage: `url(${badgeIcon})`,
-                                                    WebkitMaskRepeat: 'no-repeat',
-                                                    WebkitMaskPosition: 'center',
-                                                    WebkitMaskSize: 'contain',
-                                                    maskImage: `url(${badgeIcon})`,
-                                                    maskRepeat: 'no-repeat',
-                                                    maskPosition: 'center',
-                                                    maskSize: 'contain',
-                                                }}
-                                            />
-                                        </div>
+                                        <PrBadgeIcon
+                                            alt="Record Badge"
+                                            sizeClassName="h-[24px] w-[24px]"
+                                            lightClassName="opacity-75"
+                                        />
                                         <span className="text-lg font-bold text-foreground">{workout.recordCount ?? workout.prCount ?? 0}</span>
                                     </div>
                                 </div>

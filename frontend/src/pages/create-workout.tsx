@@ -673,7 +673,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
                   {MUSCLE_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedMuscle(o)}>{o}</DropdownMenuItem>
                   ))}
@@ -684,7 +684,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedEquipment}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
                   {EQUIPMENT_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedEquipment(o)}>{o}</DropdownMenuItem>
                   ))}

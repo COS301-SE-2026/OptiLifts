@@ -784,7 +784,6 @@ export default function ActiveSessionPage() {
             <div>PREVIOUS</div>
             {cols.map((col) => <div key={col.field}>{col.label}</div>)}
             <div>RPE</div>
-            <div className="w-full flex justify-center"><Check className="mr-6 h-4 w-4" /></div>
           </div>
 
           <div className="space-y-2">

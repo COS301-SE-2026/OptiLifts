@@ -16,6 +16,8 @@ import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { adaptImgUrl } from '@/lib/utils'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -51,6 +53,7 @@ type ExerciseData = Readonly<{
   groupId: string | null
   groupType: string | null
   groupRestTime: number | null
+  imageUrl: string | null
   exerciseId: string | null
   exerciseType: string
 }>
@@ -70,6 +73,7 @@ type WorkoutDetailsResponse = Readonly<{
     primaryMuscle: string
     exerciseType: string
     orderIndex: number
+    imageUrl?: string | null
     sets: Array<{
       id: string
       type: SetType
@@ -264,6 +268,7 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   groupId: exercise.groupId ?? null,
   groupType: exercise.groupType ?? null,
   groupRestTime: exercise.groupRestTime ?? null,
+  imageUrl: exercise.imageUrl ?? null,
   exerciseType: exercise.exerciseType,
   sets: [...exercise.sets].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessSet),
 })
@@ -389,12 +394,45 @@ export default function ActiveSessionPage() {
         setIsLoading(true)
         setError(null)
 
-        const sessdraft = getDraft<SessionDraft>(workoutId)
+      const sessdraft = getDraft<SessionDraft>(workoutId)
         if (sessdraft) {
           setWorkoutName(sessdraft.workoutName)
           setStartedAtMs(sessdraft.startedAtMs)
           setExercises(sessdraft.exercises)
           setIsLoading(false)
+
+          // drafts don't carry images or muscle groups - backfill from the workout
+          try {
+            const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
+              headers: { Accept: 'application/json' },
+            })
+
+            if (!draftResp.ok || !isMounted) {
+              return
+            }
+
+            const draftData = (await draftResp.json()) as WorkoutDetailsResponse
+            
+            if (!isMounted) {
+              return
+            }
+
+            setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
+
+            const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
+            
+            setExercises((current) =>
+              current.map((ex) =>
+                ex.imageUrl || !ex.exerciseId
+                  ? ex
+                  : { ...ex, imageUrl: imageByExerciseId.get(ex.exerciseId) ?? null }
+              )
+            )
+          } 
+          catch {
+            // offline or request failed - the draft still works as-is
+          }
+
           return
         }
 
@@ -568,6 +606,7 @@ export default function ActiveSessionPage() {
         groupId: null,
         groupType: null,
         groupRestTime: null,
+        imageUrl: exercise.imageUrl ?? null,
         exerciseType: exercise.exerciseType ?? 'WeightReps',
         sets: [
           {
@@ -702,7 +741,10 @@ export default function ActiveSessionPage() {
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
+            <Avatar size="lg" className="shrink-0 bg-surface-2">
+              {exercise.imageUrl ? <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} /> : null}
+              <AvatarFallback className="bg-surface-2 text-transparent" />
+            </Avatar>
             <div>
               <button
                 type="button"

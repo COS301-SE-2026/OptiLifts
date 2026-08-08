@@ -885,7 +885,7 @@ export default function ActiveSessionPage() {
         onSelect={selectedExercise}
       />
       {exitOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center p-4">
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-40 flex items-center justify-center p-4">
           <button type="button" aria-label="Stay" className="absolute inset-0 bg-foreground/50" onClick={() => setExitOpen(false)} />
           <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">

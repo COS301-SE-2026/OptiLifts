@@ -747,7 +747,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     };
 
     return (
-        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4 sm:p-6">
+        <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4 sm:p-6">
             <button
                 type="button"
                 className="absolute inset-0 block w-full cursor-default outline-none bg-transparent"

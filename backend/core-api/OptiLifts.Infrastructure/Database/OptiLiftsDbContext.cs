@@ -35,6 +35,8 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<WorkoutLogExercise> WorkoutLogExercises { get; set; }
     public DbSet<WorkoutSetLog> WorkoutLogSets { get; set; }
     public DbSet<ExercisePr> ExercisePrs { get; set; }
+    public DbSet<ExerciseEstimation> ExerciseEstimations { get; set; }
+    public DbSet<UserRepRange> UserRepRanges { get; set; }
     public DbSet<Muscle> Muscles { get; set; }
     public DbSet<SecMuscle> SecMuscles { get; set; }
     public DbSet<WorkoutExercise> WorkoutExercises { get; set; }

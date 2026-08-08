@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using OptiLifts.Application.Users;
+using OptiLifts.Domain.Workouts;
+using Microsoft.Extensions.DependencyInjection;
+using OptiLifts.Infrastructure.Database;
 using OptiLifts.Tests.Integration.IntegrationDb;
 
 namespace OptiLifts.Tests.Integration;
@@ -20,6 +23,24 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
         return userId;
+    }
+
+    private async Task<Guid> SeedRepRangeAsync(Guid userId, UserRepRangeExerciseType exerciseType, int lowerLimit, int upperLimit)
+    {
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+
+        var repRange = new UserRepRange
+        {
+            UserId = userId,
+            ExerciseType = exerciseType,
+            LowerLimit = lowerLimit,
+            UpperLimit = upperLimit
+        };
+
+        db.UserRepRanges.Add(repRange);
+        await db.SaveChangesAsync();
+        return repRange.Id;
     }
 
     [Fact]
@@ -104,6 +125,49 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
             Units = "imperial"
         });
         var response = await Client.PatchAsync("/api/users/me/preferences", request);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateRepRange_Succeeds()
+    {
+        var userId = await SeedAuthenticatedUserAsync("range-good@optilifts.com");
+        var repRangeId = await SeedRepRangeAsync(userId, UserRepRangeExerciseType.Compound, 8, 10);
+
+        var request = JsonContent.Create(new
+        {
+            ExerciseType = "Isolation",
+            LowerLimit = 10,
+            UpperLimit = 14
+        });
+
+        var response = await Client.PatchAsync($"/api/users/me/rep-ranges/{repRangeId}", request);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        var updated = await db.UserRepRanges.FindAsync(repRangeId);
+
+        updated.Should().NotBeNull();
+        updated.ExerciseType.Should().Be(UserRepRangeExerciseType.Isolation);
+        updated.LowerLimit.Should().Be(10);
+        updated.UpperLimit.Should().Be(14);
+    }
+
+    [Fact]
+    public async Task UpdateRepRange_InvalidBounds_ReturnsBadRequest()
+    {
+        var userId = await SeedAuthenticatedUserAsync("range-bad@optilifts.com");
+        var repRangeId = await SeedRepRangeAsync(userId, UserRepRangeExerciseType.Compound, 8, 10);
+
+        var request = JsonContent.Create(new
+        {
+            ExerciseType = "Compound",
+            LowerLimit = 12,
+            UpperLimit = 10
+        });
+
+        var response = await Client.PatchAsync($"/api/users/me/rep-ranges/{repRangeId}", request);
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 

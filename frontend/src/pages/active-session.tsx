@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { PageTitle } from '@/components/ui/page-title'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
 import { Input, NumericalUnderscoreInput } from '@/components/ui/input'
 import { toast } from '@/components/ui/alert'
@@ -166,7 +167,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
           <Button
             variant="icon"
             size="icon"
-            className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
+            className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
             onClick={() => onUpdate((current) => ({ ...current, completed: !current.completed }))}
           >
             <Check className="h-3.5 w-3.5" />
@@ -176,7 +177,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
           variant="icon"
           size="icon"
           aria-label="Remove set"
-          className="h-7 w-7 rounded-md shrink-0 border-0 bg-transparent text-muted-foreground hover:text-destructive"
+          className="relative h-7 w-7 rounded-md shrink-0 border-0 bg-transparent text-muted-foreground hover:text-destructive before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']"
           onClick={onRemove}
         >
           <X className="h-3.5 w-3.5" />
@@ -784,8 +785,7 @@ export default function ActiveSessionPage() {
 
             <div className="flex items-end justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-1.5 rounded-full bg-brand" />
-                <h1 className="text-3xl font-bold uppercase tracking-tight">{workoutName}</h1>
+                <PageTitle title={workoutName} />
               </div>
 
               <div className="flex items-center gap-6 text-center">
@@ -814,7 +814,7 @@ export default function ActiveSessionPage() {
             </div>
           )}
           {error && (
-            <div className="rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-red-500">
+            <div className="rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}

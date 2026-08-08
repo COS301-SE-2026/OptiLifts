@@ -12,6 +12,7 @@ import {
 import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-workout'
 import { metricCheck } from '@/lib/weight-utils'
 import { adaptImgUrl } from '@/lib/utils'
+import { buildLabels } from '@/lib/exercise-format'
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
@@ -74,18 +75,17 @@ return COLUMNSTYPE[exerciseType] ?? COLUMNSTYPE['WeightReps']
 
 function SetRow({
   set,
-  workingIndex,
+  setLabel,
   columns,
   onChange,
   onRemove,
 }: Readonly<{
   set: ExerciseSet
-  workingIndex: number
+  setLabel: string
   columns: ColumnDef[]
   onChange: (updated: ExerciseSet) => void
   onRemove: () => void
 }>) {
-  const setLabel = set.type === 'I' ? workingIndex : set.type
 
   return (
     <div className="flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 gap-4">
@@ -140,6 +140,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
   const columns = getColumns(exercise.exerciseType ?? 'WeightReps')
+  const setLabels = buildLabels(sets)
 
   const updateSets = (updated: ExerciseSet[]) => {
     setSets(updated)
@@ -229,19 +230,17 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
           ))}
           <span className="w-6 shrink-0" />
         </div>
-        {sets.map((set, i) => {
-          const workingIndex = sets.slice(0, i + 1).filter(s => s.type === 'I').length
-          return (
-            <SetRow
-              key={set.id}
-              set={set}
-              workingIndex={workingIndex}
-              columns={columns}
-              onChange={updated => updateSet(i, updated)}
-              onRemove={() => removeSet(i)}
-            />
-          )
-        })}
+        {sets.map((set, i) => (
+          <SetRow
+            key={set.id}
+            set={set}
+            setLabel={setLabels[i]}
+            columns={columns}
+            onChange={updated => updateSet(i, updated)}
+            onRemove={() => removeSet(i)}
+          />
+        ))}
+
       </div>
         <div className="px-4 py-3">
         <Button variant="outline" size="sm" className="w-full" onClick={addSet}>

@@ -10,7 +10,7 @@ import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
 import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
-import { saveDraft, getDraft, clearDraft } from '@/lib/session-drafts'
+import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
@@ -382,6 +382,8 @@ export default function ActiveSessionPage() {
   const [exercises, setExercises] = useState<ExerciseData[]>([])
   const [primaryMuscleGroups, setPrimaryMuscleGroups] = useState<string[]>(sessionState?.workout?.primaryMuscleGroups ?? [])
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
+  const [conflictDraft, setConflictDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
+  const [startKey, setStartKey] = useState(0)
 
   useEffect(() => {
     if (!workoutId) {
@@ -390,51 +392,58 @@ export default function ActiveSessionPage() {
 
     let isMounted = true
 
-      const loadWorkout = async () => {
-        setIsLoading(true)
-        setError(null)
+    const loadWorkout = async () => {
+      setIsLoading(true)
+      setError(null)
 
-      const sessdraft = getDraft<SessionDraft>(workoutId)
-        if (sessdraft) {
-          setWorkoutName(sessdraft.workoutName)
-          setStartedAtMs(sessdraft.startedAtMs)
-          setExercises(sessdraft.exercises)
-          setIsLoading(false)
+    const sessdraft = getDraft<SessionDraft>(workoutId)
+      if (sessdraft) {
+        setWorkoutName(sessdraft.workoutName)
+        setStartedAtMs(sessdraft.startedAtMs)
+        setExercises(sessdraft.exercises)
+        setIsLoading(false)
 
-          // drafts don't carry images or muscle groups - backfill from the workout
-          try {
-            const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
-              headers: { Accept: 'application/json' },
-            })
+        // drafts don't carry images or muscle groups - backfill from the workout
+        try {
+          const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
+            headers: { Accept: 'application/json' },
+          })
 
-            if (!draftResp.ok || !isMounted) {
-              return
-            }
-
-            const draftData = (await draftResp.json()) as WorkoutDetailsResponse
-            
-            if (!isMounted) {
-              return
-            }
-
-            setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
-
-            const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
-            
-            setExercises((current) =>
-              current.map((ex) =>
-                ex.imageUrl || !ex.exerciseId
-                  ? ex
-                  : { ...ex, imageUrl: imageByExerciseId.get(ex.exerciseId) ?? null }
-              )
-            )
-          } 
-          catch {
-            // offline or request failed - the draft still works as-is
+          if (!draftResp.ok || !isMounted) {
+            return
           }
 
-          return
+          const draftData = (await draftResp.json()) as WorkoutDetailsResponse
+            
+          if (!isMounted) {
+            return
+          }
+
+          setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
+
+          const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
+            
+          setExercises((current) =>
+            current.map((ex) =>
+              ex.imageUrl || !ex.exerciseId
+                ? ex : { ...ex, imageUrl: imageByExerciseId.get(ex.exerciseId) ?? null }
+            )
+          )
+        } 
+        catch {
+          // offline or request failed - the draft still works as-is
         }
+
+        return
+      }
+
+      const otherDraft = getDraftFromStorage()
+      if (otherDraft && otherDraft.workoutId !== workoutId) {
+        setConflictDraft(otherDraft)
+        setIsLoading(false)
+
+        return
+      }
 
       try {
         const resp = await customFetch(`/api/workouts/${workoutId}`, {
@@ -478,7 +487,7 @@ export default function ActiveSessionPage() {
     return () => {
       isMounted = false
     }
-  }, [workoutId])
+  }, [workoutId, startKey])
 
   useEffect(() => {
     const interval = setInterval(() => setNowMs(Date.now()), 1000)
@@ -942,6 +951,51 @@ export default function ActiveSessionPage() {
             <div className="mt-6 flex gap-3">
               <Button variant="secondary" className="flex-1" onClick={discard}>Discard</Button>
               <Button variant="default" className="flex-1" onClick={keep}>Keep</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {conflictDraft && (
+        <div className="fixed inset-x-0 bottom-0 top-20 z-50 flex items-center justify-center p-4">
+          <button type="button" aria-label="Go back" className="absolute inset-0 bg-foreground/50" onClick={() => navigate(-1)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-bold text-foreground">Session is already in progress</h2>
+              <button type="button" aria-label="Go back" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You already have an active session for{' '}
+              <span className="font-semibold text-foreground">{conflictDraft.workoutName}</span>.
+              You can resume it, or discard it and start {workoutName}?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  clearDraft(conflictDraft.workoutId)
+                  setConflictDraft(null)
+                  setStartKey((key) => key + 1)
+                }}
+              >
+                Discard &amp; Start
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1"
+                onClick={() => {
+                  const resume = conflictDraft
+                  setConflictDraft(null)
+                  navigate('/active-session', {
+                    state: { workout: { id: resume.workoutId, name: resume.workoutName } },
+                    replace: true,
+                  })
+                }}
+              >
+                Resume
+              </Button>
             </div>
           </div>
         </div>

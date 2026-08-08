@@ -18,6 +18,7 @@ import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
+import { buildLabels } from '@/lib/exercise-format'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -107,15 +108,9 @@ const setTypeLabelMap: Record<SetType, string> = {
   DropSet: 'Dropset'
 }
 
-const getSetLabel = (type: SetType, workingNumber: number): string | number => {
-  if (type === 'Warmup') return 'W'
-  if (type === 'DropSet') return 'D'
-  return workingNumber
-}
-
 type SetRowProps = Readonly<{
   set: SetData
-  setLabel: string | number
+  setLabel: string
   columns: ReturnType<typeof getColumns>
   gridTemplate: string
   onUpdate: (updater: (current: SetData) => SetData) => void
@@ -745,7 +740,8 @@ export default function ActiveSessionPage() {
 
     const cols = getColumns(exercise.exerciseType)
     const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 7rem`
-      
+    const setLabels = buildLabels(exercise.sets)
+
     return (
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
@@ -792,20 +788,17 @@ export default function ActiveSessionPage() {
           </div>
 
           <div className="space-y-2">
-            {exercise.sets.map((set, setIndex) => {
-              const workingNumber = exercise.sets.slice(0, setIndex + 1).filter((s) => s.type === 'Normal').length
-              return (
-                <SetRow
-                  key={set.id}
-                  set={set}
-                  setLabel={getSetLabel(set.type, workingNumber)}
-                  columns={cols}
-                  gridTemplate={gridTemp}
-                  onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
-                  onRemove={() => removeSet(exercise.id, set.id)}
-                />
-              )
-            })}
+            {exercise.sets.map((set, setIndex) => (
+              <SetRow
+                key={set.id}
+                set={set}
+                setLabel={setLabels[setIndex]}
+                columns={cols}
+                gridTemplate={gridTemp}
+                onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
+                onRemove={() => removeSet(exercise.id, set.id)}
+              />
+            ))}
           </div>
           <Button
             variant="outline"

@@ -404,10 +404,33 @@ export default function CreateWorkoutPage() {
       },
     ])
 
-  const handleExerciseSaved = async () => {
+  const handleExerciseSaved = useCallback(async (updatedExerciseId?: string) => {
     const refreshedExercises = await fetchExercises()
     setAllExercises(refreshedExercises || [])
-  }
+
+    if (!updatedExerciseId) {
+      return
+    }
+
+    const refreshedExercise = refreshedExercises.find((exercise) => exercise.id === updatedExerciseId)
+    if (!refreshedExercise) {
+      return
+    }
+
+    setExercises((prev) =>
+      prev.map((exercise) =>
+        exercise.exerciseCatalogId === updatedExerciseId
+          ? {
+              ...exercise,
+              name: refreshedExercise.name,
+              muscle: refreshedExercise.muscleGroup as MuscleName,
+              imageUrl: refreshedExercise.imageUrl,
+              exerciseType: refreshedExercise.exerciseType,
+            }
+          : exercise
+      )
+    )
+  }, [fetchExercises])
 
   const saveWorkout = async () => {
     if (!workoutName.trim() || !isAuthenticated) return

@@ -25,7 +25,7 @@ type ExerciseDetsResponse = {
 type ExerciseDetailsPopupProps = Readonly<{
   exerciseId: string | null
   onClose: () => void
-  onChanged?: () => void | Promise<void>
+  onChanged?: (exerciseId: string) => void | Promise<void>
 }>
 
 const formatMechanic = (mechanic: string | null | undefined): string | null => {
@@ -240,8 +240,8 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         }
 
         toast.success('Exercise updated.', 'Saved')
-        if (onChanged) {
-            await onChanged()
+        if (onChanged && details) {
+            await onChanged(details.id)
         }
 
         onClose()
@@ -263,7 +263,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
             toast.success('Exercise deleted.', 'Deleted')
             if (onChanged) {
-                await onChanged()
+                await onChanged(details.id)
             }
 
             setIsConfirmDeleteOpen(false)

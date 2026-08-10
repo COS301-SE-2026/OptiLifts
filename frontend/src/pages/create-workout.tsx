@@ -334,13 +334,15 @@ export default function CreateWorkoutPage() {
       }
 
       event.preventDefault()
-      event.returnValue = ''
+      return ''
     }
 
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.onbeforeunload = handleBeforeUnload
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
+      if (window.onbeforeunload === handleBeforeUnload) {
+        window.onbeforeunload = null
+      }
     }
   }, [hasUnsavedChanges, saving])
 

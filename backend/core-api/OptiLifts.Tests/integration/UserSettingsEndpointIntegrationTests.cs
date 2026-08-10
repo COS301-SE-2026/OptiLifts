@@ -2,9 +2,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using OptiLifts.Application.Users;
 using OptiLifts.Domain.Workouts;
-using Microsoft.Extensions.DependencyInjection;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Tests.Integration.IntegrationDb;
 

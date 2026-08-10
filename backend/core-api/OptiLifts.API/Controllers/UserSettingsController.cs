@@ -203,6 +203,11 @@ public sealed class UserSettingsController : ControllerBase
             return BadRequest("Lower limit must be less than or equal to upper limit.");
         }
 
+        if (request.LowerLimit < 4)
+        {
+            return BadRequest("Lower limit cannot be less than 4.");
+        }
+
         if (!Enum.TryParse<UserRepRangeExerciseType>(request.ExerciseType, true, out var exerciseType))
         {
             return BadRequest("Exercise type must be Compound or Isolation.");

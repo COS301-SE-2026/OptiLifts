@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, ImagePlus, Loader2, X } from "lucide-react";
+import { Eye, EyeOff, ImagePlus, Loader2, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
@@ -55,6 +55,13 @@ type SecurityParams = Readonly<{
     error?: string | null;
 }>;
 
+interface UserRepRangeDto {
+    id: string;
+    exerciseType: string;
+    lowerLimit: number;
+    upperLimit: number;
+}
+
 interface UserSettingsDto {
     profile: {
         displayName: string;
@@ -71,9 +78,13 @@ interface UserSettingsDto {
         units: string;
     };
 
+    repRanges: UserRepRangeDto[];
+
 }
 
-
+const getErrorMessage = (err: unknown, fallbackMessage: string): string => {
+    return (err instanceof Error)? err.message : fallbackMessage;
+};
 
 function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const { user } = useAuth();
@@ -85,11 +96,14 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
+    const [repRanges, setRepRanges] = useState<UserRepRangeDto[]>([]);
+    const [repRangesChanged, setRepRangesChanged] = useState(false);
 
     const [profileError, setProfileError] = useState<string | null>(null);
     const [preferencesError, setPreferencesError] = useState<string | null>(null);
     const [securityError, setSecurityError] = useState<string | null>(null);
     const [generalError, setGeneralError] = useState<string | null>(null);
+    const [repRangesError, setRepRangesError] = useState<string | null>(null);
 
     //states 
     const [profile, setProfile] = useState({
@@ -145,6 +159,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
+    const updateRepRange = (id: string, field: "lowerLimit" | "upperLimit", value: number) => {
+        setRepRanges(prev => prev.map(r => (r.id === id)? { ...r, [field]: value } : r));
+        setRepRangesChanged(true);
+    };
+
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -178,6 +197,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                 }
 
                 const data: UserSettingsDto = await response.json();
+                setRepRanges(data.repRanges || []);
 
                 let formattedHeight= 0;
                 if (data.profile.height) {
@@ -330,6 +350,24 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
+    const saveRepRanges = async () => {
+        for (const range of repRanges){
+            const res = await customFetch(`/api/users/me/rep-ranges/${range.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    exerciseType: range.exerciseType,
+                    lowerLimit: range.lowerLimit,
+                    upperLimit: range.upperLimit
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to update rep range for ${range.exerciseType}`);
+            }
+        }
+    };
+
     const handleSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         setProfileError(null);
@@ -346,8 +384,17 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             await saveProfilePic();
         }
         catch (err) {
-            const typedError = (err instanceof Error) ? err : new Error("Failed to save profile details");
-            setProfileError(typedError.message);
+            setProfileError(getErrorMessage(err, "Failed to save profile details"));
+            errors = true;
+        }
+
+        try {
+            if (repRangesChanged) {
+                await saveRepRanges();
+            }
+        }
+        catch (err) {
+            setRepRangesError(getErrorMessage(err, "Failed to save rep ranges"));
             errors = true;
         }
 
@@ -357,8 +404,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             }
         }
         catch (err) {
-            const typedError = (err instanceof Error) ? err : new Error("Failed to save preferences");
-            setPreferencesError(typedError.message);
+        setPreferencesError(getErrorMessage(err, "Failed to save preferences"));
             errors = true;
         }
 
@@ -368,12 +414,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             }
         }
         catch (err) {
-            const typedError = (err instanceof Error) ? err : new Error("Failed to change password");
-            setSecurityError(typedError.message);
+        setSecurityError(getErrorMessage(err, "Failed to change password"));
             errors = true;
         }
 
-        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilePicDeleted)) {
+        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilePicDeleted || repRangesChanged)) {
             window.location.reload();
         }
         setIsSaving(false);
@@ -401,7 +446,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         isLoading, isSaving,
         profileError, preferencesError, securityError, generalError,
         handleSave,
-        revertTheme
+        revertTheme,
+        repRanges, updateRepRange, repRangesError
 
     };
 }
@@ -551,6 +597,55 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 </div>
             )}
 
+        </div>
+    );
+}
+
+function RepRangesSection({ repRanges, updateRepRange, error }: Readonly<{ 
+    repRanges: UserRepRangeDto[];
+    updateRepRange: (id: string, field: "lowerLimit" | "upperLimit", value: number) => void;
+    error?: string | null;
+}>) {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-border pb-1">
+                <h3 className="font-bold text-foreground uppercase tracking-wider text-base">Rep Ranges</h3>
+                <div 
+                    className="text-muted-foreground hover:text-foreground cursor-help"
+                    title="These are your ideal rep ranges for OptiLifts to help you effectivley progressivley overload! They are not strictly enforced but act as a guide."
+                >
+                    <Info size={16} />
+                </div>
+            </div>
+            <div className="space-y-2">
+                {repRanges.map(range => (
+                    <div key={range.id} className="grid grid-cols-3 gap-4 items-center">
+                        <span className="text-sm">{range.exerciseType}</span>
+                        
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Lower</span>
+                            <Input 
+                                type="number" 
+                                value={range.lowerLimit} 
+                                onChange={(e) => updateRepRange(range.id, "lowerLimit", Number.parseInt(e.target.value) || 0)} 
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Upper</span>
+                            <Input 
+                                type="number" 
+                                value={range.upperLimit} 
+                                onChange={(e) => updateRepRange(range.id, "upperLimit", Number.parseInt(e.target.value) || 0)} 
+                            />
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs p-2.5 rounded-lg mt-2">
+                    {error}
+                </div>
+            )}
         </div>
     );
 }
@@ -725,7 +820,8 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         isLoading, isSaving,
         profileError, preferencesError, securityError, generalError,
         handleSave,
-        revertTheme
+        revertTheme, 
+        repRanges, updateRepRange, repRangesError
     } = useSettingsLogic(isOpen, onClose);
 
     if (!isOpen) {
@@ -785,6 +881,12 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                             setSelectedImg={setSelectedImg}
                             setSelectedImgUrl={setSelectedImgUrl}
                             error={profileError}
+                        />
+
+                        <RepRangesSection 
+                            repRanges={repRanges} 
+                            updateRepRange={updateRepRange} 
+                            error={repRangesError} 
                         />
 
                         <PreferencesSection

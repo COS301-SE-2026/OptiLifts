@@ -58,8 +58,8 @@ type SecurityParams = Readonly<{
 interface UserRepRangeDto {
     id: string;
     exerciseType: string;
-    lowerLimit: number;
-    upperLimit: number;
+    lowerLimit: number | "";
+    upperLimit: number | "";
 }
 
 interface UserSettingsDto {
@@ -159,7 +159,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
-    const updateRepRange = (id: string, field: "lowerLimit" | "upperLimit", value: number) => {
+    const updateRepRange = (id: string, field: "lowerLimit" | "upperLimit", value: number | "") => {
         setRepRanges(prev => prev.map(r => (r.id === id)? { ...r, [field]: value } : r));
         setRepRangesChanged(true);
     };
@@ -603,7 +603,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
 
 function RepRangesSection({ repRanges, updateRepRange, error }: Readonly<{ 
     repRanges: UserRepRangeDto[];
-    updateRepRange: (id: string, field: "lowerLimit" | "upperLimit", value: number) => void;
+    updateRepRange: (id: string, field: "lowerLimit" | "upperLimit", value: number | "") => void;
     error?: string | null;
 }>) {
     return (
@@ -627,16 +627,20 @@ function RepRangesSection({ repRanges, updateRepRange, error }: Readonly<{
                             <Input 
                                 type="number" 
                                 value={range.lowerLimit} 
-                                onChange={(e) => updateRepRange(range.id, "lowerLimit", Number.parseInt(e.target.value) || 0)} 
-                            />
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateRepRange(range.id, "lowerLimit", (val === "")? "" : Number.parseInt(val));
+                                }}/>
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <span className="text-xs text-muted-foreground">Upper</span>
                             <Input 
                                 type="number" 
                                 value={range.upperLimit} 
-                                onChange={(e) => updateRepRange(range.id, "upperLimit", Number.parseInt(e.target.value) || 0)} 
-                            />
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateRepRange(range.id, "upperLimit", (val === "")? "" : Number.parseInt(val));
+                                }}/>
                         </div>
                     </div>
                 ))}

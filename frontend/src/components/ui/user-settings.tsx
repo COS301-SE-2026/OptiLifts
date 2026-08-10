@@ -352,6 +352,19 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     const saveRepRanges = async () => {
         for (const range of repRanges){
+
+            if (range.lowerLimit === "" || range.upperLimit === "") {
+                throw new Error(`Please fill in all rep range fields for ${range.exerciseType}`);
+            }
+
+            if (Number(range.lowerLimit) >= Number(range.upperLimit)) {
+                throw new Error(`Lower limit must be less than the upper limit for ${range.exerciseType}`);
+            }
+            
+            if (Number(range.lowerLimit) < 4) {
+                throw new Error(`Lower limit cannot be less than 4 for ${range.exerciseType}`);
+            }
+
             const res = await customFetch(`/api/users/me/rep-ranges/${range.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },

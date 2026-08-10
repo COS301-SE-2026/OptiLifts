@@ -180,7 +180,7 @@ export default function WorkoutDetailPage() {
   )
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-y-auto px-6 py-12">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout</p>

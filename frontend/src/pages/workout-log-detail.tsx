@@ -134,7 +134,7 @@ export default function WorkoutLogDetailPage() {
   const highlightedMuscles = (workout?.primaryMuscleGroups ?? []) as MuscleName[]
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-3 overflow-hidden px-6 pt-5 pb-6">
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-3 overflow-y-auto px-6 pt-5 pb-6">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <Button

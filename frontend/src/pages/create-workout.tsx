@@ -249,6 +249,7 @@ export default function CreateWorkoutPage() {
   const navigate = useNavigate()
   const [workoutName, setWorkoutName] = useState('')
   const [exercises, setExercises] = useState<SelectedWorkoutExercise[]>([])
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
@@ -316,6 +317,7 @@ export default function CreateWorkoutPage() {
 
         const mappedExercises = mapApiExercises(workout.exercises)
         setExercises(mappedExercises)
+        setHasUnsavedChanges(false)
       } catch (err){
         setLoadError(err instanceof Error ? err.message : 'Failed to load details of workout')
       } finally {
@@ -325,17 +327,41 @@ export default function CreateWorkoutPage() {
     void loadWorkoutDetails()
   }, [isEdit, workoutId])
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges || saving) {
+        return
+      }
+
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [hasUnsavedChanges, saving])
+
   const toggleLink = (index: number) =>
-    setExercises(prev => prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e)))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e))
+    })
 
   const setGroupSetting = (anchorId: string, field: 'restTime', value: number) =>
     setGroupSettings(prev => {
+      setHasUnsavedChanges(true)
       const current = prev[anchorId] ?? { restTime: DEFAULT_REST }
       return { ...prev, [anchorId]: { ...current, [field]: value } }
     })
 
   const updateExerciseRestTime = (id: string, value: number) =>
-    setExercises(prev => prev.map(e => (e.id === id ? { ...e, restTime: value } : e)))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.map(e => (e.id === id ? { ...e, restTime: value } : e))
+    })
 
   const fetchExercises = useCallback(async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -385,24 +411,33 @@ export default function CreateWorkoutPage() {
   }, [fetchExercises])
 
   const removeExercise = (id: string) =>
-    setExercises(prev => prev.filter(e => e.id !== id))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.filter(e => e.id !== id)
+    })
 
   const updateSets = (id: string, sets: WorkoutExercise['sets']) =>
-    setExercises(prev => prev.map(e => e.id === id ? { ...e, sets } : e))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.map(e => e.id === id ? { ...e, sets } : e)
+    })
 
   const addExercise = (exercise: CatalogExercise) =>
-    setExercises(prev => [
-      ...prev,
-      {
-        id: `ex-${nextExerciseId++}`,
-        name: exercise.name,
-        muscle: exercise.muscleGroup,
-        imageUrl: exercise.imageUrl,
-        sets: [],
-        exerciseCatalogId: exercise.id,
-        exerciseType: exercise.exerciseType
-      },
-    ])
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return [
+        ...prev,
+        {
+          id: `ex-${nextExerciseId++}`,
+          name: exercise.name,
+          muscle: exercise.muscleGroup,
+          imageUrl: exercise.imageUrl,
+          sets: [],
+          exerciseCatalogId: exercise.id,
+          exerciseType: exercise.exerciseType
+        },
+      ]
+    })
 
   const handleExerciseSaved = useCallback(async (updatedExerciseId?: string) => {
     const refreshedExercises = await fetchExercises()
@@ -493,6 +528,8 @@ export default function CreateWorkoutPage() {
         setSaveError(await getErrorMessage(res, `Failed to create workout (${res.status})`))
         return
       }
+
+      setHasUnsavedChanges(false)
 
       navigate('/workouts')
     } catch (error) {
@@ -597,7 +634,10 @@ export default function CreateWorkoutPage() {
                     variant="default"
                     placeholder="e.g. Push Day A"
                     value={workoutName}
-                    onChange={e => setWorkoutName(e.target.value)}
+                    onChange={e => {
+                      setWorkoutName(e.target.value)
+                      setHasUnsavedChanges(true)
+                    }}
                   />
                 </div>
                 <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim() || saving} onClick={saveWorkout}>

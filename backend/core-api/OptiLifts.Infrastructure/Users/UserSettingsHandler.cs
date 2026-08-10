@@ -20,6 +20,11 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found.");
+        }
+
         var repRanges = await _dbContext.UserRepRanges
             .Where(r => r.UserId == request.UserId)
             .ToListAsync(cancellationToken);
@@ -45,11 +50,6 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
             await _dbContext.SaveChangesAsync(cancellationToken);
             repRanges.Add(defaultCompound);
             repRanges.Add(defaultIsolation);
-        }
-
-        if (user == null)
-        {
-            throw new KeyNotFoundException("User not found.");
         }
 
         double? weight = null;

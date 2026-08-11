@@ -63,18 +63,21 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
             ))
             .ToListAsync(cancellationToken);
 
-        var secondaryMusclesByExerciseId = await (
+        var secondaryMuscleRows = await (
             from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
             where workoutids.Contains(workoutExercise.WorkoutId)
             join secondary in _dbContext.SecMuscles.AsNoTracking() on workoutExercise.ExerciseId equals secondary.ExerciseId
             join muscle in _dbContext.Muscles.AsNoTracking() on secondary.MuscleId equals muscle.Id
-            group muscle.Name by workoutExercise.Id into grouped
             select new
             {
-                WorkoutExerciseId = grouped.Key,
-                SecondaryMuscles = grouped.Distinct().ToArray()
+                workoutExercise.Id,
+                muscle.Name
             })
-            .ToDictionaryAsync(entry => entry.WorkoutExerciseId, entry => entry.SecondaryMuscles, cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        var secondaryMusclesByExerciseId = secondaryMuscleRows
+            .GroupBy(entry => entry.Id)
+            .ToDictionary(group => group.Key, group => group.Select(entry => entry.Name).Distinct().ToArray());
 
         workoutDetails = workoutDetails
             .Select(detail => detail with

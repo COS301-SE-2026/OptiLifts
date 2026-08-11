@@ -52,20 +52,23 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             })
             .ToListAsync(cancellationToken);
 
-        var secondaryMusclesByExerciseId = await (
+        var secondaryMuscleRows = await (
             from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
             where workoutExercise.WorkoutId == workout.Id
             join secondary in _dbContext.SecMuscles.AsNoTracking()
                 on workoutExercise.ExerciseId equals secondary.ExerciseId
             join muscle in _dbContext.Muscles.AsNoTracking()
                 on secondary.MuscleId equals muscle.Id
-            group muscle.Name by workoutExercise.ExerciseId into grouped
             select new
             {
-                ExerciseId = grouped.Key,
-                SecondaryMuscles = grouped.Distinct().ToArray()
+                workoutExercise.ExerciseId,
+                muscle.Name
             })
-            .ToDictionaryAsync(entry => entry.ExerciseId, entry => entry.SecondaryMuscles, cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        var secondaryMusclesByExerciseId = secondaryMuscleRows
+            .GroupBy(entry => entry.ExerciseId)
+            .ToDictionary(group => group.Key, group => group.Select(entry => entry.Name).Distinct().ToArray());
 
         var workoutExerciseIds = workoutExercises.Select(entry => entry.Id).ToArray();
         var setsByWorkoutExerciseId = new Dictionary<Guid, List<WorkoutSetDto>>();

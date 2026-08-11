@@ -1,6 +1,6 @@
 import PastWorkoutsPage from '@/pages/past-workouts';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
-import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { customFetch } from '@/lib/custom-fetch';
 
 //mocking dependencies -> prevents network requests + isolates component
@@ -36,7 +36,13 @@ describe('PastWorkoutsPage', () => {
 
     beforeEach(() => { //runs each 'it' test block + resets spy functions
         vi.clearAllMocks();
-        mockFetch.mockImplementation(async (url: string) => {
+        mockFetch.mockImplementation(async (url: string, options?: RequestInit) => {
+            if (url.includes('/api/users/me/schedule/sessions/') && options?.method === 'DELETE') {
+                return {
+                    ok: true,
+                    json: async () => ({ message: 'Scheduled session deleted successfully.' }),
+                };
+            }
             if(url.includes('/api/exercises/images')){
                 return {
                     ok: true,
@@ -130,4 +136,26 @@ describe('PastWorkoutsPage', () => {
         });
         mockQueryDate = null;
     });
+
+    it('shows delete option in card menu and deletes completed workout after confirmation', async () => {
+        render(<PastWorkoutsPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('Morning Bench Routine')).toBeDefined()
+        })
+
+        fireEvent.click(screen.getByLabelText('Options for Morning Bench Routine'))
+        fireEvent.click(screen.getByText('Delete'))
+
+        const dialog = screen.getByRole('alertdialog')
+        fireEvent.click(within(dialog).getByText('Delete'))
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith('/api/users/me/schedule/sessions/log-1', expect.objectContaining({ method: 'DELETE' }))
+        })
+
+        await waitFor(() => {
+            expect(screen.queryByText('Morning Bench Routine')).toBeNull()
+        })
+    })
 });

@@ -222,7 +222,7 @@ describe('SchedulePage', () => {
         });
 
         // const nextbtn = screen.getByRole('button', {name: ''});
-        const prevbtn = screen.getAllByRole('button')[0];
+        const prevbtn = screen.getAllByRole('button')[1];
         fireEvent.click(prevbtn);
         //assert?
         await waitFor(() => {

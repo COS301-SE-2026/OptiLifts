@@ -80,7 +80,7 @@ export default function PastWorkoutsPage() {
     const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
-    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<{ workoutId: string; logId: string } | null>(null)
 
     useEffect(() => {
         const fetchWorkouts = async () => {
@@ -124,10 +124,10 @@ export default function PastWorkoutsPage() {
 
     let out;
 
-    const handleDelete = async (sessionId: string) => {
+    const handleDelete = async (workoutId: string, logId: string) => {
         setLoading(true)
         try {
-            const response = await customFetch(`/api/users/me/schedule/sessions/${sessionId}`, {
+            const response = await customFetch(`/api/workouts/${workoutId}/logs/${logId}`, {
                 method: 'DELETE',
                 headers: {
                     Accept: 'application/json',
@@ -135,12 +135,12 @@ export default function PastWorkoutsPage() {
             })
 
             if (!response.ok) {
-                throw new Error(`Failed to delete completed workout (${response.status})`)
+                throw new Error(`Failed to delete workout log (${response.status})`)
             }
 
-            setWorkouts((current) => current.filter((workout) => workout.id !== sessionId))
+            setWorkouts((current) => current.filter((workout) => workout.logId !== logId))
         } catch (error) {
-            console.error('Error deleting completed workout:', error)
+            console.error('Error deleting workout log:', error)
         } finally {
             setLoading(false)
         }
@@ -212,9 +212,13 @@ export default function PastWorkoutsPage() {
                                         <DropdownMenuItem
                                             onSelect={(event) => {
                                                 event.preventDefault()
-                                                setDeleteTargetId(workout.id)
+                                                if (!workout.logId) {
+                                                    return
+                                                }
+                                                setDeleteTarget({ workoutId: workout.workoutId, logId: workout.logId })
                                             }}
                                             data-variant="destructive"
+                                            disabled={!workout.logId}
                                         >
                                             Delete
                                         </DropdownMenuItem>
@@ -321,19 +325,19 @@ export default function PastWorkoutsPage() {
             {out}
 
             <ConfirmDialog
-                isOpen={deleteTargetId !== null}
-                onClose={() => setDeleteTargetId(null)}
+                isOpen={deleteTarget !== null}
+                onClose={() => setDeleteTarget(null)}
                 isLoading={loading}
                 variant="danger"
-                title="Delete Completed Workout"
-                description="Are you certain you want to delete this completed workout?"
+                title="Delete Workout Log"
+                description="Are you certain you want to permanently delete this workout log?"
                 confirmText="Delete"
                 cancelText="Cancel"
                 onConfirm={async () => {
-                    if (deleteTargetId) {
-                        const id = deleteTargetId
-                        setDeleteTargetId(null)
-                        await handleDelete(id)
+                    if (deleteTarget) {
+                        const target = deleteTarget
+                        setDeleteTarget(null)
+                        await handleDelete(target.workoutId, target.logId)
                     }
                 }}
             />

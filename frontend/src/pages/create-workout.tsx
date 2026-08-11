@@ -567,7 +567,7 @@ export default function CreateWorkoutPage() {
     }
 
     return filteredExercises.map((ex) => (
-      <div key={ex.id} className="flex items-center gap-3 px-2 py-2.5">
+      <div key={ex.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-2 py-2.5">
         <CircularProfileImage
           src={ex.imageUrl}
           alt={ex.name}
@@ -673,7 +673,7 @@ export default function CreateWorkoutPage() {
 
               return(
                 <Fragment key={seg.anchorId}>
-                  <div className="flex flex-col gap-2 rounded-xl border-2 border-brand/60 bg-brand/5 p-2">
+                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-2">
                     <div className="flex items-center justify-between px-2 pt-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
@@ -690,15 +690,18 @@ export default function CreateWorkoutPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <label className="flex items-center gap-1">
+                        <label htmlFor={`group-rest-${seg.anchorId}`} className="flex items-center gap-2">
                           <span>Rest (seconds)</span>
-                          <input 
-                            type = "number"
-                            min = {0}
-                            value = {settings.restTime || ''}
-                            placeholder="0"
-                            onChange = {e => setGroupSetting(seg.anchorId, 'restTime', Number(e.target.value))}
-                            className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          <Input
+                            id={`group-rest-${seg.anchorId}`}
+                            type="number"
+                            min={0}
+                            value={settings.restTime}
+                            onChange={(e) => {
+                              const nextValue = e.target.value === '' ? DEFAULT_REST : Number(e.target.value)
+                              setGroupSetting(seg.anchorId, 'restTime', Number.isFinite(nextValue) && nextValue >= 0 ? nextValue : DEFAULT_REST)
+                            }}
+                            className="h-7 w-16 text-center"
                           />
                         </label>
                       </div>
@@ -774,7 +777,7 @@ export default function CreateWorkoutPage() {
              </div>
 
               <div className="mt-2 min-h-0 max-h-72 overflow-y-auto pr-1">
-                <div className="divide-y divide-border/70">
+                <div className="space-y-2">
                 {exercisesListContent}
                 </div>
               </div>

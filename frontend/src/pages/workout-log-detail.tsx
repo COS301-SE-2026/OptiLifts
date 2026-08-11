@@ -141,7 +141,7 @@ export default function WorkoutLogDetailPage() {
             variant="text"
             size="sm"
             onClick={handleBackToPastWorkouts}
-            className="mb-1 flex items-center gap-1 self-start px-0 text-muted-foreground hover:text-foreground"
+            className="-ml-1 mb-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Past Workout</span>

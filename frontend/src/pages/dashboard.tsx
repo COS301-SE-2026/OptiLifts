@@ -4,8 +4,9 @@ import { UpcomingWorkoutsCard } from '@/components/ui/upcoming-workouts'
 import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { CircularProfileImage } from '@/components/ui/circular-image'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageTitle } from '@/components/ui/page-title'
 import streakFlame from '@/assets/streak_flame.png'
 import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
@@ -453,10 +454,8 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div className="border-l-[5px] border-brand pl-5 py-1 mb-8">
-                <h1 className="text-4xl font-extrabold uppercase tracking-tight text-foreground">
-                    Good Day, {displayProfile?.name ?? 'Guest'}
-                </h1>
+            <div className="mb-8">
+                <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
                 
                 <p className="mt-2 text-lg text-muted-foreground">
                     Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
@@ -523,7 +522,7 @@ export default function DashboardPage() {
                 {/*Favorite exercise*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Favorite exercise</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Favorite exercise</CardTitle>
                         <span className="mt-1 text-s font-medium text-muted-foreground text-center">
                             {favoriteExercise.count > 0 ? `${favoriteExercise.count} completed sessions` : 'No completed workouts yet'}
                         </span>
@@ -546,7 +545,7 @@ export default function DashboardPage() {
                 {/*Exercise streak*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Days exercised this week</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Days exercised this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img
@@ -558,7 +557,7 @@ export default function DashboardPage() {
 
                                 <span
                                     aria-hidden="true"
-                                    className="hidden h-12 w-12 bg-white/90 dark:block"
+                                    className="hidden h-12 w-12 bg-foreground dark:block"
                                     style={{
                                         WebkitMaskImage: `url(${streakFlame})`,
                                         WebkitMaskRepeat: 'no-repeat',
@@ -580,7 +579,7 @@ export default function DashboardPage() {
                 {/*num PRs*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Personal records hit this week</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Personal records hit this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img
@@ -592,7 +591,7 @@ export default function DashboardPage() {
 
                                 <span
                                     aria-hidden="true"
-                                    className="hidden h-10 w-10 bg-white/90 dark:block"
+                                    className="hidden h-10 w-10 bg-foreground dark:block"
                                     style={{
                                         WebkitMaskImage: `url(${badgeIcon})`,
                                         WebkitMaskRepeat: 'no-repeat',

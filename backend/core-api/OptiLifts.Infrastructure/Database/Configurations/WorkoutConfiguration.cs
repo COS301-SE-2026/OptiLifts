@@ -27,12 +27,12 @@ public class WorkoutConfiguration : IEntityTypeConfiguration<Workout>
         builder.HasOne<Folder>()
                .WithMany()
                .HasForeignKey(w => w.FolderId)
-               .OnDelete(DeleteBehavior.Cascade); //if the folder is deleted the associated workouts are deleted
+               .OnDelete(DeleteBehavior.SetNull); //if the folder is deleted the workouts are not deleted, prevent error of double deleting when an acc is deleted
 
         //FK relationship between workout and user 
         builder.HasOne<User>()
                .WithMany()
                .HasForeignKey(w => w.CreatedBy)
-               .OnDelete(DeleteBehavior.Restrict); //restrict as if we delete a user the folder and user will try delete it 
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }

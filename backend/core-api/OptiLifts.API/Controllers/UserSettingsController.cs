@@ -226,4 +226,27 @@ public sealed class UserSettingsController : ControllerBase
         }
     }
 
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            await _sender.Send(new DeleteAccountCommand(userId), cancellationToken);
+
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
 }

@@ -7,6 +7,7 @@ using OptiLifts.Application.Scheduling.CreateScheduledSession;
 using OptiLifts.Application.Scheduling.DeleteScheduledSession;
 using OptiLifts.Application.Scheduling.GetSchedule;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Application.Scheduling.UpdateMissedSessions;
 using OptiLifts.Application.Scheduling.UpdateScheduledSessionStatus;
 using OptiLifts.Domain.Workouts;
 
@@ -145,6 +146,18 @@ public sealed class SchedulesController : ControllerBase
                 message = "Scheduled session not found or not owned by user"
             });
         }
+        return Ok(result);
+    }
+
+    [HttpPost("me/schedule/missed")]
+    public async Task<ActionResult<UpdateMissedSessionsResult>> UpdateMissedSessions(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new UpdateMissedSessionsCommand(userId);
+        var result = await _sender.Send(command, cancellationToken);
         return Ok(result);
     }
 

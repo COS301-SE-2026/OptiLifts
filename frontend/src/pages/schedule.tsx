@@ -185,6 +185,12 @@ export default function SchedulePage() {
         setIsLoading(true)
         setError(null)
         try {
+            //added ze marking as missed first
+            await customFetch('/api/users/me/schedule/missed', {
+                method: 'POST'
+            }).catch(() => {})
+
+
             const {start, end} = fetchRange
             const [scheduleResp, analyticsResp] = await Promise.all([
                 customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
@@ -351,7 +357,11 @@ export default function SchedulePage() {
             {/* top row */}
             <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <PageTitle title="Scheduler" />
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() =>setCurrentWeekDate(new Date())}
+                    className="bg-surface border border-border text-foreground hover:bg-brand/10 hover:text-brand hover:border-brand/30 font-semibold px-3.5 py-0.5 rounded-xl text-sm transition-all shadow-sm cursor-pointer">
+                        Today
+                    </Button>
                 <DatePagination
                     currentDate={currentWeekDate}
                     onChange={setCurrentWeekDate}

@@ -609,7 +609,7 @@ function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
         <div className="space-y-4">
             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Change Password</h3>
 
-             <p className="text-xs text-muted-foreground -mt-2">
+            <p className="text-xs text-muted-foreground -mt-2">
                 Passwords need 8 or more characters containing uppercase, lowercase, numbers, and special characters
             </p>
 
@@ -683,6 +683,27 @@ function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
 export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     const { logout } = useAuth();
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            const res = await customFetch("/api/users/me", {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                logout();
+            }
+        } catch (error) {
+            console.error("Error deleting account:", error);
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteConfirmOpen(false);
+        }
+    }
 
     useEffect(() => {
         if (isOpen) {
@@ -776,7 +797,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                             error={securityError}
                         />
 
-                        {/* logout */}
+                        {/* Account Management */}
                         <div className="space-y-4 pt-2">
                             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Account Management</h3>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -788,6 +809,17 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                                     onClick={() => setIsLogoutConfirmOpen(true)}
                                 >
                                     Log Out
+                                </Button>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                                <span className="text-sm text-muted-foreground focus-visible:outline-brand">Permanently delete your account and all associated data. This action cannot be undone.</span>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="w-full sm:w-48 shrink-0 font-bold"
+                                    onClick={() => setIsDeleteConfirmOpen(true)}
+                                >
+                                    Delete Account
                                 </Button>
                             </div>
                         </div>
@@ -811,6 +843,19 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                 title="Log Out"
                 description="Are you sure you want to log out of your account?"
                 confirmText="Log Out"
+                cancelText="Cancel"
+                variant="danger"
+            />
+
+            <ConfirmDialog
+                isOpen={isDeleteConfirmOpen}
+                onClose={() => !isDeleting && setIsDeleteConfirmOpen(false)}
+                onConfirm={
+                    handleDeleteAccount
+                }
+                title="Delete Account"
+                description="Are you sure you want to delete your account? This action cannot be undone and you will lose all of your data forever."
+                confirmText={(isDeleting) ? "Deleting..." : "Delete Account"}
                 cancelText="Cancel"
                 variant="danger"
             />

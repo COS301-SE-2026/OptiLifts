@@ -25,7 +25,7 @@ type ExerciseDetsResponse = {
 type ExerciseDetailsPopupProps = Readonly<{
   exerciseId: string | null
   onClose: () => void
-  onChanged?: () => void | Promise<void>
+  onChanged?: (exerciseId: string) => void | Promise<void>
 }>
 
 const formatMechanic = (mechanic: string | null | undefined): string | null => {
@@ -48,14 +48,25 @@ const toDetails = (dto: ExerciseDetsResponse): ExerciseDetails => ({
   imageUrl: dto.imageUrl ?? null,
 })
 
-const normalizeEquipment = (equipment: string | null): string | undefined => {
+const capitalizeEquipment = (equipment: string | null | undefined): string | undefined => {
   if (!equipment) {
     return undefined
   }
 
-  const matches = DEFAULT_EQUIPMENT_OPTIONS.find((option) => option.toLowerCase() === equipment.toLowerCase())
-  
-  return matches ?? equipment
+  const normalized = equipment.trim()
+  if (!normalized) {
+    return undefined
+  }
+
+  const matches = DEFAULT_EQUIPMENT_OPTIONS.find((option) => option.toLowerCase() === normalized.toLowerCase())
+  if (matches) {
+    return matches
+  }
+
+  return normalized
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
 }
 
 const fileFromUrl = async (imageUrl: string, name: string): Promise<File | null> => {
@@ -140,7 +151,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         return {
             name: details.name,
             exerciseType: details.exerciseType,
-            equipment: normalizeEquipment(details.equipment),
+            equipment: capitalizeEquipment(details.equipment),
             imageUrl: details.imageUrl,
             primaryMuscle: details.primaryMuscles[0] ?? null,
             secondaryMuscles: details.secondaryMuscles,
@@ -240,8 +251,8 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         }
 
         toast.success('Exercise updated.', 'Saved')
-        if (onChanged) {
-            await onChanged()
+        if (onChanged && details) {
+            await onChanged(details.id)
         }
 
         onClose()
@@ -263,7 +274,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
             toast.success('Exercise deleted.', 'Deleted')
             if (onChanged) {
-                await onChanged()
+                await onChanged(details.id)
             }
 
             setIsConfirmDeleteOpen(false)
@@ -321,7 +332,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Equipment</p>
-                      <p className="text-foreground">{details.equipment ?? '-'}</p>
+                      <p className="text-foreground">{capitalizeEquipment(details.equipment) ?? '-'}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Type</p>

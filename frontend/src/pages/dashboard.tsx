@@ -432,12 +432,12 @@ export default function DashboardPage() {
                 <h1 className="text-4xl font-extrabold uppercase tracking-tight text-foreground">
                     Good Day, {displayProfile?.name ?? 'Guest'}
                 </h1>
-                
-                <p className="mt-2 text-lg text-muted-foreground">
+
+                <p className="mt-0 text-lg text-muted-foreground">
                     Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {

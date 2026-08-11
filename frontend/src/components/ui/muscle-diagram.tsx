@@ -4,11 +4,10 @@ import type { MuscleName } from '@/types/workout'
 type Props = Readonly<{
   highlightedMuscles: MuscleName[]
   secondaryMuscles?: MuscleName[]
-  secondaryMultiplier?: number
   variant?: 'front' | 'back' | 'both'
 }>
 
-export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], secondaryMultiplier = 0.5, variant = 'both' }: Props) {
+export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], variant = 'both' }: Props) {
   const primaryMuscles = new Set(highlightedMuscles)
   const secondaryMuscleSet = new Set(secondaryMuscles)
 

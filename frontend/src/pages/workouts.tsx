@@ -79,7 +79,6 @@ export default function WorkoutsPage() {
 
   useEffect(() => {
     if (!selectedId || !isAuthenticated || !isHydrated) {
-      setSelectedWorkoutDetails(null)
       return
     }
 
@@ -180,8 +179,11 @@ export default function WorkoutsPage() {
 
   const selectedWorkout = visibleWorkouts.find((w) => w.id === selectedId) ?? null
   const selectedWorkoutSecondaryMuscles = useMemo(
-    () => (selectedWorkoutDetails?.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[],
-    [selectedWorkoutDetails]
+    () =>
+      selectedWorkout && selectedWorkoutDetails?.id === selectedWorkout.id
+        ? (selectedWorkoutDetails.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[]
+        : [],
+    [selectedWorkout, selectedWorkoutDetails]
   )
 
   const summary: WorkoutSummary | null = selectedWorkout

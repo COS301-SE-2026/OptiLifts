@@ -615,12 +615,12 @@ export default function CreateWorkoutPage() {
         <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">
 
           <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <Button 
                 variant="text"
                 size="sm"
                 onClick={() => navigate('/workouts')}
-                className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+                className="ml-0 flex items-center gap-1 self-start p-0 text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back to Workouts</span>

@@ -37,10 +37,10 @@ describe('PastWorkoutsPage', () => {
     beforeEach(() => { //runs each 'it' test block + resets spy functions
         vi.clearAllMocks();
         mockFetch.mockImplementation(async (url: string, options?: RequestInit) => {
-            if (url.includes('/api/users/me/schedule/sessions/') && options?.method === 'DELETE') {
+            if (url.includes('/api/workouts/') && url.includes('/logs/') && options?.method === 'DELETE') {
                 return {
                     ok: true,
-                    json: async () => ({ message: 'Scheduled session deleted successfully.' }),
+                    json: async () => ({ message: 'Workout log deleted successfully.' }),
                 };
             }
             if(url.includes('/api/exercises/images')){
@@ -151,7 +151,7 @@ describe('PastWorkoutsPage', () => {
         fireEvent.click(within(dialog).getByText('Delete'))
 
         await waitFor(() => {
-            expect(mockFetch).toHaveBeenCalledWith('/api/users/me/schedule/sessions/log-1', expect.objectContaining({ method: 'DELETE' }))
+            expect(mockFetch).toHaveBeenCalledWith('/api/workouts/w-1/logs/l-1', expect.objectContaining({ method: 'DELETE' }))
         })
 
         await waitFor(() => {

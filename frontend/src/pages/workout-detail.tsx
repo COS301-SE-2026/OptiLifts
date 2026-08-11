@@ -140,19 +140,6 @@ export default function WorkoutDetailPage() {
     }
   }, [isAuthenticated, isHydrated, workoutId, refreshKey])
 
-  useEffect(() => {
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-    }
-  }, [])
-
   const workoutLabel = workout?.name ?? 'Workout Detail'
   const plannedExercises = useMemo(
     () => (workout ? toExercisePlanItems(workout.exercises) : []),
@@ -193,7 +180,7 @@ export default function WorkoutDetailPage() {
   )
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-y-auto px-6 py-12">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout</p>
@@ -203,12 +190,12 @@ export default function WorkoutDetailPage() {
         <div className="flex flex-col items-start gap-4 lg:items-end">
           <div className="flex flex-wrap items-center gap-8 text-left lg:text-right">
             <div>
-              <p className="text-base text-muted-foreground">Volume</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.volume}</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Volume</p>
+              <p className="text-[1.6rem] type-card-value mt-1 text-foreground">{workoutStats.volume}</p>
             </div>
             <div>
-              <p className="text-base text-muted-foreground">Sets</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.sets}</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sets</p>
+              <p className="text-[1.6rem] type-card-value mt-1 text-foreground">{workoutStats.sets}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button

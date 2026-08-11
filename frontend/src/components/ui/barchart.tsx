@@ -13,7 +13,7 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
 
   return (
     <section className={className}>
-      <h2 className="mb-4 text-2xl font-bold tracking-tight text-foreground">{title}</h2>
+      <h2 className="mb-4 type-section-title text-foreground">{title}</h2>
 
       <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:px-5 sm:py-5">
         <div className="flex gap-3">

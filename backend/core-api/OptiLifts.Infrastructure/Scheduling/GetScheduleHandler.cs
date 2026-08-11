@@ -138,6 +138,7 @@ public sealed class GetScheduleHandler : IRequestHandler<GetScheduleQuery, IRead
         }
 
         return entries
+            .Where(entry => entry.Status != ScheduleStatus.Completed || logs.ContainsKey(entry.Id))
             .Select(entry => CreateScheduledEntryDto(entry, workoutStat, workoutNames, logs, completedStats, completedPrCounts))
             .ToList();
     }

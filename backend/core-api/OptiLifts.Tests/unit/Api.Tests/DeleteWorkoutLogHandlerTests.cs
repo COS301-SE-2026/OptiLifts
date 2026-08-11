@@ -51,6 +51,7 @@ public sealed class DeleteWorkoutLogHandlerTests
             {
                 Id = ownerId,
                 Email = "owner@example.com",
+                EmailHash = "owner-hash",
                 PasswordHash = "x",
                 DisplayName = "Owner"
             },
@@ -58,6 +59,7 @@ public sealed class DeleteWorkoutLogHandlerTests
             {
                 Id = otherUserId,
                 Email = "other@example.com",
+                EmailHash = "other-hash",
                 PasswordHash = "y",
                 DisplayName = "Other"
             });
@@ -115,6 +117,7 @@ public sealed class DeleteWorkoutLogHandlerTests
         {
             Id = userId,
             Email = "test@example.com",
+            EmailHash = "test-hash",
             PasswordHash = "x",
             DisplayName = "Test"
         });

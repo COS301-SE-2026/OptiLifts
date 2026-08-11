@@ -27,6 +27,25 @@ vi.mock('@/components/ui/circular-image', () => ({
     CircularProfileImage: () => <div data-testid="circular-image"/>,
 }));
 
+vi.mock('@/components/ui/dropdown-menu', () => ({
+    DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DropdownMenuEllipsisTrigger: ({ ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+        <button type="button" {...props}>...</button>
+    ),
+    DropdownMenuEllipsisContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DropdownMenuItem: ({ children, onSelect, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { onSelect?: (event: Event) => void }) => (
+        <button
+            type="button"
+            {...props}
+            onClick={(event) => {
+                onSelect?.(event.nativeEvent as Event)
+            }}
+        >
+            {children}
+        </button>
+    ),
+}));
+
 describe('PastWorkoutsPage', () => {
     const mockFetch = customFetch as unknown as Mock;
 
@@ -91,14 +110,14 @@ describe('PastWorkoutsPage', () => {
         });
 
         expect(screen.getByText('<1m')).toBeDefined();
-        expect(screen.getByText('Muscles: Chest')).toBeDefined();
+        expect(screen.getByText(/Muscles:\s*Chest/)).toBeDefined();
         expect(screen.getByText('3')).toBeDefined();
         expect(screen.getByText('2')).toBeDefined();
 
-        const card = screen.getByRole('button', {
-            name: /Morning Bench Routine/i
-        });
-        fireEvent.click(card);
+        const title = screen.getByText('Morning Bench Routine')
+        const card = title.closest('[role="button"]')
+        expect(card).not.toBeNull()
+        fireEvent.click(card as HTMLElement)
 
         expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1/logs/l-1', expect.anything());
     });
@@ -145,7 +164,7 @@ describe('PastWorkoutsPage', () => {
         })
 
         fireEvent.click(screen.getByLabelText('Options for Morning Bench Routine'))
-        fireEvent.click(screen.getByText('Delete'))
+        fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
 
         const dialog = screen.getByRole('alertdialog')
         fireEvent.click(within(dialog).getByText('Delete'))

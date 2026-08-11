@@ -195,11 +195,11 @@ export default function WorkoutDetailPage() {
           <div className="flex flex-wrap items-center gap-8 text-left lg:text-right">
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Volume</p>
-              <p className="type-card-value mt-1 text-foreground">{workoutStats.volume}</p>
+              <p className="text-[1.6rem] type-card-value mt-1 text-foreground">{workoutStats.volume}</p>
             </div>
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sets</p>
-              <p className="type-card-value mt-1 text-foreground">{workoutStats.sets}</p>
+              <p className="text-[1.6rem] type-card-value mt-1 text-foreground">{workoutStats.sets}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button

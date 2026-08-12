@@ -12,9 +12,9 @@ export function FilterDropdown({ value, options, onValueChange, className, ariaL
   return (
     <DropdownMenu>
       <DropdownMenuTrigger variant="filter" className={className} aria-label={ariaLabel}>
-        <span>{value}</span>
+        <span className="min-w-0 truncate">{value}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+      <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
         {options.map((option) => (
           <DropdownMenuItem key={option} onSelect={() => onValueChange(option)}>
             {option}

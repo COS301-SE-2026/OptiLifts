@@ -1,4 +1,5 @@
-import badgeIcon from "../../assets/badge.png";
+import badgeIcon from '../../assets/badge.png'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 
 type BadgeProps = Readonly<{
   name: string
@@ -24,26 +25,12 @@ export function Badge({ name, category, earnedAt, iconUrl, className }: BadgePro
         .filter(Boolean)
         .join(' ')}
     >
-      <img
-        src={resolvedIcon}
+      <PrBadgeIcon
+        iconUrl={resolvedIcon}
         alt="Badge icon"
-        className="absolute right-3 top-3 h-10 w-10 select-none object-contain opacity-85 dark:hidden sm:right-4 sm:top-4"
-        draggable={false}
-      />
-
-      <span
-        aria-hidden="true"
-        className="absolute right-3 top-3 hidden h-10 w-10 bg-white/90 dark:block sm:right-4 sm:top-4"
-        style={{
-          WebkitMaskImage: `url(${resolvedIcon})`,
-          WebkitMaskRepeat: 'no-repeat',
-          WebkitMaskPosition: 'center',
-          WebkitMaskSize: 'contain',
-          maskImage: `url(${resolvedIcon})`,
-          maskRepeat: 'no-repeat',
-          maskPosition: 'center',
-          maskSize: 'contain',
-        }}
+        className="absolute right-3 top-3 sm:right-4 sm:top-4"
+        sizeClassName="h-10 w-10"
+        lightClassName="opacity-85"
       />
 
       <div className="min-w-0 space-y-1.5 pr-5">

@@ -6,9 +6,8 @@ import { SpiderGraph } from '@/components/ui/spider-graph'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { PageTitle } from '@/components/ui/page-title'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 import streakFlame from '@/assets/streak_flame.png'
-import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
 import { WORKOUT_LOG_SYNC_EVENT } from '@/lib/offline/workout-logs'
 import { useAuth } from '@/context/auth-context'
@@ -16,6 +15,7 @@ import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
 import { Dumbbell } from 'lucide-react'
+import { PageTitle } from '@/components/ui/page-title'
 
 type ScheduleAnalyticsResponse = Readonly<{
     totalWorkouts: number
@@ -454,14 +454,14 @@ export default function DashboardPage() {
                 </div>
             )}
 
+
             <div className="mb-8">
                 <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
-                
                 <p className="mt-2 text-lg text-muted-foreground">
                     Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
@@ -469,7 +469,7 @@ export default function DashboardPage() {
                                 navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
                     >
                         View Workout
                     </Button>
@@ -488,7 +488,7 @@ export default function DashboardPage() {
                                 })
                             }
                         }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
                     >
                         Start Session
                     </Button>
@@ -582,26 +582,10 @@ export default function DashboardPage() {
                         <CardTitle className="text-center text-[16px] font-semibold text-foreground">Personal records hit this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
-                                <img
-                                    src={badgeIcon}
+                                <PrBadgeIcon
                                     alt="Personal records badge"
-                                    className="h-10 w-10 select-none object-contain opacity-85 dark:hidden"
-                                    draggable={false}
-                                />
-
-                                <span
-                                    aria-hidden="true"
-                                    className="hidden h-10 w-10 bg-foreground dark:block"
-                                    style={{
-                                        WebkitMaskImage: `url(${badgeIcon})`,
-                                        WebkitMaskRepeat: 'no-repeat',
-                                        WebkitMaskPosition: 'center',
-                                        WebkitMaskSize: 'contain',
-                                        maskImage: `url(${badgeIcon})`,
-                                        maskRepeat: 'no-repeat',
-                                        maskPosition: 'center',
-                                        maskSize: 'contain',
-                                    }}
+                                    sizeClassName="h-10 w-10"
+                                    lightClassName="opacity-85"
                                 />
 
                                 <span className="text-4xl font-bold text-foreground">{prsThisWeek}</span>

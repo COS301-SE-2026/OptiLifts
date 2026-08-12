@@ -9,5 +9,4 @@ public class ExerciseEstimation
     public int Reps { get; set; }
     public ExerciseType ExerciseType { get; set; }
     public DateTime TimeStamp { get; set; } = DateTime.UtcNow;
-    public bool Deload { get; set; }
 }

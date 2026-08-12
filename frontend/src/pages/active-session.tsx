@@ -104,6 +104,12 @@ const setTypeLabelMap: Record<SetType, string> = {
   DropSet: 'Dropset'
 }
 
+const setTypeRowClass: Record<SetType, string> = {
+  Warmup: 'bg-warning/10 border-l-4 border-warning/50',
+  Normal: 'bg-surface-2 border-l-4 border-transparent',
+  DropSet: 'bg-brand/10 border-l-4 border-brand/50',
+}
+
 const getSetLabel = (type: SetType, workingNumber: number): string | number => {
   if (type === 'Warmup') return 'W'
   if (type === 'DropSet') return 'D'
@@ -124,7 +130,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
   return (
-    <div className="grid items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium" style={{ gridTemplateColumns: gridTemplate }}>
+    <div className={`grid items-center gap-4 rounded-lg p-1.5 text-center text-sm font-medium ${setTypeRowClass[set.type]}`} style={{ gridTemplateColumns: gridTemplate }}>
       <div className="flex items-center">
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">

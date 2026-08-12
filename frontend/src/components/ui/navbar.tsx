@@ -22,13 +22,15 @@ export function Navbar() {
   const { isAuthenticated} = useAuth()
   const activeDraft = getDraftFromStorage()
   const [isMenuOpen, setMenuOpen] = useState(false)
+  const [lastPathname, setLastPathname] = useState(pathname)
+
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname)
+    setMenuOpen(false)
+  }
+
   const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
   const homeLink = isAuthenticated ? '/dashboard' : '/'
-
-  
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [pathname])
 
   useEffect(() => {
     if (!isMenuOpen) {

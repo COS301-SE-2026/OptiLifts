@@ -268,6 +268,13 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   sets: [...exercise.sets].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessSet),
 })
 
+const backfillImage = (exercise: ExerciseData, images: Map<string, string | null>): ExerciseData => {
+  if (exercise.imageUrl || !exercise.exerciseId) {
+    return exercise
+  }
+
+  return { ...exercise, imageUrl: images.get(exercise.exerciseId) ?? null }
+}
 
 function groupNumMap(exercises: ExerciseData[]): Map<string, number> {
   const groupNumByExerciseId = new Map<string, number>()
@@ -387,59 +394,42 @@ export default function ActiveSessionPage() {
 
     let isMounted = true
 
-    const loadWorkout = async () => {
-      setIsLoading(true)
-      setError(null)
+    const restoreDraft = (draft: SessionDraft) => {
+      setWorkoutName(draft.workoutName)
+      setStartedAtMs(draft.startedAtMs)
+      setExercises(draft.exercises)
+      setIsLoading(false)
+    }
 
-    const sessdraft = getDraft<SessionDraft>(workoutId)
-      if (sessdraft) {
-        setWorkoutName(sessdraft.workoutName)
-        setStartedAtMs(sessdraft.startedAtMs)
-        setExercises(sessdraft.exercises)
-        setIsLoading(false)
+    // drafts don't carry images or muscle groups - backfill from the workout
+    const backfillDraft = async () => {
+      try {
+        const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
+          headers: { Accept: 'application/json' },
+        })
 
-        // drafts don't carry images or muscle groups - backfill from the workout
-        try {
-          const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
-            headers: { Accept: 'application/json' },
-          })
-
-          if (!draftResp.ok || !isMounted) {
-            return
-          }
-
-          const draftData = (await draftResp.json()) as WorkoutDetailsResponse
-            
-          if (!isMounted) {
-            return
-          }
-
-          setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
-
-          const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
-            
-          setExercises((current) =>
-            current.map((ex) =>
-              ex.imageUrl || !ex.exerciseId
-                ? ex : { ...ex, imageUrl: imageByExerciseId.get(ex.exerciseId) ?? null }
-            )
-          )
-        } 
-        catch {
-          // offline or request failed - the draft still works as-is
+        if (!draftResp.ok || !isMounted) {
+          return
         }
 
-        return
+        const draftData = (await draftResp.json()) as WorkoutDetailsResponse
+
+        if (!isMounted) {
+          return
+        }
+
+        setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
+
+        const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
+
+        setExercises((current) => current.map((ex) => backfillImage(ex, imageByExerciseId)))
       }
-
-      const otherDraft = getDraftFromStorage()
-      if (otherDraft && otherDraft.workoutId !== workoutId) {
-        setConflictDraft(otherDraft)
-        setIsLoading(false)
-
-        return
+      catch {
+        // offline or request failed - the draft still works as-is
       }
+    }
 
+    const fetchWorkout = async () => {
       try {
         const resp = await customFetch(`/api/workouts/${workoutId}`, {
           headers: { Accept: 'application/json' },
@@ -461,20 +451,40 @@ export default function ActiveSessionPage() {
         const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
         setExercises(mappedExers)
-        
-      } 
+      }
       catch (loadError) {
         if (!isMounted) {
           return
         }
 
         setError(loadError instanceof Error ? loadError.message : 'Failed to load workout details.')
-      } 
+      }
       finally {
         if (isMounted) {
           setIsLoading(false)
         }
       }
+    }
+
+    const loadWorkout = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      const sessdraft = getDraft<SessionDraft>(workoutId)
+      if (sessdraft) {
+        restoreDraft(sessdraft)
+        await backfillDraft()
+        return
+      }
+
+      const otherDraft = getDraftFromStorage()
+      if (otherDraft && otherDraft.workoutId !== workoutId) {
+        setConflictDraft(otherDraft)
+        setIsLoading(false)
+        return
+      }
+
+      await fetchWorkout()
     }
 
     void loadWorkout()

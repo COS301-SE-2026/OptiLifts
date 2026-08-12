@@ -26,6 +26,11 @@ type ScheduleAnalyticsResponse = Readonly<{
         setCount: number
         percentage: number
     }[]
+    secondaryMuscleDistribution?: readonly {
+        muscleGroup: string
+        setCount: number
+        percentage: number
+    }[]
 }>
 
 type ScheduledEntry = Readonly<{
@@ -415,6 +420,26 @@ export default function DashboardPage() {
         return values
     }, [analytics])
 
+    const secondaryMuscleValues = useMemo(() => {
+        const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
+            Chest: 0,
+            Core: 0,
+            Shoulders: 0,
+            Arms: 0,
+            Legs: 0,
+            Back: 0,
+        }
+
+        analytics?.secondaryMuscleDistribution?.forEach((item) => {
+            const mapped = MUSCLE_CATEGORY_MAP[item.muscleGroup]
+            if (mapped) {
+                values[mapped] += item.setCount
+            }
+        })
+
+        return values
+    }, [analytics])
+
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
             {isFetching && !profileData && (
@@ -589,7 +614,7 @@ export default function DashboardPage() {
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full flex-col px-0">
                         <h3 className="mb-2 w-full text-center text-[20px] font-medium text-foreground">Muscle Balance</h3>
-                        <SpiderGraph data={muscleValues} className="h-[170px]"/>
+                        <SpiderGraph data={muscleValues} secondaryData={secondaryMuscleValues} className="h-[170px]"/>
                     </CardContent>
                 </Card>
             </div>

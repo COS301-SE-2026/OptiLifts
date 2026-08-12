@@ -52,6 +52,24 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             })
             .ToListAsync(cancellationToken);
 
+        var secondaryMuscleRows = await (
+            from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
+            where workoutExercise.WorkoutId == workout.Id
+            join secondary in _dbContext.SecMuscles.AsNoTracking()
+                on workoutExercise.ExerciseId equals secondary.ExerciseId
+            join muscle in _dbContext.Muscles.AsNoTracking()
+                on secondary.MuscleId equals muscle.Id
+            select new
+            {
+                workoutExercise.ExerciseId,
+                muscle.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        var secondaryMusclesByExerciseId = secondaryMuscleRows
+            .GroupBy(entry => entry.ExerciseId)
+            .ToDictionary(group => group.Key, group => group.Select(entry => entry.Name).Distinct().ToArray());
+
         var workoutExerciseIds = workoutExercises.Select(entry => entry.Id).ToArray();
         var setsByWorkoutExerciseId = new Dictionary<Guid, List<WorkoutSetDto>>();
 
@@ -100,6 +118,9 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             entry.ExerciseId,
             entry.ExerciseName,
             entry.PrimaryMuscleName,
+            secondaryMusclesByExerciseId.TryGetValue(entry.ExerciseId, out var secondaryMuscles)
+                ? secondaryMuscles
+                : [],
             ToFrontendExerciseType(entry.ExerciseType),
             entry.OrderIndex,
             setsByWorkoutExerciseId.TryGetValue(entry.Id, out var workoutSets)

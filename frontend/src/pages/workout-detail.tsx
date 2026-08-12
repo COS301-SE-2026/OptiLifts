@@ -178,6 +178,10 @@ export default function WorkoutDetailPage() {
     () => (workout?.primaryMuscleGroups ?? []) as MuscleName[],
     [workout]
   )
+  const secondaryMuscles = useMemo(
+    () => (workout?.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[],
+    [workout]
+  )
 
   return (
     <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-y-auto px-6 py-12">
@@ -248,7 +252,7 @@ export default function WorkoutDetailPage() {
         summaryContent={
           workout ? (
             <>
-              <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+              <MuscleDiagram highlightedMuscles={highlightedMuscles} secondaryMuscles={secondaryMuscles} variant="both" />
               <MusclesSummary exercises={workout.exercises} />
             </>
           ) : null

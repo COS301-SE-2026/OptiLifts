@@ -13,8 +13,11 @@ import { cn } from '@/lib/utils'
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip)
 
 export const SPIDER_CATS = ['Chest', 'Core', 'Shoulders', 'Arms', 'Legs','Back'] as const
+const DEFAULT_SECONDARY_MUSCLE_MULTIPLIER = 0.5
 export interface SpiderGraphProps {
     readonly data: Record<string, number> | number[]
+    readonly secondaryData?: Record<string, number> | number[]
+    readonly secondaryMultiplier?: number
     readonly className?: string
 }
 
@@ -25,7 +28,11 @@ function getcssVariables(name : string, fallback:string):string {
     return value || fallback
 }
 
-export function SpiderGraph({data, className}: SpiderGraphProps) {
+function normalizeValues(data: Record<string, number> | number[]) {
+    return Array.isArray(data) ? data : SPIDER_CATS.map((cat) => data[cat] ?? 0)
+}
+
+export function SpiderGraph({data, secondaryData, secondaryMultiplier = DEFAULT_SECONDARY_MUSCLE_MULTIPLIER, className}: SpiderGraphProps) {
     const brandColor = getcssVariables('--brand', '#CC0022')
     const borderColor = getcssVariables('--border', '#E5E7EB')
     const labelColor = getcssVariables('--muted-text', '#71717A')
@@ -33,7 +40,10 @@ export function SpiderGraph({data, className}: SpiderGraphProps) {
     const fontSans = getcssVariables('--font-sans', 'Barlow, sans-serif')
     const brandFill = getcssVariables('--brand-fill', '#CC002226')
 
-    const chartValues = Array.isArray(data) ? data : SPIDER_CATS.map((cat) => data[cat] ?? 0)
+    const primaryValues = normalizeValues(data)
+    const secondaryValues = secondaryData ? normalizeValues(secondaryData) : []
+    const multiplier = Math.max(0, Math.min(1, secondaryMultiplier))
+    const chartValues = primaryValues.map((value, index) => value + ((secondaryValues[index] ?? 0) * multiplier))
 
     //configuring the size and mins and maxs
     const highestSet = Math.max(...chartValues, 0)

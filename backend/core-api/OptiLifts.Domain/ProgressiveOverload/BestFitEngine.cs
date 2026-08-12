@@ -13,7 +13,7 @@ public static class BestFitEngine
     public static (double m, double c) GetBestFitLine(List<PODataPoint> points)
     {
 
-        var firstD = points.First().Date;
+        var firstD = points[0].Date;
         int n = points.Count;
 
         double sumX = 0;
@@ -62,8 +62,8 @@ public static class BestFitEngine
         }
         int avgGap = (int)Math.Round(gapTotal / (points.Count - 1));
 
-        var lastP = points.Last();
-        var firstP = points.First();
+        var lastP = points[0];
+        var firstP = points[0];
 
         var nextDate = lastP.Date.AddDays(avgGap);
 

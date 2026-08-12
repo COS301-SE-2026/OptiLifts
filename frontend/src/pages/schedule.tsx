@@ -57,6 +57,7 @@ interface AnalyticsResponse {
     readonly totalVolume: number
     readonly totalSets: number
     readonly muscleDistribution: readonly MuscleDistributionItem[]
+    readonly secondaryMuscleDistribution?: readonly MuscleDistributionItem[]
 }
 
 interface ScheduledEntryDto {
@@ -119,6 +120,8 @@ export default function SchedulePage() {
 
     const [error, setError] = useState<string | null>(null)
     const [muscleValues, setMuscleValues] = useState<Record<string, number>>({
+        Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
+    const [secondaryMuscleValues, setSecondaryMuscleValues] = useState<Record<string, number>>({
         Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
     const [workouts, setWorkouts] = useState<Workout[]>([])
     const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
@@ -236,6 +239,19 @@ export default function SchedulePage() {
                 })
             }
             setMuscleValues(aggre)
+
+            const secondaryAggre: Record<string, number> = {
+                    Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
+            }
+            if (analyticsData.secondaryMuscleDistribution) {
+                analyticsData.secondaryMuscleDistribution.forEach((item) => {
+                    const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
+                    if (mappedCat && mappedCat in secondaryAggre) {
+                        secondaryAggre[mappedCat] += item.setCount
+                    }
+                })
+            }
+            setSecondaryMuscleValues(secondaryAggre)
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Could not load analytics')
         } finally {
@@ -461,7 +477,7 @@ export default function SchedulePage() {
                                 <Loader2 className="animate-spin text-muted-foreground/60" size={24} />
                             </div>
                         ) : (
-                            <SpiderGraph data={muscleValues} />
+                            <SpiderGraph data={muscleValues} secondaryData={secondaryMuscleValues} />
                         )}
                     </div>
 

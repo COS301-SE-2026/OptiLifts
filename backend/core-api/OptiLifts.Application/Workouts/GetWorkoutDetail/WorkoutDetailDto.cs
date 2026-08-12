@@ -16,6 +16,7 @@ public sealed record WorkoutExerciseDetailDto(
     Guid ExerciseId,
     string Name,
     string PrimaryMuscle,
+    string[] SecondaryMuscles,
     string ExerciseType,
     int OrderIndex,
     WorkoutSetDto[] Sets,

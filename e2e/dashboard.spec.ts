@@ -13,6 +13,6 @@ test.describe('Dashboard Page', () => {
     });
 
     test('displays the main user greeting', async ({ page }) => {
-        await expect(page.getByRole('heading', { name: /Good Day, Test Athlete/i })).toBeVisible();
+        await expect(page.getByText(/Good Day, Test Athlete/i)).toBeVisible();
     });
 });

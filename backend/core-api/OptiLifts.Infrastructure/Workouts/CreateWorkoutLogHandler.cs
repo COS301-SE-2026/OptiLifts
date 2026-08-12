@@ -62,7 +62,6 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
                 plannedEnt.Status = ScheduleStatus.Completed;
                 entryId = plannedEnt.Id;
             }
-            
             else
             {
                 var entry = new ScheduledEntry

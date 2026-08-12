@@ -25,6 +25,16 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
             return dataPoints;
         }
 
+        //part 2: gradient calculation and e1RM prediction
+        if (BestFitEngine.PlateauCheck(dataPoints))
+        {
+            //platea does its cool quirky thing
+        }
+
+        //if bodyweight will be x reps, if weight will be e1RM in weight
+        double predictedMetric = BestFitEngine.PredictNextVal(dataPoints);
+
+
         return dataPoints;
     }
 

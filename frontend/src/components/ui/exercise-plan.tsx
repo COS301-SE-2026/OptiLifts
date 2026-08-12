@@ -166,9 +166,9 @@ export function ExercisePlan({
         <CardHeader className="pb-2">
           <CardTitle className="text-[1.15rem] font-bold">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col pr-1">
+        <CardContent className="flex flex-col pr-1">
           {normalizedExercises.length > 0 ? (
-            <div className="exercise-summary-scroll min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
+            <div className="space-y-4 pr-2">
               {buildWorkoutSegs(normalizedExercises).map((seg, segIdx) => {
                 if (seg.kind === 'group') {
                   const typeLabel = seg.groupType || (seg.exercises.length === 2 ? 'Superset' : 'Circuit')

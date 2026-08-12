@@ -3,11 +3,40 @@ import type { MuscleName } from '@/types/workout'
 
 type Props = Readonly<{
   highlightedMuscles: MuscleName[]
+  secondaryMuscles?: MuscleName[]
   variant?: 'front' | 'back' | 'both'
 }>
 
-export function MuscleDiagram({ highlightedMuscles, variant = 'both' }: Props) {
-  const isHighlighted = (muscle: MuscleName) => highlightedMuscles.includes(muscle)
+export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], variant = 'both' }: Props) {
+  const primaryMuscles = new Set(highlightedMuscles)
+  const secondaryMuscleSet = new Set(secondaryMuscles)
+
+  const getHighlightState = (muscle: MuscleName) => {
+    if (primaryMuscles.has(muscle)) {
+      return 'primary'
+    }
+
+    if (secondaryMuscleSet.has(muscle)) {
+      return 'secondary'
+    }
+
+    return 'none'
+  }
+
+  const getMuscleClassName = (muscle: MuscleName) => {
+    const state = getHighlightState(muscle)
+
+    if (state === 'primary') {
+      return 'bg-brand/20 border-brand/80'
+    }
+
+    if (state === 'secondary') {
+      return 'bg-brand/4 border-brand/30'
+    }
+
+    return 'bg-surface'
+  }
+
   const showFront = variant === 'front' || variant === 'both'
   const showBack = variant === 'back' || variant === 'both'
 
@@ -22,7 +51,7 @@ export function MuscleDiagram({ highlightedMuscles, variant = 'both' }: Props) {
             {Object.keys(MUSCLE_REGION_MAP).slice(0, 10).map((m) => (
               <div
                 key={`front-${m}`}
-                className={`rounded-md border p-2 text-xs text-center ${isHighlighted(m as MuscleName) ? 'bg-brand/10 border-brand' : 'bg-surface'}`}>
+                className={`rounded-md border p-2 text-xs text-center ${getMuscleClassName(m as MuscleName)}`}>
                 {m}
               </div>
             ))}
@@ -37,7 +66,7 @@ export function MuscleDiagram({ highlightedMuscles, variant = 'both' }: Props) {
             {Object.keys(MUSCLE_REGION_MAP).slice(10).map((m) => (
               <div
                 key={`back-${m}`}
-                className={`rounded-md border p-2 text-xs text-center ${isHighlighted(m as MuscleName) ? 'bg-brand/10 border-brand' : 'bg-surface'}`}>
+                className={`rounded-md border p-2 text-xs text-center ${getMuscleClassName(m as MuscleName)}`}>
                 {m}
               </div>
             ))}

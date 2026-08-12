@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import badgeIcon from "../../assets/badge.png";
 import type { WorkoutOverviewProps } from '@/types/workout'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 
 const MAX_VISIBLE_EXERCISES = 10
 
@@ -40,26 +40,10 @@ export function WorkoutOverview({ href, name, exercises, prs, duration, volume, 
         </div>
 
         <div className="flex shrink-0 flex-col items-center gap-2 text-center">
-          <img
-            src={badgeIcon}
+          <PrBadgeIcon
             alt="Workout badge"
-            className="h-16 w-16 select-none object-contain opacity-70 dark:hidden"
-            draggable={false}
-          />
-
-          <span
-            aria-hidden="true"
-            className="hidden h-16 w-16 bg-white/90 dark:block"
-            style={{
-              WebkitMaskImage: `url(${badgeIcon})`,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              WebkitMaskSize: 'contain',
-              maskImage: `url(${badgeIcon})`,
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              maskSize: 'contain',
-            }}
+            sizeClassName="h-16 w-16"
+            lightClassName="opacity-70"
           />
 
           <p className="text-sm font-semibold text-foreground">{prs}</p>

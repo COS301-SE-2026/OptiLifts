@@ -783,7 +783,7 @@ export default function ActiveSessionPage() {
               variant="text"
               size="sm"
               onClick={() => setExitOpen(true)}
-              className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 self-start p-0 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Workouts</span>

@@ -8,6 +8,7 @@ using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
+using OptiLifts.Application.Workouts.DeleteWorkoutLog;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
@@ -210,6 +211,32 @@ public sealed class WorkoutsController : ControllerBase
         }
         return Ok(new { message = "Workout deleted successfully." });
 
+    }
+
+    [HttpDelete("{workoutId:guid}/logs/{logId:guid}")]
+    public async Task<IActionResult> DeleteWorkoutLog(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid logId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var deleted = await _sender.Send(new DeleteWorkoutLogCommand(workoutId, logId, userId), cancellationToken);
+
+        if (!deleted)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout log was not found for this user."
+            });
+        }
+
+        return Ok(new { message = "Workout log deleted successfully." });
     }
 
     [HttpPost("{workoutId:guid}/duplicate")]

@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.Replication.PgOutput.Messages;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -13,7 +12,8 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
     private sealed record WorkoutDetailDto(
         Guid WorkoutId,
         Guid WorkoutExerciseId,
-        string MuscleName);
+        string MuscleName,
+        string[] SecondaryMuscles);
     public GetScheduleAnalyticsHandler(OptiLiftsDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -41,7 +41,8 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
                 TotalWorkouts: 0,
                 TotalVolume: 0,
                 TotalSets: 0,
-                MuscleDistribution: Array.Empty<MuscleDistributionDto>()
+                MuscleDistribution: Array.Empty<MuscleDistributionDto>(),
+                SecondaryMuscleDistribution: Array.Empty<MuscleDistributionDto>()
             );
         }
 
@@ -56,10 +57,36 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
             (
                 we.WorkoutId,
                 we.Id,
-                m != null ? m.Name : "Other"
+                m != null ? m.Name : "Other",
+                Array.Empty<string>()
 
             ))
             .ToListAsync(cancellationToken);
+
+        var secondaryMuscleRows = await (
+            from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
+            where workoutids.Contains(workoutExercise.WorkoutId)
+            join secondary in _dbContext.SecMuscles.AsNoTracking() on workoutExercise.ExerciseId equals secondary.ExerciseId
+            join muscle in _dbContext.Muscles.AsNoTracking() on secondary.MuscleId equals muscle.Id
+            select new
+            {
+                workoutExercise.Id,
+                muscle.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        var secondaryMusclesByExerciseId = secondaryMuscleRows
+            .GroupBy(entry => entry.Id)
+            .ToDictionary(group => group.Key, group => group.Select(entry => entry.Name).Distinct().ToArray());
+
+        workoutDetails = workoutDetails
+            .Select(detail => detail with
+            {
+                SecondaryMuscles = secondaryMusclesByExerciseId.TryGetValue(detail.WorkoutExerciseId, out var secondaryMuscles)
+                    ? secondaryMuscles
+                    : []
+            })
+            .ToList();
 
         var workoutExerciseIds = workoutDetails.Select(wd => wd.WorkoutExerciseId).ToList();
 
@@ -74,13 +101,14 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
         var (totalVolume, totalSets) = CalculateTotals(entries, statsEachWorkout);
 
         //helper function 
-        var muscleDistr = CalculateMuscleDistribution(entries, workoutDetails, sets);
+        var (muscleDistr, secondaryMuscleDistr) = CalculateMuscleDistribution(entries, workoutDetails, sets);
 
         return new ScheduleAnalyticsDto(
             entries.Count,
             totalVolume,
             totalSets,
-            muscleDistr
+            muscleDistr,
+            secondaryMuscleDistr
         );
     }
     //helpers to reduce complexity - sonarqube issue
@@ -100,28 +128,69 @@ public sealed class GetScheduleAnalyticsHandler : IRequestHandler<GetScheduleAna
     }
 
     //calculate muscle distribution
-    private static List<MuscleDistributionDto> CalculateMuscleDistribution(
+    private static (List<MuscleDistributionDto> Primary, List<MuscleDistributionDto> Secondary) CalculateMuscleDistribution(
         List<ScheduledEntry> entries,
         List<WorkoutDetailDto> workoutDetails,
         List<WorkoutSet> sets)
     {
-        var muscleGroups = from entry in entries
-                           join detail in workoutDetails on entry.WorkoutId equals detail.WorkoutId
-                           join s in sets on detail.WorkoutExerciseId equals s.WorkoutExerciseId
-                           where detail.MuscleName != "Other"
-                           group s by detail.MuscleName into g
-                           select new MuscleDistributionDto(
-                               g.Key,
-                               g.Count(),
-                               0f
-                           );
-        var result = muscleGroups.ToList();
-        var totalSets = result.Sum(r => r.SetCount);
-        return result.Select(r => new MuscleDistributionDto(
-            r.MuscleGroup,
-            r.SetCount,
-            totalSets > 0 ? (float)r.SetCount / totalSets * 100f : 0f
-        )).ToList();
+        var entryCountsByWorkoutId = entries
+            .GroupBy(entry => entry.WorkoutId)
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        var primaryCounts = new Dictionary<string, int>();
+        var secondaryCounts = new Dictionary<string, int>();
+
+        foreach (var entryCountPair in entryCountsByWorkoutId)
+        {
+            var workoutId = entryCountPair.Key;
+            var repetitions = entryCountPair.Value;
+            var workoutExercises = workoutDetails.Where(detail => detail.WorkoutId == workoutId).ToList();
+            var workoutExerciseIds = workoutExercises.Select(detail => detail.WorkoutExerciseId).ToHashSet();
+            var setsByExerciseId = sets
+                .Where(set => workoutExerciseIds.Contains(set.WorkoutExerciseId))
+                .GroupBy(set => set.WorkoutExerciseId)
+                .ToDictionary(group => group.Key, group => group.Count());
+
+            foreach (var exercise in workoutExercises)
+            {
+                if (!setsByExerciseId.TryGetValue(exercise.WorkoutExerciseId, out var setCount) || setCount <= 0)
+                {
+                    continue;
+                }
+
+                var totalOccurrences = setCount * repetitions;
+
+                if (exercise.MuscleName != "Other")
+                {
+                    primaryCounts[exercise.MuscleName] = primaryCounts.TryGetValue(exercise.MuscleName, out var currentPrimary)
+                        ? currentPrimary + totalOccurrences
+                        : totalOccurrences;
+                }
+
+                foreach (var secondaryMuscle in exercise.SecondaryMuscles.Distinct())
+                {
+                    secondaryCounts[secondaryMuscle] = secondaryCounts.TryGetValue(secondaryMuscle, out var currentSecondary)
+                        ? currentSecondary + totalOccurrences
+                        : totalOccurrences;
+                }
+            }
+        }
+
+        return (ToDistribution(primaryCounts), ToDistribution(secondaryCounts));
+    }
+
+    private static List<MuscleDistributionDto> ToDistribution(Dictionary<string, int> counts)
+    {
+        var total = counts.Values.Sum();
+
+        return counts
+            .OrderByDescending(pair => pair.Value)
+            .Select(pair => new MuscleDistributionDto(
+                pair.Key,
+                pair.Value,
+                total > 0 ? (float)pair.Value / total * 100f : 0f
+            ))
+            .ToList();
     }
 
     //calculate the volume and set counts per workout

@@ -167,7 +167,7 @@ export default function ProfilePage() {
 
         <div className="lg:self-start">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">BADGES</h2>
+            <h2 className="type-section-title text-foreground">BADGES</h2>
           </div>
 
           <div className="grid min-h-[180px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
@@ -194,7 +194,7 @@ export default function ProfilePage() {
       <div className="mb-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.9fr)]">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Recent Workouts</h2>
+            <h2 className="type-section-title text-foreground">Recent Workouts</h2>
             <Button
               variant="secondary"
               size="sm"

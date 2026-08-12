@@ -115,12 +115,6 @@ const setTypeRowClass: Record<SetType, string> = {
   DropSet: 'bg-brand/10 border-l-4 border-brand/50',
 }
 
-const getSetLabel = (type: SetType, workingNumber: number): string | number => {
-  if (type === 'Warmup') return 'W'
-  if (type === 'DropSet') return 'D'
-  return workingNumber
-}
-
 type SetRowProps = Readonly<{
   set: SetData
   setLabel: string

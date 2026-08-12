@@ -15,6 +15,7 @@ import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
 import { Dumbbell } from 'lucide-react'
+import { PageTitle } from '@/components/ui/page-title'
 
 type ScheduleAnalyticsResponse = Readonly<{
     totalWorkouts: number

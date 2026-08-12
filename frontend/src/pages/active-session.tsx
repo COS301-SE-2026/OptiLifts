@@ -10,12 +10,15 @@ import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
 import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
-import { saveDraft, getDraft, clearDraft } from '@/lib/session-drafts'
+import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { adaptImgUrl } from '@/lib/utils'
+import { buildLabels } from '@/lib/exercise-format'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -51,6 +54,7 @@ type ExerciseData = Readonly<{
   groupId: string | null
   groupType: string | null
   groupRestTime: number | null
+  imageUrl: string | null
   exerciseId: string | null
   exerciseType: string
 }>
@@ -70,6 +74,7 @@ type WorkoutDetailsResponse = Readonly<{
     primaryMuscle: string
     exerciseType: string
     orderIndex: number
+    imageUrl?: string | null
     sets: Array<{
       id: string
       type: SetType
@@ -103,15 +108,9 @@ const setTypeLabelMap: Record<SetType, string> = {
   DropSet: 'Dropset'
 }
 
-const getSetLabel = (type: SetType, workingNumber: number): string | number => {
-  if (type === 'Warmup') return 'W'
-  if (type === 'DropSet') return 'D'
-  return workingNumber
-}
-
 type SetRowProps = Readonly<{
   set: SetData
-  setLabel: string | number
+  setLabel: string
   columns: ReturnType<typeof getColumns>
   gridTemplate: string
   onUpdate: (updater: (current: SetData) => SetData) => void
@@ -264,10 +263,18 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   groupId: exercise.groupId ?? null,
   groupType: exercise.groupType ?? null,
   groupRestTime: exercise.groupRestTime ?? null,
+  imageUrl: exercise.imageUrl ?? null,
   exerciseType: exercise.exerciseType,
   sets: [...exercise.sets].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessSet),
 })
 
+const backfillImage = (exercise: ExerciseData, images: Map<string, string | null>): ExerciseData => {
+  if (exercise.imageUrl || !exercise.exerciseId) {
+    return exercise
+  }
+
+  return { ...exercise, imageUrl: images.get(exercise.exerciseId) ?? null }
+}
 
 function groupNumMap(exercises: ExerciseData[]): Map<string, number> {
   const groupNumByExerciseId = new Map<string, number>()
@@ -377,6 +384,8 @@ export default function ActiveSessionPage() {
   const [exercises, setExercises] = useState<ExerciseData[]>([])
   const [primaryMuscleGroups, setPrimaryMuscleGroups] = useState<string[]>(sessionState?.workout?.primaryMuscleGroups ?? [])
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
+  const [conflictDraft, setConflictDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
+  const [startKey, setStartKey] = useState(0)
 
   useEffect(() => {
     if (!workoutId) {
@@ -385,19 +394,42 @@ export default function ActiveSessionPage() {
 
     let isMounted = true
 
-      const loadWorkout = async () => {
-        setIsLoading(true)
-        setError(null)
+    const restoreDraft = (draft: SessionDraft) => {
+      setWorkoutName(draft.workoutName)
+      setStartedAtMs(draft.startedAtMs)
+      setExercises(draft.exercises)
+      setIsLoading(false)
+    }
 
-        const sessdraft = getDraft<SessionDraft>(workoutId)
-        if (sessdraft) {
-          setWorkoutName(sessdraft.workoutName)
-          setStartedAtMs(sessdraft.startedAtMs)
-          setExercises(sessdraft.exercises)
-          setIsLoading(false)
+    // drafts don't carry images or muscle groups - backfill from the workout
+    const backfillDraft = async () => {
+      try {
+        const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
+          headers: { Accept: 'application/json' },
+        })
+
+        if (!draftResp.ok || !isMounted) {
           return
         }
 
+        const draftData = (await draftResp.json()) as WorkoutDetailsResponse
+
+        if (!isMounted) {
+          return
+        }
+
+        setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
+
+        const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
+
+        setExercises((current) => current.map((ex) => backfillImage(ex, imageByExerciseId)))
+      }
+      catch {
+        // offline or request failed - the draft still works as-is
+      }
+    }
+
+    const fetchWorkout = async () => {
       try {
         const resp = await customFetch(`/api/workouts/${workoutId}`, {
           headers: { Accept: 'application/json' },
@@ -419,15 +451,14 @@ export default function ActiveSessionPage() {
         const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
         setExercises(mappedExers)
-        
-      } 
+      }
       catch (loadError) {
         if (!isMounted) {
           return
         }
 
         setError(loadError instanceof Error ? loadError.message : 'Failed to load workout details.')
-      } 
+      }
       finally {
         if (isMounted) {
           setIsLoading(false)
@@ -435,12 +466,33 @@ export default function ActiveSessionPage() {
       }
     }
 
+    const loadWorkout = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      const sessdraft = getDraft<SessionDraft>(workoutId)
+      if (sessdraft) {
+        restoreDraft(sessdraft)
+        await backfillDraft()
+        return
+      }
+
+      const otherDraft = getDraftFromStorage()
+      if (otherDraft && otherDraft.workoutId !== workoutId) {
+        setConflictDraft(otherDraft)
+        setIsLoading(false)
+        return
+      }
+
+      await fetchWorkout()
+    }
+
     void loadWorkout()
 
     return () => {
       isMounted = false
     }
-  }, [workoutId])
+  }, [workoutId, startKey])
 
   useEffect(() => {
     const interval = setInterval(() => setNowMs(Date.now()), 1000)
@@ -568,6 +620,7 @@ export default function ActiveSessionPage() {
         groupId: null,
         groupType: null,
         groupRestTime: null,
+        imageUrl: exercise.imageUrl ?? null,
         exerciseType: exercise.exerciseType ?? 'WeightReps',
         sets: [
           {
@@ -697,12 +750,16 @@ export default function ActiveSessionPage() {
 
     const cols = getColumns(exercise.exerciseType)
     const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 7rem`
-      
+    const setLabels = buildLabels(exercise.sets)
+
     return (
       <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-surface-2 border border-border" />
+            <Avatar size="lg" className="shrink-0 bg-surface-2">
+              {exercise.imageUrl ? <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} /> : null}
+              <AvatarFallback className="bg-surface-2 text-transparent" />
+            </Avatar>
             <div>
               <button
                 type="button"
@@ -737,24 +794,20 @@ export default function ActiveSessionPage() {
             <div>PREVIOUS</div>
             {cols.map((col) => <div key={col.field}>{col.label}</div>)}
             <div>RPE</div>
-            <div className="w-full flex justify-center"><Check className="mr-6 h-4 w-4" /></div>
           </div>
 
           <div className="space-y-2">
-            {exercise.sets.map((set, setIndex) => {
-              const workingNumber = exercise.sets.slice(0, setIndex + 1).filter((s) => s.type === 'Normal').length
-              return (
-                <SetRow
-                  key={set.id}
-                  set={set}
-                  setLabel={getSetLabel(set.type, workingNumber)}
-                  columns={cols}
-                  gridTemplate={gridTemp}
-                  onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
-                  onRemove={() => removeSet(exercise.id, set.id)}
-                />
-              )
-            })}
+            {exercise.sets.map((set, setIndex) => (
+              <SetRow
+                key={set.id}
+                set={set}
+                setLabel={setLabels[setIndex]}
+                columns={cols}
+                gridTemplate={gridTemp}
+                onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
+                onRemove={() => removeSet(exercise.id, set.id)}
+              />
+            ))}
           </div>
           <Button
             variant="outline"
@@ -776,7 +829,7 @@ export default function ActiveSessionPage() {
               variant="text"
               size="sm"
               onClick={() => setExitOpen(true)}
-              className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 self-start p-0 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Workouts</span>
@@ -900,6 +953,51 @@ export default function ActiveSessionPage() {
             <div className="mt-6 flex gap-3">
               <Button variant="secondary" className="flex-1" onClick={discard}>Discard</Button>
               <Button variant="default" className="flex-1" onClick={keep}>Keep</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {conflictDraft && (
+        <div className="fixed inset-x-0 bottom-0 top-20 z-50 flex items-center justify-center p-4">
+          <button type="button" aria-label="Go back" className="absolute inset-0 bg-foreground/50" onClick={() => navigate(-1)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-bold text-foreground">Session is already in progress</h2>
+              <button type="button" aria-label="Go back" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You already have an active session for{' '}
+              <span className="font-semibold text-foreground">{conflictDraft.workoutName}</span>.
+              You can resume it, or discard it and start {workoutName}?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  clearDraft(conflictDraft.workoutId)
+                  setConflictDraft(null)
+                  setStartKey((key) => key + 1)
+                }}
+              >
+                Discard &amp; Start
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1"
+                onClick={() => {
+                  const resume = conflictDraft
+                  setConflictDraft(null)
+                  navigate('/active-session', {
+                    state: { workout: { id: resume.workoutId, name: resume.workoutName } },
+                    replace: true,
+                  })
+                }}
+              >
+                Resume
+              </Button>
             </div>
           </div>
         </div>

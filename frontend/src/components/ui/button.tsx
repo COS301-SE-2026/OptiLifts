@@ -22,7 +22,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "h-12 px-7 py-4 bg-brand text-white border-brand hover:bg-brand-2 hover:border-brand-2 focus-visible:bg-brand-2 focus-visible:border-brand-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        default: "h-12 px-7 py-4 bg-brand text-primary-foreground border-brand hover:bg-brand-2 hover:border-brand-2 focus-visible:bg-brand-2 focus-visible:border-brand-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         secondary: "h-12 px-7 py-4 bg-surface-2 text-foreground border-surface-2 hover:bg-border hover:border-border",
         outline: "h-8 px-6 py-4 bg-transparent text-foreground border-2 border-dashed border-border hover:bg-surface-2",
         ghost: "h-auto px-3 py-3 bg-transparent text-foreground border-0 hover:bg-surface-2",
@@ -51,29 +51,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const resolvedSize = size ?? "default"
     const extraClasses: string[] = []
     const ariaLabel = props["aria-label"]
-
-    const [isLoading, setIsLoading] = React.useState(false)
+    const showAddSpinner = resolvedVariant === "icon" && ariaLabel === "Add" && props["aria-busy"] === true
 
     if (resolvedVariant === "icon") {
       if (ariaLabel === "Add") extraClasses.push("border-2", "border-foreground", "hover:bg-border")
       if (ariaLabel === "Close") extraClasses.push("border-0", "bg-transparent", "hover:bg-transparent", "focus-visible:outline-none")
-      extraClasses.push("focus-visible:border-red-500", "focus-visible:ring-0")
+      extraClasses.push("focus-visible:border-brand", "focus-visible:ring-brand")
     }
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (resolvedVariant === "icon" && ariaLabel === "Add") {
-        e.persist()
-        setIsLoading(true)
-        globalThis.setTimeout(() => {
-          setIsLoading(false)
-          onClick?.(e)
-        }, 600)
-      } else {
-        onClick?.(e)
-      }
-    }
-
-    const disabledProp = props.disabled || isLoading
+    const disabledProp = props.disabled || showAddSpinner
 
     return (
       <Comp
@@ -81,12 +67,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         data-variant={resolvedVariant}
         data-size={resolvedSize}
         ref={ref}
-        onClick={handleClick}
+        onClick={onClick}
         disabled={disabledProp}
         {...props}
       >
-        {resolvedVariant === "icon" && ariaLabel === "Add" && isLoading ? (
-          <span className="inline-block size-4 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" />
+        {showAddSpinner ? (
+          <span className="inline-block size-4 rounded-full border-2 border-border border-t-foreground animate-spin" />
         ) : (
           children
         )}

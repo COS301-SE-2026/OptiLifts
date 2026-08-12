@@ -797,6 +797,9 @@ function GraphSection(){
     const spiderGraphData ={
         Chest: 12, Core: 8, Shoulders: 14, Arms: 10, Legs: 18, Back: 15
     }
+    const spiderGraphSecondaryData ={
+        Chest: 4, Core: 3, Shoulders: 5, Arms: 4, Legs: 6, Back: 4
+    }
     const volumeChartData=[
         {
             label: "Mon",
@@ -844,8 +847,8 @@ function GraphSection(){
                     <Card className="goal-card">
                         <CardContent className="p-4">
                             <h3 className="goal-title mb-2">Muscle Diagram</h3>
-                            <p className="goal-copy mb-2">Highlights primary and secondary targeted muscles</p>
-                            <MuscleDiagram highlightedMuscles={["Chest","Quadriceps","Lats"]} variant="both"/>
+                            <p className="goal-copy mb-2">Highlights primary muscles strongly and secondary muscles with a lighter emphasis</p>
+                            <MuscleDiagram highlightedMuscles={["Chest","Quadriceps","Lats"]} secondaryMuscles={["Triceps","Hamstrings","Middle Back"]} variant="both"/>
                         </CardContent>
                     </Card>
                     <Card className="goal-card">
@@ -866,7 +869,7 @@ function GraphSection(){
                                 justifyContent: 'center',
                                 marginBottom: '20px'
                             }}>
-                                <SpiderGraph data={spiderGraphData}/>
+                                <SpiderGraph data={spiderGraphData} secondaryData={spiderGraphSecondaryData} secondaryMultiplier={0.4}/>
                             </div>
                         </CardContent>
                     </Card>                    

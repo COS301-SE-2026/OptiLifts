@@ -4,10 +4,10 @@ import { UpcomingWorkoutsCard } from '@/components/ui/upcoming-workouts'
 import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { CircularProfileImage } from '@/components/ui/circular-image'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 import streakFlame from '@/assets/streak_flame.png'
-import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
 import { WORKOUT_LOG_SYNC_EVENT } from '@/lib/offline/workout-logs'
 import { useAuth } from '@/context/auth-context'
@@ -15,12 +15,18 @@ import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
 import { Dumbbell } from 'lucide-react'
+import { PageTitle } from '@/components/ui/page-title'
 
 type ScheduleAnalyticsResponse = Readonly<{
     totalWorkouts: number
     totalVolume: number
     totalSets: number
     muscleDistribution: readonly {
+        muscleGroup: string
+        setCount: number
+        percentage: number
+    }[]
+    secondaryMuscleDistribution?: readonly {
         muscleGroup: string
         setCount: number
         percentage: number
@@ -414,6 +420,26 @@ export default function DashboardPage() {
         return values
     }, [analytics])
 
+    const secondaryMuscleValues = useMemo(() => {
+        const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
+            Chest: 0,
+            Core: 0,
+            Shoulders: 0,
+            Arms: 0,
+            Legs: 0,
+            Back: 0,
+        }
+
+        analytics?.secondaryMuscleDistribution?.forEach((item) => {
+            const mapped = MUSCLE_CATEGORY_MAP[item.muscleGroup]
+            if (mapped) {
+                values[mapped] += item.setCount
+            }
+        })
+
+        return values
+    }, [analytics])
+
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
             {isFetching && !profileData && (
@@ -428,16 +454,14 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div className="border-l-[5px] border-brand pl-5 py-1 mb-8">
-                <h1 className="text-4xl font-extrabold uppercase tracking-tight text-foreground">
-                    Good Day, {displayProfile?.name ?? 'Guest'}
-                </h1>
-                
+
+            <div className="mb-8">
+                <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
                 <p className="mt-2 text-lg text-muted-foreground">
                     Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                         disabled={!upcomingWorkouts[0]}
                         onClick={() => {
@@ -445,7 +469,7 @@ export default function DashboardPage() {
                                 navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
                             }
                         }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
                     >
                         View Workout
                     </Button>
@@ -464,7 +488,7 @@ export default function DashboardPage() {
                                 })
                             }
                         }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
                     >
                         Start Session
                     </Button>
@@ -498,7 +522,7 @@ export default function DashboardPage() {
                 {/*Favorite exercise*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Favorite exercise</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Favorite exercise</CardTitle>
                         <span className="mt-1 text-s font-medium text-muted-foreground text-center">
                             {favoriteExercise.count > 0 ? `${favoriteExercise.count} completed sessions` : 'No completed workouts yet'}
                         </span>
@@ -521,7 +545,7 @@ export default function DashboardPage() {
                 {/*Exercise streak*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Days exercised this week</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Days exercised this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img
@@ -533,7 +557,7 @@ export default function DashboardPage() {
 
                                 <span
                                     aria-hidden="true"
-                                    className="hidden h-12 w-12 bg-white/90 dark:block"
+                                    className="hidden h-12 w-12 bg-foreground dark:block"
                                     style={{
                                         WebkitMaskImage: `url(${streakFlame})`,
                                         WebkitMaskRepeat: 'no-repeat',
@@ -555,29 +579,13 @@ export default function DashboardPage() {
                 {/*num PRs*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Personal records hit this week</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Personal records hit this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
-                                <img
-                                    src={badgeIcon}
+                                <PrBadgeIcon
                                     alt="Personal records badge"
-                                    className="h-10 w-10 select-none object-contain opacity-85 dark:hidden"
-                                    draggable={false}
-                                />
-
-                                <span
-                                    aria-hidden="true"
-                                    className="hidden h-10 w-10 bg-white/90 dark:block"
-                                    style={{
-                                        WebkitMaskImage: `url(${badgeIcon})`,
-                                        WebkitMaskRepeat: 'no-repeat',
-                                        WebkitMaskPosition: 'center',
-                                        WebkitMaskSize: 'contain',
-                                        maskImage: `url(${badgeIcon})`,
-                                        maskRepeat: 'no-repeat',
-                                        maskPosition: 'center',
-                                        maskSize: 'contain',
-                                    }}
+                                    sizeClassName="h-10 w-10"
+                                    lightClassName="opacity-85"
                                 />
 
                                 <span className="text-4xl font-bold text-foreground">{prsThisWeek}</span>
@@ -590,7 +598,7 @@ export default function DashboardPage() {
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full flex-col px-0">
                         <h3 className="mb-2 w-full text-center text-[20px] font-medium text-foreground">Muscle Balance</h3>
-                        <SpiderGraph data={muscleValues} className="h-[170px]"/>
+                        <SpiderGraph data={muscleValues} secondaryData={secondaryMuscleValues} className="h-[170px]"/>
                     </CardContent>
                 </Card>
             </div>

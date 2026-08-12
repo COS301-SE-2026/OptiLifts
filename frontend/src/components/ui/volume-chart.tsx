@@ -159,7 +159,7 @@ export function VolumeChart({
                 setInternalPeriod(nextPeriod)
               }}
               ariaLabel="Select time period"
-              className="bg-surface-2 border border-border rounded-md px-3 py-1.5 text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
+              className="w-36 h-9 bg-surface-2 border border-border rounded-md px-3 py-0 text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
             {muscleOptions && muscleOptions.length > 0 && (
               <FilterDropdown
                 value={resolvedMuscleFilter}
@@ -172,7 +172,7 @@ export function VolumeChart({
                   setInternalMuscleFilter(nextValue)
                 }}
                 ariaLabel="Select muscle filter"
-                className="bg-surface-2 border border-border rounded-md px-3 py-1.5 text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
+                className="w-36 h-9 bg-surface-2 border border-border rounded-md px-3 py-0 text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
             )}
           </div>
         )}

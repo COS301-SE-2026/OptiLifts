@@ -115,19 +115,6 @@ export default function WorkoutLogDetailPage() {
     }
   }, [isAuthenticated, isHydrated, logId, workoutId])
 
-  useEffect(() => {
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-    }
-  }, [])
-
   const workoutLabel = workout?.name ?? 'Workout log'
   const workoutStats = useMemo(() => {
     if (!workout) {
@@ -145,16 +132,20 @@ export default function WorkoutLogDetailPage() {
     }
   }, [workout])
   const highlightedMuscles = (workout?.primaryMuscleGroups ?? []) as MuscleName[]
+  const secondaryMuscles = useMemo(
+    () => (workout?.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[],
+    [workout]
+  )
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-3 overflow-hidden px-6 pt-5 pb-6">
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-3 overflow-y-auto px-6 pt-5 pb-6">
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <Button
             variant="text"
             size="sm"
             onClick={handleBackToPastWorkouts}
-            className="mb-1 flex items-center gap-1 self-start px-0 text-muted-foreground hover:text-foreground"
+            className="-ml-1 mb-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Past Workout</span>
@@ -169,16 +160,16 @@ export default function WorkoutLogDetailPage() {
         <div className="flex flex-col items-start gap-4 self-center lg:items-end">
           <div className="grid grid-cols-3 gap-6 justify-items-center text-center">
             <div>
-              <p className="text-base text-muted-foreground">Duration</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.duration}</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Duration</p>
+              <p className="text-[1.7rem] type-card-value mt-1 text-foreground">{workoutStats.duration}</p>
             </div>
             <div>
-              <p className="text-base text-muted-foreground">Volume</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.volume}</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Volume</p>
+              <p className="text-[1.7rem] type-card-value mt-1 text-foreground">{workoutStats.volume}</p>
             </div>
             <div>
-              <p className="text-base text-muted-foreground">Sets</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.sets}</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sets</p>
+              <p className="text-[1.7rem] type-card-value mt-1 text-foreground">{workoutStats.sets}</p>
             </div>
           </div>
         </div>
@@ -203,7 +194,7 @@ export default function WorkoutLogDetailPage() {
         summaryContent={
           workout ? (
             <>
-              <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+              <MuscleDiagram highlightedMuscles={highlightedMuscles} secondaryMuscles={secondaryMuscles} variant="both" />
               <MusclesSummary exercises={workout.exercises} />
             </>
           ) : null

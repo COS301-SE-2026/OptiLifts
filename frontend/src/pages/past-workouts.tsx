@@ -4,6 +4,13 @@ import { Card } from '@/components/ui/card'
 import { DatePagination, getWeekStart } from '@/components/ui/date-pagination'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
+import {
+    DropdownMenu,
+    DropdownMenuEllipsisContent,
+    DropdownMenuEllipsisTrigger,
+    DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { customFetch } from '@/lib/custom-fetch'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
@@ -73,6 +80,7 @@ export default function PastWorkoutsPage() {
     const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<{ workoutId: string; logId: string } | null>(null)
 
     useEffect(() => {
         const fetchWorkouts = async () => {
@@ -116,6 +124,28 @@ export default function PastWorkoutsPage() {
 
     let out;
 
+    const handleDelete = async (workoutId: string, logId: string) => {
+        setLoading(true)
+        try {
+            const response = await customFetch(`/api/workouts/${workoutId}/logs/${logId}`, {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete workout log (${response.status})`)
+            }
+
+            setWorkouts((current) => current.filter((workout) => workout.logId !== logId))
+        } catch (error) {
+            console.error('Error deleting workout log:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     if (loading) {
         out = (
             <div className="text-center text-muted-foreground py-10">
@@ -156,15 +186,45 @@ export default function PastWorkoutsPage() {
                             key={workout.id}
                             role="button"
                             tabIndex={0}
-                            onClick={openLogDetail}
+                            onClick={(e) => {
+                                const target = e.target as HTMLElement
+                                if (target.closest('[data-card-menu="true"]')) {
+                                    return
+                                }
+                                openLogDetail()
+                            }}
                             onKeyDown={(e) => {
+                                const target = e.target as HTMLElement
+                                if (target.closest('[data-card-menu="true"]')) {
+                                    return
+                                }
                                 if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
                                     openLogDetail();
                                 }
                             }}
-                            className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between border-border cursor-pointer transition-shadow hover:ring-2 hover:ring-brand focus-visible:ring-2 focus-visible:ring-brand"
+                            className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between border-border cursor-pointer transition-shadow hover:ring-2 hover:ring-brand focus-visible:ring-2 focus-visible:ring-brand"
                         >
+                            <div className="absolute right-4 top-4 z-10" data-card-menu="true">
+                                <DropdownMenu>
+                                    <DropdownMenuEllipsisTrigger aria-label={`Options for ${workout.workoutName}`} />
+                                    <DropdownMenuEllipsisContent align="end">
+                                        <DropdownMenuItem
+                                            onSelect={(event) => {
+                                                event.preventDefault()
+                                                if (!workout.logId) {
+                                                    return
+                                                }
+                                                setDeleteTarget({ workoutId: workout.workoutId, logId: workout.logId })
+                                            }}
+                                            data-variant="destructive"
+                                            disabled={!workout.logId}
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuEllipsisContent>
+                                </DropdownMenu>
+                            </div>
                             {/*left side */}
                             <div className="flex flex-col gap-4">
                                 <div>
@@ -247,6 +307,24 @@ export default function PastWorkoutsPage() {
 
             {/* block above is for out */}
             {out}
+
+            <ConfirmDialog
+                isOpen={deleteTarget !== null}
+                onClose={() => setDeleteTarget(null)}
+                isLoading={loading}
+                variant="danger"
+                title="Delete Workout Log"
+                description="Are you certain you want to permanently delete this workout log?"
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={async () => {
+                    if (deleteTarget) {
+                        const target = deleteTarget
+                        setDeleteTarget(null)
+                        await handleDelete(target.workoutId, target.logId)
+                    }
+                }}
+            />
         </section>
     )
 }

@@ -12,7 +12,8 @@ import {
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { useAuth } from '@/context/auth-context'
-import type { Workout, WorkoutSummary } from '@/types/workout'
+import type { Workout, WorkoutSummary, MuscleName } from '@/types/workout'
+import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Plus } from 'lucide-react'
 import { customFetch } from '@/lib/custom-fetch'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -26,6 +27,7 @@ export default function WorkoutsPage() {
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [selectedWorkoutDetails, setSelectedWorkoutDetails] = useState<WorkoutDetailResponse | null>(null)
 
   const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
 
@@ -74,6 +76,43 @@ export default function WorkoutsPage() {
     }
     void triggerInitial()
   }, [isHydrated, isAuthenticated, loadWorkouts])
+
+  useEffect(() => {
+    if (!selectedId || !isAuthenticated || !isHydrated) {
+      return
+    }
+
+    let isActive = true
+
+    const loadSelectedWorkoutDetails = async () => {
+      try {
+        const response = await customFetch(`/api/workouts/${selectedId}`, {
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to load workout details (${response.status})`)
+        }
+
+        const data = (await response.json()) as WorkoutDetailResponse
+        if (isActive) {
+          setSelectedWorkoutDetails(data)
+        }
+      } catch {
+        if (isActive) {
+          setSelectedWorkoutDetails(null)
+        }
+      }
+    }
+
+    void loadSelectedWorkoutDetails()
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedId, isAuthenticated, isHydrated])
 
   //duplication
   const handleDuplicate = async (workoutId: string) => {
@@ -139,6 +178,13 @@ export default function WorkoutsPage() {
   }, [visibleWorkouts, workouts, query])
 
   const selectedWorkout = visibleWorkouts.find((w) => w.id === selectedId) ?? null
+  const selectedWorkoutSecondaryMuscles = useMemo(
+    () =>
+      selectedWorkout && selectedWorkoutDetails?.id === selectedWorkout.id
+        ? (selectedWorkoutDetails.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[]
+        : [],
+    [selectedWorkout, selectedWorkoutDetails]
+  )
 
   const summary: WorkoutSummary | null = selectedWorkout
     ? {
@@ -237,7 +283,11 @@ export default function WorkoutsPage() {
         </div>
 
         <aside className="col-span-12 lg:col-span-5">
-          <MuscleDiagram highlightedMuscles={selectedWorkout?.primaryMuscleGroups ?? []} variant="both" />
+          <MuscleDiagram
+            highlightedMuscles={selectedWorkout?.primaryMuscleGroups ?? []}
+            secondaryMuscles={selectedWorkoutSecondaryMuscles}
+            variant="both"
+          />
 
           <Card className="mt-6">
             <CardHeader>

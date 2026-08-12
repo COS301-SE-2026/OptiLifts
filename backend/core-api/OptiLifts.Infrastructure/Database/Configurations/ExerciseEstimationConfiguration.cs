@@ -20,7 +20,6 @@ public class ExerciseEstimationConfiguration : IEntityTypeConfiguration<Exercise
         builder.Property(e => e.Reps).HasColumnName("reps").IsRequired();
         builder.Property(e => e.ExerciseType).HasColumnName("exercise_type").HasConversion<string>().IsRequired();
         builder.Property(e => e.TimeStamp).HasColumnName("time_stamp").IsRequired();
-        builder.Property(e => e.Deload).HasColumnName("deload").IsRequired();
 
         builder.HasIndex(e => new { e.UserId, e.ExerciseId, e.TimeStamp });
 

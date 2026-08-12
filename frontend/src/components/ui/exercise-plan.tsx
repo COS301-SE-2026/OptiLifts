@@ -128,8 +128,8 @@ function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Re
           <p className="text-[0.64rem] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
             Rest time: {formatRestTimeLabel(getExerciseRestTime(exercise))}
           </p>
-          {exercise.sets.map((set) => (
-            <div key={`${exercise.name}-${set.label}`} className={SET_ROW_CLASS}>
+          {exercise.sets.map((set, setIndex) => (
+            <div key={`${exercise.name}-${setIndex}`} className={SET_ROW_CLASS}>
               <span className="text-[0.88rem] font-medium text-foreground">{set.label}</span>
               <span className="justify-self-end whitespace-nowrap text-[0.8rem] text-foreground">
                 {formatPlannedExerciseSetText(exercise.exerciseType, set, { includeRestTime: false })}

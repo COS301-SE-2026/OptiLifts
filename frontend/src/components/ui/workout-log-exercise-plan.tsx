@@ -1,14 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatLoggedExerciseSetText } from '@/lib/exercise-format'
+import { formatLoggedExerciseSetText, buildLabels } from '@/lib/exercise-format'
 import { adaptImgUrl } from '@/lib/utils'
 import type {WorkoutLogExercisePlanProps } from '@/types/workout-log-exercise-plan'
-
-function getLoggedSetLabel(type: string, workingNumber: number): string | number {
-  if (type === 'Warmup') return 'W'
-  if (type === 'DropSet') return 'D'
-  return workingNumber
-}
 
 export function WorkoutLogExercisePlan({
   title = 'Exercises Completed',
@@ -19,6 +13,7 @@ export function WorkoutLogExercisePlan({
   const normalizedExercises = exercises.map((exercise) => ({
     ...exercise,
     sets: exercise.sets.length > 0 ? exercise.sets : [],
+    setLabels: buildLabels(exercise.sets),
   }))
 
   return (
@@ -49,22 +44,14 @@ export function WorkoutLogExercisePlan({
 
                   <div className="col-start-6 w-full justify-self-end rounded-xl border border-border bg-card px-2 py-2 shadow-sm">
                     <div className="grid gap-y-2 text-[0.84rem] text-foreground">
-                      {exercise.sets.map((set, index) => {
-                        const workingNumber =
-                          exercise.sets
-                            .slice(0, index + 1)
-                            .filter((currentSet) => currentSet.type !== 'Warmup' && currentSet.type !== 'DropSet')
-                            .length || 1
-
-                        return (
+                      {exercise.sets.map((set, index) => (
                         <div key={set.id} className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-4">
-                          <span className="text-[0.88rem] font-medium text-foreground">{getLoggedSetLabel(set.type, workingNumber)}</span>
+                          <span className="text-[0.88rem] font-medium text-foreground">{exercise.setLabels[index]}</span>
                           <span className="justify-self-end whitespace-nowrap text-[0.8rem] text-foreground">
                             {formatLoggedExerciseSetText(exercise.exerciseType, set)}
                           </span>
                         </div>
-                        )
-                      })}
+                      ))}
                     </div>
                   </div>
                 </div>

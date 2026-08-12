@@ -48,16 +48,33 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
         else
         {
-            var entry = new ScheduledEntry
-            {
-                WorkoutId = request.WorkoutId,
-                UserId = request.UserId,
-                Scheduled = request.StartedAt,
-                Status = ScheduleStatus.Completed
-            };
+            var startedDay = DateTime.SpecifyKind(request.StartedAt.Date, DateTimeKind.Utc);
 
-            _dbContext.ScheduledEntries.Add(entry);
-            entryId = entry.Id;
+            var plannedEnt = await _dbContext.ScheduledEntries
+                .Where(e => e.UserId == request.UserId
+                    && e.WorkoutId == request.WorkoutId && e.Status != ScheduleStatus.Completed
+                    && e.Scheduled >= startedDay && e.Scheduled < startedDay.AddDays(1))
+                .OrderBy(e => e.Scheduled)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (plannedEnt is not null)
+            {
+                plannedEnt.Status = ScheduleStatus.Completed;
+                entryId = plannedEnt.Id;
+            }
+            else
+            {
+                var entry = new ScheduledEntry
+                {
+                    WorkoutId = request.WorkoutId,
+                    UserId = request.UserId,
+                    Scheduled = request.StartedAt,
+                    Status = ScheduleStatus.Completed
+                };
+
+                _dbContext.ScheduledEntries.Add(entry);
+                entryId = entry.Id;
+            }
         }
 
         var log = new WorkoutLog

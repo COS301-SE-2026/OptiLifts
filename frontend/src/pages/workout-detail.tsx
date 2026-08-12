@@ -16,6 +16,7 @@ import { metricCheck, outputWeight } from '@/lib/weight-utils'
 import { MoreVertical } from 'lucide-react'
 import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { buildLabels } from '@/lib/exercise-format'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -29,24 +30,29 @@ function formatRestTime(restTimeSeconds: number) {
 }
 
 function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanItem[] {
-  return exercises.map((exercise) => ({
-    name: exercise.name,
-    subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
-    exerciseType: exercise.exerciseType ?? 'WeightReps',
-    exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
-    imageUrl: exercise.imageUrl,
-    sets: (exercise.sets ?? []).map((set) => ({
-      label: `${set.orderIndex}`,
-      reps: set.reps,
-      weight: set.weight,
-      duration: set.duration,
-      distance: set.distance,
-      restTime: formatRestTime(set.restTime),
-    })),
-    groupId: exercise.groupId,
-    groupType: exercise.groupType,
-    groupRestTime: exercise.groupRestTime,
-  }))
+  return exercises.map((exercise) => {
+    const orderedSets = [...(exercise.sets ?? [])].sort((a, b) => a.orderIndex - b.orderIndex)
+    const labels = buildLabels(orderedSets)
+
+    return {
+      name: exercise.name,
+      subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
+      exerciseType: exercise.exerciseType ?? 'WeightReps',
+      exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
+      imageUrl: exercise.imageUrl,
+      sets: orderedSets.map((set, setIndex) => ({
+        label: labels[setIndex],
+        reps: set.reps,
+        weight: set.weight,
+        duration: set.duration,
+        distance: set.distance,
+        restTime: formatRestTime(set.restTime),
+      })),
+      groupId: exercise.groupId,
+      groupType: exercise.groupType,
+      groupRestTime: exercise.groupRestTime,
+    }
+  })
 }
 
 function formatVolume(totalVolume: number) {

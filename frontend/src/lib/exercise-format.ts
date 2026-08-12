@@ -1,6 +1,21 @@
 import type { LoggedExerciseSet, PlannedExerciseSet } from '@/types/exercise-format'
 import { metricCheck, outputWeight } from './weight-utils'
 
+const WARMUP_SET_TYPES = new Set(['Warmup', 'W'])
+const DROP_SET_TYPES = new Set(['DropSet', 'Dropset', 'D'])
+
+export function buildLabels(sets: readonly Readonly<{ type: string }>[]): string[] {
+  let workingNumber = 0
+
+  return sets.map((set) => {
+    if (WARMUP_SET_TYPES.has(set.type)) return 'W'
+    if (DROP_SET_TYPES.has(set.type)) return 'D'
+
+    workingNumber += 1
+    return `${workingNumber}`
+  })
+}
+
 function formatWeight(weight: number) {
   if (metricCheck()) {
     return `${Number.isInteger(weight) ? weight : weight.toFixed(1)} KG`

@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using OptiLifts.Domain.ProgressiveOverload;
 using OptiLifts.Application.ProgressiveOverload;
+using OptiLifts.Domain.ProgressiveOverload;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 

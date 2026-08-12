@@ -14,18 +14,18 @@ public static class E1RMCalculator
 
         if (String.Equals(mechanic, "compound", StringComparison.OrdinalIgnoreCase))
         {
-            return weight /((52.2+41.9* Math.Exp(-0.55*reps))/100);
+            return weight / ((52.2 + 41.9 * Math.Exp(-0.55 * reps)) / 100);
         }
 
         if (reps <= 7)
         {
-            return weight / (1.0278-0.278*reps);
+            return weight / (1.0278 - 0.278 * reps);
         }
         else
         {
-            return 0.33*reps*weight + weight;
+            return 0.33 * reps * weight + weight;
         }
-        
+
 
 
     }

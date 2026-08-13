@@ -236,6 +236,134 @@ function SetGroupDemo(){
         </div>
     );
 }
+
+// main set type guide
+function SetTypeGuideContent() {
+    return (
+        <div className="flex flex-col gap-8">
+            <div>
+                <h2 className="font-display text-2xl text-foreground tracking-wide flex items-center gap-2">
+                    <span>SET TYPES AND SPECIALISED GROUPS</span>
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">Learn how working sets, warmup sets, dropsets, supersets, and circuit sets work in OptiLifts.</p>
+            </div>
+
+            <div className="space-y-4">
+                <h3 className="font-display text-lg text-foreground tracking-wide flex items-center gap-2 border-b border-border pb-2">
+                    <Layers className="h-5 w-5 text-brand"/>
+                    <span>SET DROPDOWN OPTIONS</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold">1</span>
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-brand px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20">Working Set</span>
+                            </div>
+                            <h4 className="font-bold text-foreground text-base mb-1">Working Sets (1, 2, 3...)</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">Standard main sets performed at one's target weight and reps for progressive overload.</p>
+                        </div>
+                        <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0"/>
+                            <span>Counts toward volume & PR stats</span>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 font-mono text-sm font-bold">
+                                W</span>
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-500 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                                Warmup Set</span>
+                            </div>
+                            <h4 className="font-bold text-foreground text-base mb-1">Warmup Sets (W)</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Light preparation sets to prime your muscles and joints before heavy working sets.
+                            </p>
+                        </div>
+                        <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-amber-500 shrink-0"/>
+                            <span>Excluded from PRs</span>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/30 font-mono text-sm font-bold">
+                                D</span>
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-500 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20">
+                                Dropset</span>
+                            </div>
+                            <h4 className="font-bold text-foreground text-base mb-1">Dropsets (D)</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                High intensity sets completed directly after a working set with reduced weight, as well as no rest.
+                            </p>
+                        </div>
+                        <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-rose-500 shrink-0"/>
+                            <span>Pushes targeted muscles past failure</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* todo: how to log dropsets */}
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-5">
+                <div className="flex items-center gap-2 border-b border-border pb-3">
+                    <Flame className="h-5 w-5 text-rose-500"/>
+                    <h3 className="font-display text-lg text-foreground tracking-wide">HOW TO LOG DROPSETS PROPERLY</h3>
+                </div>
+
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                    Log your initial set as a Working Set (Set 1) and select <strong className="text-foreground">Dropset (D)</strong> in the dropdown menu for each immediate weight drop (Set 2, and 3, etc.).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl border border-border bg-surface-2 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-brand uppercase tracking-wider">
+                            <span>Step 1</span>
+                            <ArrowRight className="h-3.5 w-3.5"/>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground">Heavy Working Set</p>
+                        <p className="text-xs text-muted-foreground">
+                            Set 1: Primary weight (eg. 50kg x 8reps). Select Set Type <strong className="text-foreground">1</strong>.
+                        </p>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-border bg-surface-2 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-brand uppercase tracking-wider">
+                            <span>Step 2</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
+                        </div>
+                        <p className="text-sm font-semibold text-foreground">First Dropset</p>
+                        <p className="text-xs text-muted-foreground">
+                            Reduce weight immediately with zero rest (eg. 40kg x 10reps). Select Set type <strong className="text-rose-500 font-mono">D</strong>
+                        </p>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-border bg-surface-2 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-brand uppercase tracking-wider">
+                            <span>Step 3</span>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground">Subsequent Drops</p>
+                        <p className="text-xs text-muted-foreground">
+                            For double/triple dropsets, add another set row (eg. 30kg x 12reps) and select <strong className="text-brand font-mono">D</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    {/* <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">Live ExerciseCard Preview:</span> */}
+                    <ExerciseCard exercise={DROPSET_EXERCISE} readOnly/>
+                </div>
+            </div>
+            <SetGroupDemo/>
+        </div>
+    )
+}
+
+type ActiveTab = 'faqs' | 'set-types' |'tutorials'|'resources'
 export default function HelpPage(){
     const [activeTab, setActiveTab] = useState<ActiveTab>('faqs')
     const [searchQuery, setSearchQuery] = useState('')
@@ -246,6 +374,12 @@ export default function HelpPage(){
             label: 'FAQS',
             icon: HelpCircle,
             count: FAQ_DATA.length
+        },
+        {
+            id: 'set-types',
+            label: 'Set Type Guide',
+            icon: Layers,
+            count: undefined
         },
         {
             id: 'tutorials',
@@ -325,6 +459,9 @@ export default function HelpPage(){
                             </h2>
                             <FaqAccordion items={FAQ_DATA} searchQuery={searchQuery}/>
                         </div>
+                    )}
+                    {activeTab === 'set-types' && (
+                        <SetTypeGuideContent/>
                     )}
 
                     {activeTab === 'tutorials' && (

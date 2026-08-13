@@ -23,7 +23,6 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task PutWorkoutLog_Returns200Ok_AndUpdatesPastWorkoutDetails()
     {
-        // Arrange
         var userId = await SeedUserAsync("edit-log-user1@example.com");
         var exerciseId = await SeedExerciseAsync("Bench Press");
 
@@ -74,10 +73,8 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
                     [new UpdateWorkoutLogSetReq(null, "Normal", 10, 75f, null, null, 120, 8.5f, 1, 0)])
             ]);
 
-        // Act
         var response = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/logs/{logId}", updateLogReq);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var getResp = await Client.GetAsync($"/api/workouts/{workoutId}/logs/{logId}");
@@ -98,7 +95,6 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task PutWorkoutLog_UpdatesExercisePrs_WhenWeightIsIncreased()
     {
-        // Arrange
         var userId = await SeedUserAsync("edit-log-pr@example.com");
         var exerciseId = await SeedExerciseAsync("Deadlift");
 
@@ -128,10 +124,8 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
                     [new UpdateWorkoutLogSetReq(null, "Normal", 5, 140f, null, null, 180, 9.5f, 1, 0)])
             ]);
 
-        // Act
         var response = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/logs/{logId}", updateLogReq);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using var scope = Fixture.Factory.Services.CreateAsyncScope();
@@ -148,7 +142,6 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task PutWorkoutLog_RemovesAndReplacesSets_WhenSetCountIsModified()
     {
-        // Arrange
         var userId = await SeedUserAsync("edit-log-sets@example.com");
         var exerciseId = await SeedExerciseAsync("Squat");
 
@@ -173,7 +166,6 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
         var createLogResp = await Client.PostAsJsonAsync($"/api/workouts/{workoutId}/logs", createLogReq);
         createLogResp.EnsureSuccessStatusCode();
 
-        // Reduce from 3 sets to 1 set with 90kg
         var updateLogReq = new UpdateWorkoutLogReq(
             "Reduced to 1 heavy set",
             DateTime.UtcNow.AddHours(-1),
@@ -183,10 +175,8 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
                     [new UpdateWorkoutLogSetReq(null, "Normal", 5, 90f, null, null, 120, 9.5f, 1, 0)])
             ]);
 
-        // Act
         var response = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/logs/{logId}", updateLogReq);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var getResp = await Client.GetAsync($"/api/workouts/{workoutId}/logs/{logId}");
@@ -203,7 +193,6 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task PutWorkoutLog_Returns404NotFound_WhenLogDoesNotExist()
     {
-        // Arrange
         var userId = await SeedUserAsync("edit-log-404@example.com");
         var workoutId = await SeedWorkoutAsync(userId, "Upper Body");
 
@@ -217,22 +206,18 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
             []
         );
 
-        // Act
         var response = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/logs/{nonExistentLogId}", updateLogReq);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task PutWorkoutLog_Returns404NotFound_WhenWorkoutLogNotOwnedByUser()
     {
-        // Arrange
         var ownerId = await SeedUserAsync("owner-log@example.com");
         var otherUserId = await SeedUserAsync("other-user-log@example.com");
         var exerciseId = await SeedExerciseAsync("Overhead Press");
 
-        // Owner creates workout and log
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(ownerId)}");
         var createWorkoutResp = await Client.PostAsJsonAsync("/api/workouts", new CreateWorkoutRequest(null, "Shoulders", [], []));
         createWorkoutResp.EnsureSuccessStatusCode();
@@ -249,7 +234,6 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
         var createLogResp = await Client.PostAsJsonAsync($"/api/workouts/{workoutId}/logs", createLogReq);
         createLogResp.EnsureSuccessStatusCode();
 
-        // Switch to non-owner user
         Client.DefaultRequestHeaders.Remove("Cookie");
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(otherUserId)}");
 
@@ -260,28 +244,22 @@ public class UpdateWorkoutLogIntegrationTests : IntegrationTestBase
             []
         );
 
-        // Act
         var response = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/logs/{logId}", updateLogReq);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task PutWorkoutLog_Returns401Unauthorized_WhenNotAuthenticated()
     {
-        // Arrange
         var workoutId = Guid.NewGuid();
         var logId = Guid.NewGuid();
         var updateLogReq = new UpdateWorkoutLogReq("No auth", DateTime.UtcNow, DateTime.UtcNow, []);
 
-        // Ensure no auth cookie set
         Client.DefaultRequestHeaders.Remove("Cookie");
 
-        // Act
         var response = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/logs/{logId}", updateLogReq);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

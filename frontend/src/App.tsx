@@ -111,6 +111,7 @@ function App() {
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
+          <Route path="workouts/:workoutId/logs/:logId/edit" element={<ActiveSessionPage mode="edit" />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
           <Route path="workouts/edit/:id" element={<CreateWorkoutPage />} />
           <Route path="active-session" element={<ActiveSessionPage />} />

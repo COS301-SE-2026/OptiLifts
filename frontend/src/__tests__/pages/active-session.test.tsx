@@ -7,6 +7,8 @@ import { customFetch } from '@/lib/custom-fetch'
 const mockNavigate = vi.fn()
 let locationState: unknown
 
+let mockParams: Record<string, string | undefined> = {}
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
 
@@ -14,6 +16,7 @@ vi.mock('react-router-dom', async () => {
     ...actual,
     useNavigate: () => mockNavigate,
     useLocation: () => ({ state: locationState }),
+    useParams: () => mockParams,
   }
 })
 
@@ -142,5 +145,63 @@ describe('ActiveSessionPage summary section', () => {
     await waitFor(() => {
       expect(within(summaryCard as HTMLElement).getByText('No targeted muscles were recorded for this workout.')).toBeDefined()
     })
+  })
+})
+
+describe('ActiveSessionPage edit mode', () => {
+  const mockFetch = customFetch as unknown as Mock
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    mockParams = {
+      workoutId: 'w-100',
+      logId: 'l-200',
+    }
+  })
+
+  afterEach(() => {
+    cleanup()
+    mockParams = {}
+  })
+
+  it('loads past workout log and displays static duration without ticking timer', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        workoutId: 'w-100',
+        logId: 'l-200',
+        name: 'Heavy Leg Day',
+        startedAt: '2026-08-10T10:00:00.000Z',
+        completedAt: '2026-08-10T11:15:00.000Z',
+        duration: '01:15',
+        primaryMuscleGroups: ['Quadriceps', 'Hamstrings'],
+        exercises: [
+          {
+            id: 'we-1',
+            exerciseId: 'ex-1',
+            name: 'Squat',
+            primaryMuscle: 'Quadriceps',
+            exerciseType: 'WeightReps',
+            orderIndex: 0,
+            sets: [
+              { id: 'set-1', type: 'Normal', reps: 10, weight: 100, duration: null, distance: null, orderIndex: 0, restTime: 90, groupNumber: 0, rpe: 8 },
+            ],
+          },
+        ],
+      }),
+    })
+
+    render(<ActiveSessionPage mode="edit" />)
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith('/api/workouts/w-100/logs/l-200', expect.any(Object))
+    })
+
+    expect(await screen.findByText('Editing Past Workout')).toBeDefined()
+    expect(screen.getByText('Heavy Leg Day')).toBeDefined()
+    expect(screen.getByText('1h 15min')).toBeDefined()
+    expect(screen.getByText('Save Changes')).toBeDefined()
+    expect(screen.getByText('Back to Workout Log')).toBeDefined()
   })
 })

@@ -365,6 +365,33 @@ const createClientExerciseId = () => {
   return `exercise-${Date.now()}-${secureRandomHex()}`
 }
 
+const formattedTime = (totalSecs: number) => {
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.floor((totalSecs % 3600) / 60)
+
+  if (h > 0) {
+    return `${h}h ${m}min`
+  }
+
+  return `${m}m`
+}
+
+const formatPastDurationText = (pastDurationText: string): string => {
+  const [hoursText, minutesText] = pastDurationText.split(':')
+  const hours = Number.parseInt(hoursText ?? '0', 10)
+  const minutes = Number.parseInt(minutesText ?? '0', 10)
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return pastDurationText
+  }
+
+  if (hours === 0) {
+    return minutes === 0 ? '<1m' : `${minutes}m`
+  }
+
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
+}
+
 type ActiveSessionProps = Readonly<{
   mode?: 'active' | 'edit'
 }>
@@ -635,17 +662,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
 
-  const formattedTime = (totalSecs: number) => {
-    const h = Math.floor(totalSecs / 3600)
-    const m = Math.floor((totalSecs % 3600) / 60)
-
-    if (h > 0) {
-      return `${h}h ${m}min`
-    }
-
-    return `${m}m`
-  }
-
   const durationDisplay = useMemo(() => {
     if (!isEditMode) {
       return formattedTime(secElaps)
@@ -657,14 +673,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     }
 
     if (pastDurationText) {
-      const [hoursText, minutesText] = pastDurationText.split(':')
-      const hours = Number.parseInt(hoursText ?? '0', 10)
-      const minutes = Number.parseInt(minutesText ?? '0', 10)
-      if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
-        if (hours === 0) return minutes === 0 ? '<1m' : `${minutes}m`
-        return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
-      }
-      return pastDurationText
+      return formatPastDurationText(pastDurationText)
     }
 
     return '--:--'

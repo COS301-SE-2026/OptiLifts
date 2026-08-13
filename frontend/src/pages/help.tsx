@@ -68,7 +68,78 @@ const TUTORIAL_DATA: readonly TutorialVideo[] =[
     }
 ]
 
-type ActiveTab = 'faqs'|'tutorials'|'resources'
+//set type data
+const DEMO_EXERCISES: WorkoutExercise[] =[
+    {
+        id: 'demo-1',
+        name: 'Barbell Bench Press',
+        muscle: 'Chest',
+        exerciseType: 'WeightReps',
+        sets: [
+            {
+                id: 's1',type: 'I', kg: 100, reps: 8, time: '', distance: ''
+            },
+            {
+                id: 's2',type: 'I', kg: 100, reps: 8, time: '', distance: ''
+            },
+        ],
+        exerciseCatalogId: 'cat-1',
+        // restTime: 120,
+    },
+    {
+        id: 'demo-2',
+        name: 'Incline Dumbbell Flys',
+        muscle: 'Chest',
+        exerciseType: 'WeightReps',
+        sets: [
+            {
+                id: 's3',type: 'I', kg: 24, reps: 10, time: '', distance: ''
+            },
+            {
+                id: 's4',type: 'I', kg: 24, reps: 10, time: '', distance: ''
+            },
+        ],
+        exerciseCatalogId: 'cat-2',
+        // restTime: 90,
+    },
+    {
+        id: 'demo-3',
+        name: 'Push-ups',
+        muscle: 'Chest',
+        exerciseType: 'BodyWeightReps',
+        sets: [
+            {
+                id: 's5',type: 'I', kg: '', reps: 15, time: '', distance: ''
+            },
+            {
+                id: 's6',type: 'I', kg: '', reps: 15, time: '', distance: ''
+            },
+        ],
+        exerciseCatalogId: 'cat-3',
+        // restTime: 60,
+    }
+];
+
+const DROPSET_EXERCISE: WorkoutExercise = {
+    id: 'dropset-demo',
+    name: 'Triceps Cable Pushdown',
+    muscle: 'Triceps',
+    exerciseType: 'WeightReps',
+    sets: [
+        {
+            id: 'ds-1',type: 'I', kg: 50, reps: 8, time: '', distance: ''
+        },
+        {
+            id: 'ds-2',type: 'D', kg: 40, reps: 10, time: '', distance: ''
+        },
+        {
+            id: 'ds-3',type: 'D', kg: 30, reps: 12, time: '', distance: ''
+        },
+    ],
+    exerciseCatalogId: 'cat-4',
+    // restTime: 60,
+};
+
 export default function HelpPage(){
     const [activeTab, setActiveTab] = useState<ActiveTab>('faqs')
     const [searchQuery, setSearchQuery] = useState('')

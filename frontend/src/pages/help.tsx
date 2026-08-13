@@ -154,10 +154,10 @@ function SetGroupDemo(){
 
     return (
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <div className="flex items-center gap-2">
-                        <span className="flex h-2 w-2 rounded-full bg-brand animate-ping"/>
+                        <Zap className="h-5 w-5 text-brand"/>
                         <h3 className="font-display text-lg text-foreground tracking-wide">
                             PRACTISE CONNECTING EXERCISES
                         </h3>
@@ -189,49 +189,50 @@ function SetGroupDemo(){
                         <ChainLink linked onClick={() => setLinked2To3(false)}/>
                         <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly/>
                     </div>
-                ): (
-                    <>{linked1To2 ? (
+                ) : linked1To2 ? (
+                    <>
                         <div className="rounded-xl border-2 border-brand/60 bg-brand/5 p-3 space-y-3 transition-all duratrion-200">
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-xs font-bold uppercase tracking-wider text-brand flex items-center gap-1.5">
-                                    <Zap className="h-3.5 w-3.5"/>SUPERSET (2 EXERCISES)
+                                    <Zap className="h-3.5 w-3.5" />SUPERSET (2 EXERCISES)
                                 </span>
                             </div>
-                            <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly/>
-                            <ChainLink linked onClick={() => setLinked1To2(false)}/>
-                            <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
+                            <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly />
+                            <ChainLink linked onClick={() => setLinked1To2(false)} />
+                            <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly />
                         </div>
-                    ) : (
-                        <>
+                        <ChainLink linked={false} onClick={() => setLinked2To3(true)} />
+                        <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly />
+                    </>
+                ) : linked2To3 ? (
+                    <>
+                        <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly />
+                        <ChainLink linked={false} onClick={() => setLinked1To2(true)} />
+                        <div className="rounded-xl border-2 border-brand/60 bg-brand/5 p-3 space-y-3 transition-all duratrion-200">
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-xs font-bold uppercase tracking-wider text-brand flex items-center gap-1.5">
+                                    <Zap className="h-3.5 w-3.5" />SUPERSET (2 EXERCISES)
+                                </span>
+                            </div>
+                            <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly />
+                            <ChainLink linked onClick={() => setLinked2To3(false)} />
+                            <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly />
+                        </div>
+                    </>
+                ):(
+                    <>
                         <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly/>
                         <ChainLink linked={false} onClick={() => setLinked1To2(true)}/>
                         <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
-                        </>
-                    )}
-                    {!linked1To2 && linked2To3 && (
-                        <div className="rounded-xl border-2 border-brand/60 bg-brand/5 p-3 space-y-3 transition-all duratrion-200">
-                            <div className="flex items-center justify-between px-1">
-                                <span className="text-xs font-bold uppercase tracking-wider text-brand flex items-center gap-1.5">
-                                    <Zap className="h-3.5 w-3.5"/>SUPERSET (2 EXERCISES)
-                                </span>
-                            </div>
-                            <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
-                            <ChainLink linked onClick={() => setLinked2To3(false)}/>
-                            <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly/>
-                        </div>
-                    )}
-                    {!linked2To3 && (
-                        <><ChainLink linked={false} onClick={() => setLinked2To3(true)}/>
+                        <ChainLink linked={false} onClick={() => setLinked2To3(true)}/>
                         <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly/>
-                        </>
-                    )}
                     </>
                 )}
             </div>
 
             <div className="rounded-xl bg-surface-2 p-3 text-xs text-muted-foreground flex items-start gap-2 border border-border">
                 <Info className="h-4 w-4 text-brand shrink-0 mt-0.5"/>
-                <p><strong className="text-foregound">OPtiLifts Rule: </strong>Joining 2 exercises forms a <span className="text-brand font-semibold">Superset</span>. Joining 3 or more consecutive exercises automatically forms a <span className="text-amber-500 font-semibold">Circuit Set</span></p>
+                <p><strong className="text-foregound">OptiLifts Rule: </strong>Joining 2 exercises forms a <span className="text-brand font-semibold">Superset</span>. Joining 3 or more consecutive exercises automatically forms a <span className="text-amber-500 font-semibold">Circuit Set</span></p>
             </div>
         </div>
     );
@@ -249,7 +250,7 @@ function SetTypeGuideContent() {
             </div>
 
             <div className="space-y-4">
-                <h3 className="font-display text-lg text-foreground tracking-wide flex items-center gap-2 border-b border-border pb-2">
+                <h3 className="font-display text-lg text-foreground tracking-wide flex items-center gap-2">
                     <Layers className="h-5 w-5 text-brand"/>
                     <span>SET DROPDOWN OPTIONS</span>
                 </h3>
@@ -309,9 +310,9 @@ function SetTypeGuideContent() {
                 </div>
             </div>
 
-            {/* todo: how to log dropsets */}
+            {/* how to log dropsets */}
             <div className="rounded-2xl border border-border bg-surface p-6 space-y-5">
-                <div className="flex items-center gap-2 border-b border-border pb-3">
+                <div className="flex items-center gap-2">
                     <Flame className="h-5 w-5 text-rose-500"/>
                     <h3 className="font-display text-lg text-foreground tracking-wide">HOW TO LOG DROPSETS PROPERLY</h3>
                 </div>
@@ -357,6 +358,13 @@ function SetTypeGuideContent() {
                     {/* <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">Live ExerciseCard Preview:</span> */}
                     <ExerciseCard exercise={DROPSET_EXERCISE} readOnly/>
                 </div>
+            </div>
+
+            <div className="space-y-4">
+                <h3 className="font-display text-lg text-foreground tracking-wide flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-brand"/>
+                    <span>SPECIALISED SET GROUPS</span>
+                </h3>
             </div>
             <SetGroupDemo/>
         </div>

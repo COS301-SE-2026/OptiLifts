@@ -103,7 +103,7 @@ function SetRow({
           <DropdownMenuTrigger variant="plain">
             <ChevronDown className="w-4 h-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent className="min-w-32 font-sans">
             {SET_TYPES.map(t => {
               let label = 'Drop'
               if (t === 'W') label = 'Warmup'
@@ -220,7 +220,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
           <DropdownMenuTrigger variant="plain" className="p-1">
             <MoreHorizontal className="w-4 h-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="min-w-36 font-sans">
             <DropdownMenuItem variant="destructive" onClick={() => onRemove?.(exercise.id)}>
               Remove exercise
             </DropdownMenuItem>

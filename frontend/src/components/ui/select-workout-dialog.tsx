@@ -174,7 +174,7 @@ export function SelectWorkoutDialog({
     }
 
     return (
-        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
+        <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
             <dialog className="mx-auto w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl flex flex-col max-h-[90%] animate-in fade-in zoom-in-95 duration-200 overflow-hidden z-50" 
             open aria-modal="true" 
                 aria-labelledby="select-workout-title">

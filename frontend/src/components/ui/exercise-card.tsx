@@ -25,6 +25,12 @@ type ExerciseCardProps = Readonly<{
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
 
+const setTypeRowClass: Record<SetType, string> = {
+  W: 'bg-warning/10 border-l-warning/50',
+  I: 'bg-surface-2 border-l-border',
+  D: 'bg-brand/10 border-l-brand/50',
+}
+
 //add functionality for different types of exercises
 type FieldKey = 'kg'|'reps'|'time'|'distance'
 type ColumnDef = {
@@ -88,7 +94,7 @@ function SetRow({
 }>) {
 
   return (
-    <div className="flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 gap-4">
+    <div className={`flex items-center rounded-lg border-y border-r border-l-4 border-border px-3 py-2 gap-4 ${setTypeRowClass[set.type]}`}>
       <div className="flex items-center w-20 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain">

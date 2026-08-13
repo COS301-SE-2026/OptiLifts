@@ -188,14 +188,24 @@ export default function PastWorkoutsPage() {
                             tabIndex={0}
                             onClick={(e) => {
                                 const target = e.target as HTMLElement
-                                if (target.closest('[data-card-menu="true"]')) {
+                                if (
+                                    target.closest('[data-card-menu="true"]') ||
+                                    target.closest('[data-slot^="dropdown-menu"]') ||
+                                    target.closest('[role="menuitem"]') ||
+                                    target.closest('[role="menu"]')
+                                ) {
                                     return
                                 }
                                 openLogDetail()
                             }}
                             onKeyDown={(e) => {
                                 const target = e.target as HTMLElement
-                                if (target.closest('[data-card-menu="true"]')) {
+                                if (
+                                    target.closest('[data-card-menu="true"]') ||
+                                    target.closest('[data-slot^="dropdown-menu"]') ||
+                                    target.closest('[role="menuitem"]') ||
+                                    target.closest('[role="menu"]')
+                                ) {
                                     return
                                 }
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -209,6 +219,18 @@ export default function PastWorkoutsPage() {
                                 <DropdownMenu>
                                     <DropdownMenuEllipsisTrigger aria-label={`Options for ${workout.workoutName}`} />
                                     <DropdownMenuEllipsisContent align="end">
+                                        <DropdownMenuItem
+                                            onSelect={(event) => {
+                                                event.preventDefault()
+                                                if (!workout.logId) {
+                                                    return
+                                                }
+                                                navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}/edit`)
+                                            }}
+                                            disabled={!workout.logId}
+                                        >
+                                            Edit
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onSelect={(event) => {
                                                 event.preventDefault()

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/ui/page-title'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
@@ -17,6 +17,7 @@ import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
+import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
 import { buildLabels } from '@/lib/exercise-format'
@@ -371,18 +372,62 @@ const createClientExerciseId = () => {
   return `exercise-${Date.now()}-${secureRandomHex()}`
 }
 
-export default function ActiveSessionPage() {
+const formattedTime = (totalSecs: number) => {
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.floor((totalSecs % 3600) / 60)
+
+  if (h > 0) {
+    return `${h}h ${m}min`
+  }
+
+  return `${m}m`
+}
+
+const formatPastDurationText = (pastDurationText: string): string => {
+  const [hoursText, minutesText] = pastDurationText.split(':')
+  const hours = Number.parseInt(hoursText ?? '0', 10)
+  const minutes = Number.parseInt(minutesText ?? '0', 10)
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return pastDurationText
+  }
+
+  if (hours === 0) {
+    return minutes === 0 ? '<1m' : `${minutes}m`
+  }
+
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
+}
+
+type ActiveSessionProps = Readonly<{
+  mode?: 'active' | 'edit'
+}>
+
+export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProps) {
   const navigate = useNavigate()
   const location = useLocation()
+  const params = useParams<{ workoutId?: string; logId?: string }>()
   const sessionState = location.state as WorkoutLocationState | null
-  const workoutId = sessionState?.workout?.id
+
+  const isEditMode = mode === 'edit' || Boolean(params.workoutId && params.logId)
+  const workoutId = isEditMode ? params.workoutId : sessionState?.workout?.id
 
   const [workoutName, setWorkoutName] = useState(sessionState?.workout?.name ?? 'WORKOUT')
-  const [isLoading, setIsLoading] = useState(() => Boolean(workoutId))
-  const [error, setError] = useState<string | null>(() =>
-    workoutId ? null : 'No workout was selected. Start a workout from the workouts page.'
-  )
-  const [logId] = useState(() => globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)
+  const [isLoading, setIsLoading] = useState(() => Boolean(workoutId && (!isEditMode || params.logId)))
+  const [error, setError] = useState<string | null>(() => {
+    if (!workoutId) {
+      return 'No workout was selected. Start a workout from the workouts page.'
+    }
+    if (isEditMode && !params.logId) {
+      return 'No workout log was selected to edit.'
+    }
+    return null
+  })
+  const [logId] = useState(() => (isEditMode && params.logId ? params.logId : (globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)))
+  const [startedAtIso, setStartedAtIso] = useState<string | null>(null)
+  const [completedAtIso, setCompletedAtIso] = useState<string | null>(null)
+  const [pastDurationText, setPastDurationText] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
   const [nowMs, setNowMs] = useState<number>(0)
   const [isPickerOpen, setPickerOpen] = useState(false)
@@ -400,6 +445,76 @@ export default function ActiveSessionPage() {
     }
 
     let isMounted = true
+
+    if (isEditMode) {
+      if (!logId) {
+        return
+      }
+
+      const fetchLogDetail = async () => {
+        setIsLoading(true)
+        setError(null)
+        try {
+          const resp = await customFetch(`/api/workouts/${workoutId}/logs/${logId}`, {
+            headers: { Accept: 'application/json' },
+          })
+
+          if (!resp.ok) {
+            throw new Error(`Failed to load workout log (${resp.status})`)
+          }
+
+          const data = (await resp.json()) as WorkoutLogDetailResponse
+          if (!isMounted) return
+
+          setWorkoutName(data.name)
+          setPrimaryMuscleGroups(data.primaryMuscleGroups ?? [])
+          setStartedAtIso(data.startedAt ?? null)
+          setCompletedAtIso(data.completedAt ?? null)
+          setPastDurationText(data.duration ?? null)
+
+          const mappedExers: ExerciseData[] = (data.exercises ?? []).map((ex) => ({
+            id: ex.id,
+            exerciseId: ex.exerciseId,
+            sourceWorkoutExerciseId: ex.id,
+            name: ex.name,
+            muscleGroup: ex.primaryMuscle,
+            groupId: null,
+            groupType: null,
+            groupRestTime: null,
+            imageUrl: ex.imageUrl ?? null,
+            exerciseType: ex.exerciseType,
+            sets: (ex.sets ?? []).map((s) => ({
+              id: s.id,
+              sourceSetId: s.setId ?? s.id,
+              type: (s.type as SetType) ?? 'Normal',
+              previous: buildPreviousText(s.weight, s.reps),
+              kg: s.weight ?? '',
+              reps: s.reps ?? '',
+              rpe: s.rpe ?? '',
+              duration: s.duration ?? '',
+              distance: s.distance ?? '',
+              restTime: s.restTime ?? 0,
+              completed: true,
+            })),
+          }))
+
+          setExercises(mappedExers)
+        } catch (loadError) {
+          if (isMounted) {
+            setError(loadError instanceof Error ? loadError.message : 'Failed to load workout log.')
+          }
+        } finally {
+          if (isMounted) {
+            setIsLoading(false)
+          }
+        }
+      }
+
+      void fetchLogDetail()
+      return () => {
+        isMounted = false
+      }
+    }
 
     const restoreDraft = (draft: SessionDraft) => {
       setWorkoutName(draft.workoutName)
@@ -499,24 +614,30 @@ export default function ActiveSessionPage() {
     return () => {
       isMounted = false
     }
-  }, [workoutId, startKey])
+  }, [isEditMode, workoutId, logId, startKey])
 
   useEffect(() => {
+    if (isEditMode) {
+      return
+    }
     const interval = setInterval(() => setNowMs(Date.now()), 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isEditMode])
 
   //autosave on any exercise change
   useEffect(() => {
+    if (isEditMode) {
+      return
+    }
     if (workoutId && exercises.length > 0) {
       saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
     }
-  }, [workoutId, workoutName, startedAtMs, logId, exercises])
+  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises])
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
   useEffect(() => {
-    if (!workoutId || exercises.length === 0) {
+    if (isEditMode || !workoutId || exercises.length === 0) {
       return
     }
 
@@ -544,20 +665,26 @@ export default function ActiveSessionPage() {
     document.addEventListener('click', interceptNavbar, true)
     return () => document.removeEventListener('click', interceptNavbar, true)
 
-  }, [workoutId, exercises.length])
+  }, [isEditMode, workoutId, exercises.length])
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
 
-  const formattedTime = (totalSecs: number) => {
-    const h = Math.floor(totalSecs / 3600)
-    const m = Math.floor((totalSecs % 3600) / 60)
-
-    if (h > 0) {
-      return `${h}h ${m}min`
+  const durationDisplay = useMemo(() => {
+    if (!isEditMode) {
+      return formattedTime(secElaps)
     }
 
-    return `${m}m`
-  }
+    if (startedAtIso && completedAtIso) {
+      const durSecs = Math.max(0, Math.round((new Date(completedAtIso).getTime() - new Date(startedAtIso).getTime()) / 1000))
+      return formattedTime(durSecs)
+    }
+
+    if (pastDurationText) {
+      return formatPastDurationText(pastDurationText)
+    }
+
+    return '--:--'
+  }, [isEditMode, secElaps, startedAtIso, completedAtIso, pastDurationText])
 
   const updateSet = (
     exerciseId: string,
@@ -749,6 +876,64 @@ export default function ActiveSessionPage() {
     setPendingNavTo(null)
   }
 
+  const savePastWorkoutEdits = async () => {
+    if (!workoutId || !logId) {
+      return
+    }
+
+    const groupNums = groupNumMap(exercises)
+    const exercisesLog: WorkoutLogExercisePayload[] = []
+
+    for (const exercise of exercises) {
+      if (!exercise.exerciseId) continue
+
+      const groupNum = groupNums.get(exercise.id) ?? 0
+      const sets = buildSetPayloads(exercise.sets, groupNum)
+
+      if (sets.length === 0) continue
+
+      exercisesLog.push({
+        exerciseId: exercise.exerciseId,
+        workoutExerciseId: exercise.sourceWorkoutExerciseId,
+        orderIndex: exercisesLog.length + 1,
+        groupNumber: groupNum,
+        sets,
+      })
+    }
+
+    if (exercisesLog.length === 0) {
+      toast.error('Workout log cannot be empty. Please complete at least one set.')
+      return
+    }
+
+    const payload = {
+      notes: null,
+      startedAt: startedAtIso,
+      completedAt: completedAtIso,
+      exercises: exercisesLog,
+    }
+
+    setIsSaving(true)
+    try {
+      const resp = await customFetch(`/api/workouts/${workoutId}/logs/${logId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!resp.ok) {
+        throw new Error(`Failed to update workout log (${resp.status})`)
+      }
+
+      toast.success('Workout log updated successfully.', 'Saved')
+      navigate(`/workouts/${workoutId}/logs/${logId}`)
+    } catch (saveError) {
+      toast.error(saveError instanceof Error ? saveError.message : 'Failed to update workout log.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const blanks = () => exercises.some(exerciseGotBlanks)
 
   const allowedFinish = summary.completedSets > 0 && !blanks()
@@ -835,22 +1020,33 @@ export default function ActiveSessionPage() {
             <Button
               variant="text"
               size="sm"
-              onClick={() => setExitOpen(true)}
+              onClick={() => {
+                if (isEditMode) {
+                  navigate(`/workouts/${workoutId}/logs/${logId}`)
+                } else {
+                  setExitOpen(true)
+                }
+              }}
               className="flex items-center gap-1 self-start p-0 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Back to Workouts</span>
+              <span>{isEditMode ? 'Back to Workout Log' : 'Back to Workouts'}</span>
             </Button>
 
             <div className="flex items-end justify-between gap-4">
               <div className="flex items-center gap-3">
                 <PageTitle title={workoutName} />
+                {isEditMode && (
+                  <span className="rounded bg-brand/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand">
+                    Editing Past Workout
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-6 text-center">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Duration</p>
-                  <p className="text-sm font-bold">{formattedTime(secElaps)}</p>
+                  <p className="text-sm font-bold">{durationDisplay}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Volume</p>
@@ -860,9 +1056,21 @@ export default function ActiveSessionPage() {
                   <p className="text-xs font-semibold text-muted-foreground">Sets</p>
                   <p className="text-sm font-bold">{summary.completedSets}/{summary.totalSets}</p>
                 </div>
-                <Button variant="default" size="sm" className="h-8" disabled={!allowedFinish} onClick={() => void finishWorkout()}>
-                  Finish
-                </Button>
+                {isEditMode ? (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-8"
+                    disabled={!allowedFinish || isSaving}
+                    onClick={() => void savePastWorkoutEdits()}
+                  >
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                ) : (
+                  <Button variant="default" size="sm" className="h-8" disabled={!allowedFinish} onClick={() => void finishWorkout()}>
+                    Finish
+                  </Button>
+                )}
               </div>
             </div>
           </div>

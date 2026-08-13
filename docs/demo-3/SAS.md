@@ -1205,7 +1205,7 @@ Returns full detail of a completed WorkoutLog. Used by the Workout Log Detail pa
 `WorkoutLogDetailDto` fields:
 
 - `workoutId`, `logId`: Guid, `name`: string, `folderId`: Guid | null, `dayIndex`: int | null.
-- `createdAt`: datetime, `completedAt`: datetime | null, `duration`: string | null.
+- `createdAt`: datetime, `startedAt`: datetime, `completedAt`: datetime | null, `duration`: string | null.
 - `primaryMuscleGroups`: array of string, `exercisePreview`: array of string.
 - `exercises`: array of `WorkoutLogExerciseDetailDto` - `id`, `exerciseId`, `name`, `primaryMuscle`, `exerciseType`, `orderIndex`, `imageUrl`, `sets` (array of `WorkoutLogSetDto`: `id`, `setId`, `type`, `reps`, `weight`, `orderIndex`, `duration`, `distance`, `restTime`, `groupNumber`, `rpe`).
 
@@ -1224,6 +1224,7 @@ Returns full detail of a completed WorkoutLog. Used by the Workout Log Detail pa
 	"folderId": null,
 	"dayIndex": null,
 	"createdAt": "2026-07-16T10:00:00Z",
+	"startedAt": "2026-07-16T09:39:00Z",
 	"completedAt": "2026-07-16T11:02:00Z",
 	"duration": "1h 23m",
 	"primaryMuscleGroups": ["Chest", "Quadriceps"],
@@ -1283,6 +1284,70 @@ Creates a completed workout log entry. This when the user hits **Finish** on the
 	"logId": "string",
 	"entryId": "string",
 	"alreadyExisted": false
+}
+```
+---
+
+### PUT /api/workouts/{workoutId}/logs/{logId}
+**Service Name:** WorkoutLog Update Service
+
+**Description:**
+Updates an existing completed workout log entry. Used when editing a completed past workout from the workout log detail page or past workouts page. Re-evaluates exercise personal records (PRs) based on updated sets.
+
+**Inputs:**
+
+- `workoutId`, `logId`: Guid - path parameters.
+- `notes`: string | null - optional notes for the workout log.
+- `startedAt` / `completedAt`: datetime | null - optional updated start and completion timestamps.
+- `exercises`: array of `UpdateWorkoutLogExerciseReq` - `exerciseId`, `workoutExerciseId` (null for exercises added in editing), `orderIndex`, `groupNumber`, `sets` (array of `UpdateWorkoutLogSetReq`: `setId`, `type`, `reps`, `weight`, `duration`, `distance`, `restTime`, `rpe`, `orderIndex`, `groupNumber`).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `200 OK` with `{ "message": "Workout log updated successfully." }`.
+- `404 Not Found` if the workout log is not found or not owned by the user.
+- `401 Unauthorized` if the cookie is missing or invalid.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a PUT request to `/api/workouts/{workoutId}/logs/{logId}` with JSON data and the `access_token` cookie attached.
+- Replaces existing logged sets and exercises for the specified `logId` and updates corresponding exercise PRs.
+
+**Example Request:**
+```json
+{
+	"notes": "Updated notes",
+	"startedAt": "2026-08-10T10:00:00Z",
+	"completedAt": "2026-08-10T11:15:00Z",
+	"exercises": [
+		{
+			"exerciseId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"workoutExerciseId": null,
+			"orderIndex": 1,
+			"groupNumber": 0,
+			"sets": [
+				{
+					"setId": null,
+					"type": "Normal",
+					"reps": 10,
+					"weight": 100,
+					"duration": null,
+					"distance": null,
+					"restTime": 90,
+					"rpe": 8,
+					"orderIndex": 1,
+					"groupNumber": 0
+				}
+			]
+		}
+	]
+}
+```
+
+**Example Response:**
+```json
+{
+	"message": "Workout log updated successfully."
 }
 ```
 ---

@@ -14,6 +14,7 @@ using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.UpdateWorkout;
+using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 
 namespace OptiLifts.API.Controllers;
 
@@ -294,4 +295,47 @@ public sealed class WorkoutsController : ControllerBase
         return Ok(new { message = "Workout updated successfully." });
     }
 
+    [HttpPut("{workoutId:guid}/logs/{logId:guid}")]
+    public async Task<IActionResult> UpdateWorkoutLog(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid logId,
+        [FromBody] UpdateWorkoutLogReq request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var command = new UpdateWorkoutLogCommand(
+            userId,
+            workoutId,
+            logId,
+            request.Notes,
+            request.StartedAt,
+            request.CompletedAt,
+            request.Exercises.Select(e => new UpdateWorkoutLogExerciseDto(
+                e.ExerciseId,
+                e.WorkoutExerciseId,
+                e.OrderIndex,
+                e.GroupNumber,
+                e.Sets.Select(s => new UpdateWorkoutLogSetDto(
+                    s.SetId, s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.RestTime, s.Rpe, s.OrderIndex, s.GroupNumber
+                )).ToList()
+            )).ToList()
+        );
+
+        var updated = await _sender.Send(command, cancellationToken);
+        if (!updated)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout log was not found or could not be updated."
+            });
+        }
+
+        return Ok(new { message = "Workout log updated successfully." });
+    }
 }

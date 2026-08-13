@@ -218,6 +218,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             workout.FolderId,
             null,
             workout.CreatedAt,
+            log.StartedAt,
             log.CompletedAt,
             log.CompletedAt is null ? null : FormatDuration(log.CompletedAt.Value - log.StartedAt),
             primaryMuscleGroups,

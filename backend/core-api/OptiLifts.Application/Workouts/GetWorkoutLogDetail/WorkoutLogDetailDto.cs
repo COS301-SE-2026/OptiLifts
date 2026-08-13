@@ -31,6 +31,7 @@ public sealed record WorkoutLogDetailDto(
     Guid? FolderId,
     int? DayIndex,
     DateTime CreatedAt,
+    DateTime StartedAt,
     DateTime? CompletedAt,
     string? Duration,
     string[] PrimaryMuscleGroups,

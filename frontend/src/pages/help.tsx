@@ -2,9 +2,12 @@ import { useState } from "react";
 import { PageTitle } from "@/components/ui/page-title";
 import { FaqAccordion } from "@/components/help/faq-accordion";
 import type { FaqItem } from "@/components/help/faq-accordion";
-import { Search, HelpCircle, Video, BookOpen, Sparkles } from "lucide-react";
+import { Search, HelpCircle, Video, BookOpen, Sparkles , Layers, Flame, Zap, RefreshCw, Info, CheckCircle2, ArrowRight} from "lucide-react";
 import { TutorialCard, type TutorialVideo } from "@/components/help/tutorial-card";
 import { ResourcePanel } from "@/components/help/resource-panel";
+import { ExerciseCard } from "@/components/ui/exercise-card";
+import { ChainLink } from "./create-workout";
+import type { WorkoutExercise } from "@/types/create-workout";
 
 const FAQ_DATA: readonly FaqItem[] = [
     {
@@ -140,6 +143,99 @@ const DROPSET_EXERCISE: WorkoutExercise = {
     // restTime: 60,
 };
 
+function SetGroupDemo(){
+    const [linked1To2, setLinked1To2] = useState(false);
+    const [linked2To3, setLinked2To3] = useState(false);
+
+    const resetDemo = () =>{
+        setLinked1To2(false);
+        setLinked2To3(false);
+    };
+
+    return (
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <span className="flex h-2 w-2 rounded-full bg-brand animate-ping"/>
+                        <h3 className="font-display text-lg text-foreground tracking-wide">
+                            PRACTISE CONNECTING EXERCISES
+                        </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        Click the join icon between exercises below to see how SuperSets & Circuit Sets are formed.
+                    </p>
+                </div>
+
+                {(linked1To2 || linked2To3) && (
+                    <button type="button" onClick={resetDemo}
+                    className="text-xs text-muted-foreground hover:text-foreground px-2.5 py-1 rounded-md bg-surface-2 border border-border flex items-center gap-1.5 cursor-pointer">
+                        <RefreshCw className="h-3 w-3"/>Reset Demo
+                    </button>
+                )}
+            </div>
+
+            <div className="space-y-3">
+                {linked1To2 && linked2To3 ? (
+                    <div className="rounded-xl border-2 border-amber-500/60 bg-amber-500/5 p-3 space-y-3 transition-all duration-200">
+                        <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
+                                <Zap className="h-3.5 w-3.5"/>CIRCUIT SET (3 EXERCISES)
+                            </span>
+                        </div>
+                        <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly/>
+                        <ChainLink linked onClick={() => setLinked1To2(false)}/>
+                        <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
+                        <ChainLink linked onClick={() => setLinked2To3(false)}/>
+                        <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly/>
+                    </div>
+                ): (
+                    <>{linked1To2 ? (
+                        <div className="rounded-xl border-2 border-brand/60 bg-brand/5 p-3 space-y-3 transition-all duratrion-200">
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-xs font-bold uppercase tracking-wider text-brand flex items-center gap-1.5">
+                                    <Zap className="h-3.5 w-3.5"/>SUPERSET (2 EXERCISES)
+                                </span>
+                            </div>
+                            <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly/>
+                            <ChainLink linked onClick={() => setLinked1To2(false)}/>
+                            <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
+                        </div>
+                    ) : (
+                        <>
+                        <ExerciseCard exercise={DEMO_EXERCISES[0]} readOnly/>
+                        <ChainLink linked={false} onClick={() => setLinked1To2(true)}/>
+                        <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
+                        </>
+                    )}
+                    {!linked1To2 && linked2To3 && (
+                        <div className="rounded-xl border-2 border-brand/60 bg-brand/5 p-3 space-y-3 transition-all duratrion-200">
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-xs font-bold uppercase tracking-wider text-brand flex items-center gap-1.5">
+                                    <Zap className="h-3.5 w-3.5"/>SUPERSET (2 EXERCISES)
+                                </span>
+                            </div>
+                            <ExerciseCard exercise={DEMO_EXERCISES[1]} readOnly/>
+                            <ChainLink linked onClick={() => setLinked2To3(false)}/>
+                            <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly/>
+                        </div>
+                    )}
+                    {!linked2To3 && (
+                        <><ChainLink linked={false} onClick={() => setLinked2To3(true)}/>
+                        <ExerciseCard exercise={DEMO_EXERCISES[2]} readOnly/>
+                        </>
+                    )}
+                    </>
+                )}
+            </div>
+
+            <div className="rounded-xl bg-surface-2 p-3 text-xs text-muted-foreground flex items-start gap-2 border border-border">
+                <Info className="h-4 w-4 text-brand shrink-0 mt-0.5"/>
+                <p><strong className="text-foregound">OPtiLifts Rule: </strong>Joining 2 exercises forms a <span className="text-brand font-semibold">Superset</span>. Joining 3 or more consecutive exercises automatically forms a <span className="text-amber-500 font-semibold">Circuit Set</span></p>
+            </div>
+        </div>
+    );
+}
 export default function HelpPage(){
     const [activeTab, setActiveTab] = useState<ActiveTab>('faqs')
     const [searchQuery, setSearchQuery] = useState('')

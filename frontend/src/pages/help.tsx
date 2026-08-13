@@ -362,11 +362,31 @@ function SetTypeGuideContent() {
 
             <div className="space-y-4">
                 <h3 className="font-display text-lg text-foreground tracking-wide flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-brand"/>
+                    <Zap className="h-5 w-5 text-brand" />
                     <span>SPECIALISED SET GROUPS</span>
                 </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-foreground text-base">Supersets (2 Exercises)</h4>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand/10 text-brand border border-brand/20">Pair</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">A Superset pairs two exercises performed back-to-back with minimal to no rest in between (eg. Bench Press followed immediately by Incline Flys). This maximises workout density and efficiency.</p>
+
+                    </div>
+
+                    <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-foreground text-base">Circuit Sets (3+ Exercises)</h4>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">Group</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            A circuit connects 3 or more exercises performed sequentially before taking a rest. Joining a third exercise automatically converts a superset into a circuit set.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <SetGroupDemo/>
+            <SetGroupDemo />
         </div>
     )
 }

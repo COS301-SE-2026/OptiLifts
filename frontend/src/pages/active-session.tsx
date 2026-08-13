@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { PageTitle } from '@/components/ui/page-title'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
 import { Input, NumericalUnderscoreInput } from '@/components/ui/input'
 import { toast } from '@/components/ui/alert'
@@ -109,6 +110,12 @@ const setTypeLabelMap: Record<SetType, string> = {
   DropSet: 'Dropset'
 }
 
+const setTypeRowClass: Record<SetType, string> = {
+  Warmup: 'bg-warning/10 border-l-4 border-warning/50',
+  Normal: 'bg-surface-2 border-l-4 border-transparent',
+  DropSet: 'bg-brand/10 border-l-4 border-brand/50',
+}
+
 type SetRowProps = Readonly<{
   set: SetData
   setLabel: string
@@ -123,7 +130,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
   return (
-    <div className="grid items-center gap-4 rounded-lg bg-surface-2 p-1.5 text-center text-sm font-medium" style={{ gridTemplateColumns: gridTemplate }}>
+    <div className={`grid items-center gap-4 rounded-lg p-1.5 text-center text-sm font-medium ${setTypeRowClass[set.type]}`} style={{ gridTemplateColumns: gridTemplate }}>
       <div className="flex items-center">
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
@@ -166,7 +173,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
           <Button
             variant="icon"
             size="icon"
-            className={`h-7 w-7 rounded-md border-border transition-colors ${set.completed ? 'bg-brand text-white hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
+            className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
             onClick={() => onUpdate((current) => ({ ...current, completed: !current.completed }))}
           >
             <Check className="h-3.5 w-3.5" />
@@ -176,7 +183,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
           variant="icon"
           size="icon"
           aria-label="Remove set"
-          className="h-7 w-7 rounded-md shrink-0 border-0 bg-transparent text-muted-foreground hover:text-destructive"
+          className="relative h-7 w-7 rounded-md shrink-0 border-0 bg-transparent text-muted-foreground hover:text-destructive before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']"
           onClick={onRemove}
         >
           <X className="h-3.5 w-3.5" />
@@ -1029,7 +1036,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             <div className="flex items-end justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-1.5 rounded-full bg-brand" />
-                <h1 className="text-3xl font-bold uppercase tracking-tight">{workoutName}</h1>
+                <PageTitle title={workoutName} />
                 {isEditMode && (
                   <span className="rounded bg-brand/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand">
                     Editing Past Workout
@@ -1075,7 +1082,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             </div>
           )}
           {error && (
-            <div className="rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-red-500">
+            <div className="rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -1146,7 +1153,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         onSelect={selectedExercise}
       />
       {exitOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center p-4">
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-40 flex items-center justify-center p-4">
           <button type="button" aria-label="Stay" className="absolute inset-0 bg-foreground/50" onClick={() => setExitOpen(false)} />
           <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">

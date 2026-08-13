@@ -1035,7 +1035,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
             <div className="flex items-end justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-1.5 rounded-full bg-brand" />
                 <PageTitle title={workoutName} />
                 {isEditMode && (
                   <span className="rounded bg-brand/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand">

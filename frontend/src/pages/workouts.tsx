@@ -17,6 +17,7 @@ import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Plus } from 'lucide-react'
 import { customFetch } from '@/lib/custom-fetch'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { cacheWorkoutList, getCachedWorkoutDetail, getCachedWorkoutList, precacheWorkoutDetails } from '@/lib/offline/workouts-cache'
 
 export default function WorkoutsPage() {
   const { isAuthenticated, isHydrated } = useAuth()
@@ -28,7 +29,7 @@ export default function WorkoutsPage() {
   const [error, setError] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [selectedWorkoutDetails, setSelectedWorkoutDetails] = useState<WorkoutDetailResponse | null>(null)
-
+  const [isOfflineData, setIsOfflineData] = useState(false)
   const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
 
   const loadWorkouts = useCallback(async (selectIdAfterLoad?: string) => {
@@ -49,10 +50,14 @@ export default function WorkoutsPage() {
 
       const data = (await response.json()) as Workout[]
       setWorkouts(data)
+      setIsOfflineData(false)
+      void cacheWorkoutList(data)
+      void precacheWorkoutDetails(data.map((w) => w.id))
 
       if (selectIdAfterLoad) {
         setSelectedId(selectIdAfterLoad)
-      } else {
+      } 
+      else {
         setSelectedId((currentId) => {
           if (data.some((w) => w.id === currentId)) {
             return currentId
@@ -60,9 +65,20 @@ export default function WorkoutsPage() {
           return data[0]?.id ?? null
         })
       }
-    } catch (loadError) {
+    } 
+    catch (loadError) {
+      const cached = await getCachedWorkoutList()
+
+      if (cached && cached.length > 0) {
+        setWorkouts(cached)
+        setIsOfflineData(true)
+        setSelectedId((currentId) => (cached.some((w) => w.id === currentId) ? currentId : cached[0]?.id ?? null))
+        return
+      }
+
       setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
-    } finally {
+    } 
+    finally {
       setIsFetching(false)
     }
   }, [])
@@ -101,8 +117,10 @@ export default function WorkoutsPage() {
           setSelectedWorkoutDetails(data)
         }
       } catch {
+        const cached = await getCachedWorkoutDetail(selectedId)
+
         if (isActive) {
-          setSelectedWorkoutDetails(null)
+          setSelectedWorkoutDetails(cached)
         }
       }
     }
@@ -219,6 +237,16 @@ export default function WorkoutsPage() {
           {displayError && (
             <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-destructive">
               {displayError}
+            </div>
+          )}
+          {displayError && (
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-destructive">
+              {displayError}
+            </div>
+          )}
+          {isOfflineData && (
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
+              You're offline - you're workouts are saved for active session purposes. Any other process is disabled until you reconnect.
             </div>
           )}
           {!isLoading && !error && filtered.length === 0 && (

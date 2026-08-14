@@ -12,12 +12,14 @@ import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload
 import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
+import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
 import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
+import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
 import { buildLabels } from '@/lib/exercise-format'
@@ -111,6 +113,12 @@ type SessionDraft = {
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
 const MAX_REST_OVERTIME_MS = 10 * 60 * 1000
+
+const createRestTimer = (seconds: number, exerciseName: string): RestTimer => ({
+  endsAt: Date.now() + seconds * 1000,
+  totalSeconds: seconds,
+  exerciseName,
+})
 
 const revivedRestTimer = (timer: RestTimer | null | undefined): RestTimer | null => {
   if (!timer) {
@@ -604,9 +612,20 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
         setExercises(mappedExers)
+        void cacheWorkoutDetail(data as WorkoutDetailResponse)
       }
       catch (loadError) {
         if (!isMounted) {
+          return
+        }
+
+        const cached = (await getCachedWorkoutDetail(workoutId)) as WorkoutDetailsResponse | null
+
+        if (cached) {
+          setWorkoutName(cached.name)
+          setPrimaryMuscleGroups(cached.primaryMuscleGroups ?? [])
+          setStartedAtMs(Date.now())
+          setExercises([...cached.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise))
           return
         }
 
@@ -733,8 +752,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
 
-    setNowMs(Date.now())
-    setRestTimer({ endsAt: Date.now() + sec * 1000, totalSeconds: sec, exerciseName: exercise.name })
+    setRestTimer(createRestTimer(sec, exercise.name))
   }
 
   const updateSet = (

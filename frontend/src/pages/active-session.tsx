@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X } from 'lucide-react'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -23,6 +23,7 @@ import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
 import { buildLabels } from '@/lib/exercise-format'
+import confetti from 'canvas-confetti'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -152,18 +153,19 @@ type SetRowProps = Readonly<{
   columns: ReturnType<typeof getColumns>
   gridTemplate: string
   gridTemplateMobile: string
+  isPR: boolean,
   onUpdate: (updater: (current: SetData) => SetData) => void
   onRemove: () => void
   onRestStart: () => void
 }>
 
-function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, onUpdate, onRemove, onRestStart }: SetRowProps) {
+function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
   return (
     <div
-      className={`grid items-center gap-2 lg:gap-4 rounded-lg p-1.5 text-center text-sm font-medium [grid-template-columns:var(--set-cols-m)] lg:[grid-template-columns:var(--set-cols)] ${setTypeRowClass[set.type]}`}
+      className={`grid items-center gap-2 lg:gap-4 rounded-lg p-1.5 text-center text-sm font-medium [grid-template-columns:var(--set-cols-m)] lg:[grid-template-columns:var(--set-cols)] ${isPR ? 'bg-success/15 border-l-4 border-success' : setTypeRowClass[set.type]}`}
       style={{ ['--set-cols-m' as string]: gridTemplateMobile, ['--set-cols' as string]: gridTemplate }}
     >
       <div className="flex items-center">
@@ -171,7 +173,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, onUp
           <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
             <ChevronDown className="h-4 w-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent className="w-auto min-w-[9rem]">
             {SET_TYPE_OPTIONS.map((option) => (
               <DropdownMenuItem key={option} onSelect={() => onUpdate((current) => ({ ...current, type: option }))}>
                 {setTypeLabelMap[option]}
@@ -219,7 +221,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, onUp
               }
             }}
           >
-            <Check className="h-3.5 w-3.5" />
+            {isPR ? <Trophy className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
           </Button>
         </div>
         <Button
@@ -360,6 +362,51 @@ const secureRandomHex = (): string => {
 }
 
 type PrHit = { exerciseName: string; kind: 'weight' | 'volume'; value: number }
+type PrKind = 'weight' | 'volume'
+
+const getSetPrKinds = (exercise: ExerciseData, set: SetData): PrKind[] => {
+  if (set.type !== 'Normal') {
+    return []
+  }
+
+  const weight = toNumericValue(set.kg)
+  const reps = toNumericValue(set.reps)
+
+  if (weight <= 0 || reps <= 0) {
+    return []
+  }
+
+  let bestWeight = exercise.bestWeight ?? 0
+  let bestVolume = exercise.bestSetVolume ?? 0
+
+  for (const other of exercise.sets) {
+    if (other.id === set.id || !other.completed || other.type !== 'Normal') {
+      continue
+    }
+
+    const otherWeight = toNumericValue(other.kg)
+    const otherReps = toNumericValue(other.reps)
+
+    if (otherWeight <= 0 || otherReps <= 0) {
+      continue
+    }
+
+    bestWeight = Math.max(bestWeight, otherWeight)
+    bestVolume = Math.max(bestVolume, otherWeight * otherReps)
+  }
+
+  const kinds: PrKind[] = []
+
+  if (weight > bestWeight) {
+    kinds.push('weight')
+  }
+
+  if (weight * reps > bestVolume) {
+    kinds.push('volume')
+  }
+
+  return kinds
+}
 
 const detectPrs = (exercises: ExerciseData[]): PrHit[] => {
   const hits: PrHit[] = []
@@ -527,6 +574,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [conflictDraft, setConflictDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
   const [startKey, setStartKey] = useState(0)
   const [restTimer, setRestTimer] = useState<RestTimer | null>(null)
+  const [prSetIds, setPrSetIds] = useState<string[]>([])
 
   useEffect(() => {
     if (!workoutId) {
@@ -795,6 +843,17 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     return '--:--'
   }, [isEditMode, secElaps, startedAtIso, completedAtIso, pastDurationText])
 
+  const handleSetCompleted = (exercise: ExerciseData, set: SetData) => {
+    startRest(exercise, set)
+
+    if (isEditMode || getSetPrKinds(exercise, set).length === 0) {
+      return
+    }
+
+    setPrSetIds((current) => (current.includes(set.id) ? current : [...current, set.id]))
+    void confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, disableForReducedMotion: true })
+  }
+
   const startRest = (exercise: ExerciseData, set: SetData) => {
     if (isEditMode) {
       return
@@ -982,7 +1041,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     if (prs.length === 1) {
       const [pr] = prs
       toast.success(
-        pr.kind === 'weight' ? `${pr.exerciseName} — ${pr.value}kg` : `${pr.exerciseName} — ${pr.value.toLocaleString()}kg set volume`, 'New PR'
+        pr.kind === 'weight' ? `${pr.exerciseName} - ${pr.value}kg` : `${pr.exerciseName} - ${pr.value.toLocaleString()}kg set volume`, 'New PR'
       )
     }
     else if (prs.length > 1) {
@@ -997,7 +1056,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       toast.success('Workout saved.', 'Saved')
     } 
     else {
-      toast.info("Workout saved but will sync when you're back online.", 'Saved offline')
+      toast.warning("Workout saved but will sync when you're back online.", 'Saved offline')
     }
 
     if (workoutId) {
@@ -1119,7 +1178,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               <DropdownMenuTrigger variant="plain" className="p-1 text-muted-foreground hover:text-foreground">
                 <MoreHorizontal className="h-5 w-5" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
                 <DropdownMenuItem variant="destructive" onSelect={() => removeExercise(exercise.id)}>
                   Remove exercise
                 </DropdownMenuItem>
@@ -1150,7 +1209,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 gridTemplateMobile={gridTempMobile}
                 onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
                 onRemove={() => removeSet(exercise.id, set.id)}
-                onRestStart={() => startRest(exercise, set)}
+                isPR={prSetIds.includes(set.id)}
+                onRestStart={() => handleSetCompleted(exercise, set)}
               />
             ))}
           </div>

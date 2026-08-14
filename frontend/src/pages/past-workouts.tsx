@@ -14,7 +14,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { customFetch } from '@/lib/custom-fetch'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
-
+import { useOnlineStatus } from '@/lib/use-online-status'
 
 type ScheduledEntryDto = {
     id: string
@@ -81,6 +81,7 @@ export default function PastWorkoutsPage() {
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<{ workoutId: string; logId: string } | null>(null)
+    const isOnline = useOnlineStatus()
 
     useEffect(() => {
         const fetchWorkouts = async () => {
@@ -227,7 +228,7 @@ export default function PastWorkoutsPage() {
                                                 }
                                                 navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}/edit`)
                                             }}
-                                            disabled={!workout.logId}
+                                            disabled={!workout.logId || !isOnline}
                                         >
                                             Edit
                                         </DropdownMenuItem>
@@ -240,7 +241,7 @@ export default function PastWorkoutsPage() {
                                                 setDeleteTarget({ workoutId: workout.workoutId, logId: workout.logId })
                                             }}
                                             data-variant="destructive"
-                                            disabled={!workout.logId}
+                                            disabled={!workout.logId || !isOnline}
                                         >
                                             Delete
                                         </DropdownMenuItem>
@@ -326,6 +327,12 @@ export default function PastWorkoutsPage() {
                     type="week"
                 />
             </div>
+
+            {!isOnline && (
+                <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
+                    You're offline — editing and deleting past workouts is unavailable until you reconnect.
+                </div>
+            )}
 
             {/* block above is for out */}
             {out}

@@ -213,6 +213,7 @@ export default function SchedulePage() {
             const analyticsData = (await analyticsResp.json()) as AnalyticsResponse
 
             setScheduleEntries(scheduleData)
+            setAnalytics(analyticsData)
             setIsOfflineData(false)
             void cacheScheduleEntries(scheduleData)
 

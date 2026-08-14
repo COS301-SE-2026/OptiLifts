@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMe
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { buildLabels } from '@/lib/exercise-format'
 import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus } from '@/lib/use-online-status'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -70,6 +71,7 @@ export default function WorkoutDetailPage() {
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const isOnline = useOnlineStatus()
 
   const handleWorkoutChanged = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
@@ -235,7 +237,7 @@ export default function WorkoutDetailPage() {
                   </DropdownMenuEllipsisTrigger>
                   <DropdownMenuEllipsisContent align="end">
                     <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
+                    <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuEllipsisContent>

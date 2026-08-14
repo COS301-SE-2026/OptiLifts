@@ -13,3 +13,5 @@ const subscribe = (onStoreChange: () => void) => {
 export function useOnlineStatus(): boolean {
   return useSyncExternalStore(subscribe, () => navigator.onLine, () => true)
 }
+
+export const OFFLINE_HINT = 'Unavailable offline'

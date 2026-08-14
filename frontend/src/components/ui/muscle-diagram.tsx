@@ -43,15 +43,15 @@ export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], varia
   //replace with heatmap svg when implemented
   return (
     <div className="w-full">
-      <div className="flex gap-2 items-start">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-start">
         {showFront && (
-        <div className="flex-1">
-          <div className="mb-2 text-sm font-semibold">Front</div>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="mb-2 text-xs sm:text-sm font-semibold">Front</div>
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {Object.keys(MUSCLE_REGION_MAP).slice(0, 10).map((m) => (
               <div
                 key={`front-${m}`}
-                className={`rounded-md border p-2 text-xs text-center ${getMuscleClassName(m as MuscleName)}`}>
+                className={`rounded-md border p-1.5 sm:p-2 text-[0.7rem] sm:text-xs text-center truncate ${getMuscleClassName(m as MuscleName)}`}>
                 {m}
               </div>
             ))}
@@ -60,13 +60,13 @@ export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], varia
         )}
 
         {showBack && (
-        <div className="flex-1">
-          <div className="mb-2 text-sm font-semibold">Back</div>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="mb-2 text-xs sm:text-sm font-semibold">Back</div>
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {Object.keys(MUSCLE_REGION_MAP).slice(10).map((m) => (
               <div
                 key={`back-${m}`}
-                className={`rounded-md border p-2 text-xs text-center ${getMuscleClassName(m as MuscleName)}`}>
+                className={`rounded-md border p-1.5 sm:p-2 text-[0.7rem] sm:text-xs text-center truncate ${getMuscleClassName(m as MuscleName)}`}>
                 {m}
               </div>
             ))}

@@ -60,6 +60,8 @@ type ExerciseData = Readonly<{
   groupType: string | null
   groupRestTime: number | null
   imageUrl: string | null
+  bestWeight: number | null
+  bestSetVolume: number | null
   exerciseId: string | null
   exerciseType: string
 }>
@@ -81,6 +83,8 @@ type WorkoutDetailsResponse = Readonly<{
     exerciseType: string
     orderIndex: number
     imageUrl?: string | null
+    bestWeight?: number | null
+    bestSetVolume?: number | null
     sets: Array<{
       id: string
       type: SetType
@@ -317,6 +321,8 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   groupType: exercise.groupType ?? null,
   groupRestTime: exercise.groupRestTime ?? null,
   imageUrl: exercise.imageUrl ?? null,
+  bestWeight: exercise.bestWeight ?? null,
+  bestSetVolume: exercise.bestSetVolume ?? null,
   exerciseType: exercise.exerciseType,
   sets: [...exercise.sets].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessSet),
 })
@@ -351,6 +357,43 @@ const secureRandomHex = (): string => {
   const res = globalThis.crypto?.getRandomValues?.(new Uint8Array(6))
 
   return res ? Array.from(res, (b) => b.toString(16).padStart(2, '0')).join('') : Date.now().toString(36)
+}
+
+type PrHit = { exerciseName: string; kind: 'weight' | 'volume'; value: number }
+
+const detectPrs = (exercises: ExerciseData[]): PrHit[] => {
+  const hits: PrHit[] = []
+
+  for (const exercise of exercises) {
+    let topWeight = 0
+    let topVolume = 0
+
+    for (const set of exercise.sets) {
+      if (!set.completed || set.type !== 'Normal') {
+        continue
+      }
+
+      const weight = toNumericValue(set.kg)
+      const reps = toNumericValue(set.reps)
+
+      if (weight <= 0 || reps <= 0) {
+        continue
+      }
+
+      topWeight = Math.max(topWeight, weight)
+      topVolume = Math.max(topVolume, weight * reps)
+    }
+
+    if (topWeight > (exercise.bestWeight ?? 0)) {
+      hits.push({ exerciseName: exercise.name, kind: 'weight', value: topWeight })
+    }
+
+    if (topVolume > (exercise.bestSetVolume ?? 0)) {
+      hits.push({ exerciseName: exercise.name, kind: 'volume', value: topVolume })
+    }
+  }
+
+  return hits
 }
 
 const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): WorkoutLogSetPayload[] => {
@@ -525,6 +568,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             name: ex.name,
             muscleGroup: ex.primaryMuscle,
             secondaryMuscles: ex.secondaryMuscles ?? [],
+            bestWeight: null,
+            bestSetVolume: null,
             groupId: null,
             groupType: null,
             groupRestTime: null,
@@ -831,6 +876,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         name: exercise.name,
         muscleGroup: exercise.muscleGroup,
         secondaryMuscles: [],
+        bestWeight: null,
+        bestSetVolume: null,
         groupId: null,
         groupType: null,
         groupRestTime: null,
@@ -929,6 +976,19 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     }
 
     await enqueue(load)
+
+    const prs = detectPrs(exercises)
+
+    if (prs.length === 1) {
+      const [pr] = prs
+      toast.success(
+        pr.kind === 'weight' ? `${pr.exerciseName} — ${pr.value}kg` : `${pr.exerciseName} — ${pr.value.toLocaleString()}kg set volume`, 'New PR'
+      )
+    }
+    else if (prs.length > 1) {
+      toast.success(`${prs.length} new personal records this session.`, 'New PRs')
+    }
+
     if (navigator.onLine) {
       await flushOutBox()
     }

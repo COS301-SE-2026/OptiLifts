@@ -53,6 +53,7 @@ type ExerciseData = Readonly<{
   sourceWorkoutExerciseId: string | null
   name: string
   muscleGroup: string
+  secondaryMuscles: string[]
   sets: SetData[]
   recommendation?: string
   groupId: string | null
@@ -76,6 +77,7 @@ type WorkoutDetailsResponse = Readonly<{
     exerciseId: string
     name: string
     primaryMuscle: string
+    secondaryMuscles?: string[]
     exerciseType: string
     orderIndex: number
     imageUrl?: string | null
@@ -310,6 +312,7 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   sourceWorkoutExerciseId: exercise.id,
   name: exercise.name,
   muscleGroup: exercise.primaryMuscle,
+  secondaryMuscles: exercise.secondaryMuscles ?? [],
   groupId: exercise.groupId ?? null,
   groupType: exercise.groupType ?? null,
   groupRestTime: exercise.groupRestTime ?? null,
@@ -521,6 +524,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             sourceWorkoutExerciseId: ex.id,
             name: ex.name,
             muscleGroup: ex.primaryMuscle,
+            secondaryMuscles: ex.secondaryMuscles ?? [],
             groupId: null,
             groupType: null,
             groupRestTime: null,
@@ -826,6 +830,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         sourceWorkoutExerciseId: null,
         name: exercise.name,
         muscleGroup: exercise.muscleGroup,
+        secondaryMuscles: [],
         groupId: null,
         groupType: null,
         groupRestTime: null,
@@ -869,6 +874,15 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     () => primaryMuscleGroups.filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName)),
     [primaryMuscleGroups]
   )
+
+  const secondaryMuscles = useMemo(
+    () =>
+      exercises
+        .flatMap((exercise) => exercise.secondaryMuscles ?? [])
+        .filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName)),
+    [exercises]
+  )
+
 
   const buildLogPayload = (): WorkoutLogPayload | null => {
     if (!workoutId) return null
@@ -1215,7 +1229,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col">
               <div className="exercise-summary-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-2 text-sm text-muted-foreground">
-                <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+                <MuscleDiagram highlightedMuscles={highlightedMuscles} secondaryMuscles={secondaryMuscles} variant="both" />
                 <MusclesSummary exercises={exercises} />
               </div>
             </CardContent>

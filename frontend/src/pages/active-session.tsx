@@ -123,9 +123,10 @@ type SetRowProps = Readonly<{
   gridTemplate: string
   onUpdate: (updater: (current: SetData) => SetData) => void
   onRemove: () => void
+  onRestStart: () => void
 }>
 
-function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: SetRowProps) {
+function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove, onRestStart }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
@@ -174,7 +175,13 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
             variant="icon"
             size="icon"
             className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
-            onClick={() => onUpdate((current) => ({ ...current, completed: !current.completed }))}
+            onClick={() => {
+              const willComplete = !set.completed
+              onUpdate((current) => ({ ...current, completed: !current.completed }))
+              if (willComplete) {
+                onRestStart()
+              }
+            }}
           >
             <Check className="h-3.5 w-3.5" />
           </Button>
@@ -191,6 +198,11 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove }: Se
       </div>
     </div>
   )
+}
+
+const formatClock = (totalSeconds: number) => {
+  const abs = Math.abs(totalSeconds)
+  return `${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
 }
 
 const buildPreviousText = (kg: number | null, reps: number | null) => {
@@ -438,6 +450,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [conflictDraft, setConflictDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
   const [startKey, setStartKey] = useState(0)
+  const [restTimer, setRestTimer] = useState<{ endsAt: number; totalSeconds: number; exerciseName: string } | null>(null)
 
   useEffect(() => {
     if (!workoutId) {
@@ -668,6 +681,10 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   }, [isEditMode, workoutId, exercises.length])
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
+  const restRem = restTimer ? Math.round((restTimer.endsAt - nowMs) / 1000) : null
+  const restOT = restRem !== null && restRem < 0
+  const restProg = restTimer && restRem !== null
+    ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
 
   const durationDisplay = useMemo(() => {
     if (!isEditMode) {
@@ -685,6 +702,22 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     return '--:--'
   }, [isEditMode, secElaps, startedAtIso, completedAtIso, pastDurationText])
+
+  const startRest = (exercise: ExerciseData, set: SetData) => {
+    if (isEditMode) {
+      return
+    }
+
+    const sec = exercise.groupId ? (exercise.groupRestTime ?? set.restTime) : set.restTime
+
+    if (!sec || sec <= 0) {
+      setRestTimer(null)
+      return
+    }
+
+    setNowMs(Date.now())
+    setRestTimer({ endsAt: Date.now() + sec * 1000, totalSeconds: sec, exerciseName: exercise.name })
+  }
 
   const updateSet = (
     exerciseId: string,
@@ -998,6 +1031,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 gridTemplate={gridTemp}
                 onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
                 onRemove={() => removeSet(exercise.id, set.id)}
+                onRestStart={() => startRest(exercise, set)}
               />
             ))}
           </div>
@@ -1124,6 +1158,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               >
                 <Plus className="mr-2 h-3.5 w-3.5" /> Add Exercise
               </Button>
+              {restTimer && <div aria-hidden className="h-24" />}
             </div>
           </div>
         </div>
@@ -1213,6 +1248,39 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 Resume
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+      {restTimer && restRem !== null && (
+        <div className="fixed inset-x-0 bottom-0 z-[80] border-t-2 border-brand bg-background/95 backdrop-blur">
+          <div className="h-1 w-full bg-surface-2">
+            <div
+              className={`h-full transition-[width] duration-1000 ease-linear ${restOT ? 'bg-warning' : 'bg-brand'}`}
+              style={{ width: `${restProg}%` }}
+            />
+          </div>
+
+          <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restOT ? 'text-warning' : 'text-brand'}`}>
+              {restOT ? '+' : ''}{formatClock(restRem)}
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground">
+                {restOT ? 'Rest over' : 'Resting'}
+              </p>
+              <p className="truncate text-sm font-semibold text-foreground">{restTimer.exerciseName}</p>
+            </div>
+
+            <Button
+              variant="icon"
+              size="icon"
+              aria-label="Dismiss rest timer"
+              className="h-11 w-11 shrink-0 border-0 bg-transparent text-muted-foreground hover:text-foreground"
+              onClick={() => setRestTimer(null)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}

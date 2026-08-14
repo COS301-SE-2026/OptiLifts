@@ -18,6 +18,7 @@ import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
+import { useOnlineStatus } from '@/lib/use-online-status'
 import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -575,6 +576,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [startKey, setStartKey] = useState(0)
   const [restTimer, setRestTimer] = useState<RestTimer | null>(null)
   const [prSetIds, setPrSetIds] = useState<string[]>([])
+  const isOnline = useOnlineStatus()
 
   useEffect(() => {
     if (!workoutId) {
@@ -1165,7 +1167,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               <button
                 type="button"
                 className="block text-left text-base font-bold leading-snug text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
-                disabled={!exercise.exerciseId}
+                disabled={!exercise.exerciseId || !isOnline}
                 onClick={() => { if (exercise.exerciseId) setDetailsExerciseId(exercise.exerciseId) }}
               >
                 {exercise.name}
@@ -1274,7 +1276,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                     variant="default"
                     size="sm"
                     className="h-8"
-                    disabled={!allowedFinish || isSaving}
+                    disabled={!allowedFinish || isSaving || !isOnline}
                     onClick={() => void savePastWorkoutEdits()}
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
@@ -1333,6 +1335,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               <Button
                 variant="outline"
                 className="w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-10 text-xs"
+                disabled={!isOnline}
+                title={isOnline ? undefined : 'Unavailable offline'}
                 onClick={() => setPickerOpen(true)}
               >
                 <Plus className="mr-2 h-3.5 w-3.5" /> Add Exercise

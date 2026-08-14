@@ -29,4 +29,48 @@ public static class E1RMCalculator
 
 
     }
+
+    //Returns reps
+    public static int ReverseEpleyReps(double targetE1RM, float previousWeight, string? mechanic, ExerciseType exerciseType)
+    {
+        if (targetE1RM <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetE1RM), "Target e1RM must be greater than 0.");
+        }
+
+        if (exerciseType == ExerciseType.BodyweightReps)
+        {
+            return Math.Max(1, (int)Math.Round(targetE1RM));
+        }
+
+        if (previousWeight <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(previousWeight), "Previous weight must be greater than 0.");
+        }
+
+        double reps = ((targetE1RM / previousWeight) - 1d) / 0.0333d;
+        return Math.Max(1, (int)Math.Round(reps));
+    }
+
+    //Returns weight
+    public static float ReverseEpleyWeight(double targetE1RM, int targetReps, string? mechanic, ExerciseType exerciseType)
+    {
+        if (targetE1RM <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetE1RM), "Target e1RM must be greater than 0.");
+        }
+
+        if (exerciseType == ExerciseType.BodyweightReps)
+        {
+            throw new InvalidOperationException("ReverseEpleyWeight is only valid for weighted exercises.");
+        }
+
+        if (targetReps <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetReps), "Target reps must be greater than 0.");
+        }
+
+        double weight = targetE1RM / (1d + (0.0333d * targetReps));
+        return (float)Math.Max(0d, weight);
+    }
 }

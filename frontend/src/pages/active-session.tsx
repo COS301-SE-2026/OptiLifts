@@ -145,17 +145,21 @@ type SetRowProps = Readonly<{
   setLabel: string
   columns: ReturnType<typeof getColumns>
   gridTemplate: string
+  gridTemplateMobile: string
   onUpdate: (updater: (current: SetData) => SetData) => void
   onRemove: () => void
   onRestStart: () => void
 }>
 
-function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove, onRestStart }: SetRowProps) {
+function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, onUpdate, onRemove, onRestStart }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
   return (
-    <div className={`grid items-center gap-4 rounded-lg p-1.5 text-center text-sm font-medium ${setTypeRowClass[set.type]}`} style={{ gridTemplateColumns: gridTemplate }}>
+    <div
+      className={`grid items-center gap-2 lg:gap-4 rounded-lg p-1.5 text-center text-sm font-medium [grid-template-columns:var(--set-cols-m)] lg:[grid-template-columns:var(--set-cols)] ${setTypeRowClass[set.type]}`}
+      style={{ ['--set-cols-m' as string]: gridTemplateMobile, ['--set-cols' as string]: gridTemplate }}
+    >
       <div className="flex items-center">
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain" className="text-muted-foreground hover:text-foreground">
@@ -172,7 +176,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove, onRe
         <Input readOnly value={setLabel} className="h-8 w-8 border-0 bg-transparent px-0 text-center text-sm font-bold" />
       </div>
 
-      <div className="text-muted-foreground font-normal">{set.previous}</div>
+      <div className="hidden lg:block text-muted-foreground font-normal">{set.previous}</div>
 
       {columns.map((col) => {
         const key = FIELD_TO_SET_KEY[col.field]
@@ -186,12 +190,14 @@ function SetRow({ set, setLabel, columns, gridTemplate, onUpdate, onRemove, onRe
         )
       })}
 
-      <NumericalUnderscoreInput
-        value={set.rpe}
-        placeholder="RPE"
-        onChange={(event) => setField('rpe', event.target.value)}
-        className="text-base text-center mx-auto"
-      />
+      <div className="hidden lg:block">
+        <NumericalUnderscoreInput
+          value={set.rpe}
+          placeholder="RPE"
+          onChange={(event) => setField('rpe', event.target.value)}
+          className="text-base text-center mx-auto"
+        />
+      </div>
 
       <div className="flex w-full items-center">
         <div className="flex flex-1 items-center justify-center">
@@ -1010,7 +1016,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const renderExerCard = (exercise: ExerciseData) => {
 
     const cols = getColumns(exercise.exerciseType)
-    const gridTemp = `4rem 1.5fr ${cols.map(() => '1fr').join(' ')} 0.8fr 7rem`
+    const gridTempMobile = `2.75rem ${cols.map(() => 'minmax(0, 1fr)').join(' ')} 4.5rem`
+    const gridTemp = `3.5rem minmax(0, 1.5fr) ${cols.map(() => 'minmax(0, 1fr)').join(' ')} minmax(0, 0.8fr) 4rem`
     const setLabels = buildLabels(exercise.sets)
 
     return (
@@ -1049,12 +1056,13 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
         <CardContent className="px-5 pb-4">
           <div
-            className="mb-2 grid gap-4 px-2 text-center text-xs font-semibold tracking-wide text-muted-foreground"
-            style={{ gridTemplateColumns: gridTemp }}>
+            className="mb-2 grid gap-2 lg:gap-4 border-l-4 border-transparent p-1.5 text-center text-xs font-semibold tracking-wide text-muted-foreground [grid-template-columns:var(--set-cols-m)] lg:[grid-template-columns:var(--set-cols)]"
+            style={{ ['--set-cols-m' as string]: gridTempMobile, ['--set-cols' as string]: gridTemp }}>
             <div>SET</div>
-            <div>PREVIOUS</div>
+            <div className="hidden lg:block">PREVIOUS</div>
             {cols.map((col) => <div key={col.field}>{col.label}</div>)}
-            <div>RPE</div>
+            <div className="hidden lg:block">RPE</div>
+            <div />
           </div>
 
           <div className="space-y-2">
@@ -1065,6 +1073,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 setLabel={setLabels[setIndex]}
                 columns={cols}
                 gridTemplate={gridTemp}
+                gridTemplateMobile={gridTempMobile}
                 onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
                 onRemove={() => removeSet(exercise.id, set.id)}
                 onRestStart={() => startRest(exercise, set)}
@@ -1083,7 +1092,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
+    <section className="mx-auto max-w-6xl px-6 pb-6 pt-20 lg:pt-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
       <div className="grid grid-cols-12 gap-6 lg:h-full lg:min-h-0">
         <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">
           <div className="flex flex-col gap-2">
@@ -1103,7 +1112,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               <span>{isEditMode ? 'Back to Workout Log' : 'Back to Workouts'}</span>
             </Button>
 
-            <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
               <div className="flex items-center gap-3">
                 <PageTitle title={workoutName} />
                 {isEditMode && (
@@ -1113,7 +1122,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 )}
               </div>
 
-              <div className="flex items-center gap-6 text-center">
+              <div className="flex items-center justify-between gap-4 text-center lg:justify-end lg:gap-6">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">Duration</p>
                   <p className="text-sm font-bold">{durationDisplay}</p>
@@ -1156,7 +1165,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             </div>
           )}
 
-          <div className="max-h-[calc(100dvh-15rem)] overflow-y-auto pr-1">
+          <div className="lg:max-h-[calc(100dvh-15rem)] lg:overflow-y-auto lg:pr-1">
             <div className="flex flex-col gap-4">
               {buildSessionSegs(exercises).map((seg) => {
                 if (seg.kind === 'single') {

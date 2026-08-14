@@ -93,16 +93,32 @@ type WorkoutDetailsResponse = Readonly<{
   }>
 }>
 
+type RestTimer = {
+  endsAt: number
+  totalSeconds: number
+  exerciseName: string
+}
+
 type SessionDraft = {
   workoutId: string
   workoutName: string
   startedAtMs: number | null
   logId: string
   exercises: ExerciseData[]
+  restTimer: RestTimer | null
 }
 
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
+const MAX_REST_OVERTIME_MS = 10 * 60 * 1000
+
+const revivedRestTimer = (timer: RestTimer | null | undefined): RestTimer | null => {
+  if (!timer) {
+    return null
+  }
+
+  return Date.now() - timer.endsAt > MAX_REST_OVERTIME_MS ? null : timer
+}
 
 const setTypeLabelMap: Record<SetType, string> = {
   Warmup: 'Warmup',
@@ -441,7 +457,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [pastDurationText, setPastDurationText] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null)
-  const [nowMs, setNowMs] = useState<number>(0)
+  const [nowMs, setNowMs] = useState<number>(() => Date.now())
   const [isPickerOpen, setPickerOpen] = useState(false)
   const [exitOpen, setExitOpen] = useState(false)
   const [pendingNavTo, setPendingNavTo] = useState<string | null>(null)
@@ -450,7 +466,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [conflictDraft, setConflictDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
   const [startKey, setStartKey] = useState(0)
-  const [restTimer, setRestTimer] = useState<{ endsAt: number; totalSeconds: number; exerciseName: string } | null>(null)
+  const [restTimer, setRestTimer] = useState<RestTimer | null>(null)
 
   useEffect(() => {
     if (!workoutId) {
@@ -533,8 +549,10 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       setWorkoutName(draft.workoutName)
       setStartedAtMs(draft.startedAtMs)
       setExercises(draft.exercises)
+      setRestTimer(revivedRestTimer(draft.restTimer))
       setIsLoading(false)
     }
+
 
     // drafts don't carry images or muscle groups - backfill from the workout
     const backfillDraft = async () => {
@@ -643,9 +661,9 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
     if (workoutId && exercises.length > 0) {
-      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer })
     }
-  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises])
+  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer])
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
@@ -893,7 +911,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     const keep = () => {
     if (workoutId) {
-      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises })
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer })
     }
 
     navigate(pendingNavTo ?? '/workouts')

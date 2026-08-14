@@ -213,6 +213,7 @@ export default function SchedulePage() {
             const analyticsData = (await analyticsResp.json()) as AnalyticsResponse
 
             setScheduleEntries(scheduleData)
+            setAnalytics(analyticsData)
             setIsOfflineData(false)
             void cacheScheduleEntries(scheduleData)
 
@@ -426,7 +427,7 @@ export default function SchedulePage() {
             {isOfflineData && (
                 <div className="mb-6 rounded-xl border border-border bg-surface-2 px-4 py-3.5 text-sm text-muted-foreground flex items-center gap-2.5 shadow-sm" role="status">
                     <AlertCircle size={18} />
-                    <span>You're offline — showing your saved schedule. Analytics are unavailable until you reconnect.</span>
+                    <span>You're offline - showing your saved schedule. Analytics are unavailable until you reconnect.</span>
                 </div>
             )}
 

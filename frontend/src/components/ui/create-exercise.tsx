@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { customFetch } from '@/lib/custom-fetch'
+import { useOnlineStatus } from '@/lib/use-online-status'
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -93,6 +94,7 @@ export function CreateExercise({
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([])
   const [activeMusclePicker, setActiveMusclePicker] = useState<"primary" | "secondary" | null>(null)
   const [muscleSearchQuery, setMuscleSearchQuery] = useState("")
+  const isOnline = useOnlineStatus()
 
   const effectiveExerciseTypeOptions = useMemo(() => {
     if (!initialValues?.exerciseType) return resolvedExerciseTypeOptions
@@ -438,7 +440,7 @@ export function CreateExercise({
 
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-              <Button type="submit" disabled={!name.trim() || !primaryMuscle || isSaving}>Save Exercise</Button>
+              <Button type="submit" disabled={!name.trim() || !primaryMuscle || isSaving || !isOnline}>Save Exercise</Button>
             </div>
             {saveError ? (
               <p className="mt-3 text-sm text-destructive" role="alert">

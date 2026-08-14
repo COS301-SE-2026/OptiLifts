@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DatePagination } from '@/components/ui/date-pagination'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { cacheScheduleEntries, getCachedScheduleEntries } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus } from '@/lib/use-online-status'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -127,6 +129,8 @@ export default function SchedulePage() {
     const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
     const [selectedAddDate, setSelectedAddDate] = useState<Date | null>(null)
     const [isScheduling, setIsScheduling] = useState(false)
+    const isOnline = useOnlineStatus()
+    const [isOfflineData, setIsOfflineData] = useState(false)
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -209,7 +213,8 @@ export default function SchedulePage() {
             const analyticsData = (await analyticsResp.json()) as AnalyticsResponse
 
             setScheduleEntries(scheduleData)
-            setAnalytics(analyticsData)
+            setIsOfflineData(false)
+            void cacheScheduleEntries(scheduleData)
 
             try{
                 const year = currentWeekDate.getFullYear()
@@ -253,6 +258,14 @@ export default function SchedulePage() {
             }
             setSecondaryMuscleValues(secondaryAggre)
         } catch (error) {
+            const cached = await getCachedScheduleEntries<ScheduledEntryDto>()
+
+            if (cached && cached.length > 0) {
+                setScheduleEntries(cached)
+                setIsOfflineData(true)
+                return
+            }
+
             setError(error instanceof Error ? error.message : 'Could not load analytics')
         } finally {
             setIsLoading(false)
@@ -302,9 +315,13 @@ export default function SchedulePage() {
     }
 
     const handleAddClick = (date: Date) => {
-        //placeholder for adding workout implementation (needs a popup)
+        if (!isOnline) {
+            return
+        }
+
         setSelectedAddDate(date)
     }
+
     const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
@@ -399,13 +416,17 @@ export default function SchedulePage() {
             </div>
             </div>
 
-
-
-            {/* error msg */}
             {error && (
                 <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3.5 text-sm text-destructive flex items-center gap-2.5 shadow-sm animate-fadeIn" role="alert">
                     <AlertCircle size={18} />
                     <span>{error}</span>
+                </div>
+            )}
+
+            {isOfflineData && (
+                <div className="mb-6 rounded-xl border border-border bg-surface-2 px-4 py-3.5 text-sm text-muted-foreground flex items-center gap-2.5 shadow-sm" role="status">
+                    <AlertCircle size={18} />
+                    <span>You're offline — showing your saved schedule. Analytics are unavailable until you reconnect.</span>
                 </div>
             )}
 

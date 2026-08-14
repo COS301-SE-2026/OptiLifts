@@ -17,6 +17,7 @@ import { MoreVertical } from 'lucide-react'
 import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { buildLabels } from '@/lib/exercise-format'
+import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -129,6 +130,13 @@ export default function WorkoutDetailPage() {
           setWorkout(data)
         }
       } catch (loadError) {
+        const cached = await getCachedWorkoutDetail(workoutId)
+
+        if (mounted && cached) {
+          setWorkout(cached)
+          return
+        }
+
         if (mounted) {
           setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
         }

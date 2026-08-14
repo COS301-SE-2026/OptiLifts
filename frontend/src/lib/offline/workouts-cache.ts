@@ -3,19 +3,19 @@ import type { Workout } from '@/types/workout'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { STORE_WORKOUTS, tx } from './db'
 
-const LIST_KEY = '__workout-list__'
+const KEY_LIST = '__workout-list__'
 
 type CachedList = { id: string; workouts: Workout[]; cachedAt: string }
 type CachedDetail = { id: string; detail: WorkoutDetailResponse; cachedAt: string }
 
 export function cacheWorkoutList(workouts: Workout[]): Promise<IDBValidKey> {
-  const row: CachedList = { id: LIST_KEY, workouts, cachedAt: new Date().toISOString() }
+  const row: CachedList = { id: KEY_LIST, workouts, cachedAt: new Date().toISOString() }
   return tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
 }
 
 export async function getCachedWorkoutList(): Promise<Workout[] | null> {
   try {
-    const row = await tx<CachedList | undefined>(STORE_WORKOUTS, 'readonly', (store) => store.get(LIST_KEY))
+    const row = await tx<CachedList | undefined>(STORE_WORKOUTS, 'readonly', (store) => store.get(KEY_LIST))
     return row?.workouts ?? null
   }
   catch {
@@ -46,18 +46,37 @@ export async function precacheWorkoutDetails(workoutIds: readonly string[]): Pro
     }
 
     try {
-      const response = await customFetch(`/api/workouts/${workoutId}`, {
+      const resp = await customFetch(`/api/workouts/${workoutId}`, {
         headers: { Accept: 'application/json' },
       })
 
-      if (!response.ok) {
+      if (!resp.ok) {
         continue
       }
 
-      await cacheWorkoutDetail((await response.json()) as WorkoutDetailResponse)
+      await cacheWorkoutDetail((await resp.json()) as WorkoutDetailResponse)
     }
     catch {
       return
     }
+  }
+}
+
+const KEY_SCHED = '__schedule__'
+
+type CachedSchedule = { id: string; entries: unknown[]; cachedAt: string }
+
+export function cacheScheduleEntries(entries: readonly unknown[]): Promise<IDBValidKey> {
+  const row: CachedSchedule = { id: KEY_SCHED, entries: [...entries], cachedAt: new Date().toISOString() }
+  return tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+}
+
+export async function getCachedScheduleEntries<T>(): Promise<T[] | null> {
+  try {
+    const row = await tx<CachedSchedule | undefined>(STORE_WORKOUTS, 'readonly', (store) => store.get(KEY_SCHED))
+    return (row?.entries as T[]) ?? null
+  }
+  catch {
+    return null
   }
 }

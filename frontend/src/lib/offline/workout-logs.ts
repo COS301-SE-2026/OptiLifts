@@ -1,4 +1,5 @@
 import { customFetch } from '@/lib/custom-fetch'
+import { STORE_WORKOUT_LOGS, tx } from './db'
 
 export const WORKOUT_LOG_SYNC_EVENT = 'ol-workout-log-synced'
 
@@ -43,47 +44,9 @@ type Items = {
   updatedAt: string
 }
 
-const NAME = 'offline-db'
-const VERSIOn = 1
-const DB_OUTBOX = 'workoutLogs'
+const store = <T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>) =>
+  tx<T>(STORE_WORKOUT_LOGS, mode, action)
 
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(NAME, VERSIOn)
-
-    req.onupgradeneeded = () => {
-      const db = req.result
-      
-      if (!db.objectStoreNames.contains(DB_OUTBOX)) {
-        db.createObjectStore(DB_OUTBOX, { keyPath: 'logId' })
-      }
-    }
-
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error ?? new Error('Could not open offline database'))
-  })
-}
-
-function store<T>( mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>): 
-Promise<T> {
-  return openDB().then(
-    (db) =>
-      new Promise<T>((resolve, reject) => {
-        const txx = db.transaction(DB_OUTBOX, mode)
-        const reqq = action(txx.objectStore(DB_OUTBOX))
-
-        txx.oncomplete = () => {
-          db.close()
-          resolve(reqq.result)
-        }
-
-        txx.onerror = () => {
-          db.close()
-          reject(txx.error ?? new Error('Offline database transaction failed'))
-        }
-      })
-  )
-}
 
 export function enqueue(payload: WorkoutLogPayload): Promise<IDBValidKey> {
   const item: Items = { logId: payload.logId, payload, status: 'pending', attempts: 0, updatedAt: new Date().toISOString(), }

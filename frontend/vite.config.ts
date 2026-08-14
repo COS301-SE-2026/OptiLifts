@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         workbox: {
+          skipWaiting: true,
+          clientsClaim: true,
           runtimeCaching: [
             {
               // for exer images: azure blob in deployed envs, azurite (docker-compose) locally.

@@ -126,7 +126,7 @@ function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Re
       <div className={SETS_PANEL_CLASS}>
         <div className="grid min-w-[72px] sm:min-w-[88px] gap-y-1 sm:gap-y-1.5 text-[0.76rem] sm:text-[0.84rem] text-foreground">
           <p className="text-[0.55rem] sm:text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground whitespace-nowrap">
-            Rest: {formatRestTimeLabel(getExerciseRestTime(exercise))}
+            Rest time: {formatRestTimeLabel(getExerciseRestTime(exercise))}
           </p>
           {exercise.sets.map((set, setIndex) => (
             <div key={`${exercise.name}-${setIndex}`} className={SET_ROW_CLASS}>

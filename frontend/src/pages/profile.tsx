@@ -146,7 +146,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-8">
+    <section className="mx-auto max-w-6xl px-4 pt-16 pb-8 sm:px-6 sm:py-8">
       <div className="mb-8 w-full max-w-[1144px]">
         {displayProfile ? (
           <ProfileOverview
@@ -170,7 +170,7 @@ export default function ProfilePage() {
             <h2 className="type-section-title text-foreground">BADGES</h2>
           </div>
 
-          <div className="grid min-h-[180px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
+          <div className="grid grid-cols-3 gap-2 sm:gap-5">
             {displayBadges.length > 0 ? (
               displayBadges.map((badge) => (
                 <Badge
@@ -183,7 +183,7 @@ export default function ProfilePage() {
                 />
               ))
             ) : (
-              <div className="flex min-h-[180px] items-center rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-3">
+              <div className="flex min-h-[145px] sm:min-h-[180px] items-center rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground col-span-3">
                 You have not earned any badges yet.
               </div>
             )}
@@ -225,7 +225,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
+          <div className="w-full">
             <Calendar
               highlightedDates={calendarDates}
               month={controlledCalendarMonth}

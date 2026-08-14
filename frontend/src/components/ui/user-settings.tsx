@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { metricCheck, outputWeight, inputWeight } from "@/lib/weight-utils";
-import { useOnlineStatus } from '@/lib/use-online-status'
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 
 type UserSettingsPopupProps = Readonly<{
     isOpen: boolean;
@@ -828,7 +828,9 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-border">
                             <Button type="button" variant="secondary" onClick={handleClosePopup} disabled={isSaving}>Cancel</Button>
-                            <Button type="submit" disabled={isSaving || !isOnline}>{isSaving ? "Saving..." : "Save Changes"}</Button>
+                            <OfflineTooltip isOnline={isOnline}>
+                                <Button type="submit" disabled={isSaving || !isOnline}>{isSaving ? "Saving..." : "Save Changes"}</Button>
+                            </OfflineTooltip>
                         </div>
                     </form>
                 )}

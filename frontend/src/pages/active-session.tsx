@@ -18,7 +18,7 @@ import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import type { MuscleName } from '@/types/workout'
-import { useOnlineStatus } from '@/lib/use-online-status'
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -1272,15 +1272,17 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                   <p className="text-sm font-bold">{summary.completedSets}/{summary.totalSets}</p>
                 </div>
                 {isEditMode ? (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="h-8"
-                    disabled={!allowedFinish || isSaving || !isOnline}
-                    onClick={() => void savePastWorkoutEdits()}
-                  >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
-                  </Button>
+                  <OfflineTooltip isOnline={isOnline}>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-8"
+                      disabled={!allowedFinish || isSaving || !isOnline}
+                      onClick={() => void savePastWorkoutEdits()}
+                    >
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </OfflineTooltip>
                 ) : (
                   <Button variant="default" size="sm" className="h-8" disabled={!allowedFinish} onClick={() => void finishWorkout()}>
                     Finish
@@ -1332,15 +1334,16 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 <p className="text-sm text-muted-foreground">No exercises in this workout yet.</p>
               )}
 
-              <Button
-                variant="outline"
-                className="w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-10 text-xs"
-                disabled={!isOnline}
-                title={isOnline ? undefined : 'Unavailable offline'}
-                onClick={() => setPickerOpen(true)}
-              >
-                <Plus className="mr-2 h-3.5 w-3.5" /> Add Exercise
-              </Button>
+              <OfflineTooltip isOnline={isOnline} className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full border-dashed border-border text-muted-foreground hover:text-foreground bg-transparent h-10 text-xs"
+                  disabled={!isOnline}
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Add Exercise
+                </Button>
+              </OfflineTooltip>
               {restTimer && <div aria-hidden className="h-24" />}
             </div>
           </div>

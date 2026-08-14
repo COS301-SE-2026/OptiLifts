@@ -323,14 +323,14 @@ export default function PastWorkoutsPage() {
                 <PageTitle title="COMPLETED WORKOUTS" />
                 <DatePagination
                     currentDate={selectedWeek}
-                    onChange={setSelectedWeek}
+                    onChange={isOnline ? setSelectedWeek : () => {}}
                     type="week"
                 />
             </div>
 
             {!isOnline && (
                 <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
-                    You're offline - editing and deleting past workouts is unavailable until you reconnect.
+                    You're offline - viewing past workouts is unavailable until you reconnect.
                 </div>
             )}
 

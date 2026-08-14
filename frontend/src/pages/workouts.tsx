@@ -12,7 +12,7 @@ import {
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { useAuth } from '@/context/auth-context'
-import { useOnlineStatus } from '@/lib/use-online-status'
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 import type { Workout, WorkoutSummary, MuscleName } from '@/types/workout'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Plus } from 'lucide-react'
@@ -225,19 +225,16 @@ export default function WorkoutsPage() {
             <div className="min-w-0 flex-1">
               <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search workouts" />
             </div>
-            <Button variant="icon" size="icon" aria-label="Add" disabled={!isOnline} title={isOnline ? undefined : 'Unavailable offline'} onClick={() => navigate('/workouts/create')}>
-              <Plus size={20} />
-            </Button>
+            <OfflineTooltip isOnline={isOnline}>
+              <Button variant="icon" size="icon" aria-label="Add" disabled={!isOnline} onClick={() => navigate('/workouts/create')}>
+                <Plus size={20} />
+              </Button>
+            </OfflineTooltip>
           </div>
 
           {isLoading && (
             <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
               Loading workouts...
-            </div>
-          )}
-          {displayError && (
-            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-destructive">
-              {displayError}
             </div>
           )}
           {displayError && (

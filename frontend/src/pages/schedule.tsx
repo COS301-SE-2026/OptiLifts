@@ -17,8 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DatePagination } from '@/components/ui/date-pagination'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
-import { cacheScheduleEntries, getCachedScheduleEntries } from '@/lib/offline/workouts-cache'
-import { useOnlineStatus } from '@/lib/use-online-status'
+import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -288,8 +288,12 @@ export default function SchedulePage() {
                     const data = await response.json()
                     setWorkouts(data)
                 } 
-            } catch(err) {
-                setError(err instanceof Error ? err.message : 'Unexpected error occured while loading workouts.')
+            } catch {
+                const cached = await getCachedWorkoutList()
+
+                if (cached) {
+                    setWorkouts(cached)
+                }
             } finally {
                 setIsFetchingWorkouts(false)
             }
@@ -427,7 +431,7 @@ export default function SchedulePage() {
             {isOfflineData && (
                 <div className="mb-6 rounded-xl border border-border bg-surface-2 px-4 py-3.5 text-sm text-muted-foreground flex items-center gap-2.5 shadow-sm" role="status">
                     <AlertCircle size={18} />
-                    <span>You're offline - showing your saved schedule. Analytics are unavailable until you reconnect.</span>
+                    <span>You're offline - showing your saved schedule. Reconnect for analytics.</span>
                 </div>
             )}
 
@@ -475,7 +479,8 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            disabled={isBeforeToday}
+                                            disabled={isBeforeToday || !isOnline}
+                                            title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
                                 </div>
@@ -513,6 +518,7 @@ export default function SchedulePage() {
                 scheduleEntries={scheduleEntries}
                 isLoading={isLoading}
                 onAddClick={handleAddClick}
+                isOnline={isOnline}
                 onDeleteSession={(id) => setDeleteTargetId(id)}
                 onWorkoutClick={handleWorkoutClick}/>
             )}
@@ -640,13 +646,14 @@ interface EmptyDayCardProps{
     readonly fullName: string
     readonly onClick: () => void
     readonly disabled?:boolean
+    readonly title?: string
 }
-function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
+function EmptyDayCard({ fullName, onClick, disabled, title }: EmptyDayCardProps) {
     return (
         <div className="flex-1 flex items-stretch">
             <button tabIndex={disabled? -1:0}
             disabled={disabled}
-            title={disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`}
+            title={title ?? (disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`)}
                 className={`flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center transition-all ${ 
                     disabled
                     ? 'opacity-40 cursor-not-allowed border-border/40 bg-surface/5'
@@ -657,7 +664,7 @@ function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
                         event.preventDefault();
                         onClick();
                     }
-                }} aria-label={disabled ? `Cannot add workout for ${fullName} before today`: `Add workout for ${fullName}`}>
+                }} aria-label={title ?? (disabled ? `Cannot add workout for ${fullName} before today` : `Add workout for ${fullName}`)}>
                 <div className={`p-3 bg-surface border border-border rounded-full transition-all shadow-sm ${
                     disabled ? 'text-muted-foreground/40 border-border/40'
                     : 'group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground'
@@ -710,6 +717,7 @@ interface MonthViewCalendarProps{
     readonly scheduleEntries: readonly ScheduledEntryDto[]
     readonly isLoading: boolean
     readonly onAddClick: (date: Date) => void
+    readonly isOnline: boolean
     readonly onDeleteSession: (id: string) => void
     readonly onWorkoutClick: (session: ScheduledEntryDto) => void
 }
@@ -718,6 +726,7 @@ function MonthViewCalendar({
     scheduleEntries,
     isLoading,
     onAddClick,
+    isOnline,
     onDeleteSession,
     onWorkoutClick
 }: MonthViewCalendarProps){
@@ -829,10 +838,10 @@ function MonthViewCalendar({
                         <div className="flex justify-center py-1">
                             <button type="button" 
                             tabIndex={isBeforeToday ? -1 : 0}
-                            disabled={isBeforeToday}
+                            disabled={isBeforeToday || !isOnline}
                             onClick={() => onAddClick(cell.date)}
-                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={isBeforeToday ? "Cannot schedule in the past" : "Add workout"}>
+                            className="…unchanged…"
+                            title={!isOnline ? OFFLINE_HINT : (isBeforeToday ? "Cannot schedule in the past" : "Add workout")}>
                                 <Plus size={14} />
                             </button>
                         </div>

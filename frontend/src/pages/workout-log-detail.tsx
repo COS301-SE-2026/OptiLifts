@@ -99,7 +99,9 @@ export default function WorkoutLogDetailPage() {
         }
       } catch (loadError) {
         if (mounted) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load workout log.')
+          setError(navigator.onLine
+            ? (loadError instanceof Error ? loadError.message : 'Failed to load workout log.')
+            : "You're offline - this workout log isn't available until you reconnect.")
         }
       } finally {
         if (mounted) {

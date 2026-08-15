@@ -16,6 +16,7 @@ import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
 import { Dumbbell } from 'lucide-react'
 import { PageTitle } from '@/components/ui/page-title'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 type ScheduleAnalyticsResponse = Readonly<{
     totalWorkouts: number
@@ -214,6 +215,7 @@ export default function DashboardPage() {
     const [isFetching, setIsFetching] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [refreshToken, setRefreshToken] = useState(0)
+    const [isOfflineData, setIsOfflineData] = useState(false)
 
     useEffect(() => {
         if (!isHydrated || !isAuthenticated){
@@ -225,6 +227,7 @@ export default function DashboardPage() {
         async function loadDashboard() {
             setIsFetching(true)
             setError(null)
+            setIsOfflineData(false)
 
             try {
                 const today = startOfDay(new Date())
@@ -283,8 +286,13 @@ export default function DashboardPage() {
                 setCompletedWorkoutDetails(workoutDetailResponses.filter((detail): detail is WorkoutDetailResponse => detail !== null))
                 setAnalytics(analyticsJson)
             } catch (loadError){
-                if (isActive){
-                    setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
+                if (isActive) {
+                    if (loadError instanceof TypeError) {
+                        setIsOfflineData(true)
+                    }
+                    else {
+                        setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
+                    }
                 }
             } finally{
                 if (isActive){
@@ -454,6 +462,9 @@ export default function DashboardPage() {
                 </div>
             )}
 
+            {isOfflineData && (
+                <OfflineBanner message="You're offline - dashboard stats need a connection. Your workouts are still available." />
+            )}
 
             <div className="mb-8">
                 <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />

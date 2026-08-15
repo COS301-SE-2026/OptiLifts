@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { buildLabels } from '@/lib/exercise-format'
 import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
 import { useOnlineStatus } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -71,6 +72,7 @@ export default function WorkoutDetailPage() {
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [isOfflineData, setIsOfflineData] = useState(false)
   const isOnline = useOnlineStatus()
 
   const handleWorkoutChanged = useCallback(() => {
@@ -130,14 +132,17 @@ export default function WorkoutDetailPage() {
         const data = (await response.json()) as WorkoutDetailResponse
         if (mounted) {
           setWorkout(data)
+          setIsOfflineData(false)
         }
       } catch (loadError) {
         const cached = await getCachedWorkoutDetail(workoutId)
 
         if (mounted && cached) {
           setWorkout(cached)
+          setIsOfflineData(true)
           return
         }
+
 
         if (mounted) {
           setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
@@ -201,6 +206,9 @@ export default function WorkoutDetailPage() {
 
   return (
     <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-y-auto px-6 py-12">
+      {isOfflineData && (
+        <OfflineBanner message="You're offline - showing a saved copy of this workout." />
+      )}
       <div className="flex flex-none items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout</p>

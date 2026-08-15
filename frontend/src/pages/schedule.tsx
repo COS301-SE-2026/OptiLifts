@@ -19,6 +19,7 @@ import { DatePagination } from '@/components/ui/date-pagination'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } from '@/lib/offline/workouts-cache'
 import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -437,11 +438,9 @@ export default function SchedulePage() {
             )}
 
             {isOfflineData && (
-                <div className="mb-6 rounded-xl border border-border bg-surface-2 px-4 py-3.5 text-sm text-muted-foreground flex items-center gap-2.5 shadow-sm" role="status">
-                    <AlertCircle size={18} />
-                    <span>You're offline - showing your saved schedule. Reconnect for analytics.</span>
-                </div>
+                <OfflineBanner message="You're offline - showing your saved schedule. Reconnect for analytics." />
             )}
+
 
             {viewMode === 'week' ? (
             <div className="grid grid-cols-12 gap-8 items-start">

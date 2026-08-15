@@ -10,6 +10,8 @@ import { customFetch } from '@/lib/custom-fetch'
 import type { ProfileCalendarEntry, ProfileCalendarResponse, ProfilePageResponse } from '@/types/profile'
 import { Button } from '@/components/ui/button'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { OfflineBanner } from '@/components/ui/offline-banner'
+
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
@@ -26,6 +28,7 @@ export default function ProfilePage() {
   const [calendarLoading, setCalendarLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isOfflineData, setIsOfflineData] = useState(false)
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) {
@@ -37,6 +40,7 @@ export default function ProfilePage() {
     async function loadProfile() {
       setIsFetching(true)
       setError(null)
+      setIsOfflineData(false)
 
       try {
         const response = await customFetch('/api/profile/overview', {
@@ -56,7 +60,12 @@ export default function ProfilePage() {
         }
       } catch (loadError) {
         if (isActive) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load profile.')
+          if (loadError instanceof TypeError) {
+            setIsOfflineData(true)
+          }
+          else {
+            setError(loadError instanceof Error ? loadError.message : 'Failed to load profile.')
+          }
         }
       } finally {
         if (isActive) {
@@ -147,6 +156,9 @@ export default function ProfilePage() {
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-8">
+      {isOfflineData && (
+        <OfflineBanner message="You're offline - your profile needs a connection." />
+      )}     
       <div className="mb-8 w-full max-w-[1144px]">
         {displayProfile ? (
           <ProfileOverview

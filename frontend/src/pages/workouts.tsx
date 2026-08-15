@@ -19,6 +19,7 @@ import { Plus } from 'lucide-react'
 import { customFetch } from '@/lib/custom-fetch'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { cacheWorkoutList, getCachedWorkoutDetail, getCachedWorkoutList, precacheWorkoutDetails } from '@/lib/offline/workouts-cache'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 export default function WorkoutsPage() {
   const { isAuthenticated, isHydrated } = useAuth()
@@ -243,10 +244,9 @@ export default function WorkoutsPage() {
             </div>
           )}
           {isOfflineData && (
-            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
-              You're offline - your workouts will sync when you're back online.
-            </div>
+            <OfflineBanner message="You're offline - your workouts will sync when you're back online." />
           )}
+
           {!isLoading && !error && filtered.length === 0 && (
             <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
               No workouts found

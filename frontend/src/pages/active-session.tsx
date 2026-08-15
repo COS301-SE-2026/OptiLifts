@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
 import { buildLabels } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 type WorkoutLocationState = Readonly<{
   workout?: Readonly<{
@@ -576,6 +577,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [startKey, setStartKey] = useState(0)
   const [restTimer, setRestTimer] = useState<RestTimer | null>(null)
   const [prSetIds, setPrSetIds] = useState<string[]>([])
+  const [isOfflineData, setIsOfflineData] = useState(false)
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
@@ -717,6 +719,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
 
         setExercises(mappedExers)
+        setIsOfflineData(false)
         void cacheWorkoutDetail(data as WorkoutDetailResponse)
       }
       catch (loadError) {
@@ -731,6 +734,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
           setPrimaryMuscleGroups(cached.primaryMuscleGroups ?? [])
           setStartedAtMs(Date.now())
           setExercises([...cached.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise))
+          setIsOfflineData(true)
           return
         }
 
@@ -1301,6 +1305,10 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             <div className="rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
+          )}
+
+          {isOfflineData && (
+            <OfflineBanner message="You're offline - this session is saved on your device and will sync when you reconnect." />
           )}
 
           <div className="lg:max-h-[calc(100dvh-15rem)] lg:overflow-y-auto lg:pr-1">

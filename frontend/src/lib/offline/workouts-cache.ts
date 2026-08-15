@@ -8,10 +8,17 @@ const KEY_LIST = '__workout-list__'
 type CachedList = { id: string; workouts: Workout[]; cachedAt: string }
 type CachedDetail = { id: string; detail: WorkoutDetailResponse; cachedAt: string }
 
-export function cacheWorkoutList(workouts: Workout[]): Promise<IDBValidKey> {
+export async function cacheWorkoutList(workouts: Workout[]): Promise<void> {
   const row: CachedList = { id: KEY_LIST, workouts, cachedAt: new Date().toISOString() }
-  return tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+
+  try {
+    await tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+  }
+  catch {
+    // caching
+  }
 }
+
 
 export async function getCachedWorkoutList(): Promise<Workout[] | null> {
   try {
@@ -23,10 +30,17 @@ export async function getCachedWorkoutList(): Promise<Workout[] | null> {
   }
 }
 
-export function cacheWorkoutDetail(detail: WorkoutDetailResponse): Promise<IDBValidKey> {
+export async function cacheWorkoutDetail(detail: WorkoutDetailResponse): Promise<void> {
   const row: CachedDetail = { id: detail.id, detail, cachedAt: new Date().toISOString() }
-  return tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+
+  try {
+    await tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+  }
+  catch {
+    // caching is best-effort
+  }
 }
+
 
 export async function getCachedWorkoutDetail(workoutId: string): Promise<WorkoutDetailResponse | null> {
   try {
@@ -66,10 +80,17 @@ const KEY_SCHED = '__schedule__'
 
 type CachedSchedule = { id: string; entries: unknown[]; cachedAt: string }
 
-export function cacheScheduleEntries(entries: readonly unknown[]): Promise<IDBValidKey> {
+export async function cacheScheduleEntries(entries: readonly unknown[]): Promise<void> {
   const row: CachedSchedule = { id: KEY_SCHED, entries: [...entries], cachedAt: new Date().toISOString() }
-  return tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+
+  try {
+    await tx(STORE_WORKOUTS, 'readwrite', (store) => store.put(row))
+  }
+  catch {
+    // caching is best-effort
+  }
 }
+
 
 export async function getCachedScheduleEntries<T>(): Promise<T[] | null> {
   try {

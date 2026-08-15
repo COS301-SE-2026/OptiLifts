@@ -6,6 +6,11 @@ export const STORE_WORKOUTS = 'workouts'
 
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB is not available'))
+      return
+    }
+
     const req = indexedDB.open(NAME, VERSION)
 
     req.onupgradeneeded = () => {

@@ -535,7 +535,7 @@ export function CreateExercise({
                   >
                     <div className="flex items-center gap-3 sm:gap-4">
                       {/* Placeholder for anatomy image */}
-                      <div className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-full bg-surface-2 border border-border shrink-0 flex items-center justify-center">
+                      <div aria-hidden="true" className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-full bg-surface-2 border border-border shrink-0 flex items-center justify-center">
                         <span className="text-[0.6rem] font-bold text-muted-foreground uppercase">{muscle.slice(0, 2)}</span>
                       </div>
                       <span className="text-[0.95rem] sm:text-[1.03rem] font-medium text-foreground">{muscle}</span>

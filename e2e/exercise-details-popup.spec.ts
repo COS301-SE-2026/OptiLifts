@@ -5,11 +5,11 @@ test.describe('Standard Exercise Details Popup', () => {
         await page.goto('/workouts');
         await page.getByRole('button', { name: 'Push Day A Options Primary' }).click();
         await page.waitForLoadState('networkidle');
-        await page.getByTestId('exercise-item-Barbell bench press').click();
+        await page.getByTestId('exercise-item-Barbell Bench Press').click();
 
         await expect(page.getByRole('heading', { name: 'Exercise Details' })).toBeVisible();
 
-        await expect(page.getByRole('paragraph').filter({ hasText: 'Barbell bench press' })).toBeVisible();
+        await expect(page.getByRole('paragraph').filter({ hasText: 'Barbell Bench Press' })).toBeVisible();
         await expect(page.getByText('Chest').nth(3)).toBeVisible();
         await expect(page.getByText('Barbell', { exact: true })).toBeVisible();
         await expect(page.getByText('compound')).toBeVisible();

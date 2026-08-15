@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         workbox: {
+          inlineWorkboxRuntime: true,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           skipWaiting: true,
           clientsClaim: true,
           runtimeCaching: [

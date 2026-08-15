@@ -23,6 +23,7 @@ type AuthContextValue = {
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
+const SESS_KEY = 'optilifts:session'
 
 export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) {
     const { children } = props
@@ -31,14 +32,23 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
 
     const login = React.useCallback((nextSession: AuthSession) => {
         setSession(nextSession)
+
+        try {
+            localStorage.setItem(SESS_KEY, JSON.stringify(nextSession))
+        }
+        catch {
+            // quota or private mode
+        }
     }, [])
 
     const logout = React.useCallback(() => {
         setSession(null)
+        localStorage.removeItem(SESS_KEY)
         customFetch('/api/auth/logout', { method: 'POST' }).catch(() => {
-            //error handled in backend    
+            //error handled in backend
         })
     }, [])
+
 
     React.useEffect(() => {
         async function hydrateSession() {
@@ -75,9 +85,17 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
                     });
                 } else {
                     setSession(null);
+                    localStorage.removeItem(SESS_KEY);
                 }
             } catch {
-                setSession(null);
+                const cached = localStorage.getItem(SESS_KEY);
+
+                if (cached) {
+                    setSession(JSON.parse(cached) as AuthSession);
+                }
+                else {
+                    setSession(null);
+                }
             } finally {
                 setIsHydrated(true);
             }

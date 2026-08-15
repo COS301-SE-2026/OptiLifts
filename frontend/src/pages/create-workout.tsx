@@ -114,7 +114,7 @@ function buildSegs(exercises: SelectedWorkoutExercise[]): WorkoutSegment[] {
 
 const MUSCLE_OPTIONS = ['All Muscles', ...MUSCLE_GROUPS] as const
 
-function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
+export function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
   return(
     <div className="flex justify-center">
       <button 

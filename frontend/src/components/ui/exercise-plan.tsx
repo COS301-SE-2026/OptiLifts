@@ -7,9 +7,9 @@ import { adaptImgUrl } from '@/lib/utils'
 const DEFAULT_EXERCISE_TYPE = 'WeightReps'
 const PLANNED_EXERCISE_SUBTITLE = 'Planned exercise'
 const DEFAULT_EMPTY_STATE = 'No exercises have been planned for this workout yet.'
-const EXERCISE_ROW_CLASS = 'grid grid-cols-[68px_minmax(0,1.45fr)_minmax(152px,11vw)] items-center gap-2 rounded-2xl border border-border bg-surface-2 px-2 py-2'
-const SETS_PANEL_CLASS = 'w-full justify-self-end rounded-xl border border-border bg-card px-2 py-2 shadow-sm'
-const SET_ROW_CLASS = 'grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-4'
+const EXERCISE_ROW_CLASS = 'col-span-2 grid grid-cols-subgrid items-start rounded-xl sm:rounded-2xl border border-border bg-surface-2 p-2.5 sm:p-3.5'
+const SETS_PANEL_CLASS = 'w-full justify-self-end rounded-lg sm:rounded-xl border border-border bg-card px-2 py-1.5 sm:px-2.5 sm:py-2 shadow-xs'
+const SET_ROW_CLASS = 'grid grid-cols-[1rem_minmax(0,1fr)] sm:grid-cols-[1.35rem_minmax(0,1fr)] items-center gap-1.5 sm:gap-2.5'
 
 const DEFAULT_SETS: ExercisePlanSet[] = [
   { label: 'W', reps: 10, weight: 20, duration: null, distance: null, restTime: '2:30 min rest' },
@@ -65,7 +65,7 @@ function formatGroupRestTime(restTimeSeconds:number) {
 }
 interface GroupedSegment {
   kind: 'group' | 'single'
-    groupId?: string
+  groupId?: string
   groupType?: string
   groupRestTime? : number
   exercises: Required<ExercisePlanItem>[]
@@ -103,37 +103,37 @@ function buildWorkoutSegs(exercises: Required<ExercisePlanItem>[]): GroupedSegme
 function ExerciseRow({ exercise, index, inGroup = false, onOpenDetails }: Readonly<{ exercise: Required<ExercisePlanItem>; index: number; inGroup?: boolean; onOpenDetails?: (exerciseId: string) => void }>) {
   return (
     <div key={`${exercise.name}-${index}`} className={EXERCISE_ROW_CLASS}>
-      <Avatar className="h-[68px] w-[68px] shrink-0 border border-border bg-background">
-        {exercise.imageUrl ? (
-          <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} />
-        ) : (
-          <AvatarFallback className="bg-background text-transparent" />
-        )}
-      </Avatar>
-      <div className="min-w-0 pr-2">
+      <div className="flex flex-col items-start min-w-0 pr-2 sm:pr-3">
+        <Avatar className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 border border-border bg-background mb-1.5">
+          {exercise.imageUrl ? (
+            <AvatarImage src={adaptImgUrl(exercise.imageUrl)} alt={exercise.name} />
+          ) : (
+            <AvatarFallback className="bg-background text-transparent" />
+          )}
+        </Avatar>
         <button
           type="button"
           data-testid={`exercise-item-${exercise.name}`}
-          className="block w-fit max-w-full truncate text-left text-[0.98rem] font-semibold text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
+          className="block w-fit max-w-full truncate text-left text-[0.88rem] sm:text-[0.95rem] font-semibold text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
           disabled={!onOpenDetails || !exercise.exerciseId}
           onClick={() => { if (exercise.exerciseId) onOpenDetails?.(exercise.exerciseId) }}
         >
           {exercise.name}
         </button>
-        <p className="mt-1 truncate text-[0.85rem] text-muted-foreground">{exercise.subtitle}</p>
+        <p className="mt-0.5 w-full truncate text-[0.72rem] sm:text-[0.8rem] text-muted-foreground">{exercise.subtitle}</p>
       </div>
 
       <div className={SETS_PANEL_CLASS}>
-        <div className="grid min-w-[96px] gap-y-2 text-[0.84rem] text-foreground">
+        <div className="grid min-w-[72px] sm:min-w-[88px] gap-y-1 sm:gap-y-1.5 text-[0.76rem] sm:text-[0.84rem] text-foreground">
           {!inGroup && (
-            <p className="text-[0.64rem] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+            <p className="text-[0.55rem] sm:text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground whitespace-nowrap">
               Rest time: {formatRestTimeLabel(getExerciseRestTime(exercise))}
             </p>
           )}
           {exercise.sets.map((set, setIndex) => (
             <div key={`${exercise.name}-${setIndex}`} className={SET_ROW_CLASS}>
-              <span className="text-[0.88rem] font-medium text-foreground">{set.label}</span>
-              <span className="justify-self-end whitespace-nowrap text-[0.8rem] text-foreground">
+              <span className="text-[0.72rem] sm:text-[0.84rem] font-medium text-foreground">{set.label}</span>
+              <span className="justify-self-end whitespace-nowrap text-[0.7rem] sm:text-[0.78rem] text-foreground">
                 {formatPlannedExerciseSetText(exercise.exerciseType, set, { includeRestTime: false })}
               </span>
             </div>
@@ -165,26 +165,26 @@ export function ExercisePlan({
   return (
     <div className={['flex min-h-0 flex-1 flex-col', className].filter(Boolean).join(' ')}>
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 px-3 sm:px-5">
           <CardTitle className="text-[1.15rem] font-bold">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col pr-1">
+        <CardContent className="flex flex-col px-3 sm:px-5">
           {normalizedExercises.length > 0 ? (
-            <div className="space-y-4 pr-2">
+            <div className="grid grid-cols-[1fr_max-content] gap-3 sm:gap-4">
               {buildWorkoutSegs(normalizedExercises).map((seg, segIdx) => {
                 if (seg.kind === 'group') {
                   const typeLabel = seg.groupType || (seg.exercises.length === 2 ? 'Superset' : 'Circuit')
                   return (
-                    <div key={`group-${seg.groupId ?? segIdx}`} className="flex flex-col gap-2 rounded-xl border-2 border-brand/60 bg-brand/5 p-2">
-                    <div className="flex items-center justify-between px-2 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{typeLabel}</span>
-                      </div>
-                      {seg.groupRestTime !== undefined && seg.groupRestTime !== null && (
-                        <span className="text-xs text-muted-foreground">
-                          Group Rest: {formatGroupRestTime(seg.groupRestTime)}
-                        </span>
-                      )}
+                    <div key={`group-${seg.groupId ?? segIdx}`} className="col-span-2 grid grid-cols-subgrid gap-2.5 rounded-xl border-2 border-brand/60 bg-brand/5 p-2 sm:p-2.5">
+                      <div className="col-span-2 flex items-center justify-between px-2 pt-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{typeLabel}</span>
+                        </div>
+                        {seg.groupRestTime !== undefined && seg.groupRestTime !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            Group Rest: {formatGroupRestTime(seg.groupRestTime)}
+                          </span>
+                        )}
                       </div>
                       {seg.exercises.map((exercise, index) => (
                         <ExerciseRow key={`${exercise.name}-${index}`} exercise={exercise} index={index} inGroup onOpenDetails={onOpenDetails} />
@@ -200,7 +200,7 @@ export function ExercisePlan({
                     onOpenDetails={onOpenDetails}/>
                 )
               })}
-              </div>
+            </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-border bg-surface-2 px-4 py-8 text-sm text-muted-foreground">
               {emptyState ?? DEFAULT_EMPTY_STATE}

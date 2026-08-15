@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, MoreVertical, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/ui/page-title'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import WorkoutDetailShell from '@/components/ui/workout-detail-shell'
 import WorkoutLogExercisePlan from '@/components/ui/workout-log-exercise-plan'
+import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 import type { MuscleName } from '@/types/workout'
@@ -138,53 +139,60 @@ export default function WorkoutLogDetailPage() {
   )
 
   return (
-    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-3 overflow-y-auto px-6 pt-5 pb-6">
-      <div className="flex flex-none items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <Button
-              variant="text"
-              size="sm"
-              onClick={handleBackToPastWorkouts}
-              className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Past Workout</span>
-            </Button>
-          </div>
-          <p className="mb-1 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout Log</p>
-          <PageTitle title={workoutLabel} />
-          {workout?.completedAt ? (
-            <p className="mt-1 text-sm text-muted-foreground">Completed {formatCompletedDate(workout.completedAt)}</p>
-          ) : null}
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-6 md:gap-8 overflow-y-auto px-4 pt-16 pb-6 sm:px-6 sm:py-10 md:py-12">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="text"
+            size="sm"
+            onClick={handleBackToPastWorkouts}
+            className="-ml-2 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Past Workout</span>
+          </Button>
         </div>
 
-        <div className="flex flex-col items-end gap-3 shrink-0 pt-2">
-          {workoutId && logId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/workouts/${workoutId}/logs/${logId}/edit`)}
-              className="flex items-center gap-1.5 text-xs font-semibold"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              <span>Edit Workout</span>
-            </Button>
-          )}
+        <div className="flex flex-row items-center justify-between gap-3 sm:gap-6">
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand sm:text-sm">Workout Log</p>
+            <PageTitle title={workoutLabel} />
+            {workout?.completedAt ? (
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">Completed {formatCompletedDate(workout.completedAt)}</p>
+            ) : null}
+          </div>
 
-          <div className="mt-2 grid grid-cols-3 gap-6 justify-items-center text-center">
-            <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Duration</p>
-              <p className="text-[1.7rem] type-card-value mt-1 text-foreground">{workoutStats.duration}</p>
+          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+            <div className="flex items-center gap-3 sm:gap-6 text-right">
+              <div>
+                <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Duration</p>
+                <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.duration}</p>
+              </div>
+              <div>
+                <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Volume</p>
+                <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.volume}</p>
+              </div>
+              <div>
+                <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Sets</p>
+                <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.sets}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Volume</p>
-              <p className="text-[1.7rem] type-card-value mt-1 text-foreground">{workoutStats.volume}</p>
-            </div>
-            <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sets</p>
-              <p className="text-[1.7rem] type-card-value mt-1 text-foreground">{workoutStats.sets}</p>
-            </div>
+
+            {workoutId && logId && (
+              <div className="ml-0.5 sm:ml-2">
+                <DropdownMenu>
+                  <DropdownMenuEllipsisTrigger aria-label="Options">
+                    <MoreVertical />
+                  </DropdownMenuEllipsisTrigger>
+                  <DropdownMenuEllipsisContent align="end">
+                    <DropdownMenuItem onSelect={() => navigate(`/workouts/${workoutId}/logs/${logId}/edit`)}>
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      Edit Log
+                    </DropdownMenuItem>
+                  </DropdownMenuEllipsisContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
         </div>
       </div>

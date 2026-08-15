@@ -76,17 +76,17 @@ export default function MusclesSummary({ exercises, className }: MusclesSummaryP
           }
 
           return (
-            <div key={muscle} className="grid grid-cols-[minmax(7.5rem,0.85fr)_minmax(0,1.55fr)_3rem] items-center gap-0">
-              <span className="whitespace-nowrap text-[0.88rem] text-foreground">{muscle}</span>
+            <div key={muscle} className="grid grid-cols-[minmax(5.5rem,0.85fr)_minmax(0,1.55fr)_2.5rem] sm:grid-cols-[minmax(7.5rem,0.85fr)_minmax(0,1.55fr)_3rem] items-center gap-1.5 sm:gap-2">
+              <span className="truncate text-xs sm:text-[0.88rem] text-foreground">{muscle}</span>
 
-              <div className="h-4 rounded-full bg-muted">
+              <div className="h-3.5 sm:h-4 rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary"
                   style={{ width: `${width}%` }}
                 />
               </div>
 
-              <span className="text-right text-sm text-muted-foreground tabular-nums">{formatSetCount(sets)}</span>
+              <span className="text-right text-xs sm:text-sm text-muted-foreground tabular-nums">{formatSetCount(sets)}</span>
             </div>
           )
         }) : (

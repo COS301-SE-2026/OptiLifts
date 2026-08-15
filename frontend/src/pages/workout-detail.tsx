@@ -190,50 +190,51 @@ export default function WorkoutDetailPage() {
   )
 
   return (
-    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-y-auto px-6 py-12">
-      <div className="flex flex-none items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout</p>
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-6 md:gap-8 overflow-y-auto px-4 pt-16 pb-6 sm:px-6 sm:py-10 md:py-12">
+      <div className="flex flex-row items-center justify-between gap-3 sm:gap-6">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand sm:text-sm">Workout</p>
           <PageTitle title={workoutLabel} />
         </div>
 
-        <div className="flex flex-col items-start gap-4 lg:items-end">
-          <div className="flex flex-wrap items-center gap-8 text-left lg:text-right">
+        <div className="flex flex-col items-end gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-6 text-right">
             <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Volume</p>
-              <p className="text-[1.6rem] type-card-value mt-1 text-foreground">{workoutStats.volume}</p>
+              <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Volume</p>
+              <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.volume}</p>
             </div>
             <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Sets</p>
-              <p className="text-[1.6rem] type-card-value mt-1 text-foreground">{workoutStats.sets}</p>
+              <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Sets</p>
+              <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.sets}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                id="start-workout-btn"
-                size="sm"
-                disabled={!workout || isLoading}
-                onClick={() => {
-                  if (workout) {
-                    navigate('/active-session', { state: { workout } })
-                  }
-                }}
-              >
-                Start Workout
-              </Button>
-              {workout && (
-                <DropdownMenu>
-                  <DropdownMenuEllipsisTrigger aria-label="Options">
-                    <MoreVertical />
-                  </DropdownMenuEllipsisTrigger>
-                  <DropdownMenuEllipsisContent align="end">
-                    <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuEllipsisContent>
-                </DropdownMenu>
-              )}
-            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              id="start-workout-btn"
+              size="sm"
+              disabled={!workout || isLoading}
+              onClick={() => {
+                if (workout) {
+                  navigate('/active-session', { state: { workout } })
+                }
+              }}
+            >
+              Start Workout
+            </Button>
+            {workout && (
+              <DropdownMenu>
+                <DropdownMenuEllipsisTrigger aria-label="Options">
+                  <MoreVertical />
+                </DropdownMenuEllipsisTrigger>
+                <DropdownMenuEllipsisContent align="end">
+                  <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuEllipsisContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>

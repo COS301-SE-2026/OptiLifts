@@ -309,7 +309,7 @@ function TypographySection(){
                         <Card className="typography-item">
                             <CardContent>
                                 <div className="type-label">LABEL / META</div>
-                                <div className="type-meta">Barlow · 11-12px (0.6875rem) · 600–700 · Uppercase · Form labels, tags</div>
+                                <div className="type-meta">Barlow · 11-12px (0.6875rem) · 600-700 · Uppercase · Form labels, tags</div>
                             </CardContent>
                         </Card>
                     </div>

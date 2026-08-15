@@ -224,6 +224,28 @@ export default function DashboardPage() {
 
         let isActive = true
 
+        const assertAllOk = (responses: readonly [Response, Response, Response, Response]) => {
+            const [profile, schedule, completed, analytics] = responses
+
+            if (!profile.ok) throw new Error(`Failed to load profile (${profile.status})`)
+            if (!schedule.ok) throw new Error(`Failed to load schedule (${schedule.status})`)
+            if (!completed.ok) throw new Error(`Failed to load completed workouts (${completed.status})`)
+            if (!analytics.ok) throw new Error(`Failed to load schedule analytics (${analytics.status})`)
+        }
+
+        const handleLoadErr = (loadError: unknown) => {
+            if (!isActive) {
+                return
+            }
+
+            if (loadError instanceof TypeError) {
+                setIsOfflineData(true)
+                return
+            }
+
+            setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
+        }
+
         async function loadDashboard() {
             setIsFetching(true)
             setError(null)
@@ -246,18 +268,7 @@ export default function DashboardPage() {
                     customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                 ])
 
-                if (!profileResponse.ok){
-                    throw new Error(`Failed to load profile (${profileResponse.status})`)
-                }
-                if (!scheduleResponse.ok){
-                    throw new Error(`Failed to load schedule (${scheduleResponse.status})`)
-                }
-                if (!completedResponse.ok){
-                    throw new Error(`Failed to load completed workouts (${completedResponse.status})`)
-                }
-                if (!analyticsResponse.ok){
-                    throw new Error(`Failed to load schedule analytics (${analyticsResponse.status})`)
-                }
+                assertAllOk([profileResponse, scheduleResponse, completedResponse, analyticsResponse])
 
                 const profileJson = (await profileResponse.json()) as ProfilePageResponse
                 const upcomingJson = (await scheduleResponse.json()) as ScheduledEntry[]
@@ -286,14 +297,7 @@ export default function DashboardPage() {
                 setCompletedWorkoutDetails(workoutDetailResponses.filter((detail): detail is WorkoutDetailResponse => detail !== null))
                 setAnalytics(analyticsJson)
             } catch (loadError){
-                if (isActive) {
-                    if (loadError instanceof TypeError) {
-                        setIsOfflineData(true)
-                    }
-                    else {
-                        setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
-                    }
-                }
+                handleLoadErr(loadError)
             } finally{
                 if (isActive){
                     setIsFetching(false)

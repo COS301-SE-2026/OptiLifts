@@ -540,6 +540,26 @@ type ActiveSessionProps = Readonly<{
   mode?: 'active' | 'edit'
 }>
 
+const initSessError = (workoutId: string | undefined, isEditMode: boolean, logId: string | undefined) => {
+  if (!workoutId) {
+    return 'No workout was selected. Start a workout from the workouts page.'
+  }
+
+  if (isEditMode && !logId) {
+    return 'No workout log was selected to edit.'
+  }
+
+  return null
+}
+
+const makeSessLogId = (isEditMode: boolean, paramLogId: string | undefined) => {
+  if (isEditMode && paramLogId) {
+    return paramLogId
+  }
+
+  return globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`
+}
+
 export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProps) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -551,16 +571,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
   const [workoutName, setWorkoutName] = useState(sessionState?.workout?.name ?? 'WORKOUT')
   const [isLoading, setIsLoading] = useState(() => Boolean(workoutId && (!isEditMode || params.logId)))
-  const [error, setError] = useState<string | null>(() => {
-    if (!workoutId) {
-      return 'No workout was selected. Start a workout from the workouts page.'
-    }
-    if (isEditMode && !params.logId) {
-      return 'No workout log was selected to edit.'
-    }
-    return null
-  })
-  const [logId] = useState(() => (isEditMode && params.logId ? params.logId : (globalThis.crypto?.randomUUID?.() ?? `log-${Date.now()}-${secureRandomHex()}`)))
+  const [error, setError] = useState<string | null>(() => initSessError(workoutId, isEditMode, params.logId))
+  const [logId] = useState(() => makeSessLogId(isEditMode, params.logId))
   const [startedAtIso, setStartedAtIso] = useState<string | null>(null)
   const [completedAtIso, setCompletedAtIso] = useState<string | null>(null)
   const [pastDurationText, setPastDurationText] = useState<string | null>(null)

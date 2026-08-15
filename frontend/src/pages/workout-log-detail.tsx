@@ -71,7 +71,21 @@ export default function WorkoutLogDetailPage() {
 
     let mounted = true
 
+    const handleLoadErr = (loadError: unknown) => {
+      if (!mounted) {
+        return
+      }
+
+      if (loadError instanceof TypeError) {
+        setError("You're offline - this workout log isn't available until you reconnect.")
+        return
+      }
+
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load workout log.')
+    }
+
     const loadWorkout = async () => {
+
       setIsLoading(true)
       setError(null)
 
@@ -98,11 +112,7 @@ export default function WorkoutLogDetailPage() {
           setWorkout(data)
         }
       } catch (loadError) {
-        if (mounted) {
-          setError(navigator.onLine
-            ? (loadError instanceof Error ? loadError.message : 'Failed to load workout log.')
-            : "You're offline - this workout log isn't available until you reconnect.")
-        }
+        handleLoadErr(loadError)
       } finally {
         if (mounted) {
           setIsLoading(false)

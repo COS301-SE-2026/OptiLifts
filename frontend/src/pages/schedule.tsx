@@ -718,6 +718,18 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
     )
 }
 
+function addButtonTitle(isOnline: boolean, isBeforeToday: boolean) {
+    if (!isOnline) {
+        return OFFLINE_HINT
+    }
+
+    if (isBeforeToday) {
+        return "Cannot schedule in the past"
+    }
+
+    return "Add workout"
+}
+
 // month view calendar comp
 interface MonthViewCalendarProps{
     readonly currentDate: Date
@@ -847,8 +859,8 @@ function MonthViewCalendar({
                             tabIndex={isBeforeToday ? -1 : 0}
                             disabled={isBeforeToday || !isOnline}
                             onClick={() => onAddClick(cell.date)}
-                            className="…unchanged…"
-                            title={!isOnline ? OFFLINE_HINT : (isBeforeToday ? "Cannot schedule in the past" : "Add workout")}>
+                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={addButtonTitle(isOnline, isBeforeToday)}>
                                 <Plus size={14} />
                             </button>
                         </div>

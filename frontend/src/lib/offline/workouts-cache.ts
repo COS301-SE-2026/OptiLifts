@@ -80,3 +80,66 @@ export async function getCachedScheduleEntries<T>(): Promise<T[] | null> {
     return null
   }
 }
+
+async function getListCachedAt(): Promise<number | null> {
+  try {
+    const row = await tx<CachedList | undefined>(STORE_WORKOUTS, 'readonly', (store) => store.get(KEY_LIST))
+    return row ? new Date(row.cachedAt).getTime() : null
+  }
+  catch {
+    return null
+  }
+}
+
+const WARM_IN_MS = 30 * 60 * 1000
+
+export async function warmOfflineCache(force = false): Promise<void> {
+  if (!navigator.onLine) {
+    return
+  }
+
+  if (!force) {
+    const cachedGottenAt = await getListCachedAt()
+
+    if (cachedGottenAt && Date.now() - cachedGottenAt < WARM_IN_MS) {
+      return
+    }
+  }
+
+  try {
+    const resp = await customFetch('/api/workouts', { headers: { Accept: 'application/json' } })
+
+    if (!resp.ok) {
+      return
+    }
+
+    const workouts = (await resp.json()) as Workout[]
+
+    await cacheWorkoutList(workouts)
+    await precacheWorkoutDetails(workouts.map((workout) => workout.id))
+  }
+  catch {
+    // nothing to warm
+  }
+
+    try {
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    const leadingDays = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
+    const firstCell = new Date(today.getFullYear(), today.getMonth(), 1 - leadingDays)
+    const lastCell = new Date(today.getFullYear(), today.getMonth(), 42 - leadingDays)
+    const start = new Date(Date.UTC(firstCell.getFullYear(), firstCell.getMonth(), firstCell.getDate()))
+    const end = new Date(Date.UTC(lastCell.getFullYear(), lastCell.getMonth(), lastCell.getDate(), 23, 59, 59, 999))
+
+    const schedResp = await customFetch(
+      `/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`
+    )
+
+    if (schedResp.ok) {
+      await cacheScheduleEntries(await schedResp.json())
+    }
+  }
+  catch {
+    // schedule uncached until page load
+  }
+}

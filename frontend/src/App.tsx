@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react'
 import { Toaster } from '@/components/ui/alert'
 import { initOfflineWorkoutLogSync } from '@/lib/offline/workout-logs'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { warmOfflineCache } from '@/lib/offline/workouts-cache'
 
 const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
 const WorkoutsPage = lazy(() => import('@/pages/workouts'))
@@ -52,6 +53,12 @@ function AppLayout() {
 function RequireAuth() {
   const { isAuthenticated, isHydrated } = useAuth()
   const location = useLocation()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void warmOfflineCache()
+    }
+  }, [isAuthenticated])
 
   if (!isHydrated) {
     return (

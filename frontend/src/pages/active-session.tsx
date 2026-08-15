@@ -552,6 +552,18 @@ const initSessError = (workoutId: string | undefined, isEditMode: boolean, logId
   return null
 }
 
+const resolveSessMode = (
+  mode: 'active' | 'edit',
+  params: { workoutId?: string; logId?: string },
+  sessionState: WorkoutLocationState | null
+) => {
+  const isEditMode = mode === 'edit' || Boolean(params.workoutId && params.logId)
+  const workoutId = isEditMode ? params.workoutId : sessionState?.workout?.id
+  const shouldLoad = Boolean(workoutId && (!isEditMode || params.logId))
+
+  return { isEditMode, workoutId, shouldLoad }
+}
+
 const makeSessLogId = (isEditMode: boolean, paramLogId: string | undefined) => {
   if (isEditMode && paramLogId) {
     return paramLogId
@@ -565,12 +577,9 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const location = useLocation()
   const params = useParams<{ workoutId?: string; logId?: string }>()
   const sessionState = location.state as WorkoutLocationState | null
-
-  const isEditMode = mode === 'edit' || Boolean(params.workoutId && params.logId)
-  const workoutId = isEditMode ? params.workoutId : sessionState?.workout?.id
-
+  const { isEditMode, workoutId, shouldLoad } = resolveSessMode(mode, params, sessionState)
   const [workoutName, setWorkoutName] = useState(sessionState?.workout?.name ?? 'WORKOUT')
-  const [isLoading, setIsLoading] = useState(() => Boolean(workoutId && (!isEditMode || params.logId)))
+  const [isLoading, setIsLoading] = useState(shouldLoad)
   const [error, setError] = useState<string | null>(() => initSessError(workoutId, isEditMode, params.logId))
   const [logId] = useState(() => makeSessLogId(isEditMode, params.logId))
   const [startedAtIso, setStartedAtIso] = useState<string | null>(null)

@@ -17,10 +17,11 @@ import { buildLabels } from '@/lib/exercise-format'
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
   restTime?: number
-  onRemove: (id: string) => void
-  onSetsChange: (id: string, sets: ExerciseSet[]) => void
+  onRemove?: (id: string) => void
+  onSetsChange?: (id: string, sets: ExerciseSet[]) => void
   onRestTimeChange?: (id: string, value: number) => void
   onOpenDetails?: (exerciseCatalogId: string) => void
+  readOnly?: boolean
 }>
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
@@ -85,12 +86,14 @@ function SetRow({
   columns,
   onChange,
   onRemove,
+  readOnly,
 }: Readonly<{
   set: ExerciseSet
   setLabel: string
   columns: ColumnDef[]
   onChange: (updated: ExerciseSet) => void
   onRemove: () => void
+  readOnly?: boolean
 }>) {
 
   return (
@@ -132,25 +135,27 @@ function SetRow({
             </div>
         )
       })}
-
+    {!readOnly &&(
       <Button variant="icon" size="icon" aria-label="Remove set" onClick={onRemove} className="border-0 bg-transparent w-6 h-6 shrink-0">
         <X className="w-4 h-4 text-muted-foreground" />
       </Button>
+    )}      
     </div>
   )
 }
 
 let nextSetId = 0
 
-export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange, onOpenDetails }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange, onOpenDetails, readOnly = false }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
   const columns = getColumns(exercise.exerciseType ?? 'WeightReps')
   const setLabels = buildLabels(sets)
 
   const updateSets = (updated: ExerciseSet[]) => {
+    if (readOnly) return;
     setSets(updated)
-    onSetsChange(exercise.id, updated)
+    onSetsChange?.(exercise.id, updated)
   }
 
   const addSet = () => {

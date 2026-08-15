@@ -48,16 +48,16 @@ export function WorkoutDetailShell({
       )}
 
       {!isLoading && !error && hasContent && (
-        <div className="grid gap-6 grid-cols-12">
-          <div className="col-span-7 flex flex-col gap-4">{mainContent}</div>
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
+          <div className="col-span-1 lg:col-span-7 flex flex-col gap-4 min-w-0">{mainContent}</div>
 
-          <aside className="col-span-5">
+          <aside className="col-span-1 lg:col-span-5 min-w-0">
             <Card className="flex flex-col">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-[1.05rem] font-bold">Summary</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col">
-                <div className="flex flex-col gap-4 pr-2 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-4 text-sm text-muted-foreground">
                   {summaryContent}
                 </div>
               </CardContent>

@@ -327,6 +327,14 @@ export default function SchedulePage() {
         setSelectedAddDate(date)
     }
 
+    const handleDeleteClick = (id: string) => {
+        if (!isOnline) {
+            return
+        }
+
+        setDeleteTargetId(id)
+    }
+
     const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
@@ -470,7 +478,7 @@ export default function SchedulePage() {
                                                     key={session.id}
                                                     session={session}
                                                     isDeleting={isDeleting === session.id}
-                                                    onDelete={(id) =>setDeleteTargetId(id)}
+                                                    onDelete={handleDeleteClick}
                                                     onClick={handleWorkoutClick}
                                                 />
                                             ))}
@@ -519,7 +527,7 @@ export default function SchedulePage() {
                 isLoading={isLoading}
                 onAddClick={handleAddClick}
                 isOnline={isOnline}
-                onDeleteSession={(id) => setDeleteTargetId(id)}
+                onDeleteSession={handleDeleteClick}
                 onWorkoutClick={handleWorkoutClick}/>
             )}
 

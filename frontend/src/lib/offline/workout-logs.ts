@@ -1,5 +1,6 @@
 import { customFetch } from '@/lib/custom-fetch'
 import { STORE_WORKOUT_LOGS, tx } from './db'
+import { warmOfflineCache } from './workouts-cache'
 
 export const WORKOUT_LOG_SYNC_EVENT = 'ol-workout-log-synced'
 
@@ -113,8 +114,12 @@ function mark(item: Items, lastError: string): Promise<IDBValidKey> {
 }
 
 export function initOfflineWorkoutLogSync(): () => void {
-  const handler = () => { void flushOutBox() }
+  const handler = () => {
+    void flushOutBox()
+    void warmOfflineCache(true)
+  }
   window.addEventListener('online', handler)
   void flushOutBox()
   return () => window.removeEventListener('online', handler)
 }
+

@@ -95,7 +95,6 @@ export function CreateExercise({
   const [activeMusclePicker, setActiveMusclePicker] = useState<"primary" | "secondary" | null>(null)
   const [muscleSearchQuery, setMuscleSearchQuery] = useState("")
   const isOnline = useOnlineStatus()
-  const isOnline = useOnlineStatus()
 
   const effectiveExerciseTypeOptions = useMemo(() => {
     if (!initialValues?.exerciseType) return resolvedExerciseTypeOptions

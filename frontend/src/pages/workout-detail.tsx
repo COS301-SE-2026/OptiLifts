@@ -236,7 +236,7 @@ export default function WorkoutDetailPage() {
                     <MoreVertical />
                   </DropdownMenuEllipsisTrigger>
                   <DropdownMenuEllipsisContent align="end">
-                    <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
                     <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
                       Delete
                     </DropdownMenuItem>

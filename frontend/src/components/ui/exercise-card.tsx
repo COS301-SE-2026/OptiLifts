@@ -221,7 +221,7 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
             <MoreHorizontal className="w-4 h-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
-            <DropdownMenuItem variant="destructive" onClick={() => onRemove(exercise.id)}>
+            <DropdownMenuItem variant="destructive" onClick={() => onRemove?.(exercise.id)}>
               Remove exercise
             </DropdownMenuItem>
           </DropdownMenuContent>

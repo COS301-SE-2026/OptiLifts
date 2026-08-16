@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { customFetch } from '@/lib/custom-fetch'
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -93,6 +94,7 @@ export function CreateExercise({
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([])
   const [activeMusclePicker, setActiveMusclePicker] = useState<"primary" | "secondary" | null>(null)
   const [muscleSearchQuery, setMuscleSearchQuery] = useState("")
+  const isOnline = useOnlineStatus()
 
   const effectiveExerciseTypeOptions = useMemo(() => {
     if (!initialValues?.exerciseType) return resolvedExerciseTypeOptions
@@ -436,7 +438,9 @@ export function CreateExercise({
 
             <div className="mt-4 sm:mt-5 flex flex-wrap justify-end gap-2.5 sm:gap-3 shrink-0 pt-2 border-t border-border/50">
               <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-              <Button type="submit" disabled={!name.trim() || !primaryMuscle || isSaving}>Save Exercise</Button>
+              <OfflineTooltip isOnline={isOnline}>
+                <Button type="submit" disabled={!name.trim() || !primaryMuscle || isSaving || !isOnline}>Save Exercise</Button>
+              </OfflineTooltip>
             </div>
             {saveError ? (
               <p className="mt-2 text-sm text-destructive shrink-0" role="alert">
@@ -531,7 +535,7 @@ export function CreateExercise({
                   >
                     <div className="flex items-center gap-3 sm:gap-4">
                       {/* Placeholder for anatomy image */}
-                      <div className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-full bg-surface-2 border border-border shrink-0 flex items-center justify-center">
+                      <div aria-hidden="true" className="h-9 w-9 sm:h-10 sm:w-10 overflow-hidden rounded-full bg-surface-2 border border-border shrink-0 flex items-center justify-center">
                         <span className="text-[0.6rem] font-bold text-muted-foreground uppercase">{muscle.slice(0, 2)}</span>
                       </div>
                       <span className="text-[0.95rem] sm:text-[1.03rem] font-medium text-foreground">{muscle}</span>

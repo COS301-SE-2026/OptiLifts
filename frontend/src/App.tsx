@@ -10,6 +10,8 @@ import ActiveSessionPage from '@/pages/active-session'
 import { Loader2 } from 'lucide-react'
 import { Toaster } from '@/components/ui/alert'
 import { initOfflineWorkoutLogSync } from '@/lib/offline/workout-logs'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { warmOfflineCache } from '@/lib/offline/workouts-cache'
 
 const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
 const WorkoutsPage = lazy(() => import('@/pages/workouts'))
@@ -29,18 +31,20 @@ function AppLayout() {
       <Navbar />
       <Toaster />
       <main>
-        <Suspense fallback={
-          <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-brand" />
-              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
-                Loading...
-              </p>
-            </div>
-          </section>
-        }>
-          <Outlet />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={
+            <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
+                  Loading...
+                </p>
+              </div>
+            </section>
+          }>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   )
@@ -49,6 +53,12 @@ function AppLayout() {
 function RequireAuth() {
   const { isAuthenticated, isHydrated } = useAuth()
   const location = useLocation()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void warmOfflineCache()
+    }
+  }, [isAuthenticated])
 
   if (!isHydrated) {
     return (

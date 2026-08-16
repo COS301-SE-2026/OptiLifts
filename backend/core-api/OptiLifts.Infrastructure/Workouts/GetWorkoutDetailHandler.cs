@@ -52,6 +52,24 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             })
             .ToListAsync(cancellationToken);
 
+        var exerId = workoutExercises.Select(entry => entry.ExerciseId).Distinct().ToArray();
+
+        var bestVal = await _dbContext.ExercisePrs
+            .AsNoTracking()
+            .Where(pr => pr.UserId == request.UserId && exerId.Contains(pr.ExerciseId))
+            .GroupBy(pr => new { pr.ExerciseId, pr.PrType })
+            .Select(group => new { group.Key.ExerciseId, group.Key.PrType, Best = group.Max(pr => pr.PrValue) })
+            .ToListAsync(cancellationToken);
+
+        var bestWeightByExer = bestVal
+            .Where(item => item.PrType == ExercisePrType.MaxWeight)
+            .ToDictionary(item => item.ExerciseId, item => item.Best);
+
+        var bestVolByExer = bestVal
+            .Where(item => item.PrType == ExercisePrType.MaxSetVolume)
+            .ToDictionary(item => item.ExerciseId, item => item.Best);
+
+
         var secondaryMuscleRows = await (
             from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
             where workoutExercise.WorkoutId == workout.Id
@@ -129,7 +147,9 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             entry.GroupId,
             entry.GroupType,
             entry.GroupRestTime,
-            entry.ImageUrl)).ToArray();
+            entry.ImageUrl,
+            bestWeightByExer.TryGetValue(entry.ExerciseId, out var bestWeight) ? bestWeight : null,
+            bestVolByExer.TryGetValue(entry.ExerciseId, out var bestVolume) ? bestVolume : null)).ToArray();
 
         var primaryMuscleGroups = exercises
             .Select(exercise => exercise.PrimaryMuscle)

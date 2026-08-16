@@ -23,8 +23,11 @@ public sealed record WorkoutExerciseDetailDto(
     Guid? GroupId = null,
     string? GroupType = null,
     int? GroupRestTime = null,
-    string? ImageUrl = null
+    string? ImageUrl = null,
+    float? BestWeight = null,
+    float? BestSetVolume = null
 );
+
 
 public sealed record WorkoutDetailDto(
     Guid Id,

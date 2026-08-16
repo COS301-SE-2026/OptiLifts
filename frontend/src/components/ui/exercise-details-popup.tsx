@@ -9,6 +9,7 @@ import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 import { formatExerciseType } from '@/constants/exercise-type-definitions'
 import { customFetch } from '@/lib/custom-fetch'
 import type { CreateExerciseFormData, ExerciseDetails } from '@/types/exercise'
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 
 type ExerciseDetsResponse = {
   id: string
@@ -95,6 +96,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
     const [details, setDetails] = useState<ExerciseDetails | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const isOnline = useOnlineStatus()
 
     useEffect(() => {
         if (!exerciseId) {
@@ -364,12 +366,16 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
             {details?.isCustom && (
               <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-                <Button type="button" variant="secondary" onClick={() => setIsConfirmDeleteOpen(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </Button>
-                <Button type="button" onClick={() => setIsEditOpen(true)}>
-                  <Pencil className="mr-2 h-4 w-4" /> Edit
-                </Button>
+                <OfflineTooltip isOnline={isOnline}>
+                  <Button type="button" variant="secondary" disabled={!isOnline} onClick={() => setIsConfirmDeleteOpen(true)}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                  </Button>
+                </OfflineTooltip>
+                <OfflineTooltip isOnline={isOnline}>
+                  <Button type="button" disabled={!isOnline} onClick={() => setIsEditOpen(true)}>
+                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                  </Button>
+                </OfflineTooltip>
               </div>
             )}
           </div>

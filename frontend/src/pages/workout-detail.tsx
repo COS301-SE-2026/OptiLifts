@@ -17,6 +17,9 @@ import { MoreVertical } from 'lucide-react'
 import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { buildLabels } from '@/lib/exercise-format'
+import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -69,6 +72,8 @@ export default function WorkoutDetailPage() {
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [isOfflineData, setIsOfflineData] = useState(false)
+  const isOnline = useOnlineStatus()
 
   const handleWorkoutChanged = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
@@ -127,8 +132,18 @@ export default function WorkoutDetailPage() {
         const data = (await response.json()) as WorkoutDetailResponse
         if (mounted) {
           setWorkout(data)
+          setIsOfflineData(false)
         }
       } catch (loadError) {
+        const cached = await getCachedWorkoutDetail(workoutId)
+
+        if (mounted && cached) {
+          setWorkout(cached)
+          setIsOfflineData(true)
+          return
+        }
+
+
         if (mounted) {
           setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
         }
@@ -191,12 +206,14 @@ export default function WorkoutDetailPage() {
 
   return (
     <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-6 md:gap-8 overflow-y-auto px-4 pt-16 pb-6 sm:px-6 sm:py-10 md:py-12">
+      {isOfflineData && (
+        <OfflineBanner message="You're offline - showing a saved copy of this workout." />
+      )}
       <div className="flex flex-row items-center justify-between gap-3 sm:gap-6">
         <div className="min-w-0 flex-1">
           <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand sm:text-sm">Workout</p>
           <PageTitle title={workoutLabel} />
         </div>
-
         <div className="flex flex-col items-end gap-2 sm:gap-3 shrink-0">
           <div className="flex items-center gap-3 sm:gap-6 text-right">
             <div>
@@ -208,7 +225,6 @@ export default function WorkoutDetailPage() {
               <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.sets}</p>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
             <Button
               id="start-workout-btn"
@@ -228,8 +244,8 @@ export default function WorkoutDetailPage() {
                   <MoreVertical />
                 </DropdownMenuEllipsisTrigger>
                 <DropdownMenuEllipsisContent align="end">
-                  <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
+                  <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuEllipsisContent>

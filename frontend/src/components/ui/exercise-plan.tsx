@@ -100,7 +100,7 @@ function buildWorkoutSegs(exercises: Required<ExercisePlanItem>[]): GroupedSegme
 }
 
 //resolves duplication issues
-function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Required<ExercisePlanItem>; index: number; onOpenDetails?: (exerciseId: string) => void }>) {
+function ExerciseRow({ exercise, index, inGroup = false, onOpenDetails }: Readonly<{ exercise: Required<ExercisePlanItem>; index: number; inGroup?: boolean; onOpenDetails?: (exerciseId: string) => void }>) {
   return (
     <div key={`${exercise.name}-${index}`} className={EXERCISE_ROW_CLASS}>
       <div className="flex flex-col items-start min-w-0 pr-2 sm:pr-3">
@@ -125,9 +125,11 @@ function ExerciseRow({ exercise, index, onOpenDetails }: Readonly<{ exercise: Re
 
       <div className={SETS_PANEL_CLASS}>
         <div className="grid min-w-[72px] sm:min-w-[88px] gap-y-1 sm:gap-y-1.5 text-[0.76rem] sm:text-[0.84rem] text-foreground">
-          <p className="text-[0.55rem] sm:text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground whitespace-nowrap">
-            Rest time: {formatRestTimeLabel(getExerciseRestTime(exercise))}
-          </p>
+          {!inGroup && (
+            <p className="text-[0.55rem] sm:text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground whitespace-nowrap">
+              Rest time: {formatRestTimeLabel(getExerciseRestTime(exercise))}
+            </p>
+          )}
           {exercise.sets.map((set, setIndex) => (
             <div key={`${exercise.name}-${setIndex}`} className={SET_ROW_CLASS}>
               <span className="text-[0.72rem] sm:text-[0.84rem] font-medium text-foreground">{set.label}</span>
@@ -185,7 +187,7 @@ export function ExercisePlan({
                         )}
                       </div>
                       {seg.exercises.map((exercise, index) => (
-                        <ExerciseRow key={`${exercise.name}-${index}`} exercise={exercise} index={index} onOpenDetails={onOpenDetails} />
+                        <ExerciseRow key={`${exercise.name}-${index}`} exercise={exercise} index={index} inGroup onOpenDetails={onOpenDetails} />
                       ))}
                     </div>
                   )

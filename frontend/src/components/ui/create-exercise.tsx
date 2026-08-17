@@ -148,22 +148,19 @@ export function CreateExercise({
   useEffect(() => {
     if (!isOpen) return
 
-    const t = setTimeout(() => {
-      setName(initialValues?.name ?? "")
-      setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps"))
-      setEquipment(initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None"))
-      setSelectedImageFile(null)
-      setSelectedImageUrl(initialValues?.imageUrl ?? null)
-      setPrimaryMuscle(initialValues?.primaryMuscle ?? null)
-      setSecondaryMuscles(initialValues?.secondaryMuscles ?? [])
-      setIsTypePickerOpen(false)
-      setActiveMusclePicker(null)
-      setMuscleSearchQuery("")
-      setIsSaving(false)
-      setSaveError(null)
-    }, 0)
-
-    return () => clearTimeout(t)
+    setName(initialValues?.name ?? "")
+    setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps"))
+    setEquipment(initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None"))
+    setSelectedImageFile(null)
+    setSelectedImageUrl(initialValues?.imageUrl ?? null)
+    setPrimaryMuscle(initialValues?.primaryMuscle ?? null)
+    setSecondaryMuscles(initialValues?.secondaryMuscles ?? [])
+    setIsTypePickerOpen(false)
+    setActiveMusclePicker(null)
+    setMuscleSearchQuery("")
+    setIsSaving(false)
+    setSaveError(null)
+   
   }, [effectiveEquipmentOptions, effectiveExerciseTypeOptions, initialValues, isOpen])
 
   useEffect(() => {

@@ -35,7 +35,7 @@ const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeDe
 
 function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children, focusRed }: CreateExerciseBackdropProps) {
   return (
-    <div data-focus-red={focusRed ? 'true' : undefined} className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center p-3 sm:p-4 overflow-y-auto`}>
+    <div data-focus-red={focusRed ? 'true' : undefined} className={`fixed inset-x-0 bottom-0 top-0 lg:top-20 ${zIndexClassName} flex items-center justify-center p-3 sm:p-4 overflow-y-auto`}>
       {focusRed ? (
         <style>{`
           /* default: red outline for focused controls inside modal */
@@ -347,7 +347,7 @@ export function CreateExercise({
   return (
     <>
       {!isTypePickerOpen && !activeMusclePicker && (
-        <CreateExerciseBackdrop zIndexClassName="z-40" backdropClassName="bg-foreground/50" onDismiss={onCancel} focusRed>
+        <CreateExerciseBackdrop zIndexClassName="z-50" backdropClassName="bg-black/50 backdrop-blur-xs" onDismiss={onCancel} focusRed>
           <form
             ref={formRef}
             aria-labelledby="create-exercise-title"
@@ -452,7 +452,7 @@ export function CreateExercise({
       )}
 
       {isTypePickerOpen ? (
-        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/50" onDismiss={() => setIsTypePickerOpen(false)} focusRed>
+        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-black/50" onDismiss={() => setIsTypePickerOpen(false)} focusRed>
           <div className="flex max-h-[85dvh] w-full max-w-sm sm:max-w-md md:max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
             <div className="relative flex h-14 items-center border-b border-border bg-surface px-4">
               <button type="button" onClick={() => setIsTypePickerOpen(false)} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Back">
@@ -500,7 +500,7 @@ export function CreateExercise({
       ) : null}
 
       {activeMusclePicker ? (
-        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-foreground/50" onDismiss={() => setActiveMusclePicker(null)} focusRed>
+        <CreateExerciseBackdrop zIndexClassName="z-[90]" backdropClassName="bg-black/50" onDismiss={() => setActiveMusclePicker(null)} focusRed>
           <div className="flex max-h-[85dvh] w-full max-w-sm sm:max-w-md md:max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
             <div className="relative flex h-14 items-center border-b border-border bg-surface px-4">
               <button type="button" onClick={() => setActiveMusclePicker(null)} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground" aria-label="Back">

@@ -293,10 +293,10 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
   return (
     <>
       {!isEditOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-40 flex items-center justify-center p-4">
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-50 flex items-center justify-center p-4">
           <button
             type="button"
-            className="absolute inset-0 block w-full cursor-default bg-foreground/50 outline-none"
+            className="absolute inset-0 block w-full cursor-default bg-black/50 backdrop-blur-xs outline-none"
             aria-label="Close exercise details" onClick={onClose} tabIndex={-1}
           />
           <div className="relative z-10 flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl">

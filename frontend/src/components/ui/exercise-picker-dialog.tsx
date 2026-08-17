@@ -223,11 +223,13 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
         onClose={() => setDetailsExerciseId(null)}
         onChanged={() => setReloadKey((k) => k + 1)}
       />
-      <CreateExercise
-        isOpen={isCreateOpen}
-        onCancel={() => setIsCreateOpen(false)}
-        onSaved={() => setReloadKey((k) => k + 1)}
-      />
+      {isCreateOpen && (
+        <CreateExercise
+          isOpen={true}
+          onCancel={() => setIsCreateOpen(false)}
+          onSaved={() => setReloadKey((k) => k + 1)}
+        />
+      )}
     </>
   )
 }

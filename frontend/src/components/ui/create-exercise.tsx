@@ -73,28 +73,14 @@ export function CreateExercise({
   exerciseTypeOptions,
   equipmentOptions = DEFAULT_EQUIPMENT_OPTIONS,
 }: CreateExerciseProps) {
+  
+  useAuth()
+
   const resolvedExerciseTypeOptions = useMemo(() => {
     if (exerciseTypeOptions && exerciseTypeOptions.length > 0) return [...exerciseTypeOptions]
     if (exerciseTypes && exerciseTypes.length > 0) return toExerciseTypeOptions(exerciseTypes)
     return [...DEFAULT_EXERCISE_TYPE_OPTIONS]
   }, [exerciseTypeOptions, exerciseTypes])
-
-  useAuth()
-
-  const [name, setName] = useState("")
-  const [exerciseType, setExerciseType] = useState<string>(resolvedExerciseTypeOptions[0]?.value ?? "WeightReps")
-  const [equipment, setEquipment] = useState<string>(equipmentOptions[0] ?? "None")
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
-  const [isTypePickerOpen, setIsTypePickerOpen] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  
-  const [primaryMuscle, setPrimaryMuscle] = useState<string | null>(null)
-  const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([])
-  const [activeMusclePicker, setActiveMusclePicker] = useState<"primary" | "secondary" | null>(null)
-  const [muscleSearchQuery, setMuscleSearchQuery] = useState("")
-  const isOnline = useOnlineStatus()
 
   const effectiveExerciseTypeOptions = useMemo(() => {
     if (!initialValues?.exerciseType) return resolvedExerciseTypeOptions
@@ -112,6 +98,21 @@ export function CreateExercise({
     () => ensureOption(equipmentOptions, initialValues?.equipment ?? ""),
     [equipmentOptions, initialValues?.equipment],
   )
+
+  const [name, setName] = useState(initialValues?.name ?? "")
+  const [exerciseType, setExerciseType] = useState<string>(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps"))
+  const [equipment, setEquipment] = useState<string>(initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None"))
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(initialValues?.imageUrl ?? null)
+  const [isTypePickerOpen, setIsTypePickerOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  
+  const [primaryMuscle, setPrimaryMuscle] = useState<string | null>(initialValues?.primaryMuscle ?? null)
+  const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>(initialValues?.secondaryMuscles ?? [])
+  const [activeMusclePicker, setActiveMusclePicker] = useState<"primary" | "secondary" | null>(null)
+  const [muscleSearchQuery, setMuscleSearchQuery] = useState("")
+  const isOnline = useOnlineStatus()
 
   const filteredMuscles = useMemo(() => {
     if (!muscleSearchQuery.trim()) return MUSCLE_GROUPS
@@ -145,23 +146,6 @@ export function CreateExercise({
   const formRef = useRef<HTMLFormElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    setName(initialValues?.name ?? "")
-    setExerciseType(initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps"))
-    setEquipment(initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None"))
-    setSelectedImageFile(null)
-    setSelectedImageUrl(initialValues?.imageUrl ?? null)
-    setPrimaryMuscle(initialValues?.primaryMuscle ?? null)
-    setSecondaryMuscles(initialValues?.secondaryMuscles ?? [])
-    setIsTypePickerOpen(false)
-    setActiveMusclePicker(null)
-    setMuscleSearchQuery("")
-    setIsSaving(false)
-    setSaveError(null)
-   
-  }, [effectiveEquipmentOptions, effectiveExerciseTypeOptions, initialValues, isOpen])
 
   useEffect(() => {
     if (!isOpen) return

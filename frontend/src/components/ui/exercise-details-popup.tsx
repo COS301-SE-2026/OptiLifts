@@ -382,9 +382,9 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         </div>
       )}
 
-      {details && (
+      {details && isEditOpen &&  (
         <CreateExercise
-          isOpen={isEditOpen} onCancel={() => setIsEditOpen(false)}
+          isOpen={true} onCancel={() => setIsEditOpen(false)}
           onSave={editSaveHandle} initialValues={initEditVals}
         />
       )}

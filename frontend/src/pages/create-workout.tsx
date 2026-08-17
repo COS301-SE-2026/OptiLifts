@@ -792,11 +792,13 @@ export default function CreateWorkoutPage() {
         onClose={() => setDetailsExerciseId(null)}
         onChanged={handleExerciseSaved}
       />
-      <CreateExercise
-        isOpen={isCreateExerciseOpen}
-        onCancel={() => setIsCreateExerciseOpen(false)}
-        onSaved={handleExerciseSaved}
-      />
+     {isCreateExerciseOpen && (
+        <CreateExercise
+          isOpen={true}
+          onCancel={() => setIsCreateExerciseOpen(false)}
+          onSaved={handleExerciseSaved}
+        />
+      )}
     </section>
   )
 }

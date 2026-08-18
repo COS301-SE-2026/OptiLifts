@@ -1526,19 +1526,19 @@ Update the status of an existing scheduled workout session
 
 ### Development Environment
 
-![Development Environment](images/deployment/DevelopmentEnviro.png)
+![Development Environment](../images/deployment/DevelopmentEnviro.png)
 
 ### Production Environment
 
-![Production Environment](images/deployment/ProductionEnviro.png)
+![Production Environment](../images/deployment/ProductionEnviro.png)
 
 ## CI/CD Pipeline Diagrams
 
 ### CI Pipeline
-![CI Pipeline](images/deployment/CIPipeline.png)
+![CI Pipeline](../images/deployment/CIPipeline.png)
 
 ### CD Pipeline
-![CD Pipeline](images/deployment/CDPipeline.png)
+![CD Pipeline](../images/deployment/CDPipeline.png)
 
 ### Rollback Strategy
 

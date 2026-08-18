@@ -47,7 +47,7 @@ To begin using OptiLifts, navigate to the web application home page.
 2. Enter your **Email**, *8Username**, and a secure **Password**.
 3. Click **Register** to enter the app.
 
-![Register Screen](images/user-manual/01-registration.png)
+![Register Screen](../images/user-manual/01-registration.png)
 
 ### Logging in
 If you already have an account, enter your credentials on the login screen and click **Log In**.
@@ -61,7 +61,7 @@ If you already have an account, enter your credentials on the login screen and c
 
 Your **Dashboard** is the central hub for all of your training activity.
 
-![Dashboard Overview](images/user-manual/02-dashboard.png)
+![Dashboard Overview](../images/user-manual/02-dashboard.png)
 
 ### Key Sections:
 * **Quick Start Bar**: Start your scheduled workout immediately
@@ -81,7 +81,7 @@ Your **Dashboard** is the central hub for all of your training activity.
 5. Define your base **Sets**, **Reps**, and initial **Weight** or **Duration**, etc., for each movement
 6. Click **Save Workout**
 
-![Create Workout](images/user-manual/03-create-workout.png)
+![Create Workout](../images/user-manual/03-create-workout.png)
 
 ---
 
@@ -89,7 +89,7 @@ Your **Dashboard** is the central hub for all of your training activity.
 
 OptiLifts features an intelligent calendar that keeps your training structured while remaining flexible.
 
-![Schedule View](images/user-manual/04-schedule-calendar.png)
+![Schedule View](../images/user-manual/04-schedule-calendar.png)
 
 ### Planning your Week
 1. Go to the **Schedule** tab from the navigation menu
@@ -102,7 +102,7 @@ OptiLifts features an intelligent calendar that keeps your training structured w
 
 When you step into the gym, tap **Start WOrkout** on your dashboard or schedule to enter **Active Session** mode.
 
-![Active Workout Session](images/user-manual/05-active-session.png)
+![Active Workout Session](../images/user-manual/05-active-session.png)
 
 ### Logging Sets and Reps
 1. As you finish a set, adjust the actual **Reps** and **Weight** lifted if they differed from your target.
@@ -112,7 +112,7 @@ When you step into the gym, tap **Start WOrkout** on your dashboard or schedule 
 1. Once all your exercises are logged, tap **Finish** at the top right.
 2. View your **Workout Log Details** via the **Profile** page.
 
-![Workout Log Session](images/user-manual/06-workout-log.png)
+![Workout Log Session](../images/user-manual/06-workout-log.png)
 
 ## 6. Profile Management
 
@@ -123,4 +123,4 @@ Go to the **Profile** page to view your historical workouts and progress.
 2. Click on the dropdowns to change your preferred theme and metrics.
 3. Click **Save Changes**
 
-![Profile](images/user-manual/07-profile.png)
+![Profile](../images/user-manual/07-profile.png)

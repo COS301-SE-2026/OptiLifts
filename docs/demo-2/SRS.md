@@ -292,7 +292,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## High-level Use Case Diagrams
 
-![Initial Use Cases](images/UseCases.png)
+![Initial Use Cases](../images/UseCases.png)
 
 ## Functional Requirements
 
@@ -429,4 +429,4 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## Domain Model
 
-![Domain Model](images/DomainModel.png)
+![Domain Model](../images/DomainModel.png)

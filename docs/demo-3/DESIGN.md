@@ -81,7 +81,7 @@ flowchart TD
 
 Primary registration screen. Allows a new user to create an account.
 
-![Register Wireframe](wireframes/register-wireframe.png)
+![Register Wireframe](../wireframes/register-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, LOGIN and REGISTER nav links right
@@ -110,7 +110,7 @@ Primary registration screen. Allows a new user to create an account.
 
 Allows an existing user to authenticate.
 
-![Login Wireframe](wireframes/login-wireframe.png)
+![Login Wireframe](../wireframes/login-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, LOGIN (active, underlined) and REGISTER nav links right
@@ -138,7 +138,7 @@ Allows an existing user to authenticate.
 
 Allows the athlete to build a named workout by adding exercises with sets, reps, and weight.
 
-![Create Workout Wireframe](wireframes/create-workout-wireframe.png)
+![Create Workout Wireframe](../wireframes/create-workout-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigation (DASHBOARD, WORKOUTS active, SCHEDULE, PROGRESS, PROFILE) right
@@ -174,7 +174,7 @@ Allows the athlete to build a named workout by adding exercises with sets, reps,
 
 Shows the athlete's saved workouts as a scrollable list of cards.
 
-![My Workouts Wireframe](wireframes/my-workouts-wireframe.png)
+![My Workouts Wireframe](../wireframes/my-workouts-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigation (DASHBOARD, WORKOUTS active, SCHEDULE, PROGRESS, PROFILE) right
@@ -200,7 +200,7 @@ Shows the athlete's saved workouts as a scrollable list of cards.
 
 Shows a quick overiew of how the athlete is doing this week, what workouts are coming up, and recent milestones.
 
-![Dashboard Wireframe](wireframes/dashboard-wireframe.png)
+![Dashboard Wireframe](../wireframes/dashboard-wireframe.png)
 
 **Component Placement:**
 - Header: logo on the left, full navigation (DASHBOARD, WORKOUTS active, SCHEDULE, PROGRESS, PROFILE) right
@@ -228,7 +228,7 @@ Shows a quick overiew of how the athlete is doing this week, what workouts are c
 
 Allows athlete to modify an existing workout by editing the names, set ranges, adding new exercises, etc.
 
-![Edit Workout Wireframe](wireframes/edit-workout-wireframe.png)
+![Edit Workout Wireframe](../wireframes/edit-workout-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigation (WORKOUTS active) right
@@ -262,7 +262,7 @@ Allows athlete to modify an existing workout by editing the names, set ranges, a
 
 Displays the  details of a specific created workout, including set information and muscle distribution
 
-![Workout detail Wireframe](wireframes/workout-detail-wireframe.png)
+![Workout detail Wireframe](../wireframes/workout-detail-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigation (WORKOUTS active) right
@@ -281,7 +281,7 @@ Displays the  details of a specific created workout, including set information a
 
 Displays the details of a completed workout session, including the exercises, set and rep counts, and muscle distribution
 
-![Workout Log Detail Wireframe](wireframes/workout-log-detail-wireframe.png)
+![Workout Log Detail Wireframe](../wireframes/workout-log-detail-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigation (WORKOUTS active) right
@@ -301,7 +301,7 @@ Displays the details of a completed workout session, including the exercises, se
 
 Calendar grid showing scheduled workout routines across a weekly context view, and displaying weekly summaries
 
-![Week Schedule Wireframe](wireframes/week-schedule-wireframe.png)
+![Week Schedule Wireframe](../wireframes/week-schedule-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigaion (SCHEDULE active) right
@@ -324,7 +324,7 @@ Calendar grid showing scheduled workout routines across a weekly context view, a
 
 Calendar grid showing scheduled workout routines across a monthly context view
 
-![Month Schedule Wireframe](wireframes/month-schedule-wireframe.png)
+![Month Schedule Wireframe](../wireframes/month-schedule-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigaion (SCHEDULE active) right
@@ -343,7 +343,7 @@ Calendar grid showing scheduled workout routines across a monthly context view
 
 Displays historical completed workouts
 
-![Past Workouts Wireframe](wireframes/past-workouts-wireframe.png)
+![Past Workouts Wireframe](../wireframes/past-workouts-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigaion (none active) right
@@ -362,7 +362,7 @@ Displays historical completed workouts
 
 User detail page displaying their information, workout history and tracking. Provides easy access to past workouts and settings configuration
 
-![Profile Wireframe](wireframes/profile-wireframe.png)
+![Profile Wireframe](../wireframes/profile-wireframe.png)
 
 **Component Placement:**
 - Header: logo left, full navigaion (PROFILE active) right

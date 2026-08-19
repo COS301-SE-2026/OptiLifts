@@ -91,13 +91,9 @@ export function GoogleSignInButton({
   const { login } = useAuth()
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [resolvedTheme, setResolvedTheme] = useState<GoogleSignInTheme>(() =>
-    getEffectiveGoogleTheme(theme)
+  const [detectedTheme, setDetectedTheme] = useState<GoogleSignInTheme>(() =>
+    getEffectiveGoogleTheme()
   )
-
-  useEffect(() => {
-    setResolvedTheme(getEffectiveGoogleTheme(theme))
-  }, [theme])
 
   useEffect(() => {
     if (theme) return
@@ -105,7 +101,7 @@ export function GoogleSignInButton({
     if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return
 
     const observer = new MutationObserver(() => {
-      setResolvedTheme(getEffectiveGoogleTheme(theme))
+      setDetectedTheme(getEffectiveGoogleTheme())
     })
 
     observer.observe(document.documentElement, {
@@ -115,6 +111,8 @@ export function GoogleSignInButton({
 
     return () => observer.disconnect()
   }, [theme])
+
+  const resolvedTheme = theme ?? detectedTheme
 
   const effectiveClientId =
     clientId ??

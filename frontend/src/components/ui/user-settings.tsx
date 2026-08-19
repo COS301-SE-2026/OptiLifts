@@ -47,6 +47,7 @@ type PreferencesParams = Readonly<{
 }>;
 
 type SecurityParams = Readonly<{
+    hasPassword: boolean;
     security: {
         currentPassword: string;
         newPassword: string;
@@ -72,6 +73,9 @@ interface UserSettingsDto {
         units: string;
     };
 
+    security?: {
+        hasPassword: boolean;
+    };
 }
 
 
@@ -86,6 +90,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
+    const [hasPassword, setHasPassword] = useState<boolean>(true);
 
     const [profileError, setProfileError] = useState<string | null>(null);
     const [preferencesError, setPreferencesError] = useState<string | null>(null);
@@ -200,6 +205,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
                 setSelectedImgUrl(data.profile.profilePictureUrl);
                 setInitialProfilePicUrl(data.profile.profilePictureUrl);
+                setHasPassword(data.security?.hasPassword ?? true);
 
                 const loadedPreferences = {
                     theme: data.preferences.theme || "dark",
@@ -275,16 +281,16 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     const savePassword = async () => {
 
-        if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
-            throw new Error("All password fields are required.");
+        if (security.newPassword === "" || security.confirmPassword === "") {
+            throw new Error("New password and confirmation are required.");
+        }
+
+        if (hasPassword && security.currentPassword === "") {
+            throw new Error("Enter current password");
         }
 
         if (security.newPassword !== security.confirmPassword) {
             throw new Error("New passwords do not match.");
-        }
-
-        if (security.currentPassword === "") {
-            throw new Error("Enter current password");
         }
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -292,18 +298,23 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             throw new Error("New password does not meet complexity requirements.");
         }
 
-        const res = await customFetch("/api/users/me/updatePassword", {
+        const endpoint = hasPassword ? "/api/users/me/updatePassword" : "/api/users/me/setPassword";
+        const body = hasPassword
+            ? { currentPassword: security.currentPassword, newPassword: security.newPassword }
+            : { newPassword: security.newPassword };
+
+        const res = await customFetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                currentPassword: security.currentPassword,
-                newPassword: security.newPassword
-            })
+            body: JSON.stringify(body)
         });
 
         if (!res.ok) {
-            throw new Error("Could not change password, please check your current password.");
+            const errorPayload = await res.json().catch(() => null);
+            throw new Error(errorPayload?.error || "Could not update password, please check your inputs.");
         }
+
+        setHasPassword(true);
     };
 
     const saveProfilePic = async () => {
@@ -398,6 +409,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         profile, updateProfile,
         preferences, updatePreferences,
         security, updateSecurity,
+        hasPassword,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
         isLoading, isSaving,
         profileError, preferencesError, securityError, generalError,
@@ -601,40 +613,46 @@ function PreferencesSection({ preferences, updatePreferences, error }: Preferenc
     );
 }
 
-function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
+function SecuritySection({ hasPassword, security, updateSecurity, error }: SecurityParams) {
     const [showCurrent, setShowCurrent] = useState<boolean>(false);
     const [showNew, setShowNew] = useState<boolean>(false);
     const [showConfirm, setShowConfirm] = useState<boolean>(false);
 
     return (
         <div className="space-y-4">
-            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Change Password</h3>
+            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">
+                {hasPassword ? "Change Password" : "Set Password"}
+            </h3>
 
             <p className="text-xs text-muted-foreground -mt-2">
-                Passwords need 8 or more characters containing uppercase, lowercase, numbers, and special characters
+                {hasPassword
+                    ? "Passwords need 8 or more characters containing uppercase, lowercase, numbers, and special characters"
+                    : "Create a password to enable logging in with your email address in addition to Google."}
             </p>
 
-            <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground">Current Password</span>
-                <div className="relative w-full">
-                    <Input
-                        type={showCurrent ? "text" : "password"}
-                        value={security.currentPassword}
-                        onChange={(e) => updateSecurity("currentPassword", e.target.value)}
-                        className="pr-11"
-                    />
-                    <Button
-                        type="button" variant="password" size="icon"
-                        onClick={() => setShowCurrent(!showCurrent)}
-                        className="absolute right-1 top-1/2 -translate-y-1/2"
-                    >
-                        {showCurrent ? <Eye size={16} /> : <EyeOff size={16} />}
-                    </Button>
+            {hasPassword && (
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs font-bold text-muted-foreground">Current Password</span>
+                    <div className="relative w-full">
+                        <Input
+                            type={showCurrent ? "text" : "password"}
+                            value={security.currentPassword}
+                            onChange={(e) => updateSecurity("currentPassword", e.target.value)}
+                            className="pr-11"
+                        />
+                        <Button
+                            type="button" variant="password" size="icon"
+                            onClick={() => setShowCurrent(!showCurrent)}
+                            className="absolute right-1 top-1/2 -translate-y-1/2"
+                        >
+                            {showCurrent ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground">New Password</span>
+                <span className="text-xs font-bold text-muted-foreground">{hasPassword ? "New Password" : "Password"}</span>
                 <div className="relative w-full">
                     <Input
                         type={showNew ? "text" : "password"}
@@ -653,7 +671,7 @@ function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground">Confirm New Password</span>
+                <span className="text-xs font-bold text-muted-foreground">{hasPassword ? "Confirm New Password" : "Confirm Password"}</span>
                 <div className="relative w-full">
                     <Input
                         type={showConfirm ? "text" : "password"}
@@ -723,6 +741,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         profile, updateProfile,
         preferences, updatePreferences,
         security, updateSecurity,
+        hasPassword,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
         isLoading, isSaving,
         profileError, preferencesError, securityError, generalError,
@@ -795,6 +814,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                         />
 
                         <SecuritySection
+                            hasPassword={hasPassword}
                             security={security} updateSecurity={updateSecurity}
                             error={securityError}
                         />

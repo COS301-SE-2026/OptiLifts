@@ -32,6 +32,7 @@ export async function customFetch( inputURL: RequestInfo | URL, init?: RequestIn
         if (
             requrl.includes('/auth/login') ||
             requrl.includes('/auth/register') ||
+            requrl.includes('/auth/google') ||
             requrl.includes('/auth/logout') ||
             requrl.includes('/auth/refresh') ||
             requrl.endsWith('/refresh')

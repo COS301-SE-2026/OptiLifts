@@ -13,6 +13,11 @@ public class BcryptPasswordHasher : IPasswordHasher
 
     public bool Verify(string hash, string password)
     {
+        if (string.IsNullOrWhiteSpace(hash) || string.IsNullOrWhiteSpace(password))
+        {
+            return false;
+        }
+
         return BCrypt.Net.BCrypt.Verify(password, hash);
     }
 }

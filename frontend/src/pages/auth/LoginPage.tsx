@@ -1,61 +1,18 @@
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/auth-context'
 import { submitAuthRequest } from './auth-request'
-import { GoogleSignInButton } from './GoogleSignInButton'
+import { PasswordRow } from './PasswordRow'
+import { SocialAuthSection } from './SocialAuthSection'
 
 function LoginHeading() {
   return (
     <h1 className="font-display text-[42px] leading-none tracking-[2px] text-foreground select-none border-b-4 border-brand pb-2 px-2 w-fit">
       LOGIN
     </h1>
-  )
-}
-
-type PasswordRowProps = Readonly<{
-  label: string
-  value: string
-  onChange: (nextValue: string) => void
-  showValue: boolean
-  onToggle: () => void
-  placeholder: string
-}>
-
-function PasswordRow({ label, value, onChange, showValue, onToggle, placeholder }: PasswordRowProps) {
-  const inputId = `password-row-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
-
-  return (
-    <div className="grid gap-1">
-      <label htmlFor={inputId} className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
-        {label}
-      </label>
-      <div className="relative w-full">
-        <Input
-          id={inputId}
-          required
-          type={showValue ? 'text' : 'password'}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          autoComplete="current-password"
-          placeholder={placeholder}
-          className="pr-11"
-        />
-        <Button
-          type="button"
-          variant="password"
-          size="icon"
-          aria-label={showValue ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-          onClick={onToggle}
-          className="absolute right-1 top-1/2 -translate-y-1/2"
-        >
-          {showValue ? <Eye size={16} /> : <EyeOff size={16} />}
-        </Button>
-      </div>
-    </div>
   )
 }
 
@@ -132,6 +89,7 @@ export function LoginPage() {
                 showValue={showPassword}
                 onToggle={() => setShowPassword((current) => !current)}
                 placeholder="Enter password"
+                autoComplete="current-password"
               />
 
               <Link to="/forgot-password" className="text-sm text-brand no-underline hover:underline text-right">
@@ -147,23 +105,12 @@ export function LoginPage() {
                 {isSubmitting ? 'LOGGING IN...' : 'LOGIN'}
               </Button>
 
-              <div className="relative my-2 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground font-semibold">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="flex justify-center w-full">
-                <GoogleSignInButton
-                  text="signin_with"
-                  fromPath={fromPath}
-                  setErrorMessage={setErrorMessage}
-                  setIsSubmitting={setIsSubmitting}
-                />
-              </div>
+              <SocialAuthSection
+                text="signin_with"
+                fromPath={fromPath}
+                setErrorMessage={setErrorMessage}
+                setIsSubmitting={setIsSubmitting}
+              />
 
               {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
 

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/auth-context'
 import { submitAuthRequest } from './auth-request'
+import { GoogleSignInButton } from './GoogleSignInButton'
 
 function RegisterHeading() {
   return (
@@ -189,6 +190,24 @@ export function RegisterPage() {
               >
                 {isSubmitting ? 'REGISTERING...' : 'REGISTER'}
               </Button>
+
+              <div className="relative my-2 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground font-semibold">Or continue with</span>
+                </div>
+              </div>
+
+              <div className="flex justify-center w-full">
+                <GoogleSignInButton
+                  text="signup_with"
+                  fromPath={fromPath}
+                  setErrorMessage={setErrorMessage}
+                  setIsSubmitting={setIsSubmitting}
+                />
+              </div>
 
               {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
 

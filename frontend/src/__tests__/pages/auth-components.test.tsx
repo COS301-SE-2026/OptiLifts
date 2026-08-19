@@ -4,8 +4,8 @@ import { PasswordRow } from '@/pages/auth/PasswordRow'
 import { SocialAuthSection } from '@/pages/auth/SocialAuthSection'
 
 vi.mock('@/pages/auth/GoogleSignInButton', () => ({
-  GoogleSignInButton: ({ text }: { text?: string }) => (
-    <div data-testid="mock-google-button" data-button-text={text} />
+  GoogleSignInButton: ({ text, theme }: { text?: string; theme?: string }) => (
+    <div data-testid="mock-google-button" data-button-text={text} data-button-theme={theme} />
   ),
 }))
 
@@ -65,9 +65,11 @@ describe('SocialAuthSection', () => {
 
     expect(screen.getByText('Or continue with')).toBeDefined()
     expect(screen.getByTestId('mock-google-button').getAttribute('data-button-text')).toBe('signin_with')
+    expect(screen.getByTestId('mock-google-button').getAttribute('data-button-theme')).toBeNull()
 
-    rerender(<SocialAuthSection text="signup_with" dividerText="Or register with" />)
+    rerender(<SocialAuthSection text="signup_with" theme="filled_black" dividerText="Or register with" />)
     expect(screen.getByText('Or register with')).toBeDefined()
     expect(screen.getByTestId('mock-google-button').getAttribute('data-button-text')).toBe('signup_with')
+    expect(screen.getByTestId('mock-google-button').getAttribute('data-button-theme')).toBe('filled_black')
   })
 })

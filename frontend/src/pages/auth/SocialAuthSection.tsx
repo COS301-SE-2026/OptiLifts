@@ -3,6 +3,7 @@ import { GoogleSignInButton, type GoogleSignInButtonProps } from './GoogleSignIn
 
 export type SocialAuthSectionProps = Readonly<{
   text?: GoogleSignInButtonProps['text']
+  theme?: GoogleSignInButtonProps['theme']
   dividerText?: string
   fromPath?: string
   setErrorMessage?: Dispatch<SetStateAction<string | null>>
@@ -11,6 +12,7 @@ export type SocialAuthSectionProps = Readonly<{
 
 export function SocialAuthSection({
   text = 'signin_with',
+  theme,
   dividerText = 'Or continue with',
   fromPath,
   setErrorMessage,
@@ -30,6 +32,7 @@ export function SocialAuthSection({
       <div className="flex justify-center w-full">
         <GoogleSignInButton
           text={text}
+          theme={theme}
           fromPath={fromPath}
           setErrorMessage={setErrorMessage}
           setIsSubmitting={setIsSubmitting}

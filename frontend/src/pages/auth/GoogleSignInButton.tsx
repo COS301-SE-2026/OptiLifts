@@ -1,12 +1,14 @@
-import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/auth-context'
 import { submitGoogleAuthRequest } from './auth-request'
 
+export type GoogleSignInTheme = 'outline' | 'filled_blue' | 'filled_black'
+
 export type GoogleSignInButtonProps = Readonly<{
   clientId?: string
   text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin'
-  theme?: 'outline' | 'filled_blue' | 'filled_black'
+  theme?: GoogleSignInTheme
   size?: 'large' | 'medium' | 'small'
   shape?: 'rectangular' | 'pill' | 'circle' | 'square'
   width?: number | string
@@ -33,7 +35,7 @@ declare global {
             parent: HTMLElement,
             options: {
               type?: 'standard' | 'icon'
-              theme?: 'outline' | 'filled_blue' | 'filled_black'
+              theme?: GoogleSignInTheme
               size?: 'large' | 'medium' | 'small'
               text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin'
               shape?: 'rectangular' | 'pill' | 'circle' | 'square'
@@ -49,10 +51,34 @@ declare global {
   }
 }
 
+export function getEffectiveGoogleTheme(themeProp?: GoogleSignInTheme): GoogleSignInTheme {
+  if (themeProp) {
+    return themeProp
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.documentElement.classList.contains('dark')) {
+      return 'filled_black'
+    }
+    const storedTheme = typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null
+    if (storedTheme === 'dark') {
+      return 'filled_black'
+    }
+    if (storedTheme === 'light') {
+      return 'outline'
+    }
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      return 'filled_black'
+    }
+  }
+
+  return 'filled_black'
+}
+
 export function GoogleSignInButton({
   clientId,
   text = 'signin_with',
-  theme = 'outline',
+  theme,
   size = 'large',
   shape = 'rectangular',
   width = 320,
@@ -65,6 +91,30 @@ export function GoogleSignInButton({
   const { login } = useAuth()
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
+  const [resolvedTheme, setResolvedTheme] = useState<GoogleSignInTheme>(() =>
+    getEffectiveGoogleTheme(theme)
+  )
+
+  useEffect(() => {
+    setResolvedTheme(getEffectiveGoogleTheme(theme))
+  }, [theme])
+
+  useEffect(() => {
+    if (theme) return
+
+    if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return
+
+    const observer = new MutationObserver(() => {
+      setResolvedTheme(getEffectiveGoogleTheme(theme))
+    })
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
+    return () => observer.disconnect()
+  }, [theme])
 
   const effectiveClientId =
     clientId ??
@@ -111,7 +161,7 @@ export function GoogleSignInButton({
       containerRef.current.innerHTML = ''
       window.google.accounts.id.renderButton(containerRef.current, {
         type: 'standard',
-        theme,
+        theme: resolvedTheme,
         size,
         text,
         shape,
@@ -133,7 +183,7 @@ export function GoogleSignInButton({
     return () => {
       if (checkInterval) clearInterval(checkInterval)
     }
-  }, [effectiveClientId, fromPath, login, navigate, onSuccess, setErrorMessage, setIsSubmitting, shape, size, text, theme, width])
+  }, [effectiveClientId, fromPath, login, navigate, onSuccess, resolvedTheme, setErrorMessage, setIsSubmitting, shape, size, text, width])
 
   return (
     <div className={`google-signin-wrapper flex justify-center w-full min-h-[44px] ${className}`}>

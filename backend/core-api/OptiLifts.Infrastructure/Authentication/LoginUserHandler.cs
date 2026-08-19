@@ -39,7 +39,7 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         var user = await _dbContext.Users
             .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
-        if (user == null)
+        if (user == null || string.IsNullOrWhiteSpace(user.PasswordHash))
         {
             throw new InvalidCredentialsException();
         }

@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir: rootDir,
+    envPrefix: ['VITE_', 'GOOGLE_'],
+    define: {
+      'import.meta.env.GOOGLE_CLIENT_ID': JSON.stringify(env.GOOGLE_CLIENT_ID ?? ''),
+    },
     plugins: [
       react(),
       VitePWA({

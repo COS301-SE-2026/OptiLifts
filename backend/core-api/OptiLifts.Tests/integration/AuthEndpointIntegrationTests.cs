@@ -1,7 +1,10 @@
 using System.Net.Http.Json;
 using FluentAssertions;
+using Google.Apis.Auth;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Database;
@@ -239,5 +242,111 @@ public sealed class AuthEndpointIntegrationTests : IntegrationTestBase
         var meResponse = await Client.SendAsync(meReq);
 
         meResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    private HttpClient CreateClientWithGoogleAuth(IGoogleAuthService googleAuthService)
+    {
+        return Fixture.Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IGoogleAuthService));
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
+                services.AddSingleton(googleAuthService);
+            });
+        }).CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+    }
+
+    [Fact]
+    public async Task GoogleAuth_NewUser_CreatesUserAndReturnsCookiesAndUserDto()
+    {
+        var googleMock = new Mock<IGoogleAuthService>();
+        googleMock
+            .Setup(g => g.ValidateIdTokenAsync("valid-google-id-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleUserInfoDto("google-sub-integ-1", "integgoogle@example.com", "Google Integration User", "https://photo.url/pic.jpg"));
+
+        var client = CreateClientWithGoogleAuth(googleMock.Object);
+
+        var response = await client.PostAsJsonAsync("/api/auth/google", new { IdToken = "valid-google-id-token" });
+
+        response.EnsureSuccessStatusCode();
+        response.Headers.Contains("Set-Cookie").Should().BeTrue();
+        var cookies = response.Headers.GetValues("Set-Cookie").ToList();
+        cookies.Should().Contain(c => c.Contains("access_token="));
+        cookies.Should().Contain(c => c.Contains("refresh_token="));
+
+        var userDto = await response.Content.ReadFromJsonAsync<AuthUserDto>();
+        userDto.Should().NotBeNull();
+        userDto!.Email.Should().Be("integgoogle@example.com");
+        userDto.DisplayName.Should().Be("Google Integration User");
+
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        var userInDb = await db.Users.FirstOrDefaultAsync(u => u.GoogleId == "google-sub-integ-1");
+        userInDb.Should().NotBeNull();
+        userInDb!.PasswordHash.Should().BeNull();
+        userInDb.ProfileImageUrl.Should().Be("https://photo.url/pic.jpg");
+    }
+
+    [Fact]
+    public async Task GoogleAuth_ExistingEmailUser_LinksGoogleIdAndAuthenticates()
+    {
+        var email = "linkme@example.com";
+        var preseededUser = await SeedAuthUserAsync(email, "Original Preseed", "Password123!");
+
+        var googleMock = new Mock<IGoogleAuthService>();
+        googleMock
+            .Setup(g => g.ValidateIdTokenAsync("valid-google-id-token-link", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleUserInfoDto("google-sub-link-99", email, "Original Preseed", null));
+
+        var client = CreateClientWithGoogleAuth(googleMock.Object);
+
+        var response = await client.PostAsJsonAsync("/api/auth/google", new { IdToken = "valid-google-id-token-link" });
+
+        response.EnsureSuccessStatusCode();
+        response.Headers.Contains("Set-Cookie").Should().BeTrue();
+
+        var userDto = await response.Content.ReadFromJsonAsync<AuthUserDto>();
+        userDto.Should().NotBeNull();
+        userDto!.Id.Should().Be(preseededUser.Id);
+
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+        var updatedUser = await db.Users.FirstAsync(u => u.Id == preseededUser.Id);
+        updatedUser.GoogleId.Should().Be("google-sub-link-99");
+        updatedUser.PasswordHash.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task GoogleAuth_InvalidToken_ReturnsUnauthorized()
+    {
+        var googleMock = new Mock<IGoogleAuthService>();
+        googleMock
+            .Setup(g => g.ValidateIdTokenAsync("bad-id-token", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidJwtException("Invalid token signature or expired"));
+
+        var client = CreateClientWithGoogleAuth(googleMock.Object);
+
+        var response = await client.PostAsJsonAsync("/api/auth/google", new { IdToken = "bad-id-token" });
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task GoogleAuth_MissingToken_ReturnsBadRequest()
+    {
+        var googleMock = new Mock<IGoogleAuthService>();
+        var client = CreateClientWithGoogleAuth(googleMock.Object);
+
+        var response = await client.PostAsJsonAsync("/api/auth/google", new { IdToken = "" });
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 }

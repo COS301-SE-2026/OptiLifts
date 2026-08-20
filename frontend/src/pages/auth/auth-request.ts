@@ -12,7 +12,7 @@ type BackendUserDto = Readonly<{
 }>
 
 type SubmitAuthRequestArgs = Readonly<{
-  endpoint: '/api/auth/login' | '/api/auth/register'
+  endpoint: '/api/auth/login' | '/api/auth/register' | '/api/auth/google'
   body: unknown
   login: (session: AuthSession) => void
   navigate: NavigateFunction
@@ -85,4 +85,34 @@ export async function submitAuthRequest({
   } finally {
     setIsSubmitting(false)
   }
+}
+
+export type SubmitGoogleAuthArgs = Readonly<{
+  idToken: string
+  login: (session: AuthSession) => void
+  navigate: NavigateFunction
+  fromPath: string
+  setErrorMessage: Dispatch<SetStateAction<string | null>>
+  setIsSubmitting: Dispatch<SetStateAction<boolean>>
+}>
+
+export async function submitGoogleAuthRequest({
+  idToken,
+  login,
+  navigate,
+  fromPath,
+  setErrorMessage,
+  setIsSubmitting,
+}: SubmitGoogleAuthArgs) {
+  return submitAuthRequest({
+    endpoint: '/api/auth/google',
+    body: { idToken },
+    login,
+    navigate,
+    fromPath,
+    setErrorMessage,
+    setIsSubmitting,
+    fallbackErrorMessage: 'Unable to sign in with Google. Please try again.',
+    unauthorizedErrorMessage: 'Google authentication failed. Please try again.',
+  })
 }

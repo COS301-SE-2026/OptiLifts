@@ -7,16 +7,18 @@ using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Users;
 
-public sealed class ChangePasswordHandler : IRequestHandler<UpdatePasswordCommand>
+public sealed class SetPasswordHandler : IRequestHandler<SetPasswordCommand>
 {
     private readonly OptiLiftsDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
-    public ChangePasswordHandler(OptiLiftsDbContext dbContext, IPasswordHasher passwordHasher)
+
+    public SetPasswordHandler(OptiLiftsDbContext dbContext, IPasswordHasher passwordHasher)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
     }
-    public async Task Handle(UpdatePasswordCommand request, CancellationToken cancellationToken)
+
+    public async Task Handle(SetPasswordCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.NewPassword))
         {
@@ -37,9 +39,9 @@ public sealed class ChangePasswordHandler : IRequestHandler<UpdatePasswordComman
             throw new KeyNotFoundException("User not found.");
         }
 
-        if (string.IsNullOrWhiteSpace(user.PasswordHash) || !_passwordHasher.Verify(user.PasswordHash, request.CurrentPassword))
+        if (!string.IsNullOrWhiteSpace(user.PasswordHash))
         {
-            throw new UnauthorizedAccessException("Provided current password is incorrect.");
+            throw new InvalidOperationException("User already has a password set. Use update password instead.");
         }
 
         user.PasswordHash = _passwordHasher.Hash(request.NewPassword);

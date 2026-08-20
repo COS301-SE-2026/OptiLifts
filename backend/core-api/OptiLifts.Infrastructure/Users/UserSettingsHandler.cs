@@ -57,7 +57,8 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
             Preferences = new PreferencesDto(
                 user.LightTheme ? "light" : "dark",
                 user.Metric ? "metric" : "imperial"
-            )
+            ),
+            Security = new SecurityDto(!string.IsNullOrWhiteSpace(user.PasswordHash))
         };
     }
 }

@@ -51,7 +51,7 @@ public class UpdatePasswordHandlerTests
         var updatedUser = await context.Users.FindAsync(userId);
 
         updatedUser.Should().NotBeNull();
-        updatedUser.PasswordHash.Should().Be("NEW_HASH");
+        updatedUser!.PasswordHash.Should().Be("NEW_HASH");
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class UpdatePasswordHandlerTests
         await using var context = CreateContext(connection);
 
         var userId = Guid.NewGuid();
-        var user = new User { Id = userId, Email = "jordan@gmail.com" };
+        var user = new User { Id = userId, Email = "jordan@gmail.com", PasswordHash = "Password123!" };
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
@@ -107,7 +107,7 @@ public class UpdatePasswordHandlerTests
         await using var context = CreateContext(connection);
 
         var userId = Guid.NewGuid();
-        var user = new User { Id = userId, Email = "jordan@gmail.com" };
+        var user = new User { Id = userId, Email = "jordan@gmail.com", PasswordHash = "Password123!" };
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
@@ -126,7 +126,7 @@ public class UpdatePasswordHandlerTests
         await using var context = CreateContext(connection);
 
         var userId = Guid.NewGuid();
-        var user = new User { Id = userId, Email = "jordan@gmail.com" };
+        var user = new User { Id = userId, Email = "jordan@gmail.com", PasswordHash = "Password123!" };
         context.Users.Add(user);
         await context.SaveChangesAsync();
 

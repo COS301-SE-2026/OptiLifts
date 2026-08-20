@@ -226,6 +226,49 @@ public sealed class UserSettingsController : ControllerBase
         }
     }
 
+    public sealed record SetPasswordRequest(
+        string NewPassword
+    );
+
+    [HttpPost("setPassword")]
+    public async Task<IActionResult> SetPassword([FromBody] SetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrEmpty(request.NewPassword))
+        {
+            return BadRequest("New password is required.");
+        }
+
+        try
+        {
+            var command = new SetPasswordCommand(
+                userId,
+                request.NewPassword
+            );
+
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new { error = e.Message });
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(new { error = e.Message });
+        }
+    }
+
     [HttpDelete]
     public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
     {

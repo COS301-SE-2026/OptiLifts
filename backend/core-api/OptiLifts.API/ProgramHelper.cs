@@ -27,6 +27,8 @@ public static class SecurityExtensions
         }
 
         services.AddSingleton<IJwtTokenService>(_ => new JwtTokenService(jwtSecret, jwtExpiryMinutes));
+        var googleClientId = configuration["GOOGLE_CLIENT_ID"] ?? string.Empty;
+        services.AddSingleton<IGoogleAuthService>(_ => new GoogleAuthService(googleClientId));
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>

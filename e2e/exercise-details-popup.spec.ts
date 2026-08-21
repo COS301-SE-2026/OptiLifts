@@ -10,7 +10,7 @@ test.describe('Standard Exercise Details Popup', () => {
         await expect(page.getByRole('heading', { name: 'Exercise Details' })).toBeVisible();
 
         await expect(page.getByRole('paragraph').filter({ hasText: 'Barbell Bench Press' })).toBeVisible();
-        await expect(page.getByText('Chest').nth(3)).toBeVisible();
+        await expect(page.getByText('Chest').first()).toBeVisible();
         await expect(page.getByText('Barbell', { exact: true })).toBeVisible();
         await expect(page.getByText('compound')).toBeVisible();
         await expect(page.locator('span').filter({ hasText: 'Shoulders' })).toBeVisible();

@@ -89,6 +89,72 @@ const fileFromUrl = async (imageUrl: string, name: string): Promise<File | null>
 
 const sameEquip = (a: string | null | undefined, b: string | null | undefined) => (a ?? '').toLowerCase() === (b ?? '').toLowerCase()
 
+const extractErrorMessage = async (resp: Response, defaultMessage: string): Promise<string> => {
+    try {
+        const errJson = await resp.json()
+        if (errJson?.error) return errJson.error
+        if (errJson?.message) return errJson.message
+    } catch {
+        const txt = await resp.text().catch(() => '')
+        if (txt) return txt
+    }
+    return defaultMessage
+}
+
+const resolveImageForFork = async (
+    values: CreateExerciseFormData,
+    existingImageUrl?: string | null
+): Promise<File | null | undefined> => {
+    if (values.imageFile || !values.imageUrl || values.imageUrl !== existingImageUrl) {
+        return values.imageFile
+    }
+
+    const file = await fileFromUrl(values.imageUrl, values.name)
+    if (!file) {
+        toast.info("Couldn't carry the image over", 'Image not copied')
+    }
+    return file
+}
+
+const buildForkExerciseFormData = (values: CreateExerciseFormData, imageFile?: File | null): FormData => {
+    const data = new FormData()
+    data.append('Name', values.name)
+
+    if (values.equipment) {
+        data.append('Equipment', values.equipment)
+    }
+    data.append('Category', values.exerciseType)
+    if (values.primaryMuscle) {
+        data.append('PrimaryMuscles', values.primaryMuscle)
+    }
+    values.secondaryMuscles.forEach((m) => data.append('SecondaryMuscles', m))
+    if (imageFile) {
+        data.append('Image', imageFile)
+    }
+    return data
+}
+
+const deleteCustomExercise = async (id: string): Promise<void> => {
+    const deleteResp = await customFetch(`/api/exercises/custom/${id}`, { method: 'DELETE' })
+    if (!deleteResp.ok) {
+        const message = await extractErrorMessage(deleteResp, `Failed to update exercise (${deleteResp.status})`)
+        throw new Error(message)
+    }
+}
+
+const createCustomExercise = async (formData: FormData): Promise<void> => {
+    const createResp = await customFetch('/api/exercises/custom', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: formData,
+    })
+
+    if (!createResp.ok) {
+        const message = await extractErrorMessage(createResp, `Request failed with status ${createResp.status}`)
+        throw new Error(message)
+    }
+}
+
 export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: ExerciseDetailsPopupProps) {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
@@ -193,8 +259,8 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         })
 
         if (!resp.ok) {
-            const txt = await resp.text()
-            throw new Error(txt || `Request failed with status ${resp.status}`)
+            const message = await extractErrorMessage(resp, `Request failed with status ${resp.status}`)
+            throw new Error(message)
         }
     }
 
@@ -203,45 +269,11 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
             return
         }
 
-        let imageFile = values.imageFile
+        const imageFile = await resolveImageForFork(values, details.imageUrl)
+        const data = buildForkExerciseFormData(values, imageFile)
 
-        if (!imageFile && values.imageUrl && values.imageUrl === details.imageUrl) {
-            imageFile = await fileFromUrl(values.imageUrl, values.name)
-            if (!imageFile) {
-                toast.info("Couldn't carry the image over", 'Image not copied')
-            }
-        }
-
-        const data = new FormData()
-        data.append('Name', values.name)
-
-        if (values.equipment) {
-            data.append('Equipment', values.equipment)
-        }
-        data.append('Category', values.exerciseType)
-        if (values.primaryMuscle) {
-            data.append('PrimaryMuscles', values.primaryMuscle)
-        }
-        values.secondaryMuscles.forEach((m) => data.append('SecondaryMuscles', m))
-        if (imageFile) {
-            data.append('Image', imageFile)
-        }
-
-        const createResp = await customFetch('/api/exercises/custom', {
-            method: 'POST',
-            headers: { Accept: 'application/json' },
-            body: data,
-        })
-
-        if (!createResp.ok) {
-            const text = await createResp.text()
-            throw new Error(text || `Request failed with status ${createResp.status}`)
-        }
-
-        const deleteResp = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
-        if (!deleteResp.ok) {
-            toast.info('The update was successful', 'Cleanup needed')
-        }
+        await deleteCustomExercise(details.id)
+        await createCustomExercise(data)
     }
 
     const editSaveHandle = async (values: CreateExerciseFormData) => {

@@ -92,6 +92,63 @@ public sealed class ExerciseComponentIntegrationTests : IntegrationTestBase
         exercisesOne.Select(e => e.Name).Should().NotContain("UserTwo Exercise");
     }
 
+    [Fact]
+    public async Task CreateCustomExercise_ReturnsBadRequest_WhenNameMatchesPublicExercise()
+    {
+        var user = await SeedUserAsync("integration-exercise-dup-pub@optilifts.com");
+        var muscle = await SeedMuscleAsync("Chest");
+        await SeedPublicExerciseAsync("Integration Public Bench Press", muscle.Id);
+
+        var client = CreateAuthenticatedClient(user);
+
+        using var content = BuildCustomExerciseContent(
+            name: "integration public bench press", // test case-insensitivity
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Chest"],
+            secondaryMuscles: []);
+
+        var response = await client.PostAsync("/api/exercises/custom", content);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+
+        var errorBody = await response.Content.ReadAsStringAsync();
+        errorBody.Should().Contain("already exists");
+    }
+
+    [Fact]
+    public async Task CreateCustomExercise_ReturnsBadRequest_WhenNameMatchesOwnCustomExercise()
+    {
+        var user = await SeedUserAsync("integration-exercise-dup-own@optilifts.com");
+        var muscle = await SeedMuscleAsync("Shoulders");
+        var client = CreateAuthenticatedClient(user);
+
+        using var content1 = BuildCustomExerciseContent(
+            name: "My Custom Overhead Press",
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Shoulders"],
+            secondaryMuscles: []);
+
+        var resp1 = await client.PostAsync("/api/exercises/custom", content1);
+        resp1.EnsureSuccessStatusCode();
+
+        using var content2 = BuildCustomExerciseContent(
+            name: "  my custom overhead press  ", // test whitespace and case-insensitivity
+            mechanic: "compound",
+            equipment: "barbell",
+            category: "Strength",
+            primaryMuscles: ["Shoulders"],
+            secondaryMuscles: []);
+
+        var resp2 = await client.PostAsync("/api/exercises/custom", content2);
+        resp2.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+
+        var errorBody = await resp2.Content.ReadAsStringAsync();
+        errorBody.Should().Contain("already exists");
+    }
+
     private record CreateResult(Guid Id);
 
     private static MultipartFormDataContent BuildCustomExerciseContent(
@@ -147,5 +204,22 @@ public sealed class ExerciseComponentIntegrationTests : IntegrationTestBase
         db.Muscles.Add(muscle);
         await db.SaveChangesAsync();
         return muscle;
+    }
+
+    private async Task SeedPublicExerciseAsync(string name, Guid primaryMuscleId)
+    {
+        await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+
+        var exercise = new Domain.Workouts.Exercise
+        {
+            Name = name,
+            UserId = null,
+            PrimaryMuscleId = primaryMuscleId,
+            ExerciseType = Domain.Workouts.ExerciseType.WeightReps,
+            IsDeleted = false
+        };
+        db.Exercises.Add(exercise);
+        await db.SaveChangesAsync();
     }
 }

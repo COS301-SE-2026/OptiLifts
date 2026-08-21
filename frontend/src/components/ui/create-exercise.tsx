@@ -308,8 +308,19 @@ export function CreateExercise({
       })
 
       if (!response.ok) {
-        const text = await response.text()
-        throw new Error(text || `Request failed with status ${response.status}`)
+        let message = `Request failed with status ${response.status}`
+        try {
+          const data = await response.json()
+          if (data?.error) {
+            message = data.error
+          } else if (data?.message) {
+            message = data.message
+          }
+        } catch {
+          const text = await response.text().catch(() => "")
+          if (text) message = text
+        }
+        throw new Error(message)
       }
 
       if (onSaved) {
@@ -346,7 +357,7 @@ export function CreateExercise({
             <div className="grid gap-3 sm:gap-4 overflow-y-auto px-1.5 py-1">
               <label className="grid gap-1.5">
                 <span className="text-xs sm:text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise name</span>
-                <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Seated Cable Row" required maxLength={80} data-slot="input" autoFocus />
+                <Input value={name} onChange={(event) => { setName(event.target.value); if (saveError) setSaveError(null); }} placeholder="e.g. Seated Cable Row" required maxLength={80} data-slot="input" autoFocus />
               </label>
 
               <div className="grid gap-1.5">

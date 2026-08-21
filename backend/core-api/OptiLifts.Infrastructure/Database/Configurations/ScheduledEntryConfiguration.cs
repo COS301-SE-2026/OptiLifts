@@ -19,6 +19,8 @@ public class ScheduledEntryConfiguration : IEntityTypeConfiguration<ScheduledEnt
         builder.Property(e => e.Scheduled).HasColumnName("scheduled").IsRequired();
         builder.Property(e => e.Status).HasColumnName("status").HasConversion<string>().IsRequired();
 
+        builder.Property(e => e.GoogleEventId).HasColumnName("google_event_id").IsRequired(false);
+
         //workout FK
         builder.HasOne<Workout>()
                 .WithMany()

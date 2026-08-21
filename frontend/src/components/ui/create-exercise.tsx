@@ -10,7 +10,8 @@ import { DEFAULT_EQUIPMENT_OPTIONS } from "@/constants/equipment"
 import type { 
   ExerciseTypeDefinition, 
   CreateExerciseProps,
-  CreateExerciseBackdropProps
+  CreateExerciseBackdropProps,
+  CreateExerciseFormData
 } from "@/types/exercise"
 
 import {
@@ -32,6 +33,44 @@ const ensureOption = (options: readonly string[], value: string): string[] => {
 
 const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeDefinition[] =>
   exerciseTypes.map((type) => ({ value: type, label: type, example: "Custom exercise type", metrics: ["REPS"] }))
+
+const extractErrorMessage = async (response: Response, defaultMessage: string): Promise<string> => {
+  try {
+    const data = await response.json()
+    if (data?.error) return data.error
+    if (data?.message) return data.message
+  } catch {
+    const text = await response.text().catch(() => "")
+    if (text) return text
+  }
+  return defaultMessage
+}
+
+const buildExerciseFormData = (values: CreateExerciseFormData): FormData => {
+  const formData = new FormData()
+  formData.append("Name", values.name)
+  if (values.equipment) formData.append("Equipment", values.equipment)
+  formData.append("Category", values.exerciseType || "Custom")
+  if (values.primaryMuscle) formData.append("PrimaryMuscles", values.primaryMuscle)
+  values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
+  if (values.imageFile) formData.append("Image", values.imageFile)
+  return formData
+}
+
+const submitCustomExercise = async (url: string, formData: FormData): Promise<void> => {
+  const response = await customFetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response, `Request failed with status ${response.status}`)
+    throw new Error(message)
+  }
+}
 
 function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children, focusRed }: CreateExerciseBackdropProps) {
   return (
@@ -268,7 +307,7 @@ export function CreateExercise({
   const handleSave = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const values = {
+    const values: CreateExerciseFormData = {
       name: name.trim(),
       exerciseType,
       equipment,
@@ -284,43 +323,9 @@ export function CreateExercise({
 
       if (onSave) {
         await onSave(values)
-        if (onSaved) {
-          await onSaved()
-        }
-        onCancel()
-        return
-      }
-
-      const formData = new FormData()
-      formData.append("Name", values.name)
-      if (values.equipment) formData.append("Equipment", values.equipment)
-      formData.append("Category", values.exerciseType || "Custom")
-      if (values.primaryMuscle) formData.append("PrimaryMuscles", values.primaryMuscle)
-      values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
-      if (values.imageFile) formData.append("Image", values.imageFile)
-
-      const response = await customFetch(resolveExercisesEndpoint(), {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        let message = `Request failed with status ${response.status}`
-        try {
-          const data = await response.json()
-          if (data?.error) {
-            message = data.error
-          } else if (data?.message) {
-            message = data.message
-          }
-        } catch {
-          const text = await response.text().catch(() => "")
-          if (text) message = text
-        }
-        throw new Error(message)
+      } else {
+        const formData = buildExerciseFormData(values)
+        await submitCustomExercise(resolveExercisesEndpoint(), formData)
       }
 
       if (onSaved) {

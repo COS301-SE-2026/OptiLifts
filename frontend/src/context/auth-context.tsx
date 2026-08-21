@@ -8,6 +8,7 @@ export type AuthUser = {
     avatarUrl?: string
     metric: boolean
     lightTheme: boolean
+    sex?: string
 }
 
 export type AuthSession = {
@@ -20,10 +21,24 @@ type AuthContextValue = {
     isHydrated: boolean
     login: (session: AuthSession) => void
     logout: () => void
+    updateUser: (fields: Partial<AuthUser>) => void
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 const SESS_KEY = 'optilifts:session'
+
+async function fetchUserSex(): Promise<string | undefined> {
+    try {
+        const settingsRes = await customFetch('/api/users/me/settings');
+        if (settingsRes.ok) {
+            const settingsdata = await settingsRes.json();
+            return settingsdata.profile?.sex
+        }
+    } catch {//ignore settings fetch error 
+    }
+    return undefined;
+}
+                    
 
 export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) {
     const { children } = props
@@ -48,6 +63,19 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
             //error handled in backend
         })
     }, [])
+
+    const updateUser = React.useCallback((fields: Partial<AuthUser>) => {
+        setSession((prev) => {
+            if (!prev?.user) return prev;
+            return {
+                ...prev,
+                user: {
+                    ...prev.user,
+                    ...fields
+                }
+            };
+        });
+    }, []);
 
 
     React.useEffect(() => {
@@ -74,6 +102,8 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
 
                     localStorage.setItem('units', (user.metric)? 'metric' : 'imperial')
 
+                    const userSex = await fetchUserSex();
+
                     login({
                         user: {
                             id: user.id,
@@ -81,6 +111,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
                             email: user.email,
                             metric: user.metric,
                             lightTheme: user.lightTheme,
+                            sex: userSex,
                         }
                     });
                 } else {
@@ -121,7 +152,8 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
         isHydrated,
         login,
         logout,
-    }), [session, isHydrated, login, logout])
+        updateUser
+    }), [session, isHydrated, login, logout, updateUser])
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

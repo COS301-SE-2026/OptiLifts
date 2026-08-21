@@ -81,7 +81,7 @@ interface UserSettingsDto {
 
 
 function useSettingsLogic(isOpen: boolean, onClose: () => void) {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
 
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
 
@@ -255,6 +255,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
         if (!res.ok) {
             throw new Error("Could not update profile information.");
+        }
+        if (profile.sex) {
+            updateUser({
+                sex:profile.sex
+            });
         }
     };
 

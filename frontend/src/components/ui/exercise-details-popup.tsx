@@ -193,8 +193,16 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         })
 
         if (!resp.ok) {
-            const txt = await resp.text()
-            throw new Error(txt || `Request failed with status ${resp.status}`)
+            let message = `Request failed with status ${resp.status}`
+            try {
+                const data = await resp.json()
+                if (data?.error) message = data.error
+                else if (data?.message) message = data.message
+            } catch {
+                const txt = await resp.text().catch(() => '')
+                if (txt) message = txt
+            }
+            throw new Error(message)
         }
     }
 
@@ -227,6 +235,20 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
             data.append('Image', imageFile)
         }
 
+        const deleteResp = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
+        if (!deleteResp.ok) {
+            let message = `Failed to update exercise (${deleteResp.status})`
+            try {
+                const errJson = await deleteResp.json()
+                if (errJson?.error) message = errJson.error
+                else if (errJson?.message) message = errJson.message
+            } catch {
+                const txt = await deleteResp.text().catch(() => '')
+                if (txt) message = txt
+            }
+            throw new Error(message)
+        }
+
         const createResp = await customFetch('/api/exercises/custom', {
             method: 'POST',
             headers: { Accept: 'application/json' },
@@ -234,13 +256,16 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         })
 
         if (!createResp.ok) {
-            const text = await createResp.text()
-            throw new Error(text || `Request failed with status ${createResp.status}`)
-        }
-
-        const deleteResp = await customFetch(`/api/exercises/custom/${details.id}`, { method: 'DELETE' })
-        if (!deleteResp.ok) {
-            toast.info('The update was successful', 'Cleanup needed')
+            let message = `Request failed with status ${createResp.status}`
+            try {
+                const errJson = await createResp.json()
+                if (errJson?.error) message = errJson.error
+                else if (errJson?.message) message = errJson.message
+            } catch {
+                const text = await createResp.text().catch(() => '')
+                if (text) message = text
+            }
+            throw new Error(message)
         }
     }
 

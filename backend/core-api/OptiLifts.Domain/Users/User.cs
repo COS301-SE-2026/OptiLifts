@@ -31,4 +31,9 @@ public class User
     public bool Metric { get; set; }
     public bool LightTheme { get; set; }
     public string? ProfileImageUrl { get; set; }
+
+    public bool GoogleCalendarSyncEnabled {get; set; } = false;
+    [Encrypted]
+    public string? GoogleCalendarRefreshToken {get; set;}
+    public string? GoogleCalendarId {get; set;}
 }

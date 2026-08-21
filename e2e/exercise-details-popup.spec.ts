@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test-utils';
 
 test.describe('Standard Exercise Details Popup', () => {
     test('testing if a user can view an exercise\'s details', async ({ page }) => {

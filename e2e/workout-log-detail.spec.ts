@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test-utils';
 
 test.describe('Workout Log Detail Page', () => {
     test.beforeEach(async ({ page }) => {

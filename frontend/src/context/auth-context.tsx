@@ -27,6 +27,19 @@ type AuthContextValue = {
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 const SESS_KEY = 'optilifts:session'
 
+async function fetchUserSex(): Promise<string | undefined> {
+    try {
+        const settingsRes = await customFetch('/api/users/me/settings');
+        if (settingsRes.ok) {
+            const settingsdata = await settingsRes.json();
+            return settingsdata.profile?.sex
+        }
+    } catch {//ignore settings fetch error 
+    }
+    return undefined;
+}
+                    
+
 export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) {
     const { children } = props
     const [session, setSession] = React.useState<AuthSession | null>(null)
@@ -89,14 +102,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
 
                     localStorage.setItem('units', (user.metric)? 'metric' : 'imperial')
 
-                    let userSex: string | undefined = undefined;
-                    try {
-                        const settingsRes = await customFetch('/api/users/me/settings');
-                        if (settingsRes.ok) {
-                            const settingsdata = await settingsRes.json();
-                            userSex = settingsdata.profile?.sex;
-                        }
-                    } catch{}
+                    const userSex = await fetchUserSex();
 
                     login({
                         user: {
@@ -147,7 +153,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
         login,
         logout,
         updateUser
-    }), [session, isHydrated, login, logout])
+    }), [session, isHydrated, login, logout, updateUser])
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

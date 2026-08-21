@@ -37,9 +37,11 @@ export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], varia
   try {
     const auth = useAuth();
     userSex = auth.user?.sex;
-  } catch {}
+  } catch {
+    //ignore settings fetch error
+  }
   const selectedsex: 'female' | 'male' = sex ?? (userSex?.toLowerCase() === 'male' ? 'male' : 'female');
-  
+
   const bodyDataMap = new Map<Slug, ExtendedBodyPart>()
   secondaryMuscles.forEach((muscle) => {
     const slugs = MUSCLE_TO_SLUGS[muscle] || []

@@ -33,8 +33,13 @@ const MUSCLE_TO_SLUGS: Record<MuscleName, Slug[]>={
   Triceps: ['triceps'],
 }
 export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], variant = 'both', sex }: Props) {
-  const {user} = useAuth();
-  const selectedsex: 'female' | 'male' = sex ?? (user?.sex?.toLowerCase() === 'male' ? 'male' : 'female')
+  let userSex : string | undefined = undefined;
+  try {
+    const auth = useAuth();
+    userSex = auth.user?.sex;
+  } catch {}
+  const selectedsex: 'female' | 'male' = sex ?? (userSex?.toLowerCase() === 'male' ? 'male' : 'female');
+  
   const bodyDataMap = new Map<Slug, ExtendedBodyPart>()
   secondaryMuscles.forEach((muscle) => {
     const slugs = MUSCLE_TO_SLUGS[muscle] || []

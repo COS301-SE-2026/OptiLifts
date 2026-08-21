@@ -21,6 +21,7 @@ type AuthContextValue = {
     isHydrated: boolean
     login: (session: AuthSession) => void
     logout: () => void
+    updateUser: (fields: Partial<AuthUser>) => void
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
@@ -50,6 +51,19 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
         })
     }, [])
 
+    const updateUser = React.useCallback((fields: Partial<AuthUser>) => {
+        setSession((prev) => {
+            if (!prev?.user) return prev;
+            return {
+                ...prev,
+                user: {
+                    ...prev.user,
+                    ...fields
+                }
+            };
+        });
+    }, []);
+
 
     React.useEffect(() => {
         async function hydrateSession() {
@@ -75,6 +89,15 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
 
                     localStorage.setItem('units', (user.metric)? 'metric' : 'imperial')
 
+                    let userSex: string | undefined = undefined;
+                    try {
+                        const settingsRes = await customFetch('/api/users/me/settings');
+                        if (settingsRes.ok) {
+                            const settingsdata = await settingsRes.json();
+                            userSex = settingsdata.profile?.sex;
+                        }
+                    } catch{}
+
                     login({
                         user: {
                             id: user.id,
@@ -82,6 +105,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
                             email: user.email,
                             metric: user.metric,
                             lightTheme: user.lightTheme,
+                            sex: userSex,
                         }
                     });
                 } else {
@@ -122,6 +146,7 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
         isHydrated,
         login,
         logout,
+        updateUser
     }), [session, isHydrated, login, logout])
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

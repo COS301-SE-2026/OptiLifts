@@ -149,35 +149,33 @@ export function GoogleSignInButton({
     (import.meta.env.GOOGLE_CLIENT_ID as string | undefined) ??
     ''
 
-  const handleCredentialResponse = useRef<GoogleCredentialHandler>(() => {})
-  handleCredentialResponse.current = async (response: { credential: string }) => {
-    if (!response?.credential) {
-      setErrorMessage?.('Google Sign-In failed: No credential returned.')
-      return
-    }
-
-    if (onSuccess) {
-      onSuccess(response.credential)
-      return
-    }
-
-    await submitGoogleAuthRequest({
-      idToken: response.credential,
-      login,
-      navigate,
-      fromPath,
-      setErrorMessage: setErrorMessage ?? (() => {}),
-      setIsSubmitting: setIsSubmitting ?? (() => {}),
-    })
-  }
-
   useEffect(() => {
-    const handler: GoogleCredentialHandler = (res) => handleCredentialResponse.current(res)
+    const handler: GoogleCredentialHandler = async (response: { credential: string }) => {
+      if (!response?.credential) {
+        setErrorMessage?.('Google Sign-In failed: No credential returned.')
+        return
+      }
+
+      if (onSuccess) {
+        onSuccess(response.credential)
+        return
+      }
+
+      await submitGoogleAuthRequest({
+        idToken: response.credential,
+        login,
+        navigate,
+        fromPath,
+        setErrorMessage: setErrorMessage ?? (() => {}),
+        setIsSubmitting: setIsSubmitting ?? (() => {}),
+      })
+    }
+
     activeHandlers.add(handler)
     return () => {
       activeHandlers.delete(handler)
     }
-  }, [])
+  }, [fromPath, login, navigate, onSuccess, setErrorMessage, setIsSubmitting])
 
   useEffect(() => {
     if (!effectiveClientId) {

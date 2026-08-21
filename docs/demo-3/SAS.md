@@ -386,6 +386,65 @@ Body
 
 ---
 
+### POST /api/auth/google
+**Service Name:** Google Authentication Service
+
+**Description:**
+Authenticates a user via Google OAuth ID token or One Tap credential. If the user account does not exist, it automatically creates a new account linked to their Google profile. If an account already exists with the same email, it links the Google account. Establishes a session via HttpOnly cookies and returns the authenticated user profile details.
+
+**Inputs:**
+
+- `idToken`: string | null - Google OAuth ID token (either `idToken` or `credential` is required).
+- `credential`: string | null - Google One Tap / Sign-In credential token.
+
+**Outputs:**
+
+- Headers:
+	- Set-Cookie: `access_token`
+	- Set-Cookie: `refresh_token`
+- Body:
+	- `user`: `AuthUserDto` - The authenticated user profile.
+
+AuthUserDto fields:
+
+- `id`: Guid - Unique user identifier.
+- `displayName`: string - User display name.
+- `email`: string - User email address.
+- `createdAt`: datetime - Account creation timestamp.
+- `metric`: boolean - Preferred measurement unit (true for metric, false for imperial).
+- `lightTheme`: boolean - Preferred UI theme (true for light theme, false for dark).
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/auth/google` with JSON data containing `idToken` or `credential`.
+- This endpoint is anonymous and does not require an existing session token.
+- If neither `idToken` nor `credential` is provided, the service returns `400 Bad Request` with `{ title: "ID Token is required", status: 400 }`.
+- If Google token verification fails or the token is invalid, returns `401 Unauthorized` with `{ title: "Invalid Google token", detail: ..., status: 401 }`.
+- Sets `access_token` and `refresh_token` as HttpOnly cookies upon success.
+
+**Example Response:**
+
+Headers:
+```
+HTTP/1.1 200 OK
+Set-Cookie: access_token=eyJhbG...; HttpOnly; Path=/; SameSite=Lax
+Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Lax
+```
+
+Body:
+```json
+{
+	"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+	"email": "user@example.com",
+	"displayName": "Google User",
+	"createdAt": "2026-08-18T10:00:00Z",
+	"metric": true,
+	"lightTheme": false
+}
+```
+
+---
+
 ### GET /api/auth/me
 **Service Name:** Current user service.
 
@@ -654,6 +713,34 @@ HTTP/1.1 204 No Content
 
 **Example Response:**
 HTTP/1.1 204 No Content
+
+---
+
+### POST /api/users/me/setPassword
+**Service Name:** Set Initial User Password Service
+
+**Description:** Sets an initial password for the authenticated user account (specifically for users who registered via third-party OAuth such as Google Sign-In and do not currently have a password set).
+
+**Inputs:**
+- `newPassword`: string - The user's new password (required).
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/setPassword` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401 Unauthorized` if the cookie is missing or invalid.
+- Empty or whitespace `newPassword` returns `400 Bad Request`.
+- The `newPassword` must meet complexity requirements (minimum 8 characters, at least one lowercase letter, one uppercase letter, one digit, and one special character); failure returns `400 Bad Request` with `{ error: "New password does not meet complexity requirements." }`.
+- If the user already has a password set on their account, returns `400 Bad Request` with `{ error: "User already has a password set. Use update password instead." }`.
+- If the user record cannot be found, returns `404 Not Found`.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
 
 ### DELETE /api/users/me
 **Service Name:** User Account Deletion Service

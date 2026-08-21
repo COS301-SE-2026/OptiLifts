@@ -10,7 +10,8 @@ import { DEFAULT_EQUIPMENT_OPTIONS } from "@/constants/equipment"
 import type { 
   ExerciseTypeDefinition, 
   CreateExerciseProps,
-  CreateExerciseBackdropProps
+  CreateExerciseBackdropProps,
+  CreateExerciseFormData
 } from "@/types/exercise"
 
 import {
@@ -32,6 +33,44 @@ const ensureOption = (options: readonly string[], value: string): string[] => {
 
 const toExerciseTypeOptions = (exerciseTypes: readonly string[]): ExerciseTypeDefinition[] =>
   exerciseTypes.map((type) => ({ value: type, label: type, example: "Custom exercise type", metrics: ["REPS"] }))
+
+const extractErrorMessage = async (response: Response, defaultMessage: string): Promise<string> => {
+  try {
+    const data = await response.json()
+    if (data?.error) return data.error
+    if (data?.message) return data.message
+  } catch {
+    const text = await response.text().catch(() => "")
+    if (text) return text
+  }
+  return defaultMessage
+}
+
+const buildExerciseFormData = (values: CreateExerciseFormData): FormData => {
+  const formData = new FormData()
+  formData.append("Name", values.name)
+  if (values.equipment) formData.append("Equipment", values.equipment)
+  formData.append("Category", values.exerciseType || "Custom")
+  if (values.primaryMuscle) formData.append("PrimaryMuscles", values.primaryMuscle)
+  values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
+  if (values.imageFile) formData.append("Image", values.imageFile)
+  return formData
+}
+
+const submitCustomExercise = async (url: string, formData: FormData): Promise<void> => {
+  const response = await customFetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response, `Request failed with status ${response.status}`)
+    throw new Error(message)
+  }
+}
 
 function CreateExerciseBackdrop({ zIndexClassName, backdropClassName, onDismiss, children, focusRed }: CreateExerciseBackdropProps) {
   return (
@@ -268,7 +307,7 @@ export function CreateExercise({
   const handleSave = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const values = {
+    const values: CreateExerciseFormData = {
       name: name.trim(),
       exerciseType,
       equipment,
@@ -284,32 +323,9 @@ export function CreateExercise({
 
       if (onSave) {
         await onSave(values)
-        if (onSaved) {
-          await onSaved()
-        }
-        onCancel()
-        return
-      }
-
-      const formData = new FormData()
-      formData.append("Name", values.name)
-      if (values.equipment) formData.append("Equipment", values.equipment)
-      formData.append("Category", values.exerciseType || "Custom")
-      if (values.primaryMuscle) formData.append("PrimaryMuscles", values.primaryMuscle)
-      values.secondaryMuscles?.forEach((m) => formData.append("SecondaryMuscles", m))
-      if (values.imageFile) formData.append("Image", values.imageFile)
-
-      const response = await customFetch(resolveExercisesEndpoint(), {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const text = await response.text()
-        throw new Error(text || `Request failed with status ${response.status}`)
+      } else {
+        const formData = buildExerciseFormData(values)
+        await submitCustomExercise(resolveExercisesEndpoint(), formData)
       }
 
       if (onSaved) {
@@ -346,7 +362,7 @@ export function CreateExercise({
             <div className="grid gap-3 sm:gap-4 overflow-y-auto px-1.5 py-1">
               <label className="grid gap-1.5">
                 <span className="text-xs sm:text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Exercise name</span>
-                <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Seated Cable Row" required maxLength={80} data-slot="input" autoFocus />
+                <Input value={name} onChange={(event) => { setName(event.target.value); if (saveError) setSaveError(null); }} placeholder="e.g. Seated Cable Row" required maxLength={80} data-slot="input" autoFocus />
               </label>
 
               <div className="grid gap-1.5">

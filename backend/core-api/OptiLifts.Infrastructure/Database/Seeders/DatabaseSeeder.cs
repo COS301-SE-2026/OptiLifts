@@ -33,6 +33,13 @@ public static class DatabaseSeeder
 
     private static async Task SeedUsersAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
     {
+        const string testPassword = "TestPassword123!";
+        const string testDisplayName = "Test Athlete";
+        const string testWeight = "82.5";
+        const string testHeight = "180";
+        const string testSex = "Male";
+        const string testDob = "1998-04-23";
+        const string testBio = "Powerlifting enthusiast and OptiLifts demo account.";
         var usersToEnsure = new[]
         {
             new
@@ -77,7 +84,66 @@ public static class DatabaseSeeder
                 Bio = "Loves to gym every day all day. This is their favourite app ever.",
                 Metric = true,
                 LightTheme = false
-            }
+            }, 
+            //NOSONAR - for the e2e tests, is repeat code 
+            new
+            {
+                Email = "test0@optilifts.com",  //NOSONAR 
+                Password = testPassword,  //NOSONAR 
+                DisplayName = testDisplayName,  //NOSONAR 
+                Level = 5,  
+                Weight = testWeight,   
+                Height = testHeight,  
+                Sex = testSex, 
+                DateOfBirth = testDob, 
+                Bio = testBio, 
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "test1@optilifts.com",
+                Password = testPassword,
+                DisplayName = testDisplayName,
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "test2@optilifts.com",
+                Password = testPassword,
+                DisplayName = testDisplayName,
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "test3@optilifts.com",
+                Password = testPassword,
+                DisplayName = testDisplayName,
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+
+            
         };
 
         foreach (var u in usersToEnsure)

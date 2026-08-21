@@ -57,6 +57,7 @@ services:
       - RUN_MIGRATIONS=true
       - DEV_SEEDING=${DEV_SEEDING:-true}
       - E2E_TESTING=${E2E_TESTING:-false}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
     depends_on:
       db:
@@ -83,6 +84,7 @@ services:
       network: host
       args:
         - VITE_API_BASE=/api
+        - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     environment:
       - NGINX_BACKEND_URL=http://core-api:8080
     # so application is on 5173 externally 

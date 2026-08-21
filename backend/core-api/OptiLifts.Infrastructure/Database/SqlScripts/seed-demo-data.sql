@@ -106,7 +106,7 @@ VALUES (
     '44444444-4444-4444-4444-444444444450',
     '44444444-4444-4444-4444-444444444451',
     '44444444-4444-4444-4444-444444444452',
-    'test@optilifts.com',
+    'test0@optilifts.com',
     'demo2@optilifts.com',
     'gymgoer@gmail.com',
     'hex',
@@ -779,5 +779,38 @@ FROM (
     JOIN UserSets us ON us.user_id = mv.user_id AND us.exercise_id = mv.exercise_id AND us.volume = mv.max_volume
 ) sub
 ON CONFLICT DO NOTHING;
+
+DO $$ 
+DECLARE
+    target_emails text[] := ARRAY['test1@optilifts.com', 'test2@optilifts.com', 'test3@optilifts.com'];
+    t_email text;
+    source_uid uuid; target_uid uuid; new_folder_id uuid; new_workout_id uuid; new_we_id uuid;
+    f record; w record; we record;
+BEGIN
+    SELECT user_id INTO source_uid FROM users WHERE email_hash = encode(sha256('test0@optilifts.com'::bytea), 'hex');
+    
+    FOREACH t_email IN ARRAY target_emails LOOP
+        SELECT user_id INTO target_uid FROM users WHERE email_hash = encode(sha256(t_email::bytea), 'hex');
+        CONTINUE WHEN target_uid IS NULL;
+
+        FOR f IN SELECT * FROM folders WHERE user_id = source_uid LOOP
+            new_folder_id := gen_random_uuid();
+            INSERT INTO folders (folder_id, user_id, name, description, created_at) VALUES (new_folder_id, target_uid, f.name, f.description, NOW());
+
+            FOR w IN SELECT * FROM workouts WHERE folder_id = f.folder_id LOOP
+                new_workout_id := gen_random_uuid();
+                INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at) VALUES (new_workout_id, new_folder_id, w.name, target_uid, NOW());
+
+                FOR we IN SELECT * FROM workout_exercises WHERE workout_id = w.workout_id LOOP
+                    new_we_id := gen_random_uuid();
+                    INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index, group_id) VALUES (new_we_id, new_workout_id, we.exercise_dict_id, we.order_index, we.group_id);
+
+                    INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+                    SELECT gen_random_uuid(), new_we_id, set_type, reps, weight, duration, distance, order_index, rest_time FROM sets WHERE workout_exercise_id = we.workout_exercise_id;
+                END LOOP;
+            END LOOP;
+        END LOOP;
+    END LOOP;
+END $$;
 
 COMMIT;

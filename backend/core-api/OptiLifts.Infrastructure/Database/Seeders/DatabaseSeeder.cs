@@ -91,12 +91,12 @@ public static class DatabaseSeeder
                 Email = "test0@optilifts.com",  //NOSONAR 
                 Password = testPassword,  //NOSONAR 
                 DisplayName = testDisplayName,  //NOSONAR 
-                Level = 5,  
-                Weight = testWeight,   
-                Height = testHeight,  
-                Sex = testSex, 
-                DateOfBirth = testDob, 
-                Bio = testBio, 
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
                 Metric = true,
                 LightTheme = false
             },
@@ -143,7 +143,7 @@ public static class DatabaseSeeder
                 LightTheme = false
             },
 
-            
+
         };
 
         foreach (var u in usersToEnsure)

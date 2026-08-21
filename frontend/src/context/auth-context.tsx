@@ -8,6 +8,7 @@ export type AuthUser = {
     avatarUrl?: string
     metric: boolean
     lightTheme: boolean
+    sex?: string
 }
 
 export type AuthSession = {

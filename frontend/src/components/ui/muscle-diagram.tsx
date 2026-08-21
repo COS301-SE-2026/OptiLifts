@@ -6,6 +6,7 @@ type Props = Readonly<{
   highlightedMuscles: MuscleName[]
   secondaryMuscles?: MuscleName[]
   variant?: 'front' | 'back' | 'both'
+  sex?: 'male' | 'female'
 }>
 //slug lookup table
 const MUSCLE_TO_SLUGS: Record<MuscleName, Slug[]>={
@@ -31,9 +32,9 @@ const MUSCLE_TO_SLUGS: Record<MuscleName, Slug[]>={
   Trapezius: ['trapezius'],
   Triceps: ['triceps'],
 }
-export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], variant = 'both' }: Props) {
+export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], variant = 'both', sex }: Props) {
   const {user} = useAuth();
-  const gender: 'male' | 'female' = user?.sex === 'female' ? 'female' : 'male'
+  const selectedsex: 'female' | 'male' = sex ?? (user?.sex?.toLowerCase() === 'male' ? 'male' : 'female')
   const bodyDataMap = new Map<Slug, ExtendedBodyPart>()
   secondaryMuscles.forEach((muscle) => {
     const slugs = MUSCLE_TO_SLUGS[muscle] || []
@@ -60,11 +61,12 @@ export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], varia
   const showBack = variant === 'back' || variant === 'both'
 
   return (
+    <div className="w-full flex flex-col items-center gap-3 py-2">
     <div className="w-full flex items-center justify-center gap-4 py-2">
       {showFront && (
         <div className="flex flex-col items-center">
           <span className="text-xs font-medium text-muted-foreground mb-1">Front</span>
-          <Body data={bodyData} side="front" gender={gender}
+          <Body data={bodyData} side="front" gender={selectedsex}
           scale={0.9} colors={['#cc5c7d', '#CC0022']}
           defaultFill="var(--surface-2)"
           border="var(--border)"/>
@@ -73,13 +75,25 @@ export function MuscleDiagram({ highlightedMuscles, secondaryMuscles = [], varia
       {showBack && (
         <div className="flex flex-col items-center">
           <span className="text-xs font-medium text-muted-foreground mb-1">Back</span>
-          <Body data={bodyData} side="back" gender={gender}
+          <Body data={bodyData} side="back" gender={selectedsex}
           scale={0.9} colors={['#cc5c7d', '#CC0022']}
           defaultFill="var(--surface-2)"
           border="var(--border)"/>
           </div>
       )}
     </div>
+
+    <div className="flex items-center justify-center gap-6 mt-1 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5">
+        <span className="w-3 h-3 rounded bg-[#CC0022] inline-block border border-black/10"/>
+        <span className="font-medium text-foreground">Primary</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-3 h-3 rounded bg-[#cc5c7d] inline-block border border-black/10" />
+        <span className="font-medium text-foreground">Secondary</span>
+      </div>
+    </div>
+</div>
   )
 }
 

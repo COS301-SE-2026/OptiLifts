@@ -103,21 +103,21 @@ jobs:
         color: ${{ steps.cov.outputs.color }}
 
 
-    - name: Install Playwright Browsers
+    - name: Install Playwright Browsers # NOSONAR
       if: steps.playwright-cache.outputs.cache-hit != 'true'
-      run: | 
+      run: | # NOSONAR
         if [ "$PLAYWRIGHT_PROJECTS" = "chromium" ]; then
-          npx playwright install chromium 
+          pnpm playwright install chromium 
         else
-          npx playwright install 
+          pnpm playwright install 
         fi
 
-    - name: Install Playwright OS Dependencies
-      run: | 
+    - name: Install Playwright OS Dependencies # NOSONAR
+      run: | # NOSONAR
         if [ "$PLAYWRIGHT_PROJECTS" = "chromium" ]; then
-          npx playwright install-deps chromium 
+          pnpm playwright install-deps chromium 
         else
-          npx playwright install-deps 
+          pnpm playwright install-deps 
         fi
 
     - name: Start E2E Services

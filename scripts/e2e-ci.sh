@@ -60,7 +60,11 @@ wait_app_stack() {
 
 run_e2e_tests() {
   cd "$ROOT_DIR"
-  E2E_USE_EXISTING_SERVICES=1 pnpm test:e2e
+  if [ "${PLAYWRIGHT_PROJECTS:-all}" = "chromium" ]; then
+    E2E_USE_EXISTING_SERVICES=1 pnpm exec playwright test --config=e2e/playwright.config.ts --project=chromium
+  else
+    E2E_USE_EXISTING_SERVICES=1 pnpm test:e2e
+  fi
 }
 
 teardown() {

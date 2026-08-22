@@ -3,9 +3,7 @@ import { test, expect } from './test-utils';
 test.describe('Workout Log Detail Page', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/past-workouts?week=2026-06-10');
-        await page.waitForLoadState('networkidle');
         await page.getByText('Push Day A').first().click();
-        await page.waitForLoadState('networkidle');
     });
 
     test('User can view a workout log\'s detail', async ({ page }) => {

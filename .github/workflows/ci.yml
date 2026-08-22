@@ -11,6 +11,8 @@ jobs:
   lint-test-build:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_PROJECTS: ${{ (github.base_ref == 'main' || github.ref_name == 'main') && 'all' || 'chromium' }}
 
     steps:
     - name: Checkout Repository
@@ -42,6 +44,7 @@ jobs:
         cache-dependency-path: 'backend/ai-api/requirements.txt'
 
     - name: Cache Playwright Browsers
+      id: playwright-cache
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
@@ -101,7 +104,22 @@ jobs:
 
 
     - name: Install Playwright Browsers
-      run: pnpm exec playwright install --with-deps
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      run: |
+        if [[ "$PLAYWRIGHT_PROJECTS" == "chromium" ]]; then
+          ./node_modules/.bin/playwright install chromium
+        else
+          ./node_modules/.bin/playwright install
+        fi
+
+    - name: Install Playwright OS Dependencies
+      run: |
+        if [[ "$PLAYWRIGHT_PROJECTS" == "chromium" ]]; then
+          ./node_modules/.bin/playwright install-deps chromium
+        else
+          ./node_modules/.bin/playwright install-deps
+        fi
+
 
     - name: Start E2E Services
       run: bash ./scripts/e2e-ci.sh start

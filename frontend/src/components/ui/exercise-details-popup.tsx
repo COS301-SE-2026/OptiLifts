@@ -52,6 +52,16 @@ const toDetails = (dto: ExerciseDetsResponse): ExerciseDetails => ({
   isDeleted: dto.isDeleted ?? false,
 })
 
+const getExerciseSourceLabel = (details: ExerciseDetails): string => {
+  if (details.isDeleted) {
+    return 'Deleted custom exercise'
+  }
+  if (details.isCustom) {
+    return 'Custom exercise'
+  }
+  return 'Exercise library'
+}
+
 const capitalizeEquipment = (equipment: string | null | undefined): string | undefined => {
   if (!equipment) {
     return undefined
@@ -365,11 +375,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
                     <div className="min-w-0">
                       <p className="truncate text-lg font-bold text-foreground">{details.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {details.isDeleted
-                          ? 'Deleted custom exercise'
-                          : details.isCustom
-                            ? 'Custom exercise'
-                            : 'Exercise library'}
+                        {getExerciseSourceLabel(details)}
                       </p>
                     </div>
                   </div>

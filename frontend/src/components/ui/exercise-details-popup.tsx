@@ -188,7 +188,6 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
     useEffect(() => {
         if (!exerciseId) {
-            setDetails(null)
             return
         }
 

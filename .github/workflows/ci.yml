@@ -103,22 +103,23 @@ jobs:
         color: ${{ steps.cov.outputs.color }}
 
 
-    - name: Install Playwright Browsers # NOSONAR
+    - name: Install Playwright Browsers
       if: steps.playwright-cache.outputs.cache-hit != 'true'
-      run: | # NOSONAR
-        if [ "$PLAYWRIGHT_PROJECTS" = "chromium" ]; then
-          pnpm playwright install chromium 
+      run: |
+        if [[ "$PLAYWRIGHT_PROJECTS" == "chromium" ]]; then
+          ./node_modules/.bin/playwright install chromium
         else
-          pnpm playwright install 
+          ./node_modules/.bin/playwright install
         fi
 
-    - name: Install Playwright OS Dependencies # NOSONAR
-      run: | # NOSONAR
-        if [ "$PLAYWRIGHT_PROJECTS" = "chromium" ]; then
-          pnpm playwright install-deps chromium 
+    - name: Install Playwright OS Dependencies
+      run: |
+        if [[ "$PLAYWRIGHT_PROJECTS" == "chromium" ]]; then
+          ./node_modules/.bin/playwright install-deps chromium
         else
-          pnpm playwright install-deps 
+          ./node_modules/.bin/playwright install-deps
         fi
+
 
     - name: Start E2E Services
       run: bash ./scripts/e2e-ci.sh start

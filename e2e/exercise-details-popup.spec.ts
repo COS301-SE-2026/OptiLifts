@@ -33,7 +33,7 @@ test.describe('Custom Exercise Details Popup', () => {
         await page.getByRole('button', { name: '+ Create Exercise' }).click();
         await page.getByPlaceholder('e.g. Seated Cable Row').fill(customExerciseName);
         await page.getByRole('button', { name: 'Select', exact: true }).click();
-        await page.getByRole('button', { name: 'Biceps' }).click();
+        await page.getByRole('button', { name: 'Biceps', exact: true }).click();
         await page.getByRole('button', { name: 'Save Exercise' }).click();
 
         await page.getByRole('button', { name: `Add ${customExerciseName}` }).click();

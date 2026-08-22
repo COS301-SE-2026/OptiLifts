@@ -103,7 +103,10 @@ jobs:
 
     - name: Install Playwright Browsers
       if: steps.playwright-cache.outputs.cache-hit != 'true'
-      run: pnpm exec playwright install --with-deps
+      run: pnpm exec playwright install
+
+    - name: Install Playwright OS Dependencies
+      run: pnpm exec playwright install-deps
 
     - name: Start E2E Services
       run: bash ./scripts/e2e-ci.sh start

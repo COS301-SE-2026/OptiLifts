@@ -10,6 +10,7 @@ import { formatExerciseType } from '@/constants/exercise-type-definitions'
 import { customFetch } from '@/lib/custom-fetch'
 import type { CreateExerciseFormData, ExerciseDetails } from '@/types/exercise'
 import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
+import { adaptImgUrl } from '@/lib/utils'
 
 type ExerciseDetsResponse = {
   id: string
@@ -26,7 +27,7 @@ type ExerciseDetsResponse = {
 type ExerciseDetailsPopupProps = Readonly<{
   exerciseId: string | null
   onClose: () => void
-  onChanged?: (exerciseId: string) => void | Promise<void>
+  onChanged?: (exerciseId?: string, oldExerciseId?: string) => void | Promise<void>
 }>
 
 const formatMechanic = (mechanic: string | null | undefined): string | null => {
@@ -72,7 +73,7 @@ const capitalizeEquipment = (equipment: string | null | undefined): string | und
 
 const fileFromUrl = async (imageUrl: string, name: string): Promise<File | null> => {
   try {
-    const resp = await fetch(imageUrl)
+    const resp = await fetch(adaptImgUrl(imageUrl))
 
     if (!resp.ok) {
         return null
@@ -142,7 +143,7 @@ const deleteCustomExercise = async (id: string): Promise<void> => {
     }
 }
 
-const createCustomExercise = async (formData: FormData): Promise<void> => {
+const createCustomExercise = async (formData: FormData): Promise<string> => {
     const createResp = await customFetch('/api/exercises/custom', {
         method: 'POST',
         headers: { Accept: 'application/json' },
@@ -153,6 +154,9 @@ const createCustomExercise = async (formData: FormData): Promise<void> => {
         const message = await extractErrorMessage(createResp, `Request failed with status ${createResp.status}`)
         throw new Error(message)
     }
+
+    const data = (await createResp.json().catch(() => null)) as { id?: string; Id?: string } | null
+    return data?.id ?? data?.Id ?? ''
 }
 
 export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: ExerciseDetailsPopupProps) {
@@ -264,21 +268,22 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         }
     }
 
-    const forkNRetire = async (values: CreateExerciseFormData) => {
+    const forkNRetire = async (values: CreateExerciseFormData): Promise<string> => {
         if (!details) {
-            return
+            return ''
         }
 
         const imageFile = await resolveImageForFork(values, details.imageUrl)
         const data = buildForkExerciseFormData(values, imageFile)
 
         await deleteCustomExercise(details.id)
-        await createCustomExercise(data)
+        return await createCustomExercise(data)
     }
 
     const editSaveHandle = async (values: CreateExerciseFormData) => {
+        let updatedId: string | undefined = details?.id
         if (structuralDiff(values)) {
-            await forkNRetire(values)
+            updatedId = await forkNRetire(values)
         } 
         else {
             await saves(values)
@@ -286,7 +291,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
         toast.success('Exercise updated.', 'Saved')
         if (onChanged && details) {
-            await onChanged(details.id)
+            await onChanged(updatedId || details.id, details.id)
         }
 
         onClose()

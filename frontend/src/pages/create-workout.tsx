@@ -441,7 +441,7 @@ export default function CreateWorkoutPage() {
       ]
     })
 
-  const handleExerciseSaved = useCallback(async (updatedExerciseId?: string) => {
+  const handleExerciseSaved = useCallback(async (updatedExerciseId?: string, oldExerciseId?: string) => {
     const refreshedExercises = await fetchExercises()
     setAllExercises(refreshedExercises || [])
 
@@ -456,13 +456,14 @@ export default function CreateWorkoutPage() {
 
     setExercises((prev) =>
       prev.map((exercise) =>
-        exercise.exerciseCatalogId === updatedExerciseId
+        exercise.exerciseCatalogId === updatedExerciseId || (oldExerciseId && exercise.exerciseCatalogId === oldExerciseId)
           ? {
               ...exercise,
               name: refreshedExercise.name,
               muscle: refreshedExercise.muscleGroup as MuscleName,
               imageUrl: refreshedExercise.imageUrl,
               exerciseType: refreshedExercise.exerciseType,
+              exerciseCatalogId: refreshedExercise.id,
             }
           : exercise
       )

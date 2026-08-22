@@ -77,7 +77,8 @@ public class GetExercisesHandler : IRequestHandler<GetExercisesQuery, List<Exerc
                 ? secondaryMuscleNames
                 : [],
             e.UserId != null,
-            e.ImageUrl
+            e.ImageUrl,
+            e.IsDeleted
         )).ToList();
     }
 

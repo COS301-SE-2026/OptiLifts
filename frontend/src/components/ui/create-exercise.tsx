@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { customFetch } from '@/lib/custom-fetch'
 import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
+import { adaptImgUrl } from '@/lib/utils'
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -376,7 +377,7 @@ export function CreateExercise({
                       <input ref={fileInputRef} type="file" accept="image/png, image/jpeg, image/webp" className="sr-only" onChange={onImageChange} />
                       <button type="button" aria-label="Select exercise image" onClick={() => fileInputRef.current?.click()} className="relative flex h-16 w-16 sm:h-20 sm:w-20 cursor-pointer overflow-hidden rounded-lg border border-border bg-surface-2 transition-colors hover:bg-border items-center justify-center">
                         {selectedImageUrl ? (
-                          <img src={selectedImageUrl} alt="Selected exercise" className="h-full w-full object-cover" />
+                          <img src={adaptImgUrl(selectedImageUrl)} alt="Selected exercise" className="h-full w-full object-cover" />
                         ) : (
                           <div className="text-muted-foreground"><ImagePlus size={20} /></div>
                         )}

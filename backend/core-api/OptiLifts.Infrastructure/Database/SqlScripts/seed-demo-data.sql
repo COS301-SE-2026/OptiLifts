@@ -784,9 +784,16 @@ DO $$
 DECLARE
     target_emails text[] := ARRAY['test1@optilifts.com', 'test2@optilifts.com', 'test3@optilifts.com'];
     t_email text;
-    source_uid uuid; target_uid uuid; new_folder_id uuid; new_workout_id uuid; new_we_id uuid;
-    f record; w record; we record;
+    source_uid uuid; target_uid uuid; 
+    new_folder_id uuid; new_workout_id uuid; new_we_id uuid; new_group_id uuid;
+    new_log_id uuid; new_entry_id uuid; new_wle_id uuid; new_set_id uuid;
+    mapped_we_id uuid; mapped_set_id uuid;
+    f record; w record; we record; eg record; s record;
+    wl record; se record; wle record; wls record;
 BEGIN
+    CREATE TEMP TABLE IF NOT EXISTS we_map (old_id uuid, new_id uuid) ON COMMIT DROP;
+    CREATE TEMP TABLE IF NOT EXISTS set_map (old_id uuid, new_id uuid) ON COMMIT DROP;
+
     SELECT user_id INTO source_uid FROM users WHERE email_hash = encode(sha256('test0@optilifts.com'::bytea), 'hex');
     
     FOREACH t_email IN ARRAY target_emails LOOP
@@ -801,12 +808,68 @@ BEGIN
                 new_workout_id := gen_random_uuid();
                 INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at) VALUES (new_workout_id, new_folder_id, w.name, target_uid, NOW());
 
-                FOR we IN SELECT * FROM workout_exercises WHERE workout_id = w.workout_id LOOP
-                    new_we_id := gen_random_uuid();
-                    INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index, group_id) VALUES (new_we_id, new_workout_id, we.exercise_dict_id, we.order_index, we.group_id);
+                FOR eg IN SELECT * FROM exercise_groups WHERE workout_id = w.workout_id LOOP
+                    new_group_id := gen_random_uuid();
+                    INSERT INTO exercise_groups (exercise_group_id, workout_id, group_type, rest_time) 
+                    VALUES (new_group_id, new_workout_id, eg.group_type, eg.rest_time);
+                    
+                    FOR we IN SELECT * FROM workout_exercises WHERE workout_id = w.workout_id AND group_id = eg.exercise_group_id LOOP
+                        new_we_id := gen_random_uuid();
+                        INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index, group_id) 
+                        VALUES (new_we_id, new_workout_id, we.exercise_dict_id, we.order_index, new_group_id);
+                        
+                        INSERT INTO we_map VALUES (we.workout_exercise_id, new_we_id);
 
-                    INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-                    SELECT gen_random_uuid(), new_we_id, set_type, reps, weight, duration, distance, order_index, rest_time FROM sets WHERE workout_exercise_id = we.workout_exercise_id;
+                        FOR s IN SELECT * FROM sets WHERE workout_exercise_id = we.workout_exercise_id LOOP
+                            new_set_id := gen_random_uuid();
+                            INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+                            VALUES (new_set_id, new_we_id, s.set_type, s.reps, s.weight, s.duration, s.distance, s.order_index, s.rest_time);
+                            INSERT INTO set_map VALUES (s.set_id, new_set_id);
+                        END LOOP;
+                    END LOOP;
+                END LOOP;
+                
+                FOR we IN SELECT * FROM workout_exercises WHERE workout_id = w.workout_id AND group_id IS NULL LOOP
+                    new_we_id := gen_random_uuid();
+                    INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index, group_id) 
+                    VALUES (new_we_id, new_workout_id, we.exercise_dict_id, we.order_index, NULL);
+
+                    INSERT INTO we_map VALUES (we.workout_exercise_id, new_we_id);
+
+                    FOR s IN SELECT * FROM sets WHERE workout_exercise_id = we.workout_exercise_id LOOP
+                        new_set_id := gen_random_uuid();
+                        INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+                        VALUES (new_set_id, new_we_id, s.set_type, s.reps, s.weight, s.duration, s.distance, s.order_index, s.rest_time);
+                        INSERT INTO set_map VALUES (s.set_id, new_set_id);
+                    END LOOP;
+                END LOOP;
+
+                FOR se IN SELECT * FROM scheduled_entries WHERE workout_id = w.workout_id AND user_id = source_uid LOOP
+                    new_entry_id := gen_random_uuid();
+                    INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+                    VALUES (new_entry_id, target_uid, new_workout_id, se.scheduled, se.status);
+
+                    FOR wl IN SELECT * FROM workout_logs WHERE entry_id = se.entry_id LOOP
+                        new_log_id := gen_random_uuid();
+                        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+                        VALUES (new_log_id, new_entry_id, wl.started_at, wl.completed_at, wl.ai_modified, wl.notes);
+
+                        FOR wle IN SELECT * FROM workout_log_exercises WHERE log_id = wl.log_id LOOP
+                            new_wle_id := gen_random_uuid();
+                            SELECT new_id INTO mapped_we_id FROM we_map WHERE old_id = wle.workout_exercise_id LIMIT 1;
+                            
+                            INSERT INTO workout_log_exercises (log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
+                            VALUES (new_wle_id, new_log_id, wle.exercise_id, mapped_we_id, wle.order_index, wle.group_number);
+                        END LOOP;
+
+                        FOR wls IN SELECT * FROM workout_log_sets WHERE log_id = wl.log_id LOOP
+                            SELECT new_id INTO mapped_we_id FROM we_map WHERE old_id = wls.workout_exercise_id LIMIT 1;
+                            SELECT new_id INTO mapped_set_id FROM set_map WHERE old_id = wls.set_id LIMIT 1;
+                            
+                            INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+                            VALUES (gen_random_uuid(), new_log_id, wls.exercise_id, mapped_we_id, mapped_set_id, wls.set_type, wls.reps, wls.weight, wls.duration, wls.distance, wls.rest_time, wls.group_number, wls.rpe, wls.order_index, wls.ai_suggested, wls.logged_at);
+                        END LOOP;
+                    END LOOP;
                 END LOOP;
             END LOOP;
         END LOOP;

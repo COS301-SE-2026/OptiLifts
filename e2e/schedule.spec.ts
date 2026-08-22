@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { Agent } from 'node:http';
+import { test, expect } from './test-utils';
 
 test.describe('Schedule Page', () => {
     test.beforeEach(async ({ page }) => {

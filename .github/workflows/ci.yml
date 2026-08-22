@@ -105,19 +105,19 @@ jobs:
 
     - name: Install Playwright Browsers
       if: steps.playwright-cache.outputs.cache-hit != 'true'
-      run: | #NOSONAR
+      run: | 
         if [ "$PLAYWRIGHT_PROJECTS" = "chromium" ]; then
-          pnpm playwright install chromium 
+          npx playwright install chromium 
         else
-          pnpm playwright install 
+          npx playwright install 
         fi
 
     - name: Install Playwright OS Dependencies
-      run: | #NOSONAR
+      run: | 
         if [ "$PLAYWRIGHT_PROJECTS" = "chromium" ]; then
-          pnpm playwright install-deps chromium 
+          npx playwright install-deps chromium 
         else
-          pnpm playwright install-deps 
+          npx playwright install-deps 
         fi
 
     - name: Start E2E Services

@@ -336,17 +336,15 @@ export default function SchedulePage() {
         setDeleteTargetId(id)
     }
 
-    const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
+    const handleScheduleWorkout = async(workoutId:string, time: string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
         }
         setIsScheduling(true)
         setError(null)
         try{
-            const utcDate = new Date(Date.UTC( //fixing monday not being scheduled
-                selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate()
-            ))
-            const scheduledAt =utcDate.toISOString()
+            const [hours, minutes] = time.split(':').map(Number)
+            const scheduledDateTime = new Date(Date.UTC(selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate(), hours, minutes))
 
             const bodyPayload: {
                 workoutId: string
@@ -357,14 +355,14 @@ export default function SchedulePage() {
                 until?: string
             } = {
                 workoutId,
-                scheduledAt,
+                scheduledAt: scheduledDateTime.toISOString(),
                 status:0
             }
             if(repeat &&interval && until) {
                 bodyPayload.repeat = repeat.toLowerCase()
                 bodyPayload.interval = interval
                 const udate = new Date(until)
-                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate()))
+                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate(), 23,59,59))
                 bodyPayload.until = utcUntil.toISOString()
             }
             const response = await customFetch('/api/users/me/schedule/sessions',{
@@ -385,6 +383,8 @@ export default function SchedulePage() {
             setIsScheduling(false)
         }
     }
+
+    
 
     const weeklydays = weekDates.map((dayDate, index) => {
         const dayM = DAYS[index]
@@ -580,6 +580,17 @@ export default function SchedulePage() {
         )
     }
 
+    const formatScheduledTime = (isoString: string) =>{
+        try{
+            const d = new Date(isoString)
+            const hours = String(d.getUTCHours()).padStart(2, '0')
+            const minutes = String(d.getUTCMinutes()).padStart(2,'0')
+            return `${hours}:${minutes}`
+        } catch {
+            return ''
+        }
+    }
+
     //workoutcards
     interface WorkoutCardProps{
         readonly session: ScheduledEntryDto
@@ -604,7 +615,12 @@ export default function SchedulePage() {
                 className="flex-1 bg-card border border-border rounded-xl p-5 hover:border-brand/40 transition-all shadow-sm cursor-pointer hover:ring-2 hover:ring-brand/45 focus-visible:ring-2 focus-visible:ring-brand/45 outline-none">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                         <div className="md:col-span-7 space-y-2">
-                            <CardTitle className="text-lg font-bold text-foreground leading-snug">{session.workoutName}</CardTitle>
+                            <CardTitle className="text-lg font-bold text-foreground leading-snug flex items-center gap-2">
+                                <span>{session.workoutName}</span>
+                                <span className="text-xs font-normal text-muted-foreground bg-surface-2/60 px-2 py-0.5 rounded-md border border-border/50">
+                                {formatScheduledTime(session.scheduled)}
+                                </span>
+                            </CardTitle>
                             <p className={cardDETAIL}>
                                 <span className="font-semibold text-foreground">Primary Muscle Groups: </span>{session.primaryMuscleGroups.join(', ') || 'None'}
                             </p>
@@ -836,9 +852,12 @@ function MonthViewCalendar({
                                     className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 hover:ring-2 hover:ring-brand/45 focus-visible-within:ring-2 focus-visible-within:ring-brand/45 shadow-sm">
                                         <button type="button"
                                         onClick={() => onWorkoutClick(session)}
-                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline" 
-                                        title={session.workoutName}>
-                                            {session.workoutName}
+                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline flex items-center justify-between" 
+                                        title={`${session.workoutName} at ${formatScheduledTime(session.scheduled)}`}>
+                                            <span className="truncate">{session.workoutName}</span>
+                                            <span className="text-[10px] font-normal text-muted-foreground ml-1 shrink-0">
+                                                {formatScheduledTime(session.scheduled)}
+                                            </span>
                                         </button>                                            
                                         <button 
                                         type="button" 

@@ -42,7 +42,8 @@ public sealed class GetExerciseByIdHandler : IRequestHandler<GetExerciseByIdQuer
             primMuscle is null ? [] : [primMuscle],
             secMuscle,
             ex.UserId != null,
-            ex.ImageUrl
+            ex.ImageUrl,
+            ex.IsDeleted
         );
     }
 }

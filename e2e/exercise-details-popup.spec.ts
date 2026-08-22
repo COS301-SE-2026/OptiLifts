@@ -67,6 +67,13 @@ test.describe('Custom Exercise Details Popup', () => {
         await expect(page.getByRole('heading', { name: 'Delete Exercise' })).toBeVisible();
         await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
 
+        //exercise details popup updates immediately upon deletion
+        await expect(page.getByRole('heading', { name: 'Exercise Details' })).toBeVisible();
+        await expect(page.getByText('Deleted custom exercise')).toBeVisible();
+        await expect(page.getByText('This exercise has been deleted and cannot be edited or deleted.')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Edit' })).not.toBeVisible();
+        await expect(page.getByRole('button', { name: 'Delete' })).not.toBeVisible();
+        await page.getByRole('button', { name: 'Close', exact: true }).click();
         await expect(page.getByRole('heading', { name: 'Exercise Details' })).not.toBeVisible();
     });
 });

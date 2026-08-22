@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Dumbbell, Pencil, Trash2, X } from 'lucide-react'
+import { AlertCircle, Dumbbell, Pencil, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CircularProfileImage } from '@/components/ui/circular-image'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -22,6 +22,7 @@ type ExerciseDetsResponse = {
   secondaryMuscles: string[]
   isCustom: boolean
   imageUrl?: string | null
+  isDeleted?: boolean
 }
 
 type ExerciseDetailsPopupProps = Readonly<{
@@ -48,6 +49,7 @@ const toDetails = (dto: ExerciseDetsResponse): ExerciseDetails => ({
   secondaryMuscles: dto.secondaryMuscles,
   isCustom: dto.isCustom,
   imageUrl: dto.imageUrl ?? null,
+  isDeleted: dto.isDeleted ?? false,
 })
 
 const capitalizeEquipment = (equipment: string | null | undefined): string | undefined => {
@@ -186,6 +188,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
 
     useEffect(() => {
         if (!exerciseId) {
+            setDetails(null)
             return
         }
 
@@ -194,20 +197,24 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
         const loading = async () => {
             setLoading(true)
             setError(null)
+            setDetails(null)
 
             try {
-                const response = await customFetch(`/api/exercises/${exerciseId}`, { headers: { Accept: 'application/json' } })
+                const response = await customFetch(`/api/exercises/${exerciseId}`, {
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                })
                 if (!response.ok) throw new Error(`Failure to load exercise (${response.status})`)
 
                 const dto = (await response.json()) as ExerciseDetsResponse
 
                 if (!canclled) setDetails(toDetails(dto))
-                } 
-                catch (err) {
-                    if (!canclled) setError(err instanceof Error ? err.message : 'Failed to load exercise')
-                } 
-                finally {
-                    if (!canclled) setLoading(false)
+            } 
+            catch (err) {
+                if (!canclled) setError(err instanceof Error ? err.message : 'Failed to load exercise')
+            } 
+            finally {
+                if (!canclled) setLoading(false)
             }
         }
 
@@ -312,12 +319,12 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
             }
 
             toast.success('Exercise deleted.', 'Deleted')
+            setDetails((prev) => (prev ? { ...prev, isDeleted: true } : null))
+            setIsConfirmDeleteOpen(false)
+
             if (onChanged) {
                 await onChanged(details.id)
             }
-
-            setIsConfirmDeleteOpen(false)
-            onClose()
         } 
         catch (err) {
             toast.error(err instanceof Error ? err.message : 'Failed to delete exercise', 'Error')
@@ -359,10 +366,21 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
                     <div className="min-w-0">
                       <p className="truncate text-lg font-bold text-foreground">{details.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {details.isCustom ? 'Custom exercise' : 'Exercise library'}
+                        {details.isDeleted
+                          ? 'Deleted custom exercise'
+                          : details.isCustom
+                            ? 'Custom exercise'
+                            : 'Exercise library'}
                       </p>
                     </div>
                   </div>
+
+                  {details.isDeleted && (
+                    <div className="flex items-center gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-xs text-destructive">
+                      <AlertCircle className="size-4 shrink-0" />
+                      <span>This exercise has been deleted and cannot be edited or deleted.</span>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
@@ -401,7 +419,7 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
               )}
             </div>
 
-            {details?.isCustom && (
+            {details?.isCustom && !details.isDeleted && (
               <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
                 <OfflineTooltip isOnline={isOnline}>
                   <Button type="button" variant="secondary" disabled={!isOnline} onClick={() => setIsConfirmDeleteOpen(true)}>

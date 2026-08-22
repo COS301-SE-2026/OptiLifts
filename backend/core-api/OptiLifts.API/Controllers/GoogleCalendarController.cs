@@ -59,7 +59,7 @@ public sealed class GoogleCalendarController : ControllerBase
     }
 
     public sealed record ConnectCalendarRequest(string Code, string RedirectUri);
-    [HttpPost("settings")]
+    [HttpPost("connect")]
     public async Task<IActionResult> ConnectCalendar(
         [FromBody] ConnectCalendarRequest request,
         CancellationToken cancellationToken)
@@ -68,7 +68,7 @@ public sealed class GoogleCalendarController : ControllerBase
         {
             return Unauthorized();
         }
-        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
         if (user == null)
         {
             return NotFound();
@@ -108,7 +108,7 @@ public sealed class GoogleCalendarController : ControllerBase
         {
             return Unauthorized();
         }
-        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
         if (user == null)
         {
             return NotFound();

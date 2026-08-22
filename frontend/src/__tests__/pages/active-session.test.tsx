@@ -41,6 +41,10 @@ vi.mock('@/components/ui/exercise-details-popup', () => ({
   ExerciseDetailsPopup: () => null,
 }))
 
+vi.mock('canvas-confetti', () => ({
+  default: vi.fn(),
+}))
+
 describe('ActiveSessionPage summary section', () => {
   const mockFetch = customFetch as unknown as Mock
 
@@ -110,14 +114,25 @@ describe('ActiveSessionPage summary section', () => {
     const summaryCard = summaryTitle.closest('[data-slot="card"]')
     expect(summaryCard).not.toBeNull()
 
+    const setButtons = document.querySelectorAll('.bg-surface-2.hover\\:border-brand')
+    if (setButtons.length > 0) {
+      const chestSetButton = setButtons[0] as HTMLButtonElement
+      const bicepSetButton = setButtons[2] as HTMLButtonElement
+      chestSetButton.click()
+      bicepSetButton.click()
+    }
+
     const scoped = within(summaryCard as HTMLElement)
+    
+    await waitFor(() => {
+      expect(scoped.getAllByText('Chest').length).toBeGreaterThan(0)
+    })
+    
     expect(scoped.getByText('Front')).toBeDefined()
     expect(scoped.getByText('Back')).toBeDefined()
     expect(scoped.getByText('Muscle')).toBeDefined()
     expect(scoped.getByText('Sets')).toBeDefined()
-    expect(scoped.getAllByText('Chest').length).toBeGreaterThan(0)
     expect(scoped.getAllByText('Biceps').length).toBeGreaterThan(0)
-    expect(scoped.getAllByText('2').length).toBeGreaterThan(0)
     expect(scoped.getAllByText('1').length).toBeGreaterThan(0)
   })
 

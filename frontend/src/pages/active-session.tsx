@@ -592,7 +592,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [exitOpen, setExitOpen] = useState(false)
   const [pendingNavTo, setPendingNavTo] = useState<string | null>(null)
   const [exercises, setExercises] = useState<ExerciseData[]>([])
-  const [primaryMuscleGroups, setPrimaryMuscleGroups] = useState<string[]>(sessionState?.workout?.primaryMuscleGroups ?? [])
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [conflictDraft, setConflictDraft] = useState<{ workoutId: string; workoutName: string } | null>(null)
   const [startKey, setStartKey] = useState(0)
@@ -629,7 +628,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
           if (!isMounted) return
 
           setWorkoutName(data.name)
-          setPrimaryMuscleGroups(data.primaryMuscleGroups ?? [])
           setStartedAtIso(data.startedAt ?? null)
           setCompletedAtIso(data.completedAt ?? null)
           setPastDurationText(data.duration ?? null)
@@ -707,8 +705,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
           return
         }
 
-        setPrimaryMuscleGroups(draftData.primaryMuscleGroups ?? [])
-
         const imageByExerciseId = new Map(draftData.exercises.map((ex) => [ex.exerciseId, ex.imageUrl ?? null]))
 
         setExercises((current) => current.map((ex) => backfillImage(ex, imageByExerciseId)))
@@ -734,7 +730,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         }
 
         setWorkoutName(data.name)
-        setPrimaryMuscleGroups(data.primaryMuscleGroups ?? [])
         setStartedAtMs(Date.now())
 
         const mappedExers: ExerciseData[] = [...data.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise)
@@ -752,7 +747,6 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
         if (cached) {
           setWorkoutName(cached.name)
-          setPrimaryMuscleGroups(cached.primaryMuscleGroups ?? [])
           setStartedAtMs(Date.now())
           setExercises([...cached.exercises].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessExercise))
           setIsOfflineData(true)
@@ -1003,19 +997,37 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     }
   }, [exercises])
 
+  const completedExercises = useMemo(
+    () => exercises.map((ex) => ({
+      ...ex,
+      sets: ex.sets.filter((set) => set.completed),
+    })).filter((ex) => ex.sets.length > 0),
+    [exercises]
+  )
+
   const highlightedMuscles = useMemo(
-    () => primaryMuscleGroups.filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName)),
-    [primaryMuscleGroups]
+    () =>
+      Array.from(
+        new Set(
+          completedExercises
+            .map((exercise) => exercise.muscleGroup)
+            .filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName))
+        )
+      ),
+    [completedExercises]
   )
 
   const secondaryMuscles = useMemo(
     () =>
-      exercises
-        .flatMap((exercise) => exercise.secondaryMuscles ?? [])
-        .filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName)),
-    [exercises]
+      Array.from(
+        new Set(
+          completedExercises
+            .flatMap((exercise) => exercise.secondaryMuscles ?? [])
+            .filter((muscle): muscle is MuscleName => MUSCLE_GROUPS.includes(muscle as MuscleName))
+        )
+      ),
+    [completedExercises]
   )
-
 
   const buildLogPayload = (): WorkoutLogPayload | null => {
     if (!workoutId) return null
@@ -1386,7 +1398,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             <CardContent className="flex min-h-0 flex-1 flex-col">
               <div className="exercise-summary-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-2 text-sm text-muted-foreground">
                 <MuscleDiagram highlightedMuscles={highlightedMuscles} secondaryMuscles={secondaryMuscles} variant="both" />
-                <MusclesSummary exercises={exercises} />
+                <MusclesSummary exercises={completedExercises} />
               </div>
             </CardContent>
           </Card>

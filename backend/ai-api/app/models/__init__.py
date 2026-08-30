@@ -5,3 +5,12 @@ from .reschedule import (
     RescheduledEntry,
     RescheduleResponse
 )
+
+# to tell linter they're used elsewhere
+__all__ = [
+    "Preferences",
+    "Entry",
+    "RescheduleRequest",
+    "RescheduledEntry",
+    "RescheduleResponse",
+]

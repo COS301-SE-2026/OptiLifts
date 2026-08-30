@@ -47,6 +47,7 @@ export type ExerciseDetails = Readonly<{
   secondaryMuscles: string[]
   isCustom: boolean
   imageUrl: string | null
+  isDeleted?: boolean
 }>
 
 export type CreateExerciseBackdropProps = Readonly<{

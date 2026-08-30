@@ -89,6 +89,35 @@ export function getEffectiveGoogleTheme(themeProp?: GoogleSignInTheme): GoogleSi
   return 'filled_black'
 }
 
+type GoogleCredentialHandler = (response: { credential: string }) => void | Promise<void>
+
+const activeHandlers = new Set<GoogleCredentialHandler>()
+
+function ensureGoogleInitialized(clientId: string) {
+  if (!window.google?.accounts?.id || !clientId) return false
+
+  const gsi = window.google.accounts.id as typeof window.google.accounts.id & {
+    _optilifts_initialized_client_id?: string
+  }
+
+  if (gsi._optilifts_initialized_client_id !== clientId) {
+    gsi.initialize({
+      client_id: clientId,
+      callback: (response: { credential: string }) => {
+        for (const handler of activeHandlers) {
+          try {
+            void handler(response)
+          } catch (err) {
+            console.error('Error in Google credential handler:', err)
+          }
+        }
+      },
+    })
+    gsi._optilifts_initialized_client_id = clientId
+  }
+  return true
+}
+
 export function GoogleSignInButton({
   clientId,
   text = 'signin_with',
@@ -135,40 +164,48 @@ export function GoogleSignInButton({
     ''
 
   useEffect(() => {
-    let checkInterval: ReturnType<typeof setInterval> | null = null
-
-    function initGoogleButton() {
-      if (!window.google?.accounts?.id || !containerRef.current) {
-        return false
+    const handler: GoogleCredentialHandler = async (response: { credential: string }) => {
+      if (!response?.credential) {
+        setErrorMessage?.('Google Sign-In failed: No credential returned.')
+        return
       }
 
-      if (!effectiveClientId) {
-        return false
+      if (onSuccess) {
+        onSuccess(response.credential)
+        return
       }
 
-      window.google.accounts.id.initialize({
-        client_id: effectiveClientId,
-        callback: async (response: { credential: string }) => {
-          if (!response?.credential) {
-            setErrorMessage?.('Google Sign-In failed: No credential returned.')
-            return
-          }
-
-          if (onSuccess) {
-            onSuccess(response.credential)
-            return
-          }
-
-          await submitGoogleAuthRequest({
-            idToken: response.credential,
-            login,
-            navigate,
-            fromPath,
-            setErrorMessage: setErrorMessage ?? (() => {}),
-            setIsSubmitting: setIsSubmitting ?? (() => {}),
-          })
-        },
+      await submitGoogleAuthRequest({
+        idToken: response.credential,
+        login,
+        navigate,
+        fromPath,
+        setErrorMessage: setErrorMessage ?? (() => {}),
+        setIsSubmitting: setIsSubmitting ?? (() => {}),
       })
+    }
+
+    activeHandlers.add(handler)
+    return () => {
+      activeHandlers.delete(handler)
+    }
+  }, [fromPath, login, navigate, onSuccess, setErrorMessage, setIsSubmitting])
+
+  useEffect(() => {
+    if (!effectiveClientId) {
+      return
+    }
+
+    let checkInterval: ReturnType<typeof setInterval> | null = null
+    let attempts = 0
+    const maxAttempts = 25
+
+    function renderGoogleButton() {
+      if (!window.google?.accounts?.id || !containerRef.current || !effectiveClientId) {
+        return false
+      }
+
+      ensureGoogleInitialized(effectiveClientId)
 
       containerRef.current.innerHTML = ''
       window.google.accounts.id.renderButton(containerRef.current, {
@@ -184,10 +221,14 @@ export function GoogleSignInButton({
       return true
     }
 
-    if (!initGoogleButton()) {
+    if (!renderGoogleButton()) {
       checkInterval = setInterval(() => {
-        if (initGoogleButton() && checkInterval) {
-          clearInterval(checkInterval)
+        attempts++
+        if (renderGoogleButton() || attempts >= maxAttempts) {
+          if (checkInterval) {
+            clearInterval(checkInterval)
+            checkInterval = null
+          }
         }
       }, 200)
     }
@@ -195,7 +236,7 @@ export function GoogleSignInButton({
     return () => {
       if (checkInterval) clearInterval(checkInterval)
     }
-  }, [effectiveClientId, fromPath, login, navigate, onSuccess, resolvedTheme, setErrorMessage, setIsSubmitting, shape, size, text, width])
+  }, [effectiveClientId, resolvedTheme, shape, size, text, width])
 
   return (
     <div className={`google-signin-wrapper flex justify-center w-full min-h-[44px] ${className}`}>

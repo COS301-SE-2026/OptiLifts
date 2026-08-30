@@ -3,40 +3,55 @@ from typing import Optional, List
 from datetime import timedelta
 import time
 
-from app.models.reschedule import RescheduleRequest, RescheduleResponse, RescheduledEntry
+from app.models.reschedule import (
+    RescheduleRequest,
+    RescheduleResponse,
+    RescheduledEntry,
+)
 
 
 def _get_available_days(start_date, end_date) -> List:
     available_days = []
     curr_day = start_date
-    while (curr_day.date() <= end_date.date()):
+    while curr_day.date() <= end_date.date():
         available_days.append(curr_day)
         curr_day += timedelta(days=1)
     return available_days
 
-def _apply_basic_constraints(model, schedule_vars, num_entries, num_days, available_days, preferences):
+
+def _apply_basic_constraints(
+    model, schedule_vars, num_entries, num_days, available_days, preferences
+):
     # constraints
-    #every workout scheduled once
+    # every workout scheduled once
     for workout in range(num_entries):
         model.AddExactlyOne(schedule_vars[(workout, day)] for day in range(num_days))
 
-    # rest days 
+    # rest days
     for day in range(num_days):
         day_name = available_days[day].strftime("%A")
 
-        if (day_name in preferences.fixed_rest_days):
+        if day_name in preferences.fixed_rest_days:
             for workout in range(num_entries):
-                model.Add(schedule_vars[(workout, day)] == 0) #make the day workout value pair false
+                model.Add(
+                    schedule_vars[(workout, day)] == 0
+                )  # make the day workout value pair false
 
     # max workouts per day
     for day in range(num_days):
-        model.Add((sum(schedule_vars[(w, day)] for w in range(num_entries))) <= preferences.max_workouts_per_day)
+        model.Add(
+            (sum(schedule_vars[(w, day)] for w in range(num_entries)))
+            <= preferences.max_workouts_per_day
+        )
 
-def _apply_muscle_rest_constraint(model, schedule_vars, all_entries, num_entries, num_days, min_rest_hours):
+
+def _apply_muscle_rest_constraint(
+    model, schedule_vars, all_entries, num_entries, num_days, min_rest_hours
+):
     # min rest between training muscle
     if min_rest_hours >= 48:
         for w1 in range(num_entries):
-            for w2 in range(w1+1, num_entries):
+            for w2 in range(w1 + 1, num_entries):
                 first_muscles = set(all_entries[w1].primary_muscles)
                 second_muscles = set(all_entries[w2].primary_muscles)
 
@@ -49,13 +64,15 @@ def _apply_muscle_rest_constraint(model, schedule_vars, all_entries, num_entries
                         model.Add(check2 <= 1)
 
 
-def _set_penalties(model, schedule_vars, all_entries, num_entries, num_days, available_days):
-    # penalties 
+def _set_penalties(
+    model, schedule_vars, all_entries, num_entries, num_days, available_days
+):
+    # penalties
     penalties = []
 
     for workout in range(num_entries):
         original_date = all_entries[workout].scheduled_at.date()
-        for day in range(num_days): 
+        for day in range(num_days):
             new_date = available_days[day].date()
             diff = abs((new_date - original_date).days)
             penalties.append(diff * schedule_vars[(workout, day)])
@@ -63,37 +80,42 @@ def _set_penalties(model, schedule_vars, all_entries, num_entries, num_days, ava
     model.Minimize(sum(penalties))
 
 
-def _extract_results(solver, schedule_vars, all_entries, num_entries, num_days, available_days):
+def _extract_results(
+    solver, schedule_vars, all_entries, num_entries, num_days, available_days
+):
     rescheduled_entries = []
 
     for workout in range(num_entries):
         for day in range(num_days):
-            if (solver.Value(schedule_vars[(workout, day)]) == 1):
+            if solver.Value(schedule_vars[(workout, day)]) == 1:
                 entry = all_entries[workout]
 
                 new_datetime = available_days[day].replace(
-                    hour=entry.scheduled_at.hour,
-                    minute=entry.scheduled_at.minute
+                    hour=entry.scheduled_at.hour, minute=entry.scheduled_at.minute
                 )
 
-                if (new_datetime != entry.scheduled_at or entry.status == "Missed"):
+                if new_datetime != entry.scheduled_at or entry.status == "Missed":
                     rescheduled_entries.append(
                         RescheduledEntry(
-                            entry_id = entry.id,
-                            workout_id = entry.workout_id,
-                            workout_name = entry.workout_name,
-                            original_scheduled_at = entry.scheduled_at,
-                            new_scheduled_at = new_datetime,
-                            action = "Shifted"
+                            entry_id=entry.id,
+                            workout_id=entry.workout_id,
+                            workout_name=entry.workout_name,
+                            original_scheduled_at=entry.scheduled_at,
+                            new_scheduled_at=new_datetime,
+                            action="Shifted",
                         )
                     )
     return rescheduled_entries
 
 
-def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[RescheduleResponse]:
+def attempt_tier_two(
+    request: RescheduleRequest, start_time: float
+) -> Optional[RescheduleResponse]:
     model = cp_model.CpModel()
 
-    available_days = _get_available_days(request.planning_window_start, request.planning_window_end)
+    available_days = _get_available_days(
+        request.planning_window_start, request.planning_window_end
+    )
     num_days = len(available_days)
 
     all_entries = request.entries
@@ -108,9 +130,20 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
             schedule_vars[(workout, day)] = model.NewBoolVar(var_name)
 
     # apply constraints and objective via helpers - thanks sonarqube -.-
-    _apply_basic_constraints(model, schedule_vars, num_entries, num_days, available_days, request.preferences)
-    _apply_muscle_rest_constraint(model, schedule_vars, all_entries, num_entries, num_days, request.preferences.min_muscle_rest_hours)
-    _set_penalties(model, schedule_vars, all_entries, num_entries, num_days, available_days)
+    _apply_basic_constraints(
+        model, schedule_vars, num_entries, num_days, available_days, request.preferences
+    )
+    _apply_muscle_rest_constraint(
+        model,
+        schedule_vars,
+        all_entries,
+        num_entries,
+        num_days,
+        request.preferences.min_muscle_rest_hours,
+    )
+    _set_penalties(
+        model, schedule_vars, all_entries, num_entries, num_days, available_days
+    )
 
     # solving step, given a max of 2 seonds
     solver = cp_model.CpSolver()
@@ -118,15 +151,17 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
 
     status = solver.Solve(model)
 
-    if (status == cp_model.OPTIMAL or status == cp_model.FEASIBLE):
-        rescheduled_entries = _extract_results(solver, schedule_vars, all_entries, num_entries, num_days, available_days)
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        rescheduled_entries = _extract_results(
+            solver, schedule_vars, all_entries, num_entries, num_days, available_days
+        )
 
         return RescheduleResponse(
             user_id=request.user_id,
             execution_tier="Tier2_CPSAT",
             execution_time_ms=int((time.time() - start_time) * 1000),
             rescheduled_entries=rescheduled_entries,
-            dropped_entries=[] 
-        )   
-    else: 
+            dropped_entries=[],
+        )
+    else:
         return None

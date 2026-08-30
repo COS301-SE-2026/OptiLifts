@@ -15,9 +15,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+
 @app.get("/health", tags=["health"], summary="Health check")
 def health_check():
     """Returns the current status of the AI Engine service."""
     return {"status": "alive", "message": "AI Engine is ready."}
+
 
 app.include_router(scheduler_router)

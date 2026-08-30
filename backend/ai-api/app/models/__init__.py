@@ -3,7 +3,7 @@ from .reschedule import (
     Entry,
     RescheduleRequest,
     RescheduledEntry,
-    RescheduleResponse
+    RescheduleResponse,
 )
 
 # to tell linter they're used elsewhere

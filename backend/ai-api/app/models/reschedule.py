@@ -2,10 +2,12 @@ from pydantic import BaseModel, Field
 from typing import List
 from datetime import datetime
 
+
 class Preferences(BaseModel):
     max_workouts_per_day: int = Field(default=1, ge=1)
     min_muscle_rest_hours: int = Field(default=48, ge=0)
     fixed_rest_days: List[str] = Field(default_factory=list)
+
 
 class Entry(BaseModel):
     id: str
@@ -24,6 +26,7 @@ class RescheduleRequest(BaseModel):
     preferences: Preferences
     entries: List[Entry] = Field(default_factory=list)
 
+
 class RescheduledEntry(BaseModel):
     entry_id: str
     workout_id: str
@@ -32,9 +35,10 @@ class RescheduledEntry(BaseModel):
     new_scheduled_at: datetime
     action: str
 
+
 class RescheduleResponse(BaseModel):
     user_id: str
-    execution_tier: str   
-    execution_time_ms: int   # for fun analytics
+    execution_tier: str
+    execution_time_ms: int  # for fun analytics
     rescheduled_entries: List[RescheduledEntry]
     dropped_entries: List[Entry]

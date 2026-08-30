@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -20,6 +21,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
 
     private async Task<string> GetAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(refreshToken)) return null;
         var requestContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("client_id", _clientId),
@@ -29,10 +31,13 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         });
 
         var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", requestContent, cancellationToken); //NOSONAR
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
 
         var json = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
-        return json?.AccessToken ?? throw new InvalidOperationException("Failes to fresh google access token");
+        return json?.AccessToken;
     }
     public async Task<string?> ExchangeCodeForRefreshTokenAsync(string code, string redirectUri, CancellationToken cancellationToken = default)
     {
@@ -57,6 +62,10 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
     public async Task<string> GetOrCreateOptiLiftsCalendarIdAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         var accessToken = await GetAccessTokenAsync(refreshToken, cancellationToken);
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return "primary";
+        }
         var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/calendarList");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -86,11 +95,40 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         var calendar = await createresponse.Content.ReadFromJsonAsync<CalendarItem>(cancellationToken: cancellationToken);
         return calendar?.Id ?? "primary";
     }
+    // time keeps messing up so ive made a helper for it
+    private async Task<string> GetUserTimeZoneAsync(string accessToken, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/settings/timezone");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<GoogleSettingsResponse>(cancellationToken: cancellationToken);
+                if (!string.IsNullOrWhiteSpace(result?.Value))
+                {
+                    return result.Value;
+                }
+            }
+        } catch
+        {
+            //fallback to utc
+        }
+        return "UTC";
+    }
 
     public async Task<string?> CreateEventAsync(string refreshToken, string calendarId, GoogleCalendarEventDto eventDto, CancellationToken cancellationToken = default)
     {
         var accessToken = await GetAccessTokenAsync(refreshToken, cancellationToken);
-        var startTimeutc = eventDto.StartTime;
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return null;
+        }
+        // var timeZone = await GetUserTimeZoneAsync(accessToken, cancellationToken);
+        // var startTimeutc = eventDto.StartTime.Kind == DateTimeKind.Utc ? eventDto.StartTime.ToLocalTime() : eventDto.StartTime;
+        // var startTimeutc = eventDto.StartTime;
+        var startTimeutc = DateTime.SpecifyKind(eventDto.StartTime, DateTimeKind.Utc);
         var endTimeUtc = startTimeutc.AddMinutes(eventDto.DurationMinutes);
 
         var payload = new
@@ -108,11 +146,21 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
             }
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(calendarId)}/events");
+        var targetcalendar = string.IsNullOrWhiteSpace(calendarId) ? "primary" : calendarId;
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(targetcalendar)}/events");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Content = JsonContent.Create(payload);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.Gone)
+        {
+            targetcalendar = await GetOrCreateOptiLiftsCalendarIdAsync(refreshToken, cancellationToken);
+
+            var retry = new HttpRequestMessage(HttpMethod.Post, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(targetcalendar)}/events");
+            retry.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            retry.Content = JsonContent.Create(payload);
+            response = await _httpClient.SendAsync(request, cancellationToken);
+        }
         if (!response.IsSuccessStatusCode)
         {
             return null;
@@ -123,15 +171,26 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
 
     public async Task DeleteEventAsync(string refreshToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(eventId))
+        if (string.IsNullOrWhiteSpace(eventId) || string.IsNullOrWhiteSpace(refreshToken)|| string.IsNullOrWhiteSpace(calendarId))
         {
             return;
         }
-        var accessToken = await GetAccessTokenAsync(refreshToken, cancellationToken);
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(calendarId)}/events/{Uri.EscapeDataString(eventId)}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            var accessToken = await GetAccessTokenAsync(refreshToken, cancellationToken);
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                return;
+            }
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(calendarId)}/events/{Uri.EscapeDataString(eventId)}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        await _httpClient.SendAsync(request, cancellationToken);
+            await _httpClient.SendAsync(request, cancellationToken);
+        } catch
+        {
+            //ignore google calendar's errors
+        }
+        
     }
 
     private sealed record TokenResponse(
@@ -147,6 +206,9 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
     );
     private sealed record GoogleEventResponse(
         [property: JsonPropertyName("id")] string Id
+    );
+    private sealed record GoogleSettingsResponse(
+        [property: JsonPropertyName("value")] string Value
     );
 }
 

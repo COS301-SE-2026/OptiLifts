@@ -347,7 +347,7 @@ export default function SchedulePage() {
         setError(null)
         try{
             const [hours, minutes] = time.split(':').map(Number)
-            const scheduledDateTime = new Date(Date.UTC(selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate(), hours, minutes))
+            const scheduledDateTime = new Date(selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate(), hours, minutes)
 
             const bodyPayload: {
                 workoutId: string
@@ -594,8 +594,8 @@ export default function SchedulePage() {
     const formatScheduledTime = (isoString: string) =>{
         try{
             const d = new Date(isoString)
-            const hours = String(d.getUTCHours()).padStart(2, '0')
-            const minutes = String(d.getUTCMinutes()).padStart(2,'0')
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2,'0')
             return `${hours}:${minutes}`
         } catch {
             return ''

@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Scheduling.DeleteScheduledSession;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
@@ -26,7 +28,7 @@ public sealed class DeleteScheduledSessionHandlerTests
     public async Task Handle_ReturnFalse_WhenNoSession()
     {
         using var db = await MemoryDBCreation();
-        var handler = new DeleteScheduledSessionHandler(db);
+        var handler = new DeleteScheduledSessionHandler(db, new Mock<IGoogleCalendarService>().Object);
         var command = new DeleteScheduledSessionCommand(
             Guid.NewGuid(),
             Guid.NewGuid());
@@ -82,7 +84,7 @@ public sealed class DeleteScheduledSessionHandlerTests
         db.ScheduledEntries.Add(entry);
         await db.SaveChangesAsync();
 
-        var handler = new DeleteScheduledSessionHandler(db);
+        var handler = new DeleteScheduledSessionHandler(db, new Mock<IGoogleCalendarService>().Object);
         var command = new DeleteScheduledSessionCommand(
             userId,
             altUserId);
@@ -126,7 +128,7 @@ public sealed class DeleteScheduledSessionHandlerTests
         db.ScheduledEntries.Add(entry);
         await db.SaveChangesAsync();
 
-        var handler = new DeleteScheduledSessionHandler(db);
+        var handler = new DeleteScheduledSessionHandler(db, new Mock<IGoogleCalendarService>().Object);
         var command = new DeleteScheduledSessionCommand(
             userId,
             entry.Id);

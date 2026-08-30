@@ -95,28 +95,6 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         var calendar = await createresponse.Content.ReadFromJsonAsync<CalendarItem>(cancellationToken: cancellationToken);
         return calendar?.Id ?? "primary";
     }
-    // time keeps messing up so ive made a helper for it
-    private async Task<string> GetUserTimeZoneAsync(string accessToken, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/settings/timezone");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<GoogleSettingsResponse>(cancellationToken: cancellationToken);
-                if (!string.IsNullOrWhiteSpace(result?.Value))
-                {
-                    return result.Value;
-                }
-            }
-        } catch
-        {
-            //fallback to utc
-        }
-        return "UTC";
-    }
 
     public async Task<string?> CreateEventAsync(string refreshToken, string calendarId, GoogleCalendarEventDto eventDto, CancellationToken cancellationToken = default)
     {
@@ -125,9 +103,6 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         {
             return null;
         }
-        // var timeZone = await GetUserTimeZoneAsync(accessToken, cancellationToken);
-        // var startTimeutc = eventDto.StartTime.Kind == DateTimeKind.Utc ? eventDto.StartTime.ToLocalTime() : eventDto.StartTime;
-        // var startTimeutc = eventDto.StartTime;
         var startTimeutc = DateTime.SpecifyKind(eventDto.StartTime, DateTimeKind.Utc);
         var endTimeUtc = startTimeutc.AddMinutes(eventDto.DurationMinutes);
 
@@ -206,9 +181,6 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
     );
     private sealed record GoogleEventResponse(
         [property: JsonPropertyName("id")] string Id
-    );
-    private sealed record GoogleSettingsResponse(
-        [property: JsonPropertyName("value")] string Value
     );
 }
 

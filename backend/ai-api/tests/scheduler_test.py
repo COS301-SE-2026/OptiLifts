@@ -111,13 +111,13 @@ def test_tier2_2missedworkouts_maxworkoutsperday1():
     data = response.json()
     
     assert data["execution_tier"] == "Tier2_CPSAT"
-    assert len(data["rescheduled_entries"]) == 4
+    assert len(data["rescheduled_entries"]) == 2
     
     new_dates = []
     for entry in data["rescheduled_entries"]:
         new_dates.append(entry["new_scheduled_at"][:10])
     
-    assert len(set(new_dates)) == 4
+    assert len(set(new_dates)) == 2
     assert "2026-09-06" not in new_dates
 
 

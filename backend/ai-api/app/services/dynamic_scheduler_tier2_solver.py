@@ -71,7 +71,7 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
             diff = abs((new_date - original_date).days)
             penalties.append(diff * schedule_vars[(workout, day)])
 
-    model.Maximize(sum(penalties))
+    model.Minimize(sum(penalties))
 
 
     # solving step

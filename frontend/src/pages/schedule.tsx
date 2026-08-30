@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
-import {X, Plus, Loader2, AlertCircle} from 'lucide-react'
+import {X, Plus, Loader2, AlertCircle, Settings} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import {Card, CardTitle} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
@@ -20,6 +20,7 @@ import { metricCheck, outputWeight } from '@/lib/weight-utils'
 import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } from '@/lib/offline/workouts-cache'
 import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
 import { OfflineBanner } from '@/components/ui/offline-banner'
+import { ScheduleSettingsPopup } from '@/components/ui/schedule-settings-popup'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -132,6 +133,8 @@ export default function SchedulePage() {
     const [isScheduling, setIsScheduling] = useState(false)
     const isOnline = useOnlineStatus()
     const [isOfflineData, setIsOfflineData] = useState(false)
+
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -427,6 +430,12 @@ export default function SchedulePage() {
                         <DropdownMenuItem onClick={() => setViewMode('month')}>Month View</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Button variant="outline" size="sm" aria-label="Schedule Settings" onClick={() => setIsSettingsOpen(true)}
+                className="bg-surface border border-border text-foreground hover:bg-brand/10 hover:text-brand hover:border-brand/30 px-3 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <Settings size={16}/>
+                    <span className="hidden sm:inline">Settings</span>
+                </Button>
             </div>
             </div>
 
@@ -557,6 +566,8 @@ export default function SchedulePage() {
                 await handleDeletingSession(id)
             }
             }}/>
+
+            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}/>
         </section>
     )
 }
@@ -674,7 +685,7 @@ interface EmptyDayCardProps{
 function EmptyDayCard({ fullName, onClick, disabled, title }: EmptyDayCardProps) {
     return (
         <div className="flex-1 flex items-stretch">
-            <button tabIndex={disabled? -1:0}
+            <button type="button" tabIndex={disabled? -1:0}
             disabled={disabled}
             title={title ?? (disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`)}
                 className={`flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center transition-all ${ 

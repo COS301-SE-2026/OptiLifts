@@ -9,7 +9,7 @@ class Preferences(BaseModel):
 
 class Entry(BaseModel):
     id: str
-    wokrout_id: str
+    workout_id: str
     workout_name: str
     scheduled_at: datetime
     status: str

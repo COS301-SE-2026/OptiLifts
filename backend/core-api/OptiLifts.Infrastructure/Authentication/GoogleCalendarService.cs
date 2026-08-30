@@ -22,7 +22,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         Console.WriteLine($"[GoogleCalendarService Init] ClientId Length: {_clientId.Length}, ClientSecret Length: {_clientSecret.Length}");
     }
 
-    private async Task<string> GetAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
+    private async Task<string?> GetAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(refreshToken)) return null;
         var requestContent = new FormUrlEncodedContent(new[]

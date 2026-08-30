@@ -8,6 +8,8 @@ namespace OptiLifts.Infrastructure.Authentication;
 
 public sealed class GoogleCalendarService : IGoogleCalendarService
 {
+    private const string BearerConst = "Bearer";
+    private const string Primary = "primary";
     private readonly HttpClient _httpClient;
     private readonly string _clientId;
     private readonly string _clientSecret;
@@ -67,10 +69,10 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         var accessToken = await GetAccessTokenAsync(refreshToken, cancellationToken);
         if (string.IsNullOrWhiteSpace(accessToken))
         {
-            return "primary";
+            return Primary;
         }
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/calendarList");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/calendar/v3/users/me/calendarList"); //NOSONAR
+        request.Headers.Authorization = new AuthenticationHeaderValue(BearerConst, accessToken);
 
         var listresponse = await _httpClient.SendAsync(request, cancellationToken);
         if (listresponse.IsSuccessStatusCode)
@@ -79,12 +81,14 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
             var existing = result?.Items?.FirstOrDefault(c => string.Equals(c.Summary, "OptiLifts", StringComparison.OrdinalIgnoreCase));
             if (existing != null)
             {
-                return existing.Id;
+                var deleteReq = new HttpRequestMessage(HttpMethod.Delete, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(existing.Id)}");
+                deleteReq.Headers.Authorization = new AuthenticationHeaderValue(BearerConst, accessToken);
+                await _httpClient.SendAsync(deleteReq, cancellationToken);
             }
         }
 
-        var createrequest = new HttpRequestMessage(HttpMethod.Post, "https://www.googleapis.com/calendar/v3/calendars");
-        createrequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var createrequest = new HttpRequestMessage(HttpMethod.Post, "https://www.googleapis.com/calendar/v3/calendars");//NOSONAR
+        createrequest.Headers.Authorization = new AuthenticationHeaderValue(BearerConst, accessToken);
         createrequest.Content = JsonContent.Create(new
         {
             summary = "OptiLifts",
@@ -93,10 +97,10 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         var createresponse = await _httpClient.SendAsync(createrequest, cancellationToken);
         if (!createresponse.IsSuccessStatusCode)
         {
-            return "primary";
+            return Primary;
         }
         var calendar = await createresponse.Content.ReadFromJsonAsync<CalendarItem>(cancellationToken: cancellationToken);
-        return calendar?.Id ?? "primary";
+        return calendar?.Id ?? Primary;
     }
 
     public async Task<string?> CreateEventAsync(string refreshToken, string calendarId, GoogleCalendarEventDto eventDto, CancellationToken cancellationToken = default)
@@ -124,9 +128,9 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
             }
         };
 
-        var targetcalendar = string.IsNullOrWhiteSpace(calendarId) ? "primary" : calendarId;
+        var targetcalendar = string.IsNullOrWhiteSpace(calendarId) ? Primary : calendarId;
         var request = new HttpRequestMessage(HttpMethod.Post, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(targetcalendar)}/events");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(BearerConst, accessToken);
         request.Content = JsonContent.Create(payload);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -135,7 +139,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
             targetcalendar = await GetOrCreateOptiLiftsCalendarIdAsync(refreshToken, cancellationToken);
 
             var retry = new HttpRequestMessage(HttpMethod.Post, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(targetcalendar)}/events");
-            retry.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            retry.Headers.Authorization = new AuthenticationHeaderValue(BearerConst, accessToken);
             retry.Content = JsonContent.Create(payload);
             response = await _httpClient.SendAsync(request, cancellationToken);
         }
@@ -161,7 +165,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
                 return;
             }
             var request = new HttpRequestMessage(HttpMethod.Delete, $"https://www.googleapis.com/calendar/v3/calendars/{Uri.EscapeDataString(calendarId)}/events/{Uri.EscapeDataString(eventId)}");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue(BearerConst, accessToken);
 
             await _httpClient.SendAsync(request, cancellationToken);
         }

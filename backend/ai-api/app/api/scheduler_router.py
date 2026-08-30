@@ -12,6 +12,15 @@ def reschedule_workouts(request: RescheduleRequest):
     start_time = time.time()
     exec_time = int((time.time() - start_time)*1000)
 
+    if len(request.entries) == 0:
+        return RescheduleResponse(
+            user_id=request.user_id,
+            execution_tier="Empty",
+            execution_time_ms=exec_time,
+            rescheduled_entries=[],
+            dropped_entries=[]
+        )
+
     #try tier 1
     tier1_response = attempt_tier_one(request, exec_time)
 

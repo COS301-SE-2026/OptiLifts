@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Auth.Google;
 using OptiLifts.Application.Auth.Login;
@@ -48,7 +49,7 @@ public sealed class GoogleCalendarController : ControllerBase
         {
             return Unauthorized();
         }
-        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
+        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user == null)
         {
             return NotFound();
@@ -68,7 +69,7 @@ public sealed class GoogleCalendarController : ControllerBase
         {
             return Unauthorized();
         }
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user == null)
         {
             return NotFound();
@@ -87,6 +88,13 @@ public sealed class GoogleCalendarController : ControllerBase
         user.GoogleCalendarSyncEnabled = true;
         var calendarId = await _calendarService.GetOrCreateOptiLiftsCalendarIdAsync(refreshToken, cancellationToken);
         user.GoogleCalendarId = calendarId;
+
+        var now = DateTime.UtcNow;
+        var entriesToReset = await _dbContext.ScheduledEntries.Where(e => e.UserId == userId && e.Scheduled >= now).ToListAsync(cancellationToken);
+        foreach (var entry in entriesToReset)
+        {
+            entry.GoogleEventId = null;
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await SyncFutureWorkoutsForUserAsync(user, cancellationToken);
@@ -108,7 +116,7 @@ public sealed class GoogleCalendarController : ControllerBase
         {
             return Unauthorized();
         }
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u=> u.Id == userId, cancellationToken);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user == null)
         {
             return NotFound();
@@ -149,18 +157,19 @@ public sealed class GoogleCalendarController : ControllerBase
         });
     }
 
-    private async Task SyncFutureWorkoutsForUserAsync(Domain.Users.User user, CancellationToken cancellationToken){
+    private async Task SyncFutureWorkoutsForUserAsync(Domain.Users.User user, CancellationToken cancellationToken)
+    {
         if (!user.GoogleCalendarSyncEnabled || string.IsNullOrWhiteSpace(user.GoogleCalendarRefreshToken)) return;
 
         var prevCal = user.GoogleCalendarId;
         var calendarId = await _calendarService.GetOrCreateOptiLiftsCalendarIdAsync(user.GoogleCalendarRefreshToken, cancellationToken);
-        
+
         var now = DateTime.UtcNow;
 
         if (!string.Equals(prevCal, calendarId, StringComparison.OrdinalIgnoreCase))
         {
             user.GoogleCalendarId = calendarId;
-            var entriestoReset = await _dbContext.ScheduledEntries.Where(e=> e.UserId == user.Id && e.Scheduled >= now).ToListAsync(cancellationToken);
+            var entriestoReset = await _dbContext.ScheduledEntries.Where(e => e.UserId == user.Id && e.Scheduled >= now).ToListAsync(cancellationToken);
             foreach (var entry in entriestoReset)
             {
                 entry.GoogleEventId = null;
@@ -173,7 +182,7 @@ public sealed class GoogleCalendarController : ControllerBase
         .ToListAsync(cancellationToken);
 
         if (!futureentries.Any()) return;
-        foreach(var entry in futureentries)
+        foreach (var entry in futureentries)
         {
             var workout = await _dbContext.Workouts.AsNoTracking().FirstOrDefaultAsync(w => w.Id == entry.WorkoutId, cancellationToken);
             if (workout == null) continue;
@@ -183,12 +192,12 @@ public sealed class GoogleCalendarController : ControllerBase
                 where we.WorkoutId == workout.Id
                 join ex in _dbContext.Exercises.AsNoTracking() on we.ExerciseId equals ex.Id
                 orderby we.OrderIndex
-                select new {ex.Name, setCount = _dbContext.Sets.Count(s => s.WorkoutExerciseId == we.Id)}
+                select new { ex.Name, setCount = _dbContext.Sets.Count(s => s.WorkoutExerciseId == we.Id) }
 
             ).ToListAsync(cancellationToken);
 
-            var exerciseList = string.Join("\n", exercises.Select(e=> $"- {e.Name} ({e.setCount} sets)"));
-            var description = $"Planned Workout Session in OptiLifts\n\nExercises:\n{(string.IsNullOrWhiteSpace(exerciseList) ? "- Custom Exercises": exerciseList)}\n\nOpen in OptiLifts: https://app.optilifts.app/schedule";
+            var exerciseList = string.Join("\n", exercises.Select(e => $"- {e.Name} ({e.setCount} sets)"));
+            var description = $"Planned Workout Session in OptiLifts\n\nExercises:\n{(string.IsNullOrWhiteSpace(exerciseList) ? "- Custom Exercises" : exerciseList)}\n\nOpen in OptiLifts: https://app.optilifts.app/schedule";
             var eventDto = new GoogleCalendarEventDto(
                 Summary: $"OptiLifts: {workout.Name}",
                 Description: description,

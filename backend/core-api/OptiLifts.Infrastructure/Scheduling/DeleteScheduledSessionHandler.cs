@@ -24,8 +24,8 @@ public sealed class DeleteScheduledSessionHandler : IRequestHandler<DeleteSchedu
 
         if (!string.IsNullOrEmpty(entry.GoogleEventId))
         {
-            var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u=> u.Id == request.UserId, cancellationToken);
-            if (user !=null && user.GoogleCalendarSyncEnabled && !string.IsNullOrWhiteSpace(user.GoogleCalendarRefreshToken) && !string.IsNullOrWhiteSpace(user.GoogleCalendarId))
+            var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user != null && user.GoogleCalendarSyncEnabled && !string.IsNullOrWhiteSpace(user.GoogleCalendarRefreshToken) && !string.IsNullOrWhiteSpace(user.GoogleCalendarId))
             {
                 try
                 {
@@ -35,7 +35,7 @@ public sealed class DeleteScheduledSessionHandler : IRequestHandler<DeleteSchedu
                 {
                     //ignore google calendar errors
                 }
-                
+
             }
         }
 

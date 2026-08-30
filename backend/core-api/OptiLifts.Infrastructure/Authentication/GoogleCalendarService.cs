@@ -15,8 +15,9 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
     public GoogleCalendarService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _clientId = (configuration["Authentication:Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty).Trim('"', '\'', ' ');
-        _clientSecret = (configuration["Authentication:Google:ClientSecret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty).Trim('"', '\'', ' ');
+        _clientId = (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? configuration["GOOGLE_CLIENT_ID"] ?? configuration["Authentication:Google:ClientId"] ?? string.Empty).Trim('"', '\'', ' ');
+        _clientSecret = (Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? configuration["GOOGLE_CLIENT_SECRET"] ?? configuration["Authentication:Google:ClientSecret"] ?? string.Empty).Trim('"', '\'', ' ');
+        Console.WriteLine($"[GoogleCalendarService Init] ClientId Length: {_clientId.Length}, ClientSecret Length: {_clientSecret.Length}");
     }
 
     private async Task<string> GetAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
@@ -52,6 +53,8 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", requestContent, cancellationToken); //NOSONAR
         if (!response.IsSuccessStatusCode)
         {
+            var errContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            Console.WriteLine($"[Google OAuth Error] Status: {response.StatusCode}, Body: {errContent}");
             return null;
         }
 
@@ -73,7 +76,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         if (listresponse.IsSuccessStatusCode)
         {
             var result = await listresponse.Content.ReadFromJsonAsync<CalendarListResponse>(cancellationToken: cancellationToken);
-            var existing = result?.Items?.FirstOrDefault(c=> string.Equals(c.Summary, "OptiLifts", StringComparison.OrdinalIgnoreCase));
+            var existing = result?.Items?.FirstOrDefault(c => string.Equals(c.Summary, "OptiLifts", StringComparison.OrdinalIgnoreCase));
             if (existing != null)
             {
                 return existing.Id;
@@ -110,7 +113,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
         {
             summary = eventDto.Summary,
             description = eventDto.Description,
-            colorId="11",
+            colorId = "11",
             start = new
             {
                 dateTime = startTimeutc.ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -146,7 +149,7 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
 
     public async Task DeleteEventAsync(string refreshToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(eventId) || string.IsNullOrWhiteSpace(refreshToken)|| string.IsNullOrWhiteSpace(calendarId))
+        if (string.IsNullOrWhiteSpace(eventId) || string.IsNullOrWhiteSpace(refreshToken) || string.IsNullOrWhiteSpace(calendarId))
         {
             return;
         }
@@ -161,11 +164,12 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             await _httpClient.SendAsync(request, cancellationToken);
-        } catch
+        }
+        catch
         {
             //ignore google calendar's errors
         }
-        
+
     }
 
     private sealed record TokenResponse(

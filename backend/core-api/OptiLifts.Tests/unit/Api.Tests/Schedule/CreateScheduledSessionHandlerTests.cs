@@ -1,13 +1,13 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Scheduling.CreateScheduledSession;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Scheduling;
-using Moq;
-using OptiLifts.Application.Auth.Abstractions;
 
 namespace OptiLifts.Tests.Api.Tests;
 

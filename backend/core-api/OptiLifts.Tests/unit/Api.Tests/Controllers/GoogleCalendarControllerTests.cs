@@ -15,6 +15,7 @@ using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Tests.Api.Tests.Controllers;
+
 public sealed class GoogleCalendarControllerTests
 {
     private static async Task<OptiLiftsDbContext> CreateDbContextAsync()

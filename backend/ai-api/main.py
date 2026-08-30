@@ -3,6 +3,7 @@
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from app.api.scheduler_router import router as scheduler_router
 
 tags_metadata = [
     {"name": "health", "description": "Service health checks."},
@@ -18,6 +19,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.include_router(scheduler_router)
 
 # --- Models ---
 

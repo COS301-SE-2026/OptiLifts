@@ -118,6 +118,25 @@ export function ScheduleSettingsPopup({
         }
     }
 
+    const handleDisconnect = async () => {
+        setIsToggling(true)
+        setError(null)
+        try {
+            const res = await customFetch('/api/users/me/google-calendar/disconnect', {
+                method: 'POST'
+            })
+            if (!res.ok){
+                throw new Error("failed to disonnect google calendar")
+            }
+            setIsConnected(false)
+            setSyncEnabled(false)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Error disconnecting')
+        } finally {
+            setIsToggling(false)
+        }
+    }
+
     return (
         <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4">
             <div className="relative z-10 w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -178,9 +197,13 @@ export function ScheduleSettingsPopup({
                                             <CheckCircle2 size={18} className="text-success"/>
                                             <span className="text-sm font-semibold text-foreground">Google Calendar Connected</span>
                                         </div>
+                                        <button type="button" onClick={handleDisconnect} disabled={isToggling} className="text-xs text-destructive hover:underline font-medium cursor-pointer">Disconnect</button>
                                     </div>
                                     <div className="flex items-center justify-between border-t border-border/60 pt-3">
-                                        <span className="text-sm font-semibold text-foreground">Sync Schedule to Google Calendar</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold text-foreground">Sync Schedule to Google Calendar</span>
+                                            {isToggling && <Loader2 size={16} className="animate-spin text-brand"/>}
+                                        </div>                                        
                                         <label className="relative inline-flex items-center cursor-pointer">
                                             <span className="sr-only">Sync Schedule to Google Calendar</span>
                                             <input type="checkbox" checked={syncEnabled} disabled={isToggling} onChange={(e) => handleToggleSync(e.target.checked)} className="sr-only peer"/>

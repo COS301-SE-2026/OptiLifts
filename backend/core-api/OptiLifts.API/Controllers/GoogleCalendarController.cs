@@ -127,22 +127,52 @@ public sealed class GoogleCalendarController : ControllerBase
         });
     }
 
+    [HttpPost("disconnect")]
+    public async Task<IActionResult> DisconnectCalendar(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user == null)
+        {
+            return NotFound();
+        }
+        user.GoogleCalendarRefreshToken = null;
+        user.GoogleCalendarId = null;
+        user.GoogleCalendarSyncEnabled = false;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(new
+        {
+            connected = false
+        });
+    }
+
     private async Task SyncFutureWorkoutsForUserAsync(Domain.Users.User user, CancellationToken cancellationToken){
         if (!user.GoogleCalendarSyncEnabled || string.IsNullOrWhiteSpace(user.GoogleCalendarRefreshToken)) return;
 
+        var prevCal = user.GoogleCalendarId;
+        var calendarId = await _calendarService.GetOrCreateOptiLiftsCalendarIdAsync(user.GoogleCalendarRefreshToken, cancellationToken);
+        
         var now = DateTime.UtcNow;
+
+        if (!string.Equals(prevCal, calendarId, StringComparison.OrdinalIgnoreCase))
+        {
+            user.GoogleCalendarId = calendarId;
+            var entriestoReset = await _dbContext.ScheduledEntries.Where(e=> e.UserId == user.Id && e.Scheduled >= now).ToListAsync(cancellationToken);
+            foreach (var entry in entriestoReset)
+            {
+                entry.GoogleEventId = null;
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         var futureentries = await _dbContext.ScheduledEntries
         .Where(e => e.UserId == user.Id && e.Scheduled >= now && string.IsNullOrEmpty(e.GoogleEventId))
         .ToListAsync(cancellationToken);
 
         if (!futureentries.Any()) return;
-        var calendarId = user.GoogleCalendarId;
-        if (string.IsNullOrWhiteSpace(calendarId))
-        {
-            calendarId = await _calendarService.GetOrCreateOptiLiftsCalendarIdAsync(user.GoogleCalendarRefreshToken, cancellationToken);
-            user.GoogleCalendarId = calendarId;
-        }
-
         foreach(var entry in futureentries)
         {
             var workout = await _dbContext.Workouts.AsNoTracking().FirstOrDefaultAsync(w => w.Id == entry.WorkoutId, cancellationToken);

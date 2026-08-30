@@ -1,7 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Reflection.Metadata;
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -12,7 +13,6 @@ using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
-using FluentAssertions;
 
 namespace OptiLifts.Tests.Api.Tests.Controllers;
 public sealed class GoogleCalendarControllerTests
@@ -62,7 +62,7 @@ public sealed class GoogleCalendarControllerTests
             DisplayName = "Test"
         });
         await db.SaveChangesAsync();
-        
+
         var mockService = new Mock<IGoogleCalendarService>();
         var controller = CreateController(db, mockService.Object, userId);
         var result = await controller.GetSettings(CancellationToken.None);
@@ -102,7 +102,7 @@ public sealed class GoogleCalendarControllerTests
             Status = ScheduleStatus.Completed
         };
         db.ScheduledEntries.Add(entry);
-        
+
         await db.SaveChangesAsync();
 
         var mockService = new Mock<IGoogleCalendarService>();
@@ -143,7 +143,7 @@ public sealed class GoogleCalendarControllerTests
             GoogleCalendarSyncEnabled = true
         });
         await db.SaveChangesAsync();
-        
+
         var mockService = new Mock<IGoogleCalendarService>();
         var controller = CreateController(db, mockService.Object, userId);
         var result = await controller.DisconnectCalendar(CancellationToken.None);

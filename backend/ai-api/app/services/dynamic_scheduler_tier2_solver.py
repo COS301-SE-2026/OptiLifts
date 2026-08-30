@@ -93,8 +93,8 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
                         minute=entry.scheduled_at.minute
                     )
 
-                if (new_datetime != entry.scheduled_at or entry.status == "Missed"):
-                    rescheduled_entries.append(
+                    if (new_datetime != entry.scheduled_at or entry.status == "Missed"):
+                        rescheduled_entries.append(
                             RescheduledEntry(
                                 entry_id = entry.id,
                                 workout_id = entry.workout_id,

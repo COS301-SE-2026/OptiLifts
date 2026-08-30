@@ -16,8 +16,8 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
 
     num_days = len(available_days)
 
-    all_entires = request.entries
-    num_entries = len(all_entires)
+    all_entries = request.entries
+    num_entries = len(all_entries)
 
     schedule_vars = {}
 
@@ -49,8 +49,8 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
     if request.preferences.min_muscle_rest_hours >= 48:
         for w1 in range(num_entries):
             for w2 in range(w1+1, num_entries):
-                first_muscles = set(all_entires[w1].primary_muscles)
-                second_muscles = set(all_entires[w2].primary_muscles)
+                first_muscles = set(all_entries[w1].primary_muscles)
+                second_muscles = set(all_entries[w2].primary_muscles)
 
                 if first_muscles.intersection(second_muscles):
                     for day in range(num_days - 1):
@@ -61,26 +61,60 @@ def attempt_tier_two(request: RescheduleRequest, start_time: float) -> Optional[
                         model.Add(check2 <= 1)
 
 
+    # penalties 
+    penalties = []
+
+    for workout in range(num_entries):
+        original_date = all_entries[workout].scheduled_at.date()
+        for day in range(num_days): 
+            new_date = available_days[day].date()
+            diff = abs((new_date - original_date).days)
+            penalties.append(diff * schedule_vars[(workout, day)])
+
+    model.Maximize(sum(penalties))
 
 
+    # solving step
     solver = cp_model.CpSolver()
-
     solver.parameters.max_time_in_seconds = 2.0
+
     status = solver.Solve(model)
 
+    if (status == cp_model.OPTIMAL or status == cp_model.FEASIBLE):
+        rescheduled_entries = []
 
-    if (status == cp_model.OTPTIMAL or status == cp_model.FEASIBLE):
-        # cool resposne and stuff
-        pass
+        for workout in range(num_entries):
+            for day in range(num_days):
+                if (solver.Value(schedule_vars[(workout, day)]) == 1):
+                    entry = all_entries[workout]
+
+                    new_datetime = available_days[day].replace(
+                        hour=entry.scheduled_at.hour,
+                        minute=entry.scheduled_at.minute
+                    )
+
+                if (new_datetime != entry.scheduled_at or entry.status == "Missed"):
+                    rescheduled_entries.append(
+                            RescheduledEntry(
+                                entry_id = entry.id,
+                                workout_id = entry.workout_id,
+                                workout_name = entry.workout_name,
+                                original_scheduled_at = entry.scheduled_at,
+                                new_scheduled_at = new_datetime,
+                                action = "Shifted"
+                            )
+                        )
+
+        return RescheduleResponse(
+            user_id=request.user_id,
+            execution_tier="Tier2_CPSAT",
+            execution_time_ms=int((time.time() - start_time) * 1000),
+            rescheduled_entries=rescheduled_entries,
+            dropped_entries=[] 
+        )   
+
     else: 
         return None
 
-    return RescheduleResponse(
-        user_id = request.user_id,
-        execution_tier = "Tier2_CPSAT",
-        execution_time_ms = int((time.time() - start_time) * 1000),
-        rescheduled_entries= [],
-        dropped_entries = []
-    )
 
     

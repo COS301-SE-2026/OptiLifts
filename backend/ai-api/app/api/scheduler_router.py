@@ -28,6 +28,7 @@ def reschedule_workouts(request: RescheduleRequest):
 
     
     # Both tiers failed :(
+    # placeholder for what to do if it's infeasible to reschedule all
     return RescheduleResponse(
         user_id = request.user_id,
         execution_tier = "Failed",

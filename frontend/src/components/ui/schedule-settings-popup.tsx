@@ -58,8 +58,11 @@ export function ScheduleSettingsPopup({
 
         const client = window.google.accounts.oauth2.initCodeClient({
             client_id: clientId,
-            scope: 'https://www.googleapis.com/auth/calendar.events',
+            scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar',
             ux_mode: 'popup',
+            error_callback: () => {
+                setIsConnecting(false)
+            },
             callback: async (response: { code?: string; error?: string }) => {
                 if (response.error || !response.code) {
                     setError('Google calendar authorisation failed')

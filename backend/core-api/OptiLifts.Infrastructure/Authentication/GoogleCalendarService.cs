@@ -14,8 +14,8 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
     public GoogleCalendarService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _clientId = configuration["Authentication:Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty;
-        _clientSecret = configuration["Authentication:Google:ClientSecret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty;
+        _clientId = (configuration["Authentication:Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? string.Empty).Trim('"', '\'', ' ');
+        _clientSecret = (configuration["Authentication:Google:ClientSecret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? string.Empty).Trim('"', '\'', ' ');
     }
 
     private async Task<string> GetAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
@@ -79,8 +79,10 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
             description = "OptiLifts Workout Schedule Calendar"
         });
         var createresponse = await _httpClient.SendAsync(createrequest, cancellationToken);
-        createresponse.EnsureSuccessStatusCode();
-
+        if (!createresponse.IsSuccessStatusCode)
+        {
+            return "primary";
+        }
         var calendar = await createresponse.Content.ReadFromJsonAsync<CalendarItem>(cancellationToken: cancellationToken);
         return calendar?.Id ?? "primary";
     }
@@ -88,13 +90,14 @@ public sealed class GoogleCalendarService : IGoogleCalendarService
     public async Task<string?> CreateEventAsync(string refreshToken, string calendarId, GoogleCalendarEventDto eventDto, CancellationToken cancellationToken = default)
     {
         var accessToken = await GetAccessTokenAsync(refreshToken, cancellationToken);
-        var startTimeutc = DateTime.SpecifyKind(eventDto.StartTime, DateTimeKind.Utc);
+        var startTimeutc = eventDto.StartTime;
         var endTimeUtc = startTimeutc.AddMinutes(eventDto.DurationMinutes);
 
         var payload = new
         {
             summary = eventDto.Summary,
             description = eventDto.Description,
+            colorId="11",
             start = new
             {
                 dateTime = startTimeutc.ToString("yyyy-MM-ddTHH:mm:ssZ")

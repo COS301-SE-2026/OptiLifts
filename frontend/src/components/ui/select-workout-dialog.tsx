@@ -67,6 +67,7 @@ interface SelectWorkoutDialogProps {
     readonly workouts: readonly Workout[]
     readonly isFetching: boolean
     readonly onSchedule: (workoutId: string,
+        time: string,
         repeat?: string,
         interval?: number,
         until?: string
@@ -85,6 +86,7 @@ export function SelectWorkoutDialog({
     const [repeatInterval, setRepeatInterval] = useState<number>(1)
     const [repeatUntil, setRepeatUntil] = useState<string>('')
     const [repeatType, setRepeatType] = useState<'Day' | 'Week'| 'Month'>('Week')
+    const [scheduledTime, setScheduledTime] = useState<string>('09:00')
 
     useEffect(()=>{
         if(isOpen) {
@@ -104,18 +106,18 @@ export function SelectWorkoutDialog({
 
     const filtered = workouts.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()) || w.primaryMuscleGroups.some((m: string) => m.toLowerCase().includes(searchQuery.toLowerCase())))
     const handleConfirm = async() => {
-        if(selectedId) {
+        if(selectedId && scheduledTime) {
             if (isRepeating){
-                await onSchedule(selectedId, repeatType, repeatInterval, repeatUntil)
+                await onSchedule(selectedId, scheduledTime, repeatType, repeatInterval, repeatUntil)
             } else {
-                await onSchedule(selectedId)
+                await onSchedule(selectedId, scheduledTime)
             }
             
         }
     }
     const {minDatestr, maxDatestr, showWarn} = getRepeatDateConstraints(scheduledDate, repeatType, repeatInterval, isRepeating, repeatUntil)
     
-    const isScheduleDisabled = isScheduling || !selectedId || (isRepeating && !repeatUntil)
+    const isScheduleDisabled = isScheduling || !selectedId || !scheduledTime || (isRepeating && !repeatUntil)
     
     let contentList;
     if (isFetching) {
@@ -175,7 +177,7 @@ export function SelectWorkoutDialog({
 
     return (
         <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
-            <dialog className="mx-auto w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl flex flex-col max-h-[90%] animate-in fade-in zoom-in-95 duration-200 overflow-hidden z-50" 
+            <dialog className="mx-auto w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl flex flex-col max-h-[90%] animate-in fade-in zoom-in-95 duration-200 overflow-y-auto z-50" 
             open aria-modal="true" 
                 aria-labelledby="select-workout-title">
                 <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-4">
@@ -197,6 +199,15 @@ export function SelectWorkoutDialog({
                 <div className="flex-1 overflow-y-auto px-2 py-1 space-y-4 min-h-[150px]">
                     {contentList}
                 </div> 
+
+                <div className="py-2.5 space-y-1.5">
+                    <label htmlFor="scheduled-time-input"
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                        Workout Time <span className="text-destructive">*</span>
+                    </label>
+                    <input id="scheduled-time-input" type="time" required value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full bg-surface border border-border text-foreground px-3 py-2 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand shadow-sm cursor-pointer"/>
+                </div>
 
                 {/* repeating */}
                 <div className="py-3.5 space-y-3.5 shrink-0">

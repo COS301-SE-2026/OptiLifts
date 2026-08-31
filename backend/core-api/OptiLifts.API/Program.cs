@@ -2,7 +2,9 @@ using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.API;
 using OptiLifts.Application;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
+using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Infrastructure.Gamification;
@@ -105,6 +107,9 @@ builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 
 //register auth implementations
 builder.Services.AuthProgramHelper(builder.Configuration);
+
+builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
+
 var app = builder.Build();
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);

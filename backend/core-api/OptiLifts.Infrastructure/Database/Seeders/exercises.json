@@ -13,31 +13,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Archer pull up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3293-72BC5Za.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Archer push up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3294-A9qxk2F.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Assisted chin-up",
     "Mechanic": "compound",
     "Equipment": "Machine",
@@ -48,29 +23,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0572-MaMuGH6.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Assisted motion russian twist",
-    "Mechanic": "isolation",
-    "Equipment": "Other",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0014-r7cT9YD.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Assisted parallel close grip pull-up",
-    "Mechanic": "compound",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0015-vrhHa6D.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -201,18 +153,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell front raise and pullover",
-    "Mechanic": "isolation",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0040-33AzZeV.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell front squat",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -239,19 +179,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell full zercher squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1545-vR1vold.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell glute bridge",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -261,28 +188,6 @@
       "Hamstrings"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1409-qKBpF7I.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell good morning",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Hamstrings",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0044-XlZ4lAC.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell guillotine bench press",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0045-GXoaSgn.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -296,19 +201,6 @@
       "Calves"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0046-5VCj6iH.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell high bar squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1436-Gnfo4FM.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -336,19 +228,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell jefferson squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0051-pkSoCW9.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell jm bench press",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -358,45 +237,6 @@
       "Chest"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0052-ZsiqXYa.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell jump squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0053-1gFNTZV.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell lateral lunge",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1410-py1HSzx.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell low bar squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1435-bTpEUcm.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -449,19 +289,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell one arm side deadlift",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0066-2DxtqHL.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell one leg squat",
+    "Name": "Barbell Bulgarian Split Squat",
     "Mechanic": "compound",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -612,18 +440,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell seated calf raise",
-    "Mechanic": "isolation",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1371-ipvgBnC.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell seated close-grip concentration curl",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
@@ -633,18 +449,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0089-1V1gj1u.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell seated good morning",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0090-d960PgE.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -671,20 +475,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell side split squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0098-W31mMjd.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell single leg deadlift",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -694,57 +484,6 @@
       "Hamstrings"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1756-gEyURal.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell single leg split squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0099-gGNQmVt.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell sitted alternate leg raise",
-    "Mechanic": "isolation",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2799-G7xoEzr.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell speed squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0101-euI1BwR.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell squat jump step rear lunge",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2798-RYcV1kH.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -796,30 +535,6 @@
       "Glutes"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0108-rGwhJ5o.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell standing rocking leg calf raise",
-    "Mechanic": "isolation",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0111-6HiHHe0.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Barbell stiff leg good morning",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0115-JrOHAZc.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -911,32 +626,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell zercher squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0127-LSTChY9.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Bench pull-ups",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3019-mExgrF9.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Bent over row",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -959,18 +648,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0575-q6y3OhV.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Biceps leg concentration curl",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Biceps",
-    "SecondaryMuscles": [
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1770-sJFIDIp.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -998,19 +675,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Bodyweight drop jump squat",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3543-wfotm7S.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Bodyweight incline side plank",
     "Mechanic": "isolation",
     "Equipment": "None",
@@ -1021,18 +685,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Bodyweight squatting row",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Upper Back",
-    "SecondaryMuscles": [
-      "Biceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3168-3xK09Sk.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Bodyweight standing calf raise",
     "Mechanic": "isolation",
     "Equipment": "None",
@@ -1040,19 +692,6 @@
     "PrimaryMuscle": "Calves",
     "SecondaryMuscles": [],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1373-bJYHBIN.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Cable assisted inverse leg curl",
-    "Mechanic": "isolation",
-    "Equipment": "Cable",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Hamstrings",
-    "SecondaryMuscles": [
-      "Glutes",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3235-zHEpuuc.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -1080,7 +719,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Cable cross-over revers fly",
+    "Name": "Cable cross-over reverse fly",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -1603,16 +1242,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Cable tuck reverse crunch",
-    "Mechanic": "isolation",
-    "Equipment": "Cable",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0242-TXtXc84.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Cable upright row",
     "Mechanic": "isolation",
     "Equipment": "Cable",
@@ -1623,16 +1252,6 @@
       "Biceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0246-cALKspW.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Captains chair straight leg raise",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2963-weoDEpH.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -1671,18 +1290,6 @@
       "Triceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1273-wigSg76.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Clock push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0258-CMAxnsG.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -1960,19 +1567,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell contralateral forward lunge",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3635-ecl28tP.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell cross body hammer curl",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
@@ -2029,28 +1623,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell decline shrug",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Traps",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0305-cwsAI4G.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell decline twist fly",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0307-reFHapa.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell fly",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
@@ -2080,18 +1652,6 @@
       "Biceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0310-3eGE2JC.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell full can lateral raise",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Front Deltoid",
-    "SecondaryMuscles": [
-      "Traps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0311-AQ0mC4Y.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -2379,43 +1939,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell one arm zottman preacher curl",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Biceps",
-    "SecondaryMuscles": [
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1672-sxY5Biu.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell palm rotational bent over row",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Upper Back",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1329-wt6rwjk.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell palms in incline bench press",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1623-8eqjhOl.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell peacher hammer curl",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
@@ -2425,19 +1948,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0370-F1KxjBa.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell plyo squat",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0371-S4pwGlc.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -2546,16 +2056,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell rotation reverse fly",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Front Deltoid",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0386-prbWx1D.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell seated alternate front raise",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
@@ -2565,16 +2065,6 @@
       "Biceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0387-gH5fRsC.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell seated bent arm lateral raise",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Front Deltoid",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2317-JzQbv7J.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -2652,32 +2142,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell seated one leg calf raise - hammer grip",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1380-FxhcxUW.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell seated one leg calf raise - palm up",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1381-VW88JNd.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell seated preacher curl",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
@@ -2744,19 +2208,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell single leg deadlift with stepbox support",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2805-daBmy1Y.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell single leg split squat",
+    "Name": "Dumbbell bulgarian split squat",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
@@ -2770,19 +2222,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell single leg squat",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0411-H6ybluc.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell squat",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
@@ -2793,18 +2232,6 @@
       "Calves"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0413-HsvHqgf.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell standing alternate hammer curl and press",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Biceps",
-    "SecondaryMuscles": [
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3560-LeaZOIz.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -2867,18 +2294,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell standing zottman preacher curl",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Biceps",
-    "SecondaryMuscles": [
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2293-P2nRiUa.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell step-up lunge",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
@@ -2890,32 +2305,6 @@
       "Calves"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2796-gFyFj9z.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell step-up split squat",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2812-QjE2DcA.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell stiff leg deadlift",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0432-5eLRITT.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -2945,18 +2334,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell twisting bench press",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1743-z6TAHoT.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Dumbbell upright row",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
@@ -2970,19 +2347,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell zottman preacher curl",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Biceps",
-    "SecondaryMuscles": [
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2294-y5U5B9Y.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Elbow dips",
+    "Name": "Bodyweight dips",
     "Mechanic": "compound",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
@@ -2991,18 +2356,6 @@
       "Chest"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3287-LkoAWAE.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Elbow lift - reverse push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Upper Back",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1772-wbUYILZ.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3079,28 +2432,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Floor fly (with barbell)",
-    "Mechanic": "isolation",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0458-neonEDL.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Frog crunch",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/2429-FFRP97T.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Front plank with twist",
     "Mechanic": "isolation",
     "Equipment": "None",
@@ -3120,40 +2451,6 @@
       "Triceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3327-gw9PqGk.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Glute bridge march",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3561-GibBPPg.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Gripless shrug",
-    "Mechanic": "isolation",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Traps",
-    "SecondaryMuscles": [
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0580-f91FwXG.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Groin crunch",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0469-mWppALS.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3207,16 +2504,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Hanging leg raise",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0472-I3tsCnC.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Hanging straight leg raise",
     "Mechanic": "isolation",
     "Equipment": "None",
@@ -3224,28 +2511,6 @@
     "PrimaryMuscle": "Abdominals",
     "SecondaryMuscles": [],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0475-4Ml7QFO.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Hyght dumbbell fly",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3234-P9ZRyLT.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Impossible dips",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3289-05Cf2v8.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3309,18 +2574,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Incline scapula push up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3011-GdMa1ET.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Jump squat",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -3373,18 +2626,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Kettlebell one arm military press to the side",
-    "Mechanic": "compound",
-    "Equipment": "Kettlebell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Front Deltoid",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0539-yCvYdi7.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Kettlebell pistol squat",
     "Mechanic": "compound",
     "Equipment": "Kettlebell",
@@ -3395,18 +2636,6 @@
       "Calves"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0544-5bpPTHv.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Kettlebell plyo push-up",
-    "Mechanic": "compound",
-    "Equipment": "Kettlebell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0545-ktf3nvW.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3436,16 +2665,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Knee touch crunch",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3640-dTg95eZ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Kneeling jump squat",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -3456,43 +2675,6 @@
       "Calves"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1420-UgDm3oy.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Kneeling leg curl",
-    "Mechanic": "isolation",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Hamstrings",
-    "SecondaryMuscles": [
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0582-nnmCTLN.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Korean dips",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3288-rWoBmi5.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "L-pull-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3418-d1GgzTU.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3610,18 +2792,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Medicine ball close grip push up",
-    "Mechanic": "compound",
-    "Equipment": "Other",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1701-8K7m2SS.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Military press",
     "Mechanic": "compound",
     "Equipment": "Machine",
@@ -3631,32 +2801,6 @@
       "Triceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0587-CggQhII.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Mixed grip chin-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0627-T8UpLkb.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Modified push up to lower arms",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Forearms",
-    "SecondaryMuscles": [
-      "Triceps",
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1421-arvaszz.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3670,26 +2814,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0588-IGjKj1v.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Negative crunch",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0634-szIn2UK.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Oblique crunches floor",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0635-QUDd8WS.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3744,16 +2868,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "One leg floor calf raise",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1387-0jp9Rlz.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "One leg squat",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -3767,56 +2881,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Outside leg kick push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0642-jNU1gFQ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Pike-to-cobra push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3662-XPUDTt7.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Plyo push up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1306-Snj1wSv.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Power point plank",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [
-      "Triceps",
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3665-hCjGsRQ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Preacher curl",
     "Mechanic": "isolation",
     "Equipment": "Machine",
@@ -3826,19 +2890,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0592-b6hQYMb.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Pull up (neutral grip)",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0651-0V2YQjW.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3867,18 +2918,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Push-up close-grip off dumbbell",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0660-KZXAtKQ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Push-up inside leg kick",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -3892,55 +2931,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Push-up medicine ball",
-    "Mechanic": "compound",
-    "Equipment": "Other",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0663-W8KAlkI.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Push-up on lower arms",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1467-4Jt8QsQ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Push-up plus",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3145-pvBMLHA.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Push-up to side plank",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [
-      "Chest",
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0664-KhHJ338.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Raise single arm push-up",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -3950,19 +2940,6 @@
       "Triceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0666-13TpY4H.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Rear pull-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0670-CbFSYC1.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4014,32 +2991,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Reverse plank with leg lift",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3663-tFToB7l.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Reverse t-bar row",
-    "Mechanic": "compound",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Upper Back",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1349-BgljGjd.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Ring dips",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -4052,19 +3003,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Rocky pull-up pulldown",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0678-cQ19bBP.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Russian twist",
     "Mechanic": "isolation",
     "Equipment": "None",
@@ -4072,40 +3010,6 @@
     "PrimaryMuscle": "Abdominals",
     "SecondaryMuscles": [],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0687-XVDdcoj.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Scapula dips",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Traps",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3012-7xeukSt.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Scapula push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3021-jV65tKx.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Scapular pull-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Traps",
-    "SecondaryMuscles": [
-      "Biceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0688-uTBt1HV.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4129,16 +3033,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Seated crunch",
-    "Mechanic": "isolation",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0595-ZnJHhMk.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Seated fly",
     "Mechanic": "isolation",
     "Equipment": "Machine",
@@ -4146,18 +3040,6 @@
     "PrimaryMuscle": "Chest",
     "SecondaryMuscles": [],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0596-v3xmPAR.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Seated good morning",
-    "Mechanic": "compound",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3759-XsCcxCC.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4183,16 +3065,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Seated leg raise crunch",
-    "Mechanic": "isolation",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0600-PQ2AtC3.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Seated reverse fly",
     "Mechanic": "isolation",
     "Equipment": "Machine",
@@ -4213,19 +3085,6 @@
       "Forearms"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1350-7I6LNUG.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Seated squat calf raise on leg press machine",
-    "Mechanic": "compound",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1385-IeDEXTe.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4264,30 +3123,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Side plank hip adduction",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Adductors",
-    "SecondaryMuscles": [
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1775-VO2qeJg.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Side push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0717-wpbD28t.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Single arm push-up",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -4300,7 +3135,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbell Single leg calf raise",
+    "Name": "Dumbbell Single leg calf raise",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
@@ -4355,18 +3190,6 @@
       "Triceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0748-trqKQv2.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Smith bent knee good morning",
-    "Mechanic": "compound",
-    "Equipment": "Smith machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0749-1bQkKZK.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4497,19 +3320,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Smith low bar squat",
-    "Mechanic": "compound",
-    "Equipment": "Smith machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1434-RGLscZM.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Smith machine bicep curl",
     "Mechanic": "isolation",
     "Equipment": "Smith machine",
@@ -4569,30 +3379,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Smith reverse calf raises",
-    "Mechanic": "isolation",
-    "Equipment": "Smith machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0763-ywaNfuh.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Smith reverse calf raises",
-    "Mechanic": "isolation",
-    "Equipment": "Smith machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1394-Lsqrgh4.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Smith reverse grip bent over row",
     "Mechanic": "compound",
     "Equipment": "Smith machine",
@@ -4628,7 +3414,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Smith single leg split squat",
+    "Name": "Smith machine bulgarian split squat",
     "Mechanic": "compound",
     "Equipment": "Smith machine",
     "ExerciseType": "WeightReps",
@@ -4638,19 +3424,6 @@
       "Hamstrings"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0768-wWFspEi.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Smith sprint lunge",
-    "Mechanic": "compound",
-    "Equipment": "Smith machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0769-HsjbB1z.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4793,16 +3566,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Superman push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0803-4GqRrAk.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "T bar row",
     "Mechanic": "compound",
     "Equipment": "Machine",
@@ -4825,28 +3588,6 @@
       "Hamstrings"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0811-jQGwmxN.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Triceps dips floor",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0815-7aVz15j.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Tuck crunch",
-    "Mechanic": "isolation",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Abdominals",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0871-BMMolZ3.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -4966,19 +3707,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Weighted lunge with swing",
-    "Mechanic": "compound",
-    "Equipment": "Other",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3644-5WiFcYk.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Weighted one hand pull up",
     "Mechanic": "compound",
     "Equipment": "Other",
@@ -5062,18 +3790,6 @@
       "Calves"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3642-13VW2VO.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Weighted three bench dips",
-    "Mechanic": "compound",
-    "Equipment": "Other",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": [
-      "Chest"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1754-gtO1ErP.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -5287,16 +4003,6 @@
     "Attribution": ""
   },
   {
-    "Name": "Meadows Row",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
     "Name": "Pull-Up",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -5477,16 +4183,6 @@
     "Attribution": ""
   },
   {
-    "Name": "Bayesian Cable Curl",
-    "Mechanic": "isolation",
-    "Equipment": "Cable",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Biceps",
-    "SecondaryMuscles": [],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
     "Name": "Close-Grip Barbell Bench Press",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -5647,26 +4343,6 @@
     "Attribution": ""
   },
   {
-    "Name": "Conventional Barbell Deadlift",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Hamstrings",
-    "SecondaryMuscles": ["Glutes", "Lower Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Stiff-Legged Deadlift",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Hamstrings",
-    "SecondaryMuscles": ["Glutes", "Lower Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
     "Name": "Barbell Hip Thrust",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -5766,5 +4442,4 @@
     "ImageUrl": "",
     "Attribution": ""
   }
-  
 ]

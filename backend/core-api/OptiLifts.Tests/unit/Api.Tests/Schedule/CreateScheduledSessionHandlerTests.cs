@@ -1,11 +1,14 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Scheduling.CreateScheduledSession;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Scheduling;
+
 namespace OptiLifts.Tests.Api.Tests;
 
 public sealed class CreateScheduledSessionHandlerTests
@@ -61,7 +64,7 @@ public sealed class CreateScheduledSessionHandlerTests
         await db.SaveChangesAsync();
 
 
-        var handler = new CreateScheduledSessionHandler(db);
+        var handler = new CreateScheduledSessionHandler(db, new Mock<IGoogleCalendarService>().Object);
         var command = new CreateScheduledSessionCommand(
             UserId: userId,
             WorkoutId: notownedWorkout.Id,
@@ -99,7 +102,7 @@ public sealed class CreateScheduledSessionHandlerTests
         await db.SaveChangesAsync();
 
         var scheduledDate = new DateTime(2026, 12, 1, 9, 30, 0, DateTimeKind.Utc);
-        var handler = new CreateScheduledSessionHandler(db);
+        var handler = new CreateScheduledSessionHandler(db, new Mock<IGoogleCalendarService>().Object);
         var command = new CreateScheduledSessionCommand(
             UserId: userId,
             WorkoutId: workout.Id,
@@ -145,7 +148,7 @@ public sealed class CreateScheduledSessionHandlerTests
         var start = new DateTime(2026, 7, 5, 10, 0, 0, DateTimeKind.Utc);
         var end = new DateTime(2026, 7, 19, 10, 0, 0, DateTimeKind.Utc);
 
-        var handler = new CreateScheduledSessionHandler(db);
+        var handler = new CreateScheduledSessionHandler(db, new Mock<IGoogleCalendarService>().Object);
         var command = new CreateScheduledSessionCommand(
             UserId: userId,
             WorkoutId: workout.Id,

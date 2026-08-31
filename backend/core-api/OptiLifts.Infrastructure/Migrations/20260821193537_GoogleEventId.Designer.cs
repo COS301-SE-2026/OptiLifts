@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260821193537_GoogleEventId")]
+    partial class GoogleEventId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -272,50 +275,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("user_models", (string)null);
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Users.UserScheduleConfig", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CycleStartDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cycle_start_date");
-
-                    b.Property<int>("CycleWindowLengthDays")
-                        .HasColumnType("integer")
-                        .HasColumnName("cycle_window_length_days");
-
-                    b.Property<bool>("DynamicSchedulerEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("dynamic_scheduler_enabled");
-
-                    b.Property<int>("MaxWorkoutsPerDay")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_workouts_per_day");
-
-                    b.Property<int>("MinMuscleRestHours")
-                        .HasColumnType("integer")
-                        .HasColumnName("min_muscle_rest_hours");
-
-                    b.Property<string>("RestDays")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("rest_day");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("user_schedule_config", (string)null);
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Exercise", b =>
@@ -866,15 +825,6 @@ namespace OptiLifts.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Users.UserModel", b =>
-                {
-                    b.HasOne("OptiLifts.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Users.UserScheduleConfig", b =>
                 {
                     b.HasOne("OptiLifts.Domain.Users.User", null)
                         .WithMany()

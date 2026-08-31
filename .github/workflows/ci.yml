@@ -64,7 +64,7 @@ jobs:
     - name: Run Coverage
       run: pnpm test:coverage
 
-    - name: Compute combined coverage
+    - name: Compute and check combined coverage
       id: cov
       run: |
         FE_JSON="frontend/coverage/coverage-summary.json"
@@ -91,6 +91,8 @@ jobs:
 
         echo "percentage=$PCT" >> "$GITHUB_OUTPUT"
         echo "color=$COLOR" >> "$GITHUB_OUTPUT"
+
+        echo "Calculated Total Code Coverage: $PCT%"
 
         if (( $(echo "$PCT < 80.0" | bc -l) )); then
           echo "Code coverage ($PCT%) is below 80%"

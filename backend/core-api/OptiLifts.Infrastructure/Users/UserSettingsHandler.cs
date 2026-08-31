@@ -91,7 +91,8 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
                 r.ExerciseType.ToString(),
                 r.LowerLimit,
                 r.UpperLimit
-            )).ToList()
+            )).ToList(),
+            Security = new SecurityDto(!string.IsNullOrWhiteSpace(user.PasswordHash))
         };
     }
 }

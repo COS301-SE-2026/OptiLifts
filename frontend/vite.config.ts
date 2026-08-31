@@ -13,10 +13,35 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir: rootDir,
+    envPrefix: ['VITE_', 'GOOGLE_'],
+    define: {
+      'import.meta.env.GOOGLE_CLIENT_ID': JSON.stringify(env.GOOGLE_CLIENT_ID ?? ''),
+    },
     plugins: [
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        workbox: {
+          inlineWorkboxRuntime: true,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          skipWaiting: true,
+          clientsClaim: true,
+          runtimeCaching: [
+            {
+              // for exer images: azure blob in deployed envs, azurite (docker-compose) locally.
+              // adaptImgUrl rewrites the container hostname to 127.0.0.1 before the browser fetches.
+              urlPattern: ({ url }) =>
+                url.hostname.endsWith('.blob.core.windows.net') ||
+                (url.hostname === '127.0.0.1' && url.port === '10000'),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'exercise-images',
+                expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
+        },
         injectRegister: 'inline',
         manifest: {
           name: 'OptiLifts',

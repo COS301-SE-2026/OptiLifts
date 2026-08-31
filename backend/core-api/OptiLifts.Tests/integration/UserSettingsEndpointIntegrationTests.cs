@@ -295,5 +295,65 @@ public sealed class UserSettingsEndpointIntegrationTests : IntegrationTestBase
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task UpdatePassword_MissingCurrentPassword_ReturnsBadRequest()
+    {
+        await SeedAuthenticatedUserAsync("jordan@gmail.com");
+        var request = new
+        {
+            CurrentPassword = "",
+            NewPassword = "NewPassword123!"
+        };
 
+        var response = await Client.PostAsJsonAsync("/api/users/me/updatePassword", request);
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task SetPassword_OAuthUserWithoutCurrentPassword_Succeeds()
+    {
+        var email = "oauth-setpass@optilifts.com";
+        var userId = Guid.NewGuid();
+
+        await using (var scope = Fixture.Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OptiLifts.Infrastructure.Database.OptiLiftsDbContext>();
+            db.Users.Add(new OptiLifts.Domain.Users.User
+            {
+                Id = userId,
+                Email = email,
+                EmailHash = OptiLifts.Infrastructure.Security.EmailHasher.HashEmail(email),
+                GoogleId = "google-sub-setpass-1",
+                PasswordHash = null,
+                DisplayName = "OAuth User"
+            });
+            db.Folders.Add(new OptiLifts.Domain.Workouts.Folder { Name = "Default", UserId = userId });
+            await db.SaveChangesAsync();
+        }
+
+        Client.DefaultRequestHeaders.Remove("Cookie");
+        Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
+
+        // Verify settings returns HasPassword = false
+        var settingsResponse = await Client.GetAsync("/api/users/me/settings");
+        settingsResponse.EnsureSuccessStatusCode();
+        var settings = await settingsResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        settings.Should().NotBeNull();
+        settings!.Security.HasPassword.Should().BeFalse();
+
+        // Set password for OAuth user
+        var request = new
+        {
+            NewPassword = "BrandNewPassword123!"
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/users/me/setPassword", request);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+
+        // Verify settings now returns HasPassword = true
+        var updatedSettingsResponse = await Client.GetAsync("/api/users/me/settings");
+        var updatedSettings = await updatedSettingsResponse.Content.ReadFromJsonAsync<UserSettingsDto>();
+        updatedSettings!.Security.HasPassword.Should().BeTrue();
+    }
 }

@@ -17,13 +17,20 @@ import { buildLabels } from '@/lib/exercise-format'
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
   restTime?: number
-  onRemove: (id: string) => void
-  onSetsChange: (id: string, sets: ExerciseSet[]) => void
+  onRemove?: (id: string) => void
+  onSetsChange?: (id: string, sets: ExerciseSet[]) => void
   onRestTimeChange?: (id: string, value: number) => void
   onOpenDetails?: (exerciseCatalogId: string) => void
+  readOnly?: boolean
 }>
 
 const SET_TYPES: SetType[] = ['W', 'I', 'D']
+
+const setTypeRowClass: Record<SetType, string> = {
+  W: 'bg-warning/10 border-l-warning/50',
+  I: 'bg-surface-2 border-l-border',
+  D: 'bg-brand/10 border-l-brand/50',
+}
 
 //add functionality for different types of exercises
 type FieldKey = 'kg'|'reps'|'time'|'distance'
@@ -79,22 +86,24 @@ function SetRow({
   columns,
   onChange,
   onRemove,
+  readOnly,
 }: Readonly<{
   set: ExerciseSet
   setLabel: string
   columns: ColumnDef[]
   onChange: (updated: ExerciseSet) => void
   onRemove: () => void
+  readOnly?: boolean
 }>) {
 
   return (
-    <div className="flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 gap-4">
+    <div className={`flex items-center rounded-lg border-y border-r border-l-4 border-border px-3 py-2 gap-4 ${setTypeRowClass[set.type]}`}>
       <div className="flex items-center w-20 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger variant="plain">
             <ChevronDown className="w-4 h-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent className="w-auto min-w-[9rem]">
             {SET_TYPES.map(t => {
               let label = 'Drop'
               if (t === 'W') label = 'Warmup'
@@ -126,25 +135,27 @@ function SetRow({
             </div>
         )
       })}
-
+    {!readOnly &&(
       <Button variant="icon" size="icon" aria-label="Remove set" onClick={onRemove} className="border-0 bg-transparent w-6 h-6 shrink-0">
         <X className="w-4 h-4 text-muted-foreground" />
       </Button>
+    )}      
     </div>
   )
 }
 
 let nextSetId = 0
 
-export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange, onOpenDetails }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRestTimeChange, onOpenDetails, readOnly = false }: ExerciseCardProps) {
   const [sets, setSets] = useState<ExerciseSet[]>(exercise.sets)
 
   const columns = getColumns(exercise.exerciseType ?? 'WeightReps')
   const setLabels = buildLabels(sets)
 
   const updateSets = (updated: ExerciseSet[]) => {
+    if (readOnly) return;
     setSets(updated)
-    onSetsChange(exercise.id, updated)
+    onSetsChange?.(exercise.id, updated)
   }
 
   const addSet = () => {
@@ -209,8 +220,8 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
           <DropdownMenuTrigger variant="plain" className="p-1">
             <MoreHorizontal className="w-4 h-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem variant="destructive" onClick={() => onRemove(exercise.id)}>
+          <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
+            <DropdownMenuItem variant="destructive" onClick={() => onRemove?.(exercise.id)}>
               Remove exercise
             </DropdownMenuItem>
           </DropdownMenuContent>

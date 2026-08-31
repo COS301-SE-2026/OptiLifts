@@ -386,6 +386,65 @@ Body
 
 ---
 
+### POST /api/auth/google
+**Service Name:** Google Authentication Service
+
+**Description:**
+Authenticates a user via Google OAuth ID token or One Tap credential. If the user account does not exist, it automatically creates a new account linked to their Google profile. If an account already exists with the same email, it links the Google account. Establishes a session via HttpOnly cookies and returns the authenticated user profile details.
+
+**Inputs:**
+
+- `idToken`: string | null - Google OAuth ID token (either `idToken` or `credential` is required).
+- `credential`: string | null - Google One Tap / Sign-In credential token.
+
+**Outputs:**
+
+- Headers:
+	- Set-Cookie: `access_token`
+	- Set-Cookie: `refresh_token`
+- Body:
+	- `user`: `AuthUserDto` - The authenticated user profile.
+
+AuthUserDto fields:
+
+- `id`: Guid - Unique user identifier.
+- `displayName`: string - User display name.
+- `email`: string - User email address.
+- `createdAt`: datetime - Account creation timestamp.
+- `metric`: boolean - Preferred measurement unit (true for metric, false for imperial).
+- `lightTheme`: boolean - Preferred UI theme (true for light theme, false for dark).
+
+**Usage / Interaction Rules:**
+
+- Clients must send a POST request to `/api/auth/google` with JSON data containing `idToken` or `credential`.
+- This endpoint is anonymous and does not require an existing session token.
+- If neither `idToken` nor `credential` is provided, the service returns `400 Bad Request` with `{ title: "ID Token is required", status: 400 }`.
+- If Google token verification fails or the token is invalid, returns `401 Unauthorized` with `{ title: "Invalid Google token", detail: ..., status: 401 }`.
+- Sets `access_token` and `refresh_token` as HttpOnly cookies upon success.
+
+**Example Response:**
+
+Headers:
+```
+HTTP/1.1 200 OK
+Set-Cookie: access_token=eyJhbG...; HttpOnly; Path=/; SameSite=Lax
+Set-Cookie: refresh_token=d7f8a...; HttpOnly; Path=/; SameSite=Lax
+```
+
+Body:
+```json
+{
+	"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+	"email": "user@example.com",
+	"displayName": "Google User",
+	"createdAt": "2026-08-18T10:00:00Z",
+	"metric": true,
+	"lightTheme": false
+}
+```
+
+---
+
 ### GET /api/auth/me
 **Service Name:** Current user service.
 
@@ -654,6 +713,34 @@ HTTP/1.1 204 No Content
 
 **Example Response:**
 HTTP/1.1 204 No Content
+
+---
+
+### POST /api/users/me/setPassword
+**Service Name:** Set Initial User Password Service
+
+**Description:** Sets an initial password for the authenticated user account (specifically for users who registered via third-party OAuth such as Google Sign-In and do not currently have a password set).
+
+**Inputs:**
+- `newPassword`: string - The user's new password (required).
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- No content on success (`204 No Content`).
+
+**Usage / Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/setPassword` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401 Unauthorized` if the cookie is missing or invalid.
+- Empty or whitespace `newPassword` returns `400 Bad Request`.
+- The `newPassword` must meet complexity requirements (minimum 8 characters, at least one lowercase letter, one uppercase letter, one digit, and one special character); failure returns `400 Bad Request` with `{ error: "New password does not meet complexity requirements." }`.
+- If the user already has a password set on their account, returns `400 Bad Request` with `{ error: "User already has a password set. Use update password instead." }`.
+- If the user record cannot be found, returns `404 Not Found`.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
 
 ### DELETE /api/users/me
 **Service Name:** User Account Deletion Service
@@ -1205,7 +1292,7 @@ Returns full detail of a completed WorkoutLog. Used by the Workout Log Detail pa
 `WorkoutLogDetailDto` fields:
 
 - `workoutId`, `logId`: Guid, `name`: string, `folderId`: Guid | null, `dayIndex`: int | null.
-- `createdAt`: datetime, `completedAt`: datetime | null, `duration`: string | null.
+- `createdAt`: datetime, `startedAt`: datetime, `completedAt`: datetime | null, `duration`: string | null.
 - `primaryMuscleGroups`: array of string, `exercisePreview`: array of string.
 - `exercises`: array of `WorkoutLogExerciseDetailDto` - `id`, `exerciseId`, `name`, `primaryMuscle`, `exerciseType`, `orderIndex`, `imageUrl`, `sets` (array of `WorkoutLogSetDto`: `id`, `setId`, `type`, `reps`, `weight`, `orderIndex`, `duration`, `distance`, `restTime`, `groupNumber`, `rpe`).
 
@@ -1224,6 +1311,7 @@ Returns full detail of a completed WorkoutLog. Used by the Workout Log Detail pa
 	"folderId": null,
 	"dayIndex": null,
 	"createdAt": "2026-07-16T10:00:00Z",
+	"startedAt": "2026-07-16T09:39:00Z",
 	"completedAt": "2026-07-16T11:02:00Z",
 	"duration": "1h 23m",
 	"primaryMuscleGroups": ["Chest", "Quadriceps"],
@@ -1283,6 +1371,70 @@ Creates a completed workout log entry. This when the user hits **Finish** on the
 	"logId": "string",
 	"entryId": "string",
 	"alreadyExisted": false
+}
+```
+---
+
+### PUT /api/workouts/{workoutId}/logs/{logId}
+**Service Name:** WorkoutLog Update Service
+
+**Description:**
+Updates an existing completed workout log entry. Used when editing a completed past workout from the workout log detail page or past workouts page. Re-evaluates exercise personal records (PRs) based on updated sets.
+
+**Inputs:**
+
+- `workoutId`, `logId`: Guid - path parameters.
+- `notes`: string | null - optional notes for the workout log.
+- `startedAt` / `completedAt`: datetime | null - optional updated start and completion timestamps.
+- `exercises`: array of `UpdateWorkoutLogExerciseReq` - `exerciseId`, `workoutExerciseId` (null for exercises added in editing), `orderIndex`, `groupNumber`, `sets` (array of `UpdateWorkoutLogSetReq`: `setId`, `type`, `reps`, `weight`, `duration`, `distance`, `restTime`, `rpe`, `orderIndex`, `groupNumber`).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- `200 OK` with `{ "message": "Workout log updated successfully." }`.
+- `404 Not Found` if the workout log is not found or not owned by the user.
+- `401 Unauthorized` if the cookie is missing or invalid.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a PUT request to `/api/workouts/{workoutId}/logs/{logId}` with JSON data and the `access_token` cookie attached.
+- Replaces existing logged sets and exercises for the specified `logId` and updates corresponding exercise PRs.
+
+**Example Request:**
+```json
+{
+	"notes": "Updated notes",
+	"startedAt": "2026-08-10T10:00:00Z",
+	"completedAt": "2026-08-10T11:15:00Z",
+	"exercises": [
+		{
+			"exerciseId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"workoutExerciseId": null,
+			"orderIndex": 1,
+			"groupNumber": 0,
+			"sets": [
+				{
+					"setId": null,
+					"type": "Normal",
+					"reps": 10,
+					"weight": 100,
+					"duration": null,
+					"distance": null,
+					"restTime": 90,
+					"rpe": 8,
+					"orderIndex": 1,
+					"groupNumber": 0
+				}
+			]
+		}
+	]
+}
+```
+
+**Example Response:**
+```json
+{
+	"message": "Workout log updated successfully."
 }
 ```
 ---

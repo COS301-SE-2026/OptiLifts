@@ -18,7 +18,7 @@ public sealed class GetExerciseByIdHandler : IRequestHandler<GetExerciseByIdQuer
     public async Task<ExerciseDto?> Handle(GetExerciseByIdQuery request, CancellationToken cancellationToken)
     {
         var ex = await _dbContext.Exercises.AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == request.ExerciseId && !e.IsDeleted && (e.UserId == null || e.UserId == request.UserId), cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == request.ExerciseId && (e.UserId == null ? !e.IsDeleted : e.UserId == request.UserId), cancellationToken);
 
         if (ex == null)
             return null;
@@ -42,7 +42,8 @@ public sealed class GetExerciseByIdHandler : IRequestHandler<GetExerciseByIdQuer
             primMuscle is null ? [] : [primMuscle],
             secMuscle,
             ex.UserId != null,
-            ex.ImageUrl
+            ex.ImageUrl,
+            ex.IsDeleted
         );
     }
 }

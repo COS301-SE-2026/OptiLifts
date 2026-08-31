@@ -347,18 +347,18 @@ export default function LandingPage() {
             </section>
 
             <main className="relative">
-                <div className="h-24 bg-gradient-to-b from-black to-white sm:h-32" />
+                <div className="h-24 bg-gradient-to-b from-black to-surface sm:h-32" />
 
-                <section className="bg-white px-6 pt-24 text-center">
+                <section className="bg-surface px-6 pt-24 text-center">
                     <h2 
-                        className="mx-auto max-w-3xl text-[clamp(28px,5vw,48px)] leading-tight text-black"
+                        className="mx-auto max-w-3xl text-[clamp(28px,5vw,48px)] leading-tight text-foreground"
                     >
                         Workouts that adapt for <span className="text-brand">you</span> after every session to ensure progression
                     </h2>
                 </section>
 
-                <section className="bg-white pb-24 pt-16 text-center">
-                    <h3 className="mb-12 text-[clamp(20px,3vw,32px)] text-black">
+                <section className="bg-surface pb-24 pt-16 text-center">
+                    <h3 className="mb-12 text-[clamp(20px,3vw,32px)] text-foreground">
                         How do we achieve this?
                     </h3>
 
@@ -371,7 +371,7 @@ export default function LandingPage() {
                                     className="items cursor-pointer border-0 bg-transparent"
                                     onClick={() => handleCarouselClick(feature)}
                                 >
-                                    <feature.Icon size={168} strokeWidth={2.5} className="text-black" />
+                                    <feature.Icon size={168} strokeWidth={2.5} className="text-foreground" />
                                     <span className="item-labels">{feature.label}</span>
                                 </button>
                             ))}
@@ -379,9 +379,9 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                <section ref={cardSectionRef} className="scroll-mt-24 bg-white px-6 pb-28 pt-20 sm:pt-50">
+                <section ref={cardSectionRef} className="scroll-mt-24 bg-surface px-6 pb-28 pt-20 sm:pt-50">
                     <div className="mx-auto max-w-6xl">
-                        <div ref={cardFrameRef} className="relative overflow-visible rounded-3xl border-2 border-brand/40 bg-white p-4 sm:p-6">
+                        <div ref={cardFrameRef} className="relative overflow-visible rounded-3xl border-2 border-brand/40 bg-surface p-4 sm:p-6">
                             <div className="absolute left-0 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3">
                                     {CARD_TABS.map(({ Icon, label }, index) => {
                                         const isActive = index === activeCardTab
@@ -399,8 +399,8 @@ export default function LandingPage() {
                                                 className={[
                                                     'relative flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all duration-150 sm:h-12 sm:w-12',
                                                     isActive
-                                                        ? 'border-brand bg-white text-white shadow-[0_0_0_6px_rgba(204,0,34,0.12)]'
-                                                        : 'border-black/15 bg-white text-black hover:border-brand hover:text-brand',
+                                                        ? 'border-brand bg-surface shadow-[0_0_0_6px_rgba(204,0,34,0.12)]'
+                                                        : 'border-border bg-surface text-foreground hover:border-brand hover:text-brand',
                                                 ].join(' ')}
                                             >
                                                 <Icon size={20} strokeWidth={2.2} className={isActive ? 'opacity-0' : ''} />
@@ -411,7 +411,7 @@ export default function LandingPage() {
                             </div>
 
                             <div className="pl-8 sm:pl-10">
-                                <div className="grid min-h-[420px] grid-cols-1 gap-6 rounded-2xl border-2 border-dashed border-brand/35 bg-white p-6 md:min-h-[520px] md:grid-cols-[210px_1fr] md:p-8">
+                                <div className="grid min-h-[420px] grid-cols-1 gap-6 rounded-2xl border-2 border-dashed border-brand/35 bg-surface p-6 md:min-h-[520px] md:grid-cols-[210px_1fr] md:p-8">
                                     <div className="flex items-center justify-center">
                                         <div ref={focusSlotRef} className="relative flex h-28 w-28 items-center justify-center rounded-full border-2 border-brand bg-brand/10 text-brand md:h-32 md:w-32">
                                             <ActiveFocusIcon
@@ -424,14 +424,14 @@ export default function LandingPage() {
                                     </div>
 
                                     <div className="flex flex-col justify-center text-left">
-                                        <h4 className="mt-3 text-[clamp(24px,3vw,36px)] leading-tight text-black">
+                                        <h4 className="mt-3 text-[clamp(24px,3vw,36px)] leading-tight text-foreground">
                                             {activeTabMeta.label}
                                         </h4>
-                                        <p className="mt-3 max-w-xl font-sans text-[15px] leading-relaxed text-black/70">
+                                        <p className="mt-3 max-w-xl font-sans text-[15px] leading-relaxed text-muted-foreground">
                                             {activeTabMeta.blurb}
                                         </p>
                                         <div className="mt-5 rounded-2xl border border-brand/25 bg-brand/[0.08] p-2">
-                                            <div className="h-[320px] overflow-hidden rounded-xl bg-white md:h-[380px]">
+                                            <div className="h-[320px] overflow-hidden rounded-xl bg-surface md:h-[380px]">
                                                 <img
                                                     src={activeTabMeta.image}
                                                     alt={activeTabMeta.imageAlt}
@@ -447,22 +447,22 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                <section ref={progressiveSectionRef} className="scroll-mt-24 bg-white px-6 pb-28 pt-4 sm:pt-8">
-                    <div className="mx-auto max-w-6xl rounded-3xl border-2 border-brand/40 bg-white p-6 sm:p-8">
+                <section ref={progressiveSectionRef} className="scroll-mt-24 bg-surface px-6 pb-28 pt-4 sm:pt-8">
+                    <div className="mx-auto max-w-6xl rounded-3xl border-2 border-brand/40 bg-surface p-6 sm:p-8">
                         <div className="mt-3 flex items-center justify-center gap-3">
                             <TrendingUp size={50} strokeWidth={2.2} className="text-brand" />
-                            <h3 className="text-[clamp(28px,4vw,44px)] leading-tight text-black">Progressive Overload</h3>
+                            <h3 className="text-[clamp(28px,4vw,44px)] leading-tight text-foreground">Progressive Overload</h3>
                         </div>
-                            <p className="mx-auto mt-4 max-w-3xl text-center font-sans text-[20px] leading-relaxed text-black/70">
+                            <p className="mx-auto mt-4 max-w-3xl text-center font-sans text-[20px] leading-relaxed text-muted-foreground">
                             The Progressive Overload Engine is the core Optilifts. By analyzing your performance over your last few workouts, it dynamically adapts your upcoming sessions so you're always progressing at the right pace. Built on proven scientific research, it ensures that every time you train, you are pushing yourself safely and effectively.
                             The engine also factors in your rest days, recommends new exercises, and detects plateaus and long-term fatigue that trigger our other systems to make the right adjustments for your fitness journey.
                         </p>
                     </div>
                 </section>
                 
-                <footer className="border-t-2 border-brand/40 bg-white px-6 py-10 sm:py-12">
-                    <p className="mx-auto max-w-6xl text-center font-display text-[clamp(24px,4vw,42px)] leading-tight text-black">
-                        are you ready to start you fitness journey?
+                <footer className="border-t-2 border-brand/40 bg-surface px-6 py-10 sm:py-12">
+                    <p className="mx-auto max-w-6xl text-center font-display text-[clamp(24px,4vw,42px)] leading-tight text-foreground">
+                        are you ready to start your fitness journey?
                     </p>
                 </footer>
             </main>

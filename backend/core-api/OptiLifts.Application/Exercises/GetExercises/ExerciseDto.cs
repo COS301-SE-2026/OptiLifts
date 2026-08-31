@@ -9,5 +9,6 @@ public record ExerciseDto(
     List<string> PrimaryMuscles,
     List<string> SecondaryMuscles,
     bool IsCustom,
-    string? ImageUrl
+    string? ImageUrl,
+    bool IsDeleted = false
 );

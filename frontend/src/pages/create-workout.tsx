@@ -114,7 +114,7 @@ function buildSegs(exercises: SelectedWorkoutExercise[]): WorkoutSegment[] {
 
 const MUSCLE_OPTIONS = ['All Muscles', ...MUSCLE_GROUPS] as const
 
-function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
+export function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
   return(
     <div className="flex justify-center">
       <button 
@@ -441,7 +441,7 @@ export default function CreateWorkoutPage() {
       ]
     })
 
-  const handleExerciseSaved = useCallback(async (updatedExerciseId?: string) => {
+  const handleExerciseSaved = useCallback(async (updatedExerciseId?: string, oldExerciseId?: string) => {
     const refreshedExercises = await fetchExercises()
     setAllExercises(refreshedExercises || [])
 
@@ -456,13 +456,14 @@ export default function CreateWorkoutPage() {
 
     setExercises((prev) =>
       prev.map((exercise) =>
-        exercise.exerciseCatalogId === updatedExerciseId
+        exercise.exerciseCatalogId === updatedExerciseId || (oldExerciseId && exercise.exerciseCatalogId === oldExerciseId)
           ? {
               ...exercise,
               name: refreshedExercise.name,
               muscle: refreshedExercise.muscleGroup as MuscleName,
               imageUrl: refreshedExercise.imageUrl,
               exerciseType: refreshedExercise.exerciseType,
+              exerciseCatalogId: refreshedExercise.id,
             }
           : exercise
       )
@@ -792,11 +793,13 @@ export default function CreateWorkoutPage() {
         onClose={() => setDetailsExerciseId(null)}
         onChanged={handleExerciseSaved}
       />
-      <CreateExercise
-        isOpen={isCreateExerciseOpen}
-        onCancel={() => setIsCreateExerciseOpen(false)}
-        onSaved={handleExerciseSaved}
-      />
+     {isCreateExerciseOpen && (
+        <CreateExercise
+          isOpen={true}
+          onCancel={() => setIsCreateExerciseOpen(false)}
+          onSaved={handleExerciseSaved}
+        />
+      )}
     </section>
   )
 }

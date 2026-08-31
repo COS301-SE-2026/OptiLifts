@@ -14,6 +14,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { customFetch } from '@/lib/custom-fetch'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { useOnlineStatus } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 
 type ScheduledEntryDto = {
@@ -81,6 +83,8 @@ export default function PastWorkoutsPage() {
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<{ workoutId: string; logId: string } | null>(null)
+    const [isOfflineData, setIsOfflineData] = useState(false)
+    const isOnline = useOnlineStatus()
 
     useEffect(() => {
         const fetchWorkouts = async () => {
@@ -94,6 +98,7 @@ export default function PastWorkoutsPage() {
                 if (response.ok) {
                     const out = await response.json()
                     setWorkouts(out)
+                    setIsOfflineData(false)
 
                     const exercises = Array.from(new Set(
                         out.flatMap((workout: ScheduledEntryDto) => workout.exercisePreviewIds || [])
@@ -115,6 +120,7 @@ export default function PastWorkoutsPage() {
             } catch (error) {
                 console.error('Error fetching workouts:', error)
             } finally {
+                setIsOfflineData(true)
                 setLoading(false)
             }
         }
@@ -188,14 +194,24 @@ export default function PastWorkoutsPage() {
                             tabIndex={0}
                             onClick={(e) => {
                                 const target = e.target as HTMLElement
-                                if (target.closest('[data-card-menu="true"]')) {
+                                if (
+                                    target.closest('[data-card-menu="true"]') ||
+                                    target.closest('[data-slot^="dropdown-menu"]') ||
+                                    target.closest('[role="menuitem"]') ||
+                                    target.closest('[role="menu"]')
+                                ) {
                                     return
                                 }
                                 openLogDetail()
                             }}
                             onKeyDown={(e) => {
                                 const target = e.target as HTMLElement
-                                if (target.closest('[data-card-menu="true"]')) {
+                                if (
+                                    target.closest('[data-card-menu="true"]') ||
+                                    target.closest('[data-slot^="dropdown-menu"]') ||
+                                    target.closest('[role="menuitem"]') ||
+                                    target.closest('[role="menu"]')
+                                ) {
                                     return
                                 }
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -215,10 +231,22 @@ export default function PastWorkoutsPage() {
                                                 if (!workout.logId) {
                                                     return
                                                 }
+                                                navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}/edit`)
+                                            }}
+                                            disabled={!workout.logId || !isOnline}
+                                        >
+                                            Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onSelect={(event) => {
+                                                event.preventDefault()
+                                                if (!workout.logId) {
+                                                    return
+                                                }
                                                 setDeleteTarget({ workoutId: workout.workoutId, logId: workout.logId })
                                             }}
                                             data-variant="destructive"
-                                            disabled={!workout.logId}
+                                            disabled={!workout.logId || !isOnline}
                                         >
                                             Delete
                                         </DropdownMenuItem>
@@ -300,10 +328,14 @@ export default function PastWorkoutsPage() {
                 <PageTitle title="COMPLETED WORKOUTS" />
                 <DatePagination
                     currentDate={selectedWeek}
-                    onChange={setSelectedWeek}
+                    onChange={isOnline ? setSelectedWeek : () => {}}
                     type="week"
                 />
             </div>
+
+            {isOfflineData && (
+                <OfflineBanner message="You're offline - viewing past workouts is unavailable until you reconnect." />
+            )}
 
             {/* block above is for out */}
             {out}

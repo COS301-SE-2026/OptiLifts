@@ -17,6 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DatePagination } from '@/components/ui/date-pagination'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -127,6 +130,8 @@ export default function SchedulePage() {
     const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
     const [selectedAddDate, setSelectedAddDate] = useState<Date | null>(null)
     const [isScheduling, setIsScheduling] = useState(false)
+    const isOnline = useOnlineStatus()
+    const [isOfflineData, setIsOfflineData] = useState(false)
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -210,6 +215,8 @@ export default function SchedulePage() {
 
             setScheduleEntries(scheduleData)
             setAnalytics(analyticsData)
+            setIsOfflineData(false)
+            void cacheScheduleEntries(scheduleData)
 
             try{
                 const year = currentWeekDate.getFullYear()
@@ -253,6 +260,14 @@ export default function SchedulePage() {
             }
             setSecondaryMuscleValues(secondaryAggre)
         } catch (error) {
+            const cached = await getCachedScheduleEntries<ScheduledEntryDto>()
+
+            if (cached && cached.length > 0) {
+                setScheduleEntries(cached)
+                setIsOfflineData(true)
+                return
+            }
+
             setError(error instanceof Error ? error.message : 'Could not load analytics')
         } finally {
             setIsLoading(false)
@@ -274,8 +289,12 @@ export default function SchedulePage() {
                     const data = await response.json()
                     setWorkouts(data)
                 } 
-            } catch(err) {
-                setError(err instanceof Error ? err.message : 'Unexpected error occured while loading workouts.')
+            } catch {
+                const cached = await getCachedWorkoutList()
+
+                if (cached) {
+                    setWorkouts(cached)
+                }
             } finally {
                 setIsFetchingWorkouts(false)
             }
@@ -302,9 +321,21 @@ export default function SchedulePage() {
     }
 
     const handleAddClick = (date: Date) => {
-        //placeholder for adding workout implementation (needs a popup)
+        if (!isOnline) {
+            return
+        }
+
         setSelectedAddDate(date)
     }
+
+    const handleDeleteClick = (id: string) => {
+        if (!isOnline) {
+            return
+        }
+
+        setDeleteTargetId(id)
+    }
+
     const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
@@ -399,15 +430,17 @@ export default function SchedulePage() {
             </div>
             </div>
 
-
-
-            {/* error msg */}
             {error && (
                 <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3.5 text-sm text-destructive flex items-center gap-2.5 shadow-sm animate-fadeIn" role="alert">
                     <AlertCircle size={18} />
                     <span>{error}</span>
                 </div>
             )}
+
+            {isOfflineData && (
+                <OfflineBanner message="You're offline - showing your saved schedule. Reconnect for analytics." />
+            )}
+
 
             {viewMode === 'week' ? (
             <div className="grid grid-cols-12 gap-8 items-start">
@@ -444,7 +477,7 @@ export default function SchedulePage() {
                                                     key={session.id}
                                                     session={session}
                                                     isDeleting={isDeleting === session.id}
-                                                    onDelete={(id) =>setDeleteTargetId(id)}
+                                                    onDelete={handleDeleteClick}
                                                     onClick={handleWorkoutClick}
                                                 />
                                             ))}
@@ -453,7 +486,8 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            disabled={isBeforeToday}
+                                            disabled={isBeforeToday || !isOnline}
+                                            title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
                                 </div>
@@ -491,7 +525,8 @@ export default function SchedulePage() {
                 scheduleEntries={scheduleEntries}
                 isLoading={isLoading}
                 onAddClick={handleAddClick}
-                onDeleteSession={(id) => setDeleteTargetId(id)}
+                isOnline={isOnline}
+                onDeleteSession={handleDeleteClick}
                 onWorkoutClick={handleWorkoutClick}/>
             )}
 
@@ -618,13 +653,14 @@ interface EmptyDayCardProps{
     readonly fullName: string
     readonly onClick: () => void
     readonly disabled?:boolean
+    readonly title?: string
 }
-function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
+function EmptyDayCard({ fullName, onClick, disabled, title }: EmptyDayCardProps) {
     return (
         <div className="flex-1 flex items-stretch">
             <button tabIndex={disabled? -1:0}
             disabled={disabled}
-            title={disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`}
+            title={title ?? (disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`)}
                 className={`flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center transition-all ${ 
                     disabled
                     ? 'opacity-40 cursor-not-allowed border-border/40 bg-surface/5'
@@ -635,7 +671,7 @@ function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
                         event.preventDefault();
                         onClick();
                     }
-                }} aria-label={disabled ? `Cannot add workout for ${fullName} before today`: `Add workout for ${fullName}`}>
+                }} aria-label={title ?? (disabled ? `Cannot add workout for ${fullName} before today` : `Add workout for ${fullName}`)}>
                 <div className={`p-3 bg-surface border border-border rounded-full transition-all shadow-sm ${
                     disabled ? 'text-muted-foreground/40 border-border/40'
                     : 'group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground'
@@ -682,12 +718,25 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
     )
 }
 
+function addButtonTitle(isOnline: boolean, isBeforeToday: boolean) {
+    if (!isOnline) {
+        return OFFLINE_HINT
+    }
+
+    if (isBeforeToday) {
+        return "Cannot schedule in the past"
+    }
+
+    return "Add workout"
+}
+
 // month view calendar comp
 interface MonthViewCalendarProps{
     readonly currentDate: Date
     readonly scheduleEntries: readonly ScheduledEntryDto[]
     readonly isLoading: boolean
     readonly onAddClick: (date: Date) => void
+    readonly isOnline: boolean
     readonly onDeleteSession: (id: string) => void
     readonly onWorkoutClick: (session: ScheduledEntryDto) => void
 }
@@ -696,6 +745,7 @@ function MonthViewCalendar({
     scheduleEntries,
     isLoading,
     onAddClick,
+    isOnline,
     onDeleteSession,
     onWorkoutClick
 }: MonthViewCalendarProps){
@@ -807,10 +857,10 @@ function MonthViewCalendar({
                         <div className="flex justify-center py-1">
                             <button type="button" 
                             tabIndex={isBeforeToday ? -1 : 0}
-                            disabled={isBeforeToday}
+                            disabled={isBeforeToday || !isOnline}
                             onClick={() => onAddClick(cell.date)}
-                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={isBeforeToday ? "Cannot schedule in the past" : "Add workout"}>
+                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={addButtonTitle(isOnline, isBeforeToday)}>
                                 <Plus size={14} />
                             </button>
                         </div>

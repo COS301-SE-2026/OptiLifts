@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test-utils';
 
 test.describe('Workout Detail Page', () => {
     test.beforeEach(async ({ page }) => {
@@ -14,12 +14,13 @@ test.describe('Workout Detail Page', () => {
 
         await expect (page.getByText('Barbell Bench Press')).toBeVisible();
         await expect (page.getByRole('paragraph').filter({ hasText: 'Chest' })).toBeVisible();
-        await expect (page.getByText('Rest time: 1:30 min')).toBeVisible();
         await expect (page.getByText('160 KG x 8 reps')).toBeVisible();
+
+        await expect (page.getByText('Superset')).toBeVisible();
+        await expect (page.getByText('Group Rest: 1:30 min')).toBeVisible();
+
         await expect (page.getByText('Barbell Back Squat')).toBeVisible();
-        
         await expect (page.getByRole('paragraph').filter({ hasText: 'Quadriceps' })).toBeVisible();
-        await expect (page.getByText('Rest time: 2 min')).toBeVisible();
         await expect (page.getByText('1120 KG x 5 reps')).toBeVisible();
         
         await expect (page.getByText('MuscleSetsChest1Quadriceps1')).toBeVisible();

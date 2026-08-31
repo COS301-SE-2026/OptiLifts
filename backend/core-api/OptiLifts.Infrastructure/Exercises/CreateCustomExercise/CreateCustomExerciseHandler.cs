@@ -27,6 +27,19 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
 
     public async Task<Guid> Handle(CreateCustomExerciseCommand request, CancellationToken cancellationToken)
     {
+        var name = request.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidOperationException("Exercise name is required.");
+
+        var nameExists = await _dbContext.Exercises.AnyAsync(
+            e => !e.IsDeleted &&
+                 (e.UserId == null || e.UserId == request.UserId) &&
+                 e.Name.ToLower() == name.ToLower(),
+            cancellationToken);
+
+        if (nameExists)
+            throw new InvalidOperationException($"An exercise with the name '{name}' already exists.");
+
         var exerciseType = ResolveExerciseType(request.Category);
         var primaryMuscleId = await ResolveMuscleIdAsync(request.PrimaryMuscles, "primary muscle", cancellationToken);
         var secondaryMuscleIds = await ResolveMuscleIdsAsync(request.SecondaryMuscles, primaryMuscleId, cancellationToken);
@@ -46,7 +59,7 @@ public class CreateCustomExerciseHandler : IRequestHandler<CreateCustomExerciseC
         var exercise = new Exercise
         {
             UserId = request.UserId,
-            Name = request.Name,
+            Name = name,
             Mechanic = request.Mechanic,
             Equipment = request.Equipment?.Trim().ToLower(),
             ExerciseType = exerciseType,

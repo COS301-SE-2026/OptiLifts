@@ -8,7 +8,8 @@ public class User
     [Encrypted]
     public string Email { get; set; } = string.Empty;
     public string EmailHash { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
+    public string? PasswordHash { get; set; }
+    public string? GoogleId { get; set; }
     [Encrypted]
     public string DisplayName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -31,6 +31,7 @@ export type WorkoutLogDetailResponse = Readonly<{
   folderId: string | null
   dayIndex: number | null
   createdAt: string
+  startedAt?: string | null
   completedAt: string | null
   duration: string | null
   primaryMuscleGroups: string[]

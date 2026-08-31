@@ -177,4 +177,17 @@ describe('PastWorkoutsPage', () => {
             expect(screen.queryByText('Morning Bench Routine')).toBeNull()
         })
     })
+
+    it('navigates to edit page when clicking Edit in card options menu', async () => {
+        render(<PastWorkoutsPage />)
+
+        await waitFor(() => {
+            expect(screen.getByText('Morning Bench Routine')).toBeDefined()
+        })
+
+        fireEvent.click(screen.getByLabelText('Options for Morning Bench Routine'))
+        fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+
+        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1/logs/l-1/edit')
+    })
 });

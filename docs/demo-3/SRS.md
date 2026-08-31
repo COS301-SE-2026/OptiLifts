@@ -417,7 +417,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ### NFR4: Maintainability
 1. NFR4.1: The automated CI/CD pipeline execution time (from code merge to production deployment) will complete within 30 minutes for new features or bug fixes.
-2. NFR4.2: The system will have an automated test coverage of at least 80%.
+2. NFR4.2: The system will have an automated line coverage of at least 80%.
 
 ### NFR5: Usability
 1. NFR5.1: 95% of new users will be able to complete account registration and create their first workout within 5 minutes of first use during usability testing.

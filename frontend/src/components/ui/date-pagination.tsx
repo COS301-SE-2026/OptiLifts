@@ -64,7 +64,9 @@ export function DatePagination({ currentDate, onChange, type = 'week', className
         <div className={cn("flex items-center gap-3 text-base font-bold", className)}>
             <button
                 onClick={getPrev}
+                aria-label="Previous"
                 className="text-foreground transition-colors hover:text-brand active:scale-95"
+                type = "button"
             >
                 <ChevronLeft size={22} strokeWidth={2.5} />
             </button>
@@ -75,7 +77,9 @@ export function DatePagination({ currentDate, onChange, type = 'week', className
 
             <button
                 onClick={getNext}
+                aria-label="Next"
                 className="text-foreground transition-colors hover:text-brand active:scale-95"
+                type = "button"
             >
                 <ChevronRight size={22} strokeWidth={2.5} />
             </button>

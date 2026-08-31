@@ -421,7 +421,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ### NFR5: Usability
 1. NFR5.1: 95% of new users will be able to complete account registration and create their first workout within 5 minutes of first use during usability testing.
-2. NFR5.2: The system's user interface will meet WCAG 2.1 Level AA accessibility standards, ensuring full keyboard navigability and objective compliance. 
+2. NFR5.2: The system's user interface will meet WCAG 2.1 Level AA accessibility standards (including full keyboard navigability), achieving an automated accessibility score of at least 90% as measured by Google Lighthouse audits.
 3. NFR5.3: The system will achieve at least an 85% user satisfaction rating via a System Usability Scale (SUS) questionnaire across a minimum of 5 test users.
 
 

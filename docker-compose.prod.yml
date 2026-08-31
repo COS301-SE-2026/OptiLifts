@@ -58,6 +58,7 @@ services:
       - DEV_SEEDING=${DEV_SEEDING:-true}
       - E2E_TESTING=${E2E_TESTING:-false}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
 
     depends_on:
       db:

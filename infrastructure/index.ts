@@ -26,6 +26,7 @@ const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
 const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
 const googleClientId = config.getSecret("googleClientId");
+const googleClientSecret = config.getSecret("googleClientSecret");
 
 const domainStage = config.get("domainStage") ?? "none";
 
@@ -232,7 +233,8 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
             },
             { name: "core-api-sentry-dsn", value: coreApiSentryDsn },
-            { name: "google-client-id", value: googleClientId }
+            { name: "google-client-id", value: googleClientId },
+            { name: "google-client-secret", value: googleClientSecret }
         ],
 
         registries: [{
@@ -267,6 +269,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
                 { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
                 { name: "GOOGLE_CLIENT_ID", secretRef: "google-client-id" },
+                { name: "GOOGLE_CLIENT_SECRET", secretRef: "google-client-secret" },
                 { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
             ],
             probes: [{

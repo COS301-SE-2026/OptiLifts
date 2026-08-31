@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260821192954_GoogleCalendarSync")]
+    partial class GoogleCalendarSync
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -458,10 +461,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("entry_id");
-
-                    b.Property<string>("GoogleEventId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_event_id");
 
                     b.Property<DateTime>("Scheduled")
                         .HasColumnType("timestamp with time zone")

@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
-import {X, Plus, Loader2, AlertCircle} from 'lucide-react'
+import {X, Plus, Loader2, AlertCircle, Settings} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import {Card, CardTitle} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
@@ -20,6 +20,7 @@ import { metricCheck, outputWeight } from '@/lib/weight-utils'
 import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } from '@/lib/offline/workouts-cache'
 import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
 import { OfflineBanner } from '@/components/ui/offline-banner'
+import { ScheduleSettingsPopup } from '@/components/ui/schedule-settings-popup'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -132,6 +133,8 @@ export default function SchedulePage() {
     const [isScheduling, setIsScheduling] = useState(false)
     const isOnline = useOnlineStatus()
     const [isOfflineData, setIsOfflineData] = useState(false)
+
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -336,17 +339,15 @@ export default function SchedulePage() {
         setDeleteTargetId(id)
     }
 
-    const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
+    const handleScheduleWorkout = async(workoutId:string, time: string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
         }
         setIsScheduling(true)
         setError(null)
         try{
-            const utcDate = new Date(Date.UTC( //fixing monday not being scheduled
-                selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate()
-            ))
-            const scheduledAt =utcDate.toISOString()
+            const [hours, minutes] = time.split(':').map(Number)
+            const scheduledDateTime = new Date(selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate(), hours, minutes)
 
             const bodyPayload: {
                 workoutId: string
@@ -357,14 +358,14 @@ export default function SchedulePage() {
                 until?: string
             } = {
                 workoutId,
-                scheduledAt,
+                scheduledAt: scheduledDateTime.toISOString(),
                 status:0
             }
             if(repeat &&interval && until) {
                 bodyPayload.repeat = repeat.toLowerCase()
                 bodyPayload.interval = interval
                 const udate = new Date(until)
-                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate()))
+                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate(), 23,59,59))
                 bodyPayload.until = utcUntil.toISOString()
             }
             const response = await customFetch('/api/users/me/schedule/sessions',{
@@ -385,6 +386,8 @@ export default function SchedulePage() {
             setIsScheduling(false)
         }
     }
+
+    
 
     const weeklydays = weekDates.map((dayDate, index) => {
         const dayM = DAYS[index]
@@ -427,6 +430,12 @@ export default function SchedulePage() {
                         <DropdownMenuItem onClick={() => setViewMode('month')}>Month View</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Button variant="outline" size="sm" aria-label="Schedule Settings" onClick={() => setIsSettingsOpen(true)}
+                className="bg-surface border border-border text-foreground hover:bg-brand/10 hover:text-brand hover:border-brand/30 px-3 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <Settings size={16}/>
+                    <span className="hidden sm:inline">Settings</span>
+                </Button>
             </div>
             </div>
 
@@ -557,6 +566,8 @@ export default function SchedulePage() {
                 await handleDeletingSession(id)
             }
             }}/>
+
+            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}/>
         </section>
     )
 }
@@ -578,6 +589,17 @@ export default function SchedulePage() {
                 <div className={`text-xs md:text-sm font-sans font-semibold text-muted-foreground/80 mt-1 leading-none ${isToday ? 'text-brand/90' : 'text-muted-foreground/80'}`}>{date}</div>
             </div>
         )
+    }
+
+    const formatScheduledTime = (isoString: string) =>{
+        try{
+            const d = new Date(isoString)
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2,'0')
+            return `${hours}:${minutes}`
+        } catch {
+            return ''
+        }
     }
 
     //workoutcards
@@ -604,7 +626,12 @@ export default function SchedulePage() {
                 className="flex-1 bg-card border border-border rounded-xl p-5 hover:border-brand/40 transition-all shadow-sm cursor-pointer hover:ring-2 hover:ring-brand/45 focus-visible:ring-2 focus-visible:ring-brand/45 outline-none">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                         <div className="md:col-span-7 space-y-2">
-                            <CardTitle className="text-lg font-bold text-foreground leading-snug">{session.workoutName}</CardTitle>
+                            <CardTitle className="text-lg font-bold text-foreground leading-snug flex items-center gap-2">
+                                <span>{session.workoutName}</span>
+                                <span className="text-xs font-normal text-muted-foreground bg-surface-2/60 px-2 py-0.5 rounded-md border border-border/50">
+                                {formatScheduledTime(session.scheduled)}
+                                </span>
+                            </CardTitle>
                             <p className={cardDETAIL}>
                                 <span className="font-semibold text-foreground">Primary Muscle Groups: </span>{session.primaryMuscleGroups.join(', ') || 'None'}
                             </p>
@@ -658,7 +685,7 @@ interface EmptyDayCardProps{
 function EmptyDayCard({ fullName, onClick, disabled, title }: EmptyDayCardProps) {
     return (
         <div className="flex-1 flex items-stretch">
-            <button tabIndex={disabled? -1:0}
+            <button type="button" tabIndex={disabled? -1:0}
             disabled={disabled}
             title={title ?? (disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`)}
                 className={`flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center transition-all ${ 
@@ -836,9 +863,12 @@ function MonthViewCalendar({
                                     className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 hover:ring-2 hover:ring-brand/45 focus-visible-within:ring-2 focus-visible-within:ring-brand/45 shadow-sm">
                                         <button type="button"
                                         onClick={() => onWorkoutClick(session)}
-                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline" 
-                                        title={session.workoutName}>
-                                            {session.workoutName}
+                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline flex items-center justify-between" 
+                                        title={`${session.workoutName} at ${formatScheduledTime(session.scheduled)}`}>
+                                            <span className="truncate">{session.workoutName}</span>
+                                            <span className="text-[10px] font-normal text-muted-foreground ml-1 shrink-0">
+                                                {formatScheduledTime(session.scheduled)}
+                                            </span>
                                         </button>                                            
                                         <button 
                                         type="button" 

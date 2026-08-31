@@ -26,7 +26,7 @@ vi.mock('@/components/ui/confirm-dialog', () => ({
 }));
 
 vi.mock('@/components/ui/select-workout-dialog', () => ({
-    SelectWorkoutDialog: ({isOpen, onSchedule}: Readonly<{ isOpen: boolean; onSchedule: (id: string) => void}>) => isOpen? (<div data-testid="select-dialog"><button onClick={() => onSchedule('workout-123')}>Schedule Workout</button></div>):null,
+    SelectWorkoutDialog: ({isOpen, onSchedule}: Readonly<{ isOpen: boolean; onSchedule: (id: string, time:string) => void}>) => isOpen? (<div data-testid="select-dialog"><button onClick={() => onSchedule('workout-123', '09:00')}>Schedule Workout</button></div>):null,
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => ({

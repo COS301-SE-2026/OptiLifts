@@ -46,6 +46,20 @@ declare global {
           ) => void
           prompt?: () => void
         }
+        oauth2?: {
+          initCodeClient: (config: {
+            client_id: string
+            scope: string
+            ux_mode?: string
+            error_callback?: (error: unknown)=> void
+            callback: (response: {
+              code?: string;
+              error?: string
+            }) => void
+          }) => {
+            requestCode: () => void
+          }
+        }
       }
     }
   }

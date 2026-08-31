@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace OptiLifts.Application.Scheduling.Reschedule;
 
 public record UserScheduleConfigDto(
-    bool IsDynamicSchedulerEnabled,
+    bool DynamicSchedulerEnabled,
     int MaxWorkoutsPerDay,
     int MinMuscleRestHours,
     List<string> RestDays,

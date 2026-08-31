@@ -245,7 +245,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
     template: {
         scale: {
             minReplicas: 0,
-            maxReplicas: 2,
+            maxReplicas: 3,
         },
         containers: [{
             name: "core-api",

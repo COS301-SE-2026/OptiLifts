@@ -8,4 +8,7 @@ public class UserScheduleConfig
     public int MaxWorkoutsPerDay {get; set; }=1;
     public int MinMuscleRestHours {get; set;}= 48;
     public List<string> RestDays {get; set; } = new() {"Sunday"};
+    
+    public int CycleWindowLengthDays {get; set;} = 7;
+    public DateTime CycleStartDate {get; set;} = DateTime.UtcNow.Date;
 }

@@ -410,7 +410,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 1. NFR2.1: The system will support a 200% increase in workload (scaling from a baseline of 100 up to 300 concurrent users) with no more than a 10% decrease in response time.
 
 ### NFR3: Security
-1. NFR3.1: The system will encrypt sensitive user data (specifically  emails, usernames and bodily/health-orientated infromation) at rest using application-level AES-256 encryption via Entity Framework Core value converters before the data is stored in the database. 
+1. NFR3.1: The system will encrypt sensitive user data (specifically  emails, usernames and bodily/health-orientated infromation such as height, weight etc.) at rest using application-level AES-256 encryption via Entity Framework Core value converters before the data is stored in the database. 
 2. NFR3.2: The system will hash user passwords when stored in the database using bcrypt with a salt factor of 12.
 3. NFR3.3: The system will use HTTPS (TLS 1.2) for all data transmission between the client and server.
 4. NFR3.4: The system will prevent unauthorized access to the business logic and data of the app by enforcing stateless JSON Web Token (JWT) authentication, transmitted via HttpOnly cookies, and applying resource-based authorization (ensuring users can only access and modify their own personal data).

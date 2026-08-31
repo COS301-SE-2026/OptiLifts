@@ -7,6 +7,7 @@ using OptiLifts.Application.Scheduling.CreateScheduledSession;
 using OptiLifts.Application.Scheduling.DeleteScheduledSession;
 using OptiLifts.Application.Scheduling.GetSchedule;
 using OptiLifts.Application.Scheduling.GetScheduleAnalytics;
+using OptiLifts.Application.Scheduling.Reschedule;
 using OptiLifts.Application.Scheduling.UpdateMissedSessions;
 using OptiLifts.Application.Scheduling.UpdateScheduledSessionStatus;
 using OptiLifts.Domain.Workouts;
@@ -161,4 +162,61 @@ public sealed class SchedulesController : ControllerBase
         return Ok(result);
     }
 
+    //dynamic rescheduler endpoints
+    [HttpGet("me/schedule/config")]
+    public async Task<ActionResult<UserScheduleConfigDto>> GetScheduleConfig(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new GetUserScheduleConfigQuery(userId);
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+    
+    [HttpPut("me/schedule/config")]
+    public async Task<ActionResult<UserScheduleConfigDto>> UpdateScheduleConfig(
+        [FromBody] UserScheduleConfigDto config,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new UpdateUserScheduleConfigCommand(userId, config);
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("me/schedule/reschedule")]
+    public async Task<ActionResult<RescheduleResultDto>> TriggerReschedule(
+        [FromBody] RescheduleRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new TriggerRescheduleCommand(userId, request.SelectedMissedEntryIds);
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("me/schedule/reschedule/confirm")]
+    public async Task<ActionResult> ConfirmReschedule(
+        [FromBody] List<ConfirmRescheduleItemDto> request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var command = new ConfirmRescheduleCommand(userId, request);
+        await _sender.Send(command, cancellationToken);
+        return Ok(new
+        {
+            message ="Schedule updated successfully"
+        });
+    }
 }

@@ -2,6 +2,7 @@ import { customFetch } from "@/lib/custom-fetch"
 import { Calendar, CheckCircle2, Loader2, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "./button"
+import { ReschedulingConfig } from "./rescheduling-config"
 
 type ScheduleSettingsPopupProps = Readonly<{
     isOpen: boolean
@@ -152,7 +153,7 @@ export function ScheduleSettingsPopup({
                     </button>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto font-sans">
                     {isLoading ? (
                         <div className="py-8 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                             <Loader2 className="animate-spin text-brand" size={24}/>
@@ -212,6 +213,8 @@ export function ScheduleSettingsPopup({
                                     </div>
                                 </div>
                             )}
+                            {/* rescheduling section */}
+                            <ReschedulingConfig/>
                         </>
                     )}
                 </div>

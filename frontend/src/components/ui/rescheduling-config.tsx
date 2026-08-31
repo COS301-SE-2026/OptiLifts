@@ -86,7 +86,7 @@ export function ReschedulingConfig() {
             <div className="flex items-center justify-between">
                 <div>
                     <h4 className="font-display font-bold text-base uppercase tracking-wider text-foreground">Dynamic Rescheduling</h4>
-                    <p className="text-xs text-muted-foreground">Automatically re-scheduled missed workouts within active cycles</p>
+                    <p className="text-xs text-muted-foreground">Automatically re-schedules missed workouts within active cycles</p>
                 </div>
                 <input type="checkbox" checked={config.dynamicSchedulerEnabled} onChange={(e) => setConfig({
                     ...config,

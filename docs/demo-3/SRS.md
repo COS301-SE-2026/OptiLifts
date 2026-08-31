@@ -402,8 +402,8 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 ## Non-Functional Requirements
 
 ### NFR1: Performance
-1. NFR1.1: The system will respond to Core API requests within 1.5 seconds for 95% of requests.
-2. NFR1.2: The system will respond to AI-API requests within 3 seconds for 95% of requests.
+1. NFR1.1: 95% of `GET /api/workouts` requests (core API) will complete within 1.5 seconds under normal operating conditions.
+2. NFR1.2: 95% of `POST /ai-api/reschedule` requests (AI-API) will complete within 3 seconds under normal operating conditions.
 3. NFR1.3: The system will support 100 concurrent active users with less than a 10% increase in average response time compared to the single-user baseline.
 
 ### NFR2: Scalability

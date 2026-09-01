@@ -34,7 +34,7 @@ public record RescheduleResultDto(
     string ExecutionTier,
     int ExecutionTimeMs,
     List<RescheduledEntryDto> RescheduledEntries,
-    List<RescheduleEntryDetailDto> DroppedEntries
+    List<RescheduledEntryDto> DroppedEntries
 );
 
 public record ConfirmRescheduleItemDto(

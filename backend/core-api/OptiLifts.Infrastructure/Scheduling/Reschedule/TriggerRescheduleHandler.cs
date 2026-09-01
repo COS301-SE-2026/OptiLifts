@@ -44,7 +44,7 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
         .ToList();
         if (targetentries.Count == 0)
         {
-            return new RescheduleResultDto(request.UserId, "None", 0, new List<RescheduledEntryDto>(), new List<RescheduleEntryDetailDto>());
+            return new RescheduleResultDto(request.UserId, "None", 0, new List<RescheduledEntryDto>(), new List<RescheduledEntryDto>());
         }
 
         //fetch workouots and their primary muscles
@@ -113,13 +113,13 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
                 r.NewScheduledAt,
                 r.Action
             )).ToList(),
-            result.DroppedEntries.Select(d => new RescheduleEntryDetailDto(
-                Guid.Parse(d.Id),
+            result.DroppedEntries.Select(d => new RescheduledEntryDto(
+                Guid.Parse(d.EntryId),
                 Guid.Parse(d.WorkoutId),
                 d.WorkoutName,
-                d.ScheduledAt,
-                d.Status,
-                d.PrimaryMuscles
+                d.OriginalScheduledAt,
+                d.NewScheduledAt,
+                d.Action
             )).ToList()
         );
     }

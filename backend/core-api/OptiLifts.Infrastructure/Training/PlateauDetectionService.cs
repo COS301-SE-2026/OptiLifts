@@ -45,7 +45,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
             await UpsertAsync(alreadyExists, userId, exerciseId, TrendStatus.InsufficientData, 0, 0, 0, 0, series.Count,
                 series.Count > 0 ? series[0].Date : DateTime.UtcNow,
                 series.Count > 0 ? series[^1].Date : DateTime.UtcNow,
-                cancellationToken);
+                false, cancellationToken);
             return;
         }
 
@@ -55,7 +55,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
         {
             if ((wndw[i].Date - wndw[i - 1].Date).TotalDays > MaxGapInDays)
             {
-                await UpsertAsync(alreadyExists, userId, exerciseId, TrendStatus.InsufficientData, 0, 0, 0, 0, wndw.Count, wndw[0].Date, wndw[^1].Date, cancellationToken);
+                await UpsertAsync(alreadyExists, userId, exerciseId, TrendStatus.InsufficientData, 0, 0, 0, 0, wndw.Count, wndw[0].Date, wndw[^1].Date, false, cancellationToken);
                 return;
             }
         }
@@ -69,6 +69,18 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
         var slopePercPerWeek = bWindow * 7 / meanE1rmWindow * 100;
 
         var (ciLow, ciHigh) = CompConfidenceInter(xs, ys, aWindow, bWindow, meanE1rmWindow);
+
+
+        var rpePoints = wndw.Where(p => p.AvgRpe.HasValue).ToList();
+        var rpeTrendRising = false;
+        if (rpePoints.Count >= 4)
+        {
+            var rpeOrigin = rpePoints[0].Date;
+            var rpeXs = rpePoints.Select(p => (p.Date - rpeOrigin).TotalDays).ToArray();
+            var rpeYs = rpePoints.Select(p => (double)p.AvgRpe!.Value).ToArray();
+            var (_, rpeSlope) = LeastSqLineFit(rpeXs, rpeYs);
+            rpeTrendRising = rpeSlope * 7 > 0.3;
+        }
 
         var baselinePts = series.Where(p => p.Date < wndwStart && p.Date >= wndwStart.AddDays(-BaselineDays)).ToList();
         var baselineAvail = baselinePts.Count >= MinBaselinePts && (baselinePts[^1].Date - baselinePts[0].Date).TotalDays >= MinBaselineSpan;
@@ -121,7 +133,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
 
         var confirmed = alreadyExists is not null && alreadyExists.Status == currStatus;
 
-        await UpsertAsync(alreadyExists, userId, exerciseId, currStatus, slopePercPerWeek, ciLow, ciHigh, meanE1rmWindow, wndw.Count, wndwStart, wndw[^1].Date, cancellationToken);
+        await UpsertAsync(alreadyExists, userId, exerciseId, currStatus, slopePercPerWeek, ciLow, ciHigh, meanE1rmWindow, wndw.Count, wndwStart, wndw[^1].Date, rpeTrendRising, cancellationToken);
 
         if (confirmed && currStatus == TrendStatus.Plateau)
         {
@@ -130,7 +142,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
     }
 
     private async Task UpsertAsync(ExerciseTrend? existing, Guid userId, Guid exerciseId, TrendStatus status,
-        double slopePctPerWeek, double ciLow, double ciHigh, double meanE1rm, int sessionsUsed, DateTime windowStart, DateTime windowEnd, CancellationToken cancellationToken)
+        double slopePctPerWeek, double ciLow, double ciHigh, double meanE1rm, int sessionsUsed, DateTime windowStart, DateTime windowEnd, bool rpeTrendRising, CancellationToken cancellationToken)
     {
         if (existing is null)
         {
@@ -146,6 +158,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
         existing.SessionsUsed = sessionsUsed;
         existing.WindowStart = windowStart;
         existing.WindowEnd = windowEnd;
+        existing.RpeTrendRising = rpeTrendRising;
         existing.ComputedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -199,7 +212,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
         var half = TCritical * seB;
         var slopePctPerWeek = b * 7 / meanY * 100;
         var halfPctPerWeek = half * 7 / meanY * 100;
-        
+
         return (slopePctPerWeek - halfPctPerWeek, slopePctPerWeek + halfPctPerWeek);
     }
 }

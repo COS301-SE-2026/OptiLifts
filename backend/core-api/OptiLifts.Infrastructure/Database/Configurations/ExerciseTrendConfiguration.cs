@@ -27,6 +27,7 @@ public class ExerciseTrendConfiguration : IEntityTypeConfiguration<ExerciseTrend
         builder.Property(t => t.Status).HasColumnName("status").HasConversion<string>().IsRequired();
         builder.Property(t => t.ComputedAt).HasColumnName("computed_at").IsRequired();
         builder.Property(t => t.SupersedesExerciseId).HasColumnName("supersedes_exercise_id");
+        builder.Property(t => t.RpeTrendRising).HasColumnName("rpe_trend_rising").IsRequired();
 
         builder.HasIndex(t => new { t.UserId, t.ExerciseId }).IsUnique();
 

@@ -18,7 +18,6 @@ public enum TrainingEventType
 {
     AcuteFatigueFlagged,
     PlateauDetected,
-    ChronicFatigueFlagged,
     DeloadSuggested,
     Resolved
 }

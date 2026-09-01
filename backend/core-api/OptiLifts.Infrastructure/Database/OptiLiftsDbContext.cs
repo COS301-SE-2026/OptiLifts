@@ -46,7 +46,6 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<Badge> Badges { get; set; }
     public DbSet<UserBadge> UserBadges { get; set; }
     public DbSet<ExerciseTrend> ExerciseTrends { get; set; }
-    public DbSet<FatigueState> FatigueStates { get; set; }
     public DbSet<TrainingEvent> TrainingEvents { get; set; }
 
 

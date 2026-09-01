@@ -15,6 +15,7 @@ public class ExerciseTrend
     public TrendStatus Status { get; set; }
     public DateTime ComputedAt { get; set; } = DateTime.UtcNow;
     public Guid? SupersedesExerciseId { get; set; }
+    public bool RpeTrendRising { get; set; }
 }
 
 public enum TrendStatus

@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.ProgressiveOverload;
@@ -19,111 +20,220 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
 
     public async Task<List<PODataPoint>> Handle(GenerateOverloadCommand request, CancellationToken cancellationToken)
     {
-        //part 1: get enough data points and normalize them to e1RM or just reps if it's bodyweight
         var dataPoints = await GetNormalizedDataPointsAsync(request.UserId, request.ExerciseId, cancellationToken);
         if (dataPoints.Count < 4)
         {
+            await RemoveEstimationAsync(request.UserId, request.ExerciseId, cancellationToken);
+            return dataPoints;
+        }
+        double predictedMetric = BestFitEngine.PredictNextVal(dataPoints);
+        if (predictedMetric <= 0)
+        {
+            await RemoveEstimationAsync(request.UserId, request.ExerciseId, cancellationToken);
             return dataPoints;
         }
 
-        //part 2: gradient calculation and e1RM prediction
-        if (BestFitEngine.PlateauCheck(dataPoints))
-        {
-            //platea does its cool quirky thing
-        }
-
-        //if bodyweight will be x reps, if weight will be e1RM in weight
-        double predictedMetric = BestFitEngine.PredictNextVal(dataPoints);
-
-        var recommendationMetric = await BuildRecommendationMetricAsync(
+        var recommendation = await BuildRecommendationAsync(
             request.UserId,
             request.ExerciseId,
             predictedMetric,
             cancellationToken);
 
-        var projectedDate = GetProjectedNextDate(dataPoints);
-        dataPoints.Insert(0, new PODataPoint(projectedDate, recommendationMetric));
+        if (recommendation is null)
+        {
+            await RemoveEstimationAsync(request.UserId, request.ExerciseId, cancellationToken);
+            return dataPoints;
+        }
 
+        await UpsertEstimationAsync(request.UserId, request.ExerciseId, recommendation, cancellationToken);
+        var projectedDate = GetProjectedNextDate(dataPoints);
+        dataPoints.Insert(0, new PODataPoint(projectedDate, recommendation.Metric));
 
         return dataPoints;
     }
 
-    private async Task<double> BuildRecommendationMetricAsync(Guid userId, Guid exerciseId, double predictedMetric, CancellationToken cancellationToken)
+    private async Task<OverloadRecommendation?> BuildRecommendationAsync(Guid userId, Guid exerciseId, double predictedMetric, CancellationToken cancellationToken)
     {
         var exercise = await _dbContext.Exercises
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == exerciseId, cancellationToken);
 
-        if (exercise == null || (exercise.ExerciseType != ExerciseType.WeightReps && exercise.ExerciseType != ExerciseType.BodyweightReps))
+        if (exercise == null || !IsSupportedExerciseType(exercise.ExerciseType))
         {
-            return predictedMetric;
+            return null;
+        }
+
+        if (exercise.ExerciseType == ExerciseType.BodyweightReps)
+        {
+            return await BuildBodyweightRecommendationAsync(userId, exerciseId, exercise, cancellationToken);
         }
 
         var (lowerLimit, upperLimit) = await GetUserRepRangeAsync(userId, exercise.Mechanic, cancellationToken);
 
-        if (exercise.ExerciseType == ExerciseType.BodyweightReps)
+        float bodyweightForWeighted = 0f;
+        if (exercise.ExerciseType == ExerciseType.WeightedBodyweight)
         {
-            int calculatedReps = E1RMCalculator.ReverseEpleyReps(predictedMetric, 0f, exercise.Mechanic, exercise.ExerciseType);
-
-            if (IsRepsInRange(calculatedReps, lowerLimit, upperLimit))
+            var userBodyweight = await GetUserBodyweightAsync(userId, cancellationToken);
+            if (!userBodyweight.HasValue || userBodyweight.Value <= 0)
             {
-                return predictedMetric;
+                return null;
             }
 
-            int clampedReps = ClampRepsToRange(calculatedReps, lowerLimit, upperLimit);
-            return clampedReps;
+            bodyweightForWeighted = userBodyweight.Value;
         }
 
         var previousWeight = await GetPreviousAverageWeightAsync(userId, exerciseId, cancellationToken);
-        if (!previousWeight.HasValue)
+        if (!previousWeight.HasValue || previousWeight.Value < 0 ||
+            (exercise.ExerciseType == ExerciseType.WeightReps && previousWeight.Value == 0))
         {
-            return predictedMetric;
+            return null;
         }
 
-        int weightedCalculatedReps = E1RMCalculator.ReverseEpleyReps(predictedMetric, previousWeight.Value, exercise.Mechanic, exercise.ExerciseType);
+        int weightedCalculatedReps = E1RMCalculator.ReverseEpleyReps(predictedMetric, previousWeight.Value, exercise.Mechanic, exercise.ExerciseType, bodyweightForWeighted);
 
         //Check if newly calculated reps is in range 
         //if yes, reps are in range, keep same weight and use new reps.
         if (IsRepsInRange(weightedCalculatedReps, lowerLimit, upperLimit))
         {
-            return E1RMCalculator.CalculateE1RM(previousWeight.Value, weightedCalculatedReps, exercise.Mechanic, exercise.ExerciseType);
+            return CreateWeightedRecommendation(previousWeight.Value, weightedCalculatedReps, exercise, bodyweightForWeighted);
         }
 
         //if no, attempt weight increase at lower rep limit.
-        float predictedTargetWeight = E1RMCalculator.ReverseEpleyWeight(predictedMetric, lowerLimit, exercise.Mechanic, exercise.ExerciseType);
+        float predictedTargetWeight = E1RMCalculator.ReverseEpleyWeight(predictedMetric, lowerLimit, exercise.Mechanic, exercise.ExerciseType, bodyweightForWeighted);
 
-        //Machine exercise, weight recomendation given as is.
         if (IsMachineExercise(exercise))
         {
-            if (predictedTargetWeight <= previousWeight.Value)
+            float truncatedTargetWeight = (float)Math.Truncate(predictedTargetWeight);
+            if (truncatedTargetWeight <= previousWeight.Value)
             {
-                int forcedRepIncrease = Math.Max(weightedCalculatedReps, upperLimit + 1);
-                return E1RMCalculator.CalculateE1RM(previousWeight.Value, forcedRepIncrease, exercise.Mechanic, exercise.ExerciseType);
+                int forcedRepIncrease = GetForcedRepIncrease(weightedCalculatedReps, upperLimit);
+                return CreateWeightedRecommendation(previousWeight.Value, forcedRepIncrease, exercise, bodyweightForWeighted);
             }
 
-            return E1RMCalculator.CalculateE1RM(predictedTargetWeight, lowerLimit, exercise.Mechanic, exercise.ExerciseType);
+            return CreateWeightedRecommendation(truncatedTargetWeight, lowerLimit, exercise, bodyweightForWeighted);
         }
 
         //For now, all non machine weighted exercises use 5kg increments.
         //Want to discuss so remind me when the time comes.
-        float predictedIncrease = predictedTargetWeight - previousWeight.Value;
-        float validIncrease = (float)Math.Floor(predictedIncrease / WeightedIncrementKg) * WeightedIncrementKg;
+        float roundedTargetWeight = (float)Math.Floor(predictedTargetWeight / WeightedIncrementKg) * WeightedIncrementKg;
 
         //If no valid increment step increase is possible, increase reps regardless of upper rep range limit.
-        if (validIncrease < WeightedIncrementKg)
+        if (roundedTargetWeight <= previousWeight.Value)
         {
-            int forcedRepIncrease = Math.Max(weightedCalculatedReps, upperLimit + 1);
-            return E1RMCalculator.CalculateE1RM(previousWeight.Value, forcedRepIncrease, exercise.Mechanic, exercise.ExerciseType);
+            int forcedRepIncrease = GetForcedRepIncrease(weightedCalculatedReps, upperLimit);
+            return CreateWeightedRecommendation(previousWeight.Value, forcedRepIncrease, exercise, bodyweightForWeighted);
         }
 
-        float recommendedWeight = previousWeight.Value + validIncrease;
-        return E1RMCalculator.CalculateE1RM(recommendedWeight, lowerLimit, exercise.Mechanic, exercise.ExerciseType);
+        return CreateWeightedRecommendation(roundedTargetWeight, lowerLimit, exercise, bodyweightForWeighted);
+    }
+
+    private async Task<OverloadRecommendation?> BuildBodyweightRecommendationAsync(Guid userId, Guid exerciseId, Exercise exercise, CancellationToken cancellationToken)
+    {
+        var bodyweight = await GetUserBodyweightAsync(userId, cancellationToken);
+        if (!bodyweight.HasValue || bodyweight.Value <= 0)
+        {
+            return null;
+        }
+
+        var previousReps = await GetPreviousAverageRepsAsync(userId, exerciseId, cancellationToken);
+        if (!previousReps.HasValue)
+        {
+            return null;
+        }
+
+        int recommendedReps = previousReps.Value + 1;
+        double metric = E1RMCalculator.CalculateE1RM(0f, recommendedReps, exercise.Mechanic, exercise.ExerciseType, bodyweight.Value);
+        return new OverloadRecommendation(null, recommendedReps, metric, exercise.ExerciseType);
+    }
+
+    private static bool IsSupportedExerciseType(ExerciseType exerciseType)
+    {
+        return exerciseType == ExerciseType.WeightReps
+               || exerciseType == ExerciseType.BodyweightReps
+               || exerciseType == ExerciseType.WeightedBodyweight;
+    }
+
+    private async Task<float?> GetUserBodyweightAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (user == null || !float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bodyweight))
+        {
+            return null;
+        }
+
+        return bodyweight;
+    }
+
+    private static int GetForcedRepIncrease(int calculatedReps, int upperLimit)
+    {
+        if (calculatedReps <= upperLimit || calculatedReps == int.MaxValue)
+        {
+            return upperLimit + 1;
+        }
+
+        return calculatedReps;
+    }
+
+    private static OverloadRecommendation CreateWeightedRecommendation(float weight, int reps, Exercise exercise, float bodyweight = 0f)
+    {
+        return new OverloadRecommendation(
+            weight,
+            reps,
+            E1RMCalculator.CalculateE1RM(weight, reps, exercise.Mechanic, exercise.ExerciseType, bodyweight),
+            exercise.ExerciseType);
+    }
+
+    private async Task UpsertEstimationAsync(Guid userId, Guid exerciseId, OverloadRecommendation recommendation, CancellationToken cancellationToken)
+    {
+        var estimations = await _dbContext.ExerciseEstimations
+            .Where(estimation => estimation.UserId == userId && estimation.ExerciseId == exerciseId)
+            .OrderByDescending(estimation => estimation.TimeStamp)
+            .ToListAsync(cancellationToken);
+
+        var estimation = estimations.FirstOrDefault();
+        if (estimation is null)
+        {
+            estimation = new ExerciseEstimation
+            {
+                UserId = userId,
+                ExerciseId = exerciseId
+            };
+            _dbContext.ExerciseEstimations.Add(estimation);
+        }
+
+        if (estimations.Count > 1)
+        {
+            _dbContext.ExerciseEstimations.RemoveRange(estimations.Skip(1));
+        }
+
+        estimation.Weight = recommendation.Weight;
+        estimation.Reps = recommendation.Reps;
+        estimation.ExerciseType = recommendation.ExerciseType;
+        estimation.TimeStamp = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task RemoveEstimationAsync(Guid userId, Guid exerciseId, CancellationToken cancellationToken)
+    {
+        var estimations = await _dbContext.ExerciseEstimations
+            .Where(estimation => estimation.UserId == userId && estimation.ExerciseId == exerciseId)
+            .ToListAsync(cancellationToken);
+
+        if (estimations.Count == 0)
+        {
+            return;
+        }
+
+        _dbContext.ExerciseEstimations.RemoveRange(estimations);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private static bool IsMachineExercise(Exercise exercise)
     {
-        return !string.IsNullOrWhiteSpace(exercise.Equipment)
-               && exercise.Equipment.Contains("machine", StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrWhiteSpace(exercise.Equipment) && exercise.Equipment.Contains("machine", StringComparison.OrdinalIgnoreCase);
     }
 
     private static DateTime GetProjectedNextDate(List<PODataPoint> points)
@@ -146,11 +256,6 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
     private static bool IsRepsInRange(int reps, int lowerLimit, int upperLimit)
     {
         return reps >= lowerLimit && reps <= upperLimit;
-    }
-
-    private static int ClampRepsToRange(int reps, int lowerLimit, int upperLimit)
-    {
-        return Math.Clamp(reps, lowerLimit, upperLimit);
     }
 
     private async Task<(int LowerLimit, int UpperLimit)> GetUserRepRangeAsync(Guid userId, string? mechanic, CancellationToken cancellationToken)
@@ -204,15 +309,55 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
         return latestWorkout.Sets.Average(s => s.Weight);
     }
 
+    private async Task<int?> GetPreviousAverageRepsAsync(Guid userId, Guid exerciseId, CancellationToken cancellationToken)
+    {
+        var latestWorkout = await _dbContext.WorkoutLogs
+            .AsNoTracking()
+            .Join(_dbContext.ScheduledEntries,
+                log => log.EntryId,
+                entry => entry.Id,
+                (log, entry) => new { log, entry })
+            .Where(x => x.entry.UserId == userId && x.log.CompletedAt != null)
+            .OrderByDescending(x => x.log.StartedAt)
+            .Select(x => new
+            {
+                WorkoutDate = x.log.StartedAt,
+                Sets = _dbContext.WorkoutLogSets
+                    .Where(s => s.LogId == x.log.Id && s.ExerciseId == exerciseId && s.Type == SetType.Normal)
+                    .ToList()
+            })
+            .Where(x => x.Sets.Any())
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latestWorkout == null)
+        {
+            return null;
+        }
+
+        return (int)Math.Round(latestWorkout.Sets.Average(s => s.Reps));
+    }
+
     private async Task<List<PODataPoint>> GetNormalizedDataPointsAsync(Guid userId, Guid exerciseId, CancellationToken cancellationToken)
     {
         var exercise = await _dbContext.Exercises
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == exerciseId, cancellationToken);
 
-        if (exercise == null || (exercise.ExerciseType != ExerciseType.WeightReps && exercise.ExerciseType != ExerciseType.BodyweightReps))
+        if (exercise == null || !IsSupportedExerciseType(exercise.ExerciseType))
         {
             return new List<PODataPoint>();
+        }
+
+        float bodyweight = 0f;
+        if (exercise.ExerciseType == ExerciseType.BodyweightReps || exercise.ExerciseType == ExerciseType.WeightedBodyweight)
+        {
+            var userBodyweight = await GetUserBodyweightAsync(userId, cancellationToken);
+            if (!userBodyweight.HasValue || userBodyweight.Value <= 0)
+            {
+                return new List<PODataPoint>();
+            }
+
+            bodyweight = userBodyweight.Value;
         }
 
         var validWorkouts = await _dbContext.WorkoutLogs
@@ -263,12 +408,12 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
             float avgWeight = w.Sets.Average(s => s.Weight);
             int avgReps = (int)Math.Round(w.Sets.Average(s => s.Reps));
 
-            var e1RM = E1RMCalculator.CalculateE1RM(avgWeight, avgReps, exercise.Mechanic, exercise.ExerciseType);
+            var e1RM = E1RMCalculator.CalculateE1RM(avgWeight, avgReps, exercise.Mechanic, exercise.ExerciseType, bodyweight);
             dataPoints.Add(new PODataPoint(w.WorkoutDate, e1RM));
         }
 
         return dataPoints;
     }
 
-
+    private sealed record OverloadRecommendation(float? Weight, int Reps, double Metric, ExerciseType ExerciseType);
 }

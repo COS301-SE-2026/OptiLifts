@@ -119,8 +119,8 @@ export function ReschedulingConfig() {
                             {ALL_DAYS.map((day)=> {
                                 const active = config.restDays.includes(day);
                                 return (
-                                    <button key={day} type="button" onClick={() => toggleRestDay(day)}
-                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${active ? "bg-brand text-white shadow-xs" : "bg-surface border border-border text-muted-foreground hover:bg-surface-2"}`}>
+                                    <button key={day} type="button" onClick={() => toggleRestDay(day)} aria-pressed={active} aria-label={`Toggle ${day} as rest day`}
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-brand outline-none ${active ? "bg-brand text-white shadow-xs" : "bg-surface border border-border text-muted-foreground hover:bg-surface-2"}`}>
                                             {day.slice(0,3)}
                                     </button>
                                 );

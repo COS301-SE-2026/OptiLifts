@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, Calendar, X } from "lucide-react";
+import { useEffect } from "react";
 
 export interface RescheduledItem {
     entryId: string;
@@ -22,6 +23,16 @@ interface ReschedulePreviewModalProps {
 export function ReschedulePreviewModal({
     isOpen, onClose, proposedItems, droppedItems, onConfirm, isConfirming, selectedMissedIds
 }: Readonly<ReschedulePreviewModalProps>){
+    //added keyboard accessibility
+    useEffect(()=> {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onClose]);
+    
     if (!isOpen){
         return null;
     }
@@ -32,7 +43,7 @@ export function ReschedulePreviewModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200">
-            <button type="button" aria-label="Close modal backdrop" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
+            <button type="button" tabIndex={-1} aria-label="Close modal backdrop" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
             <div className="relative z-10 w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 font-sans overflow-hidden">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                     <div>
@@ -42,7 +53,7 @@ export function ReschedulePreviewModal({
                         </h3>
                         <p className="text-sm text-muted-foreground mt-1">Review suggested workout schedule changes.</p>
                     </div>
-                    <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                    <button type="button" onClick={onClose} aria-label="Close modal" className="text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-brand rounded-lg p-1">
                         <X size={20}/>
                     </button>
                 </div>

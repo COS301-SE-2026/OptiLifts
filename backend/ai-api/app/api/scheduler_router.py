@@ -1,5 +1,9 @@
 from fastapi import APIRouter
-from app.models.reschedule import RescheduleRequest, RescheduleResponse
+from app.models.reschedule import (
+    RescheduleRequest,
+    RescheduleResponse,
+    RescheduledEntry,
+)
 import time
 
 from app.services.dynamic_scheduler_tier1_solver import attempt_tier_one
@@ -37,11 +41,23 @@ def reschedule_workouts(request: RescheduleRequest):
         return tier2_response
 
     # Both tiers failed :(
-    # placeholder for what to do if it's infeasible to reschedule all
+    dropped_fallback = [
+        RescheduledEntry(
+            entry_id=entry.id,
+            workout_id=entry.workout_id,
+            workout_name=entry.workout_name,
+            original_scheduled_at=entry.scheduled_at,
+            new_scheduled_at=entry.scheduled_at,
+            action="Dropped",
+        )
+        for entry in request.entries
+        if entry.status == "Missed"
+    ]
+
     return RescheduleResponse(
         user_id=request.user_id,
         execution_tier="Failed",
         execution_time_ms=int((time.time() - start_time) * 1000),
         rescheduled_entries=[],
-        dropped_entries=request.entries,
+        dropped_entries=dropped_fallback,
     )

@@ -73,7 +73,28 @@ def test_tier1_1missedworkout_nextdaytaken():
     data = response.json()
 
     # schedules for Tuesday the 9th
-    assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-01T08:00:00Z"
+    assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-02T08:00:00Z"
+
+
+def test_tier1_missedworkout_musclehoursconflict():
+    payload = get_base_payload()
+    payload["preferences"]["max_workouts_per_day"] = 2
+    payload["preferences"]["min_muscle_rest_hours"] = 72
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Scheduled", "2026-09-01T08:00:00Z", ["Chest"])
+    )
+
+    response = client.post("/ai-api/reschedule", json=payload)
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["execution_tier"] == "Tier1_FastPath"
+    assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-04T08:00:00Z"
 
 
 def test_tier2_musclerest_enforced_fortwowithsamemuscle():
@@ -176,7 +197,109 @@ def test_tier2_3missedworkouts_2perday():
     assert len(set(new_dates)) < 3
 
 
-def test_impossible_schedule_infeasible_4workoutsin3days_max1perday():
+def test_tier2_schedule_muscleconflict_dropsone():
+    payload = get_base_payload()
+    payload["planning_window_end"] = "2026-09-01T23:59:59Z"
+
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Chest"])
+    )
+
+    response = client.post("/ai-api/reschedule", json=payload)
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["execution_tier"] == "Tier2_CPSAT"
+    assert len(data["rescheduled_entries"]) == 1
+    assert len(data["dropped_entries"]) == 1
+
+
+def test_tier2_all_dropped_fails_muscleclash():
+    payload = get_base_payload()
+    payload["planning_window_end"] = "2026-09-02T23:59:59Z"
+
+    payload["preferences"]["max_workouts_per_day"] = 2
+
+    payload["entries"].append(
+        create_entry("1", "Scheduled", "2026-08-31T17:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Scheduled", "2026-09-01T17:00:00Z", ["Quads"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Scheduled", "2026-09-02T17:00:00Z", ["Chest"])
+    )
+
+    payload["entries"].append(
+        create_entry("4", "Missed", "2026-08-25T08:00:00Z", ["Chest", "Quads"])
+    )
+
+    response = client.post("/ai-api/reschedule", json=payload)
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["execution_tier"] == "Failed"
+
+
+def test_tier2_multiple_drops_required():
+    payload = get_base_payload()
+    payload["planning_window_end"] = "2026-09-02T23:59:59Z"
+
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-08-31T09:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Missed", "2026-08-31T10:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("4", "Missed", "2026-08-31T11:00:00Z", ["Chest"])
+    )
+
+    response = client.post("/ai-api/reschedule", json=payload)
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["execution_tier"] == "Tier2_CPSAT"
+    assert len(data["rescheduled_entries"]) == 2
+    assert len(data["dropped_entries"]) == 2
+
+
+def test_tier2_distance_penalty_workoutremoval():
+    payload = get_base_payload()
+    payload["planning_window_end"] = "2026-09-01T23:59:59Z"
+    payload["preferences"]["max_workouts_per_day"] = 1
+
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Push"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Pull"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Missed", "2026-09-02T08:00:00Z", ["Legs"])
+    )
+
+    response = client.post("/ai-api/reschedule", json=payload)
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["execution_tier"] == "Tier2_CPSAT"
+    assert len(data["rescheduled_entries"]) == 2
+    assert len(data["dropped_entries"]) == 1
+    assert data["dropped_entries"][0]["entry_id"] == "3"
+
+
+def test_impossible_schedule_infeasible_4workoutsin3days_max1perday_dropsone():
     payload = get_base_payload()
     payload["planning_window_end"] = "2026-09-02T23:59:59Z"
 
@@ -194,13 +317,13 @@ def test_impossible_schedule_infeasible_4workoutsin3days_max1perday():
     )
 
     response = client.post("/ai-api/reschedule", json=payload)
-
     assert response.status_code == 200
 
     data = response.json()
 
-    assert data["execution_tier"] == "Failed"
-    assert len(data["dropped_entries"]) == 4
+    assert data["execution_tier"] == "Tier2_CPSAT"
+    assert len(data["dropped_entries"]) == 1
+    assert len(data["rescheduled_entries"]) == 3
 
 
 def test_empty_payload():
@@ -222,23 +345,3 @@ def test_missingfields():
     response = client.post("/ai-api/reschedule", json=payload)
 
     assert response.status_code == 422
-
-
-def test_impossible_schedule_muscleconflict():
-    payload = get_base_payload()
-    payload["planning_window_end"] = "2026-09-01T23:59:59Z"
-
-    payload["entries"].append(
-        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
-    )
-    payload["entries"].append(
-        create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Chest"])
-    )
-
-    response = client.post("/ai-api/reschedule", json=payload)
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["execution_tier"] == "Failed"
-    assert len(data["dropped_entries"]) == 2

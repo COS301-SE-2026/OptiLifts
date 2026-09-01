@@ -40,4 +40,4 @@ class RescheduleResponse(BaseModel):
     execution_tier: str
     execution_time_ms: int  # for fun analytics
     rescheduled_entries: List[RescheduledEntry]
-    dropped_entries: List[Entry]
+    dropped_entries: List[RescheduledEntry]

@@ -16,7 +16,6 @@ class Entry(BaseModel):
     scheduled_at: datetime
     status: str
     primary_muscles: List[str] = Field(default_factory=list)
-    estimated_duration_minutes: int = Field(default=60, ge=0)
 
 
 class RescheduleRequest(BaseModel):

@@ -2,6 +2,7 @@ import { customFetch } from "@/lib/custom-fetch"
 import { Calendar, CheckCircle2, Loader2, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "./button"
+import { ReschedulingConfig } from "./rescheduling-config"
 
 type ScheduleSettingsPopupProps = Readonly<{
     isOpen: boolean
@@ -139,11 +140,12 @@ export function ScheduleSettingsPopup({
 
     return (
         <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4">
+            <button type="button" aria-label="Close settings backdrop" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
             <div className="relative z-10 w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <div className="flex items-center gap-2">
                         <Calendar size={20} className="text-brand"/>
-                        <h2 className="text-lg font-bold font-display uppercase tracking-wider text-foreground">
+                        <h2 className="text-xl font-bold font-display uppercase tracking-wider text-foreground">
                             Schedule Settings
                         </h2>
                     </div>
@@ -152,7 +154,7 @@ export function ScheduleSettingsPopup({
                     </button>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto font-sans">
                     {isLoading ? (
                         <div className="py-8 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                             <Loader2 className="animate-spin text-brand" size={24}/>
@@ -212,6 +214,8 @@ export function ScheduleSettingsPopup({
                                     </div>
                                 </div>
                             )}
+                            {/* rescheduling section */}
+                            <ReschedulingConfig/>
                         </>
                     )}
                 </div>

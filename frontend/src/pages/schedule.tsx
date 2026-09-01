@@ -80,6 +80,7 @@ interface ScheduledEntryDto {
 }
 
 interface ScheduleConfig{
+    readonly dynamicSchedulerEnabled?: boolean
     readonly cycleWindowLengthDays: number
     readonly cycleStartDate: string
 }
@@ -626,8 +627,8 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            disabled={isBeforeToday || !isOnline}
-                                            // disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
+                                            // disabled={isBeforeToday || !isOnline}
+                                            disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
                                             title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
@@ -640,7 +641,7 @@ export default function SchedulePage() {
                 {/* summary section */}
                 <div className="col-span-12 lg:col-span-4 space-y-6 lg:sticky lg:top-24">
                         {/* rescheduling stuff */}
-                        {missedSessions.length > 0 && (
+                        {scheduleConfig?.dynamicSchedulerEnabled && missedSessions.length > 0 && (
                             <div>
                                 <div className="flex-1 p-4 bg-destructive/10 border border-brand rounded-2xl flex flex-col gap-3 font-sans animate-fadeIn shadow-sm">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -744,7 +745,7 @@ export default function SchedulePage() {
             }
             }}/>
 
-            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}/>
+            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => { setIsSettingsOpen(false); void fetchScheduleAndAnalytics(); }}/>
             <ReschedulePreviewModal
                 isOpen={isPreviewOpen}
                 onClose={() => setIsPreviewOpen(false)}

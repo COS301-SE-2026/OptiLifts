@@ -143,14 +143,14 @@ export function ReschedulingConfig() {
                             })}/>
                         </div>
                     </div>
-                    <Button type="button" onClick={handleSave} disabled={isSaving} className="w-full mt-2 font-display uppercase tracking-wider" size="sm">
-                        {isSaving ? "Saving..." : "Save Rescheduling Preferences"}
-                    </Button>
+                    
 
 
                 </div>
             )}
-
+            <Button type="button" onClick={handleSave} disabled={isSaving} className="w-full">
+                {isSaving ? "Saving..." : "Save Rescheduling Preferences"}
+            </Button>
 
         </div>
     );

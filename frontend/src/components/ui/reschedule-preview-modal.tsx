@@ -30,8 +30,9 @@ export function ReschedulePreviewModal({
     };
 
     return (
-        <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-            <div onClick={(e) => e.stopPropagation()} className="relative z-10 w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-2xl p-6 space-y-6 animate-in zoom-in-95 duration-200 font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+            <button type="button" aria-label="Close modal backdrop" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
+            <div className="relative z-10 w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-2xl p-6 space-y-6 animate-in zoom-in-95 duration-200 font-sans">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                     <div>
                         <h3 className="text-xl font-bold font-display uppercase tracking-wider text-foreground flex items-center gap-2">

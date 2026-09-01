@@ -231,6 +231,55 @@ export default function SchedulePage() {
         }
     }, [currentWeekDate, weekDates, viewMode])
 
+    const aggreMuscleSetCounts = (
+        distribution?: readonly {
+            muscleGroup: string;
+            setCount: number
+        }[]): Record<string, number> => {
+        const aggre: Record<string, number> = {
+            Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
+        }
+        if (!distribution) {
+            return aggre
+        }
+        distribution.forEach((item) => {
+            const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
+            if (mappedCat && mappedCat in aggre) {
+                aggre[mappedCat] += item.setCount
+            }
+        })
+        return aggre
+    }
+    const fetchCycleSchedule = async (confData: ScheduleConfig): Promise<ScheduledEntryDto[] | null> => {
+        const cycleLength = confData.cycleWindowLengthDays ?? 7
+        const rawStart = confData.cycleStartDate ? new Date(confData.cycleStartDate) : new Date()
+        const cycleStartDate = Date.UTC(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate())
+        const today = new Date()
+        const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+        const diffDays = Math.max(0, Math.floor((todayUtc - cycleStartDate) / (1000 * 60 * 60 * 24)))
+        const cycleIndex = Math.floor(diffDays / cycleLength)
+        const cStart = new Date(cycleStartDate + cycleIndex * cycleLength * 24 * 60 * 60 * 1000)
+        const cEnd = new Date(cStart.getTime() + (cycleLength - 1) * 24 * 60 * 60 * 1000 + (23 * 3600 + 59 * 60 + 59) * 1000)
+        const cycleResp = await customFetch(`/api/users/me/schedule?startDate=${cStart.toISOString()}&endDate=${cEnd.toISOString()}`)
+        if (cycleResp.ok) {
+            return (await cycleResp.json()) as ScheduledEntryDto[]
+        }
+        return null
+    }
+    const fetchCalendarLogs = async (currentWeekDate: Date): Promise<Record<string, string>> => {
+        const year = currentWeekDate.getFullYear()
+        const month = currentWeekDate.getMonth() + 1
+        const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
+        if (!calendarRes.ok) return {}
+        const calendarData = await calendarRes.json()
+        const mapping: Record<string, string> = {}
+        calendarData.entries.forEach((entry: { workoutId: string, date: string, logId: string }) => {
+            mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
+        })
+        return mapping
+    }
+
+
     const fetchScheduleAndAnalytics = useCallback(async () => {
         await Promise.resolve()
         setIsLoading(true)
@@ -261,67 +310,26 @@ export default function SchedulePage() {
             setIsOfflineData(false)
             void cacheScheduleEntries(scheduleData)
 
-            if (configResp && configResp.ok){
+            if (configResp?.ok){
                 const confData = (await configResp.json()) as ScheduleConfig
                 setScheduleConfig(confData)
-                const cycleLength = confData.cycleWindowLengthDays ?? 7
-                const rawStart = confData.cycleStartDate ? new Date(confData.cycleStartDate) : new Date()
-                const cycleStartDate = Date.UTC(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate())
-                const today = new Date()
-                const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
-                const diffDays = Math.max(0, Math.floor((todayUtc - cycleStartDate)/(1000 * 60 * 60 * 24)))
-                const cycleIndex = Math.floor(diffDays/cycleLength)
-                const cStart = new Date(cycleStartDate + cycleIndex*cycleLength*24*60*60*1000)
-                const cEnd = new Date(cStart.getTime() + (cycleLength - 1)*24*60* 60*1000+ (23*3600+59*60+ 59)*1000)
-                const cycleResp = await customFetch(`/api/users/me/schedule?startDate=${cStart.toISOString()}&endDate=${cEnd.toISOString()}`)
-                if (cycleResp.ok) {
-                    const cycledata = (await cycleResp.json()) as ScheduledEntryDto[]
-                    setCycleScheduleEntries(cycledata)
+                const cycleData = await fetchCycleSchedule(confData)
+                if (cycleData){
+                    setCycleScheduleEntries(cycleData)
                 }
             }
             
 
-            try{
-                const year = currentWeekDate.getFullYear()
-                const month = currentWeekDate.getMonth() + 1
-                const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
-                if (calendarRes.ok){
-                    const calendarData = await calendarRes.json()
-                    const mapping: Record<string, string> = {}
-                    calendarData.entries.forEach((entry: {workoutId:string, date:string, logId:string}) => {
-                        mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
-                    })
-                    setCompletedLogs(mapping)
-                }
-            } catch(e){
+            try {
+                const logsMapping = await fetchCalendarLogs(currentWeekDate)
+                setCompletedLogs(logsMapping)
+            }
+            catch (e) {
                 setError(e instanceof Error ? e.message : 'Error fetching calendar logs')
             }
 
-            const aggre: Record<string, number> = {
-                    Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
-            }
-            if (analyticsData.muscleDistribution) {
-                analyticsData.muscleDistribution.forEach((item) => {
-                    const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
-                    if (mappedCat && mappedCat in aggre) {
-                        aggre[mappedCat] += item.setCount
-                    }
-                })
-            }
-            setMuscleValues(aggre)
-
-            const secondaryAggre: Record<string, number> = {
-                    Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
-            }
-            if (analyticsData.secondaryMuscleDistribution) {
-                analyticsData.secondaryMuscleDistribution.forEach((item) => {
-                    const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
-                    if (mappedCat && mappedCat in secondaryAggre) {
-                        secondaryAggre[mappedCat] += item.setCount
-                    }
-                })
-            }
-            setSecondaryMuscleValues(secondaryAggre)
+            setMuscleValues(aggreMuscleSetCounts(analyticsData.muscleDistribution))
+            setSecondaryMuscleValues(aggreMuscleSetCounts(analyticsData.secondaryMuscleDistribution))
         } catch (error) {
             const cached = await getCachedScheduleEntries<ScheduledEntryDto>()
 

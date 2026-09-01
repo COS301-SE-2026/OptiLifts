@@ -134,6 +134,182 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.ToTable("messages", (string)null);
                 });
 
+            modelBuilder.Entity("OptiLifts.Domain.Training.ExerciseTrend", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("trend_id");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("computed_at");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_id");
+
+                    b.Property<float>("MeanE1rm")
+                        .HasColumnType("real")
+                        .HasColumnName("mean_e1rm");
+
+                    b.Property<int>("SessionsUsed")
+                        .HasColumnType("integer")
+                        .HasColumnName("sessions_used");
+
+                    b.Property<float>("SlopeCiHigh")
+                        .HasColumnType("real")
+                        .HasColumnName("slope_ci_high");
+
+                    b.Property<float>("SlopeCiLow")
+                        .HasColumnType("real")
+                        .HasColumnName("slope_ci_low");
+
+                    b.Property<float>("SlopePctPerWeek")
+                        .HasColumnType("real")
+                        .HasColumnName("slope_pct_per_week");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("SupersedesExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_exercise_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("WindowEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("window_end");
+
+                    b.Property<DateTime>("WindowStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("window_start");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("SupersedesExerciseId");
+
+                    b.HasIndex("UserId", "ExerciseId")
+                        .IsUnique();
+
+                    b.ToTable("exercise_trends", (string)null);
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Training.FatigueState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("fatigue_state_id");
+
+                    b.Property<float>("AcuteLoad")
+                        .HasColumnType("real")
+                        .HasColumnName("acute_load");
+
+                    b.Property<float>("Acwr")
+                        .HasColumnType("real")
+                        .HasColumnName("acwr");
+
+                    b.Property<float>("ChronicLoad")
+                        .HasColumnType("real")
+                        .HasColumnName("chronic_load");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("computed_at");
+
+                    b.Property<string>("Confidence")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("confidence");
+
+                    b.Property<float>("DecrementRatio")
+                        .HasColumnType("real")
+                        .HasColumnName("decrement_ratio");
+
+                    b.Property<bool>("IsFlagged")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_flagged");
+
+                    b.Property<float>("RpeSlope")
+                        .HasColumnType("real")
+                        .HasColumnName("rpe_slope");
+
+                    b.Property<int>("SignalsFired")
+                        .HasColumnType("integer")
+                        .HasColumnName("signals_fired");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("fatigue_states", (string)null);
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Training.TrainingEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("acknowledged_at");
+
+                    b.Property<float?>("Confidence")
+                        .HasColumnType("real")
+                        .HasColumnName("confidence");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Diagnosis")
+                        .HasColumnType("text")
+                        .HasColumnName("diagnosis");
+
+                    b.Property<string>("Outcome")
+                        .HasColumnType("text")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("text")
+                        .HasColumnName("recommendation");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("training_events", (string)null);
+                });
+
             modelBuilder.Entity("OptiLifts.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -761,7 +937,7 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("rest_time");
 
-                    b.Property<float>("Rpe")
+                    b.Property<float?>("Rpe")
                         .HasColumnType("real")
                         .HasColumnName("rpe");
 
@@ -817,6 +993,44 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Training.ExerciseTrend", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesExerciseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("OptiLifts.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Training.FatigueState", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OptiLifts.Domain.Training.TrainingEvent", b =>
+                {
+                    b.HasOne("OptiLifts.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -78,9 +78,10 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
             e.Status.ToString(),
             musclesWorkout.GetValueOrDefault(e.WorkoutId, new List<string>())
         )).ToList();
+        var effectiveStart = start < today ? today : start;
         var payload = new PythonRescheduleRequest(
             request.UserId.ToString(),
-            start,
+            effectiveStart,
             end,
             new PythonPreferences(
                 config?.MaxWorkoutsPerDay ?? 1,

@@ -40,6 +40,26 @@ def attempt_tier_one(
             curr_day += timedelta(days=1)
             continue
 
+        min_days = request.preferences.min_muscle_rest_hours / 24
+
+        if min_days > 0:
+            conflict = False
+            first_muscles = set(missed_workout.primary_muscles)
+            
+            for entry in scheduled_workouts:
+                second_muscles = set(entry.primary_muscles)
+                if first_muscles.intersection(second_muscles):
+
+                    diff_days = abs((curr_day.date() - entry.scheduled_at.date()).days)
+                    
+                    if diff_days < min_days:
+                        conflict = True
+                        break
+                        
+            if conflict:
+                curr_day += timedelta(days=1)
+                continue
+
         # good day
         new_datetime = curr_day.replace(
             hour=missed_workout.scheduled_at.hour,

@@ -25,7 +25,7 @@ internal record PythonRescheduleResponse(
     string ExecutionTier,
     int ExecutionTimeMs,
     List<PythonRescheduledEntry> RescheduledEntries,
-    List<PythonEntry> DroppedEntries
+    List<PythonRescheduledEntry> DroppedEntries
 );
 internal record PythonRescheduledEntry(
     string EntryId,

@@ -147,6 +147,7 @@ export default function SchedulePage() {
     
     const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig | null>(null)
     const [cycleScheduleEntries, setCycleScheduleEntries] = useState<ScheduledEntryDto[]>([])
+    const [droppedSchedule, setDroppedSchedule] = useState<RescheduledItem[]>([]);
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -496,6 +497,7 @@ export default function SchedulePage() {
             if (res.ok) {
                 const data = await res.json();
                 setProposedSchedule(data.rescheduledEntries || []);
+                setDroppedSchedule(data.droppedEntries || []);
                 setIsPreviewOpen(true);
             } else {
                 toast.error("Failed to generate proposed schedule", "Error");
@@ -750,6 +752,7 @@ export default function SchedulePage() {
                 isOpen={isPreviewOpen}
                 onClose={() => setIsPreviewOpen(false)}
                 proposedItems={proposedSchedule}
+                droppedItems={droppedSchedule}
                 onConfirm={handleConfirmReschedule}
                 isConfirming={isConfirmingReschedule}
                 selectedMissedIds={selectedMissedIds}/>

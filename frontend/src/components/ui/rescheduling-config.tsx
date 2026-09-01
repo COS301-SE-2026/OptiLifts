@@ -97,7 +97,7 @@ export function ReschedulingConfig() {
             
             {config.dynamicSchedulerEnabled && (
                 <div className="space-y-3 bg-surface-2/40 p-4 rounded-2xl border border-border text-xs">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <span className="font-bold text-muted-foreground uppercase text-[11px] block mb-1">Max Workouts/Day</span>
                             <Input type="number" min={1} max={5} value={config.maxWorkoutsPerDay} onChange={(e) => setConfig({
@@ -128,7 +128,7 @@ export function ReschedulingConfig() {
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <span className="font-bold text-muted-foreground uppercase text-[11px] block mb-1">Cycle Length (Days)</span>
                             <Input type="number" min={1} max={30} value={config.cycleWindowLengthDays} onChange={(e) => setConfig({

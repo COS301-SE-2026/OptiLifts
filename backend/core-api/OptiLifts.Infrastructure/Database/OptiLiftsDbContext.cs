@@ -8,6 +8,7 @@ using OptiLifts.Domain.Messaging;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
+using OptiLifts.Domain.Training;
 
 namespace OptiLifts.Infrastructure.Database;
 
@@ -44,6 +45,10 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<UserModel> UserModels { get; set; }
     public DbSet<Badge> Badges { get; set; }
     public DbSet<UserBadge> UserBadges { get; set; }
+    public DbSet<ExerciseTrend> ExerciseTrends { get; set; }
+    public DbSet<FatigueState> FatigueStates { get; set; }
+    public DbSet<TrainingEvent> TrainingEvents { get; set; }
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

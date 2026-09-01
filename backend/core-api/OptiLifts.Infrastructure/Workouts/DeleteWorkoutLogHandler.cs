@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.DeleteWorkoutLog;
 using OptiLifts.Infrastructure.Database;
 
@@ -8,10 +9,12 @@ namespace OptiLifts.Infrastructure.Workouts;
 public sealed class DeleteWorkoutLogHandler : IRequestHandler<DeleteWorkoutLogCommand, bool>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly ISender? _sender;
 
-    public DeleteWorkoutLogHandler(OptiLiftsDbContext dbContext)
+    public DeleteWorkoutLogHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _sender = sender;
     }
 
     public async Task<bool> Handle(DeleteWorkoutLogCommand request, CancellationToken cancellationToken)
@@ -30,8 +33,25 @@ public sealed class DeleteWorkoutLogHandler : IRequestHandler<DeleteWorkoutLogCo
             return false;
         }
 
+        var exerciseIds = await _dbContext.WorkoutLogSets
+            .Where(set => set.LogId == log.Id)
+            .Select(set => set.ExerciseId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
         _dbContext.WorkoutLogs.Remove(log);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (_sender is null)
+        {
+            return true;
+        }
+
+        foreach (var exerciseId in exerciseIds)
+        {
+            await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
+        }
+
         return true;
     }
 }

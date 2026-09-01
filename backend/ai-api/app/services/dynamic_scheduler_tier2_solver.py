@@ -63,13 +63,13 @@ def _apply_muscle_rest_constraint(
             ):  # sonarqube made me do it
                 continue
 
-            for day in range(num_days - min_days):
+            for day in range(num_days):
                 for gap in range(1, min_days + 1):
-                    check1 = schedule_vars[(w1, day)] + schedule_vars[(w2, day + gap)]
-                    check2 = schedule_vars[(w2, day)] + schedule_vars[(w1, day + gap)]
-
-                    model.Add(check1 <= 1)
-                    model.Add(check2 <= 1)
+                    if (day + gap < num_days):
+                        check1 = schedule_vars[(w1, day)] + schedule_vars[(w2, day + gap)]
+                        check2 = schedule_vars[(w2, day)] + schedule_vars[(w1, day + gap)]
+                        model.Add(check1 <= 1)
+                        model.Add(check2 <= 1)
 
 
 def _set_penalties(

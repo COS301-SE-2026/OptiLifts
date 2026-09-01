@@ -197,8 +197,28 @@ def test_tier2_3missedworkouts_2perday():
 
     assert len(set(new_dates)) < 3
 
+def test_tier2_schedule_muscleconflict_dropsone():
+    payload = get_base_payload()
+    payload["planning_window_end"] = "2026-09-01T23:59:59Z"
 
-def test_impossible_schedule_infeasible_4workoutsin3days_max1perday():
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Chest"])
+    )
+
+    response = client.post("/ai-api/reschedule", json=payload)
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["execution_tier"] == "Tier2_CPSAT"
+    assert len(data["rescheduled_entries"]) == 1
+    assert len(data["dropped_entries"]) == 1
+
+
+def test_impossible_schedule_infeasible_4workoutsin3days_max1perday_dropsone():
     payload = get_base_payload()
     payload["planning_window_end"] = "2026-09-02T23:59:59Z"
 
@@ -221,8 +241,9 @@ def test_impossible_schedule_infeasible_4workoutsin3days_max1perday():
 
     data = response.json()
 
-    assert data["execution_tier"] == "Failed"
-    assert len(data["dropped_entries"]) == 4
+    assert data["execution_tier"] == "Tier2_CPSAT"
+    assert len(data["dropped_entries"]) == 1
+    assert len(data["rescheduled_entries"]) == 3
 
 
 def test_empty_payload():
@@ -245,22 +266,3 @@ def test_missingfields():
 
     assert response.status_code == 422
 
-
-def test_impossible_schedule_muscleconflict():
-    payload = get_base_payload()
-    payload["planning_window_end"] = "2026-09-01T23:59:59Z"
-
-    payload["entries"].append(
-        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
-    )
-    payload["entries"].append(
-        create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Chest"])
-    )
-
-    response = client.post("/ai-api/reschedule", json=payload)
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["execution_tier"] == "Failed"
-    assert len(data["dropped_entries"]) == 2

@@ -35,7 +35,7 @@ public class ProgressiveOverloadIntegrationTests : IntegrationTestBase
         var exercise = detail!.Exercises.Single(e => e.ExerciseId == exerciseId);
 
         exercise.Estimation.Should().NotBeNull();
-        exercise.Estimation!.Weight.Should().Be(100f);
+        exercise.Estimation.Weight.Should().Be(100f);
         //flat history has no trend, so the minimum-growth floor pushes reps up by one instead of stalling.
         exercise.Estimation.Reps.Should().Be(11);
     }
@@ -59,7 +59,7 @@ public class ProgressiveOverloadIntegrationTests : IntegrationTestBase
         var exercise = detail!.Exercises.Single(e => e.ExerciseId == exerciseId);
 
         exercise.Estimation.Should().NotBeNull();
-        exercise.Estimation!.Weight.Should().BeNull();
+        exercise.Estimation.Weight.Should().BeNull();
         exercise.Estimation.Reps.Should().Be(11);
     }
 

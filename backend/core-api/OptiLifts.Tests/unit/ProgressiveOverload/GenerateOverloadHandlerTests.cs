@@ -84,7 +84,7 @@ public class GenerateOverloadHandlerTests
 
         var estimation = await testDb.Context.ExerciseEstimations.SingleAsync();
         estimation.Weight.Should().NotBeNull();
-        estimation.Weight!.Value.Should().BeGreaterThan(100f);
+        estimation.Weight.Value.Should().BeGreaterThan(100f);
         ((estimation.Weight.Value - 100f) % 5f).Should().BeApproximately(0f, 0.001f);
     }
 

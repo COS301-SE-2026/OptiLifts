@@ -46,7 +46,7 @@ def reschedule_workouts(request: RescheduleRequest):
             new_scheduled_at=entry.scheduled_at,
             action="Dropped"
         )
-        for entry in request.entries
+        for entry in request.entries if entry.status == "Missed"
     ]
     
     return RescheduleResponse(

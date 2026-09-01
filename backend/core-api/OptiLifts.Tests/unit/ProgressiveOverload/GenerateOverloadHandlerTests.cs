@@ -25,16 +25,38 @@ public class GenerateOverloadHandlerTests
     }
 
     [Fact]
-    public async Task Handle_BodyweightExercise_ReturnsClampedRepRecommendation()
+    public async Task Handle_BodyweightExercise_AlwaysRecommendsOneMoreRepThanPreviousSession()
     {
         await using var testDb = await CreateTestDatabaseAsync();
-        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.BodyweightReps, "compound", null, [(0f, 10), (0f, 10), (0f, 10), (0f, 10)]);
+        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.BodyweightReps, "compound", null, [(0f, 10), (0f, 10), (0f, 10), (0f, 10)], userWeight: 80f);
         var handler = new GenerateOverloadHandler(testDb.Context);
 
         var result = await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
 
+        var expectedMetric = E1RMCalculator.CalculateE1RM(0f, 11, "compound", ExerciseType.BodyweightReps, 80f);
         result.Should().HaveCount(5);
-        result[0].Metric.Should().Be(8d);
+        result[0].Metric.Should().BeApproximately(expectedMetric, 0.001d);
+
+        var estimation = await testDb.Context.ExerciseEstimations.SingleAsync();
+        estimation.Reps.Should().Be(11);
+        estimation.Weight.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_EligibleHistory_StoresCurrentExerciseEstimation()
+    {
+        await using var testDb = await CreateTestDatabaseAsync();
+        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.WeightReps, null, "barbell", [(100f, 10), (100f, 10), (100f, 10), (100f, 10)]);
+        var handler = new GenerateOverloadHandler(testDb.Context);
+
+        await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
+
+        var estimation = await testDb.Context.ExerciseEstimations.SingleAsync();
+        estimation.UserId.Should().Be(setup.UserId);
+        estimation.ExerciseId.Should().Be(setup.Exercise.Id);
+        estimation.Weight.Should().Be(100f);
+        estimation.Reps.Should().Be(11);
+        estimation.ExerciseType.Should().Be(ExerciseType.WeightReps);
     }
 
     [Fact]
@@ -46,7 +68,7 @@ public class GenerateOverloadHandlerTests
 
         var result = await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
 
-        var expectedMetric = E1RMCalculator.CalculateE1RM(100f, 10, null, ExerciseType.WeightReps);
+        var expectedMetric = E1RMCalculator.CalculateE1RM(100f, 13, null, ExerciseType.WeightReps);
         result.Should().HaveCount(5);
         result[0].Metric.Should().BeApproximately(expectedMetric, 0.001d);
     }
@@ -55,26 +77,29 @@ public class GenerateOverloadHandlerTests
     public async Task Handle_NonMachineExercise_TargetWeightIsRoundedDownToFiveKgIncrement()
     {
         await using var testDb = await CreateTestDatabaseAsync();
-        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.WeightReps, null, "dumbbell", [(100f, 10), (100f, 10), (100f, 10), (100f, 10)]);
+        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.WeightReps, null, "dumbbell", [(100f, 17), (100f, 14), (100f, 11), (100f, 8)]);
         var handler = new GenerateOverloadHandler(testDb.Context);
 
-        var result = await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
+        await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
 
-        var expectedMetric = E1RMCalculator.CalculateE1RM(335f, 8, null, ExerciseType.WeightReps);
-        result[0].Metric.Should().BeApproximately(expectedMetric, 0.001d);
+        var estimation = await testDb.Context.ExerciseEstimations.SingleAsync();
+        estimation.Weight.Should().NotBeNull();
+        estimation.Weight!.Value.Should().BeGreaterThan(100f);
+        ((estimation.Weight.Value - 100f) % 5f).Should().BeApproximately(0f, 0.001f);
     }
 
     [Fact]
-    public async Task Handle_MachineExercise_KeepsUnroundedPredictedTargetWeight()
+    public async Task Handle_MachineExercise_TruncatesPredictedTargetWeightToWholeNumber()
     {
         await using var testDb = await CreateTestDatabaseAsync();
-        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.WeightReps, null, "machine", [(100f, 10), (100f, 10), (100f, 10), (100f, 10)]);
+        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.WeightReps, null, "machine", [(100f, 13), (100f, 13), (100f, 13), (100f, 13)]);
         var handler = new GenerateOverloadHandler(testDb.Context);
 
         var result = await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
 
-        var predictedMetric = E1RMCalculator.CalculateE1RM(100f, 10, null, ExerciseType.WeightReps);
-        var expectedWeight = E1RMCalculator.ReverseEpleyWeight(predictedMetric, 8, null, ExerciseType.WeightReps);
+        var lastActualMetric = E1RMCalculator.CalculateE1RM(100f, 13, null, ExerciseType.WeightReps);
+        var predictedMetric = lastActualMetric * 1.02d;
+        var expectedWeight = (float)Math.Truncate(E1RMCalculator.ReverseEpleyWeight(predictedMetric, 8, null, ExerciseType.WeightReps));
         var expectedMetric = E1RMCalculator.CalculateE1RM(expectedWeight, 8, null, ExerciseType.WeightReps);
         result[0].Metric.Should().BeApproximately(expectedMetric, 0.001d);
     }
@@ -129,7 +154,8 @@ public class GenerateOverloadHandlerTests
         string? mechanic,
         string? equipment,
         IReadOnlyList<(float Weight, int Reps)> loggedSets,
-        IReadOnlyList<int>? daysAgo = null)
+        IReadOnlyList<int>? daysAgo = null,
+        float? userWeight = null)
     {
         var user = new User
         {
@@ -137,7 +163,8 @@ public class GenerateOverloadHandlerTests
             Email = $"{Guid.NewGuid()}@example.com",
             EmailHash = Guid.NewGuid().ToString(),
             PasswordHash = "test",
-            DisplayName = "Test user"
+            DisplayName = "Test user",
+            Weight = userWeight?.ToString(System.Globalization.CultureInfo.InvariantCulture)
         };
         var muscle = new Muscle { Id = Guid.NewGuid(), Name = $"Muscle {Guid.NewGuid()}" };
         var exercise = new Exercise
@@ -179,7 +206,7 @@ public class GenerateOverloadHandlerTests
                 Type = SetType.Normal,
                 Weight = loggedSets[index].Weight,
                 Reps = loggedSets[index].Reps,
-                LoggedAt = log.CompletedAt!.Value
+                LoggedAt = log.CompletedAt.Value
             };
 
             context.AddRange(entry, log, set);

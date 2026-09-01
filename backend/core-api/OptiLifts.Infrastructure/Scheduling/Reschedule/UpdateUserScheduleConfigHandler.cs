@@ -16,7 +16,7 @@ public class UpdateUserScheduleConfigHandler : IRequestHandler<UpdateUserSchedul
 
     public async Task<UserScheduleConfigDto> Handle(UpdateUserScheduleConfigCommand request, CancellationToken cancellationToken)
     {
-        var config = await _dbContext.UserScheduleConfigs.FirstOrDefaultAsync(c => c.UserId ==request.UserId, cancellationToken);
+        var config = await _dbContext.UserScheduleConfigs.FirstOrDefaultAsync(c => c.UserId == request.UserId, cancellationToken);
         if (config == null)
         {
             config = new UserScheduleConfig

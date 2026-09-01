@@ -145,7 +145,7 @@ export default function SchedulePage() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     
     const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig | null>(null)
-    const [cycleScheduleEntries, setCycleScheduledEntries] = useState<ScheduledEntryDto[]>([])
+    const [cycleScheduleEntries, setCycleScheduleEntries] = useState<ScheduledEntryDto[]>([])
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -276,7 +276,7 @@ export default function SchedulePage() {
                 const cycleResp = await customFetch(`/api/users/me/schedule?startDate=${cStart.toISOString()}&endDate=${cEnd.toISOString()}`)
                 if (cycleResp.ok) {
                     const cycledata = (await cycleResp.json()) as ScheduledEntryDto[]
-                    setCycleScheduledEntries(cycledata)
+                    setCycleScheduleEntries(cycledata)
                 }
             }
             
@@ -618,8 +618,8 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            // disabled={isBeforeToday || !isOnline}
-                                            disabled={!isOnline}//temp
+                                            disabled={isBeforeToday || !isOnline}
+                                            // disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
                                             title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}

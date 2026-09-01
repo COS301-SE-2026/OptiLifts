@@ -22,14 +22,14 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
 
     public async Task<RescheduleResultDto> Handle(TriggerRescheduleCommand request, CancellationToken cancellationToken)
     {
-        var config = await _dbContext.UserScheduleConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.UserId ==request.UserId, cancellationToken);
+        var config = await _dbContext.UserScheduleConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == request.UserId, cancellationToken);
 
         var cycleLength = config?.CycleWindowLengthDays ?? 7;//default to a cycle of a week
         var cycleStartDate = config?.CycleStartDate ?? DateTime.UtcNow.Date;
         //calcul to get current cycle
         var today = DateTime.UtcNow.Date;
-        var dayssinceStart =Math.Max(0, (today - cycleStartDate).Days);
-        var cycleIndex = dayssinceStart/cycleLength;
+        var dayssinceStart = Math.Max(0, (today - cycleStartDate).Days);
+        var cycleIndex = dayssinceStart / cycleLength;
         var start = DateTime.SpecifyKind(cycleStartDate.AddDays(cycleIndex * cycleLength), DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(start.AddDays(cycleLength).AddTicks(-1), DateTimeKind.Utc);
 
@@ -39,8 +39,8 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
         .ToListAsync(cancellationToken);
 
         //filter the users selected missed and the upcoming
-        var targetentries = entries.Where(e => (e.Status == ScheduleStatus.Missed && request.SelectedMissedEntryIds.Contains(e.Id)) 
-        ||  e.Status == ScheduleStatus.Scheduled)
+        var targetentries = entries.Where(e => (e.Status == ScheduleStatus.Missed && request.SelectedMissedEntryIds.Contains(e.Id))
+        || e.Status == ScheduleStatus.Scheduled)
         .ToList();
         if (targetentries.Count == 0)
         {
@@ -51,7 +51,7 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
         var workoutIds = targetentries.Select(e => e.WorkoutId).Distinct().ToList();
         var workoutNames = await _dbContext.Workouts.AsNoTracking()
         .Where(w => workoutIds.Contains(w.Id))
-        .ToDictionaryAsync(w => w.Id, w=> w.Name, cancellationToken);
+        .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
         var workoutMuscles = await (
             from we in _dbContext.WorkoutExercises.AsNoTracking()
             where workoutIds.Contains(we.WorkoutId)
@@ -62,12 +62,12 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
             select new
             {
                 we.WorkoutId,
-                MuscleName = m != null? m.Name : null
+                MuscleName = m != null ? m.Name : null
             }
         ).ToListAsync(cancellationToken);
         var musclesWorkout = workoutMuscles.Where(x => !string.IsNullOrEmpty(x.MuscleName))
-        .GroupBy(x=> x.WorkoutId)
-        .ToDictionary(g => g.Key, g=> g.Select(x => x.MuscleName!).Distinct().ToList());
+        .GroupBy(x => x.WorkoutId)
+        .ToDictionary(g => g.Key, g => g.Select(x => x.MuscleName!).Distinct().ToList());
 
         //make the python req
         var pythonEntries = targetentries.Select(e => new PythonEntry(
@@ -86,11 +86,11 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
             new PythonPreferences(
                 config?.MaxWorkoutsPerDay ?? 1,
                 config?.MinMuscleRestHours ?? 48,
-                config?.RestDays ?? new List<string>{"Sunday"}
+                config?.RestDays ?? new List<string> { "Sunday" }
             ),
             pythonEntries
         );
-        var snakecase = new JsonSerializerOptions{PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower};
+        var snakecase = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
         var client = _httpClientFactory.CreateClient("AiApi");
         var response = await client.PostAsJsonAsync("ai-api/reschedule", payload, snakecase, cancellationToken);

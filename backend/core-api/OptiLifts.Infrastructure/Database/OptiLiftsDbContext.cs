@@ -45,7 +45,7 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<Badge> Badges { get; set; }
     public DbSet<UserBadge> UserBadges { get; set; }
 
-    public DbSet<UserScheduleConfig> UserScheduleConfigs {get; set;}
+    public DbSet<UserScheduleConfig> UserScheduleConfigs { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -174,7 +174,7 @@ public sealed class SchedulesController : ControllerBase
         var result = await _sender.Send(command, cancellationToken);
         return Ok(result);
     }
-    
+
     [HttpPut("me/schedule/config")]
     public async Task<ActionResult<UserScheduleConfigDto>> UpdateScheduleConfig(
         [FromBody] UserScheduleConfigDto config,
@@ -216,7 +216,7 @@ public sealed class SchedulesController : ControllerBase
         await _sender.Send(command, cancellationToken);
         return Ok(new
         {
-            message ="Schedule updated successfully"
+            message = "Schedule updated successfully"
         });
     }
 }

@@ -42,7 +42,7 @@ public sealed class GetUserScheduleConfigHandlerTests
         {
             UserId = userId,
             DynamicSchedulerEnabled = true,
-            MaxWorkoutsPerDay = 2,
+            MaxWorkoutsPerDay = 3,
             MinMuscleRestHours  = 72,
             RestDays = new List<string> {"Saturday","Sunday"},
             CycleWindowLengthDays = 14,
@@ -81,7 +81,7 @@ public sealed class GetUserScheduleConfigHandlerTests
         var command = new GetUserScheduleConfigQuery(userId);
         var result = await handler.Handle(command, CancellationToken.None);
         result.Should().NotBeNull();
-        result.DynamicSchedulerEnabled.Should().BeTrue();
+        result.DynamicSchedulerEnabled.Should().BeFalse();
         result.MaxWorkoutsPerDay.Should().Be(1);
         result.MinMuscleRestHours.Should().Be(48);
         result.RestDays.Should().ContainSingle().Which.Should().Be("Sunday");

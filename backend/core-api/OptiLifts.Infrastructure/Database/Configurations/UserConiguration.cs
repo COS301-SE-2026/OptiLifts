@@ -31,6 +31,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Bio).HasColumnName("bio").HasMaxLength(255);
         builder.Property(u => u.ProfileImageUrl).HasColumnName("profile_image_url");
 
+        builder.Property(u => u.GoogleCalendarSyncEnabled).HasColumnName("google_calendar_sync_enabled").HasDefaultValue(false);
+        builder.Property(u => u.GoogleCalendarRefreshToken).HasColumnName("google_calendar_refresh_token").HasColumnName("google_calendar_refresh_token").IsRequired(false);
+        builder.Property(u => u.GoogleCalendarId).HasColumnName("google_calendar_id").IsRequired(false);
+
 
         //creates a unique index on the email hash as it's deterministic
         builder.HasIndex(u => u.EmailHash).IsUnique();

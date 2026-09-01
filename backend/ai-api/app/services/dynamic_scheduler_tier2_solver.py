@@ -49,7 +49,7 @@ def _apply_muscle_rest_constraint(
     model, schedule_vars, all_entries, num_entries, num_days, min_rest_hours
 ):
     min_days = int(min_rest_hours / 24)
-    
+
     if min_days <= 0:
         return
 
@@ -58,9 +58,11 @@ def _apply_muscle_rest_constraint(
             first_muscles = set(all_entries[w1].primary_muscles)
             second_muscles = set(all_entries[w2].primary_muscles)
 
-            if not first_muscles.intersection(second_muscles) : # sonarqube made me do it
+            if not first_muscles.intersection(
+                second_muscles
+            ):  # sonarqube made me do it
                 continue
-            
+
             for day in range(num_days - min_days):
                 for gap in range(1, min_days + 1):
                     check1 = schedule_vars[(w1, day)] + schedule_vars[(w2, day + gap)]
@@ -75,14 +77,14 @@ def _set_penalties(
 ):
     # penalties
     penalties = []
-    DROP_PENALTY = 100  
+    DROP_PENALTY = 100
 
     for workout in range(num_entries):
         is_scheduled = sum(schedule_vars[(workout, day)] for day in range(num_days))
-        
+
         is_dropped = model.NewBoolVar(f"drop_{workout}")
         model.Add(is_dropped == 1 - is_scheduled)
-        
+
         penalties.append(is_dropped * DROP_PENALTY)
 
         original_date = all_entries[workout].scheduled_at.date()
@@ -102,7 +104,7 @@ def _extract_results(
 
     for workout in range(num_entries):
         rescheduled = False
-        
+
         for day in range(num_days):
             if solver.Value(schedule_vars[(workout, day)]) == 1:
                 rescheduled = True
@@ -123,9 +125,9 @@ def _extract_results(
                             action="Shifted",
                         )
                     )
-                break  
-                
-        if (not rescheduled and all_entries[workout].status == "Missed"):
+                break
+
+        if not rescheduled and all_entries[workout].status == "Missed":
             dropped_entries.append(
                 RescheduledEntry(
                     entry_id=all_entries[workout].id,

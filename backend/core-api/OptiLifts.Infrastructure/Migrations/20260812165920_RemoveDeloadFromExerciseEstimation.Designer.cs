@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260812165920_RemoveDeloadFromExerciseEstimation")]
+    partial class RemoveDeloadFromExerciseEstimation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,25 +173,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("email_hash");
 
-                    b.Property<string>("GoogleCalendarId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_id");
-
-                    b.Property<string>("GoogleCalendarRefreshToken")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_refresh_token");
-
-                    b.Property<bool>("GoogleCalendarSyncEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("google_calendar_sync_enabled");
-
-                    b.Property<string>("GoogleId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("google_id");
-
                     b.Property<string>("Height")
                         .HasColumnType("text")
                         .HasColumnName("height");
@@ -206,6 +190,7 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnName("metric");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
 
@@ -233,9 +218,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EmailHash")
-                        .IsUnique();
-
-                    b.HasIndex("GoogleId")
                         .IsUnique();
 
                     b.HasIndex("RefreshTokenHash");
@@ -499,10 +481,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("entry_id");
-
-                    b.Property<string>("GoogleEventId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_event_id");
 
                     b.Property<DateTime>("Scheduled")
                         .HasColumnType("timestamp with time zone")

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Auth.Register;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
 
@@ -63,6 +64,23 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
 
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _dbContext.UserRepRanges.AddRange(
+            new UserRepRange
+            {
+                UserId = user.Id,
+                ExerciseType = UserRepRangeExerciseType.Compound,
+                LowerLimit = 6,
+                UpperLimit = 10
+            },
+            new UserRepRange
+            {
+                UserId = user.Id,
+                ExerciseType = UserRepRangeExerciseType.Isolation,
+                LowerLimit = 8,
+                UpperLimit = 12
+            }
+        );
 
         var token = _jwtTokenService.CreateToken(user);
         var refreshToken = TokenHelper.GenerateRefreshToken();

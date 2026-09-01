@@ -8,8 +8,12 @@ public sealed record WorkoutSetDto(
     int? Duration,
     float? Distance,
     int OrderIndex,
-    int RestTime
+    int RestTime,
+    float? PreviousWeight = null,
+    int? PreviousReps = null
 );
+
+public sealed record ExerciseEstimationDto(float? Weight, int Reps);
 
 public sealed record WorkoutExerciseDetailDto(
     Guid Id,
@@ -25,7 +29,9 @@ public sealed record WorkoutExerciseDetailDto(
     int? GroupRestTime = null,
     string? ImageUrl = null,
     float? BestWeight = null,
-    float? BestSetVolume = null
+    float? BestSetVolume = null,
+    ExerciseEstimationDto? Estimation = null,
+    bool IsMachine = false
 );
 
 

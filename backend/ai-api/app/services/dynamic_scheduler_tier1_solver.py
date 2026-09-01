@@ -8,56 +8,56 @@ from app.models.reschedule import (
 )
 
 
+def _has_max_capacity(curr_date, scheduled_workouts, max_workouts: int) -> bool:
+    count = sum(1 for entry in scheduled_workouts if entry.scheduled_at.date() == curr_date)
+    return count >= max_workouts
+
+def _has_muscle_conflict(curr_date, missed_workout, scheduled_workouts, min_days: float) -> bool:
+    if min_days <= 0:
+        return False
+        
+    first_muscles = set(missed_workout.primary_muscles)
+    for entry in scheduled_workouts:
+        if first_muscles.intersection(entry.primary_muscles):
+            diff_days = abs((curr_date - entry.scheduled_at.date()).days)
+            if diff_days < min_days:
+                return True
+    return False
+
 def attempt_tier_one(
     request: RescheduleRequest, execution_time_ms: int = 0
 ) -> Optional[RescheduleResponse]:
     missed_workouts = [entry for entry in request.entries if entry.status == "Missed"]
-    scheduled_workouts = [
-        entry for entry in request.entries if entry.status == "Scheduled"
-    ]
-
+    
     if len(missed_workouts) != 1:
         return None  # python is funky
 
     missed_workout = missed_workouts[0]
-
+    scheduled_workouts = [
+        entry for entry in request.entries if entry.status == "Scheduled"
+    ]
+    
+    min_days = request.preferences.min_muscle_rest_hours / 24
     curr_day = request.planning_window_start
-    while curr_day.date() <= request.planning_window_end.date():
-        day_name = curr_day.strftime("%A")
+    end_date = request.planning_window_end.date()
 
+    while curr_day.date() <= end_date:
+        curr_date = curr_day.date()
+        
         # rest day
-        if day_name in request.preferences.fixed_rest_days:
+        if curr_day.strftime("%A") in request.preferences.fixed_rest_days:
             curr_day += timedelta(days=1)
             continue
 
         # max workouts per day check
-        count_w = 0
-        for entry in scheduled_workouts:
-            if entry.scheduled_at.date() == curr_day.date():
-                count_w += 1
-
-        if count_w >= request.preferences.max_workouts_per_day:
+        if _has_max_capacity(curr_date, scheduled_workouts, request.preferences.max_workouts_per_day):
             curr_day += timedelta(days=1)
             continue
 
-        min_days = request.preferences.min_muscle_rest_hours / 24
-
-        if min_days > 0:
-            conflict = False
-            first_muscles = set(missed_workout.primary_muscles)
-
-            for entry in scheduled_workouts:
-                second_muscles = set(entry.primary_muscles)
-                if first_muscles.intersection(second_muscles):
-                    diff_days = abs((curr_day.date() - entry.scheduled_at.date()).days)
-
-                    if diff_days < min_days:
-                        conflict = True
-                        break
-
-            if conflict:
-                curr_day += timedelta(days=1)
-                continue
+        # muscle conflict
+        if _has_muscle_conflict(curr_date, missed_workout, scheduled_workouts, min_days):
+            curr_day += timedelta(days=1)
+            continue
 
         # good day
         new_datetime = curr_day.replace(

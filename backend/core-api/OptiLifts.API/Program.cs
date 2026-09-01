@@ -115,16 +115,10 @@ if (!aiApiUrl.EndsWith("/"))
 {
     aiApiUrl += "/";
 }
-var aiApiKey = builder.Configuration["AI_API_KEY"] ?? "";
-
 builder.Services.AddHttpClient("AiApi", client =>
 {
     client.BaseAddress = new Uri(aiApiUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
-    if (!string.IsNullOrWhiteSpace(aiApiKey))
-    {
-        client.DefaultRequestHeaders.Add("X-Internal-Api-Key", aiApiKey);
-    }
 });
 
 var app = builder.Build();

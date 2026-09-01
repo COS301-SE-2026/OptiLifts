@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260831143852_AddUserScheduleConfig")]
+    partial class AddUserScheduleConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,20 +173,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("email_hash");
 
-                    b.Property<string>("GoogleCalendarId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_id");
-
-                    b.Property<string>("GoogleCalendarRefreshToken")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_refresh_token");
-
-                    b.Property<bool>("GoogleCalendarSyncEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("google_calendar_sync_enabled");
-
                     b.Property<string>("GoogleId")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
@@ -280,14 +269,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<DateTime>("CycleStartDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cycle_start_date");
-
-                    b.Property<int>("CycleWindowLengthDays")
-                        .HasColumnType("integer")
-                        .HasColumnName("cycle_window_length_days");
 
                     b.Property<bool>("DynamicSchedulerEnabled")
                         .HasColumnType("boolean")
@@ -502,10 +483,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("entry_id");
-
-                    b.Property<string>("GoogleEventId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_event_id");
 
                     b.Property<DateTime>("Scheduled")
                         .HasColumnType("timestamp with time zone")

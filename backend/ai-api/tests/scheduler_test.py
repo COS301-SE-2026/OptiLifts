@@ -28,7 +28,6 @@ def create_entry(id_str, status, date_str, muscles=["Trapazoids"]):
         "scheduled_at": date_str,
         "status": status,
         "primary_muscles": muscles,
-        "estimated_duration_minutes": 60,
     }
 
 

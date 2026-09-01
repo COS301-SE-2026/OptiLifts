@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "setup": "pnpm install && cd backend/core-api && dotnet restore && dotnet tool update --global dotnet-ef && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
-    "dev": "concurrently \"pnpm db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev": "concurrently \"pnpm db\" \"pnpm dev:backend\" \"pnpm dev:frontend\" \"pnpm dev:ai\"",
     
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",

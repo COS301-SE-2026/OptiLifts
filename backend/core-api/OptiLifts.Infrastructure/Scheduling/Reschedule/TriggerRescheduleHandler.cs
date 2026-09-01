@@ -93,7 +93,7 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
         var snakecase = new JsonSerializerOptions{PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower};
 
         var client = _httpClientFactory.CreateClient("AiApi");
-        var response = await client.PostAsJsonAsync("/ai-api/reschedule", payload, snakecase, cancellationToken);
+        var response = await client.PostAsJsonAsync("ai-api/reschedule", payload, snakecase, cancellationToken);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<PythonRescheduleResponse>(snakecase, cancellationToken: cancellationToken);
         if (result == null)

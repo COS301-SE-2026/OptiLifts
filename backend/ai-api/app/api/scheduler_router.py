@@ -1,5 +1,9 @@
 from fastapi import APIRouter
-from app.models.reschedule import RescheduleRequest, RescheduleResponse, RescheduledEntry
+from app.models.reschedule import (
+    RescheduleRequest,
+    RescheduleResponse,
+    RescheduledEntry,
+)
 import time
 
 from app.services.dynamic_scheduler_tier1_solver import attempt_tier_one
@@ -44,11 +48,12 @@ def reschedule_workouts(request: RescheduleRequest):
             workout_name=entry.workout_name,
             original_scheduled_at=entry.scheduled_at,
             new_scheduled_at=entry.scheduled_at,
-            action="Dropped"
+            action="Dropped",
         )
-        for entry in request.entries if entry.status == "Missed"
+        for entry in request.entries
+        if entry.status == "Missed"
     ]
-    
+
     return RescheduleResponse(
         user_id=request.user_id,
         execution_tier="Failed",

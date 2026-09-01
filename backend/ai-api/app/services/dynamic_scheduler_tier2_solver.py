@@ -44,12 +44,13 @@ def _apply_basic_constraints(
             <= preferences.max_workouts_per_day
         )
 
+
 def _add_muscle_gap_constraints(model, schedule_vars, w1, w2, num_days, min_days):
     for day in range(num_days):
         for gap in range(0, min_days):
             if day + gap >= num_days:
                 continue
-                
+
             if gap == 0:
                 check = schedule_vars[(w1, day)] + schedule_vars[(w2, day)]
                 model.Add(check <= 1)
@@ -58,6 +59,7 @@ def _add_muscle_gap_constraints(model, schedule_vars, w1, w2, num_days, min_days
                 check2 = schedule_vars[(w2, day)] + schedule_vars[(w1, day + gap)]
                 model.Add(check1 <= 1)
                 model.Add(check2 <= 1)
+
 
 def _apply_muscle_rest_constraint(
     model, schedule_vars, all_entries, num_entries, num_days, min_rest_hours
@@ -71,7 +73,9 @@ def _apply_muscle_rest_constraint(
             first_muscles = set(all_entries[w1].primary_muscles)
             second_muscles = set(all_entries[w2].primary_muscles)
             if first_muscles.intersection(second_muscles):
-                _add_muscle_gap_constraints(model, schedule_vars, w1, w2, num_days, min_days)
+                _add_muscle_gap_constraints(
+                    model, schedule_vars, w1, w2, num_days, min_days
+                )
 
 
 def _set_penalties(

@@ -197,6 +197,7 @@ def test_tier2_3missedworkouts_2perday():
 
     assert len(set(new_dates)) < 3
 
+
 def test_tier2_schedule_muscleconflict_dropsone():
     payload = get_base_payload()
     payload["planning_window_end"] = "2026-09-01T23:59:59Z"
@@ -217,40 +218,57 @@ def test_tier2_schedule_muscleconflict_dropsone():
     assert len(data["rescheduled_entries"]) == 1
     assert len(data["dropped_entries"]) == 1
 
+
 def test_tier2_all_dropped_fails_muscleclash():
     payload = get_base_payload()
-    payload["planning_window_end"] = "2026-09-02T23:59:59Z" 
-    
-    payload["preferences"]["max_workouts_per_day"] = 2 
-    
-    payload["entries"].append(create_entry("1", "Scheduled", "2026-08-31T17:00:00Z", ["Chest"]))
-    payload["entries"].append(create_entry("2", "Scheduled", "2026-09-01T17:00:00Z", ["Quads"]))
-    payload["entries"].append(create_entry("3", "Scheduled", "2026-09-02T17:00:00Z", ["Chest"]))
-    
-    payload["entries"].append(create_entry("4", "Missed", "2026-08-25T08:00:00Z", ["Chest", "Quads"]))
+    payload["planning_window_end"] = "2026-09-02T23:59:59Z"
+
+    payload["preferences"]["max_workouts_per_day"] = 2
+
+    payload["entries"].append(
+        create_entry("1", "Scheduled", "2026-08-31T17:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Scheduled", "2026-09-01T17:00:00Z", ["Quads"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Scheduled", "2026-09-02T17:00:00Z", ["Chest"])
+    )
+
+    payload["entries"].append(
+        create_entry("4", "Missed", "2026-08-25T08:00:00Z", ["Chest", "Quads"])
+    )
 
     response = client.post("/ai-api/reschedule", json=payload)
     assert response.status_code == 200
 
     data = response.json()
-    
+
     assert data["execution_tier"] == "Failed"
 
 
 def test_tier2_multiple_drops_required():
     payload = get_base_payload()
-    payload["planning_window_end"] = "2026-09-02T23:59:59Z" 
-    
-    payload["entries"].append(create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"]))
-    payload["entries"].append(create_entry("2", "Missed", "2026-08-31T09:00:00Z", ["Chest"]))
-    payload["entries"].append(create_entry("3", "Missed", "2026-08-31T10:00:00Z", ["Chest"]))
-    payload["entries"].append(create_entry("4", "Missed", "2026-08-31T11:00:00Z", ["Chest"]))
+    payload["planning_window_end"] = "2026-09-02T23:59:59Z"
+
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-08-31T09:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Missed", "2026-08-31T10:00:00Z", ["Chest"])
+    )
+    payload["entries"].append(
+        create_entry("4", "Missed", "2026-08-31T11:00:00Z", ["Chest"])
+    )
 
     response = client.post("/ai-api/reschedule", json=payload)
     assert response.status_code == 200
 
     data = response.json()
-    
+
     assert data["execution_tier"] == "Tier2_CPSAT"
     assert len(data["rescheduled_entries"]) == 2
     assert len(data["dropped_entries"]) == 2
@@ -258,18 +276,24 @@ def test_tier2_multiple_drops_required():
 
 def test_tier2_distance_penalty_workoutremoval():
     payload = get_base_payload()
-    payload["planning_window_end"] = "2026-09-01T23:59:59Z" 
+    payload["planning_window_end"] = "2026-09-01T23:59:59Z"
     payload["preferences"]["max_workouts_per_day"] = 1
-    
-    payload["entries"].append(create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Push"]))
-    payload["entries"].append(create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Pull"]))
-    payload["entries"].append(create_entry("3", "Missed", "2026-09-02T08:00:00Z", ["Legs"]))
+
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Push"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-09-01T08:00:00Z", ["Pull"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Missed", "2026-09-02T08:00:00Z", ["Legs"])
+    )
 
     response = client.post("/ai-api/reschedule", json=payload)
     assert response.status_code == 200
 
     data = response.json()
-    
+
     assert data["execution_tier"] == "Tier2_CPSAT"
     assert len(data["rescheduled_entries"]) == 2
     assert len(data["dropped_entries"]) == 1
@@ -322,4 +346,3 @@ def test_missingfields():
     response = client.post("/ai-api/reschedule", json=payload)
 
     assert response.status_code == 422
-

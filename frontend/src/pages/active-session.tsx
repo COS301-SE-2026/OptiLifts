@@ -58,7 +58,6 @@ type ExerciseData = Readonly<{
   muscleGroup: string
   secondaryMuscles: string[]
   sets: SetData[]
-  recommendation?: string
   groupId: string | null
   groupType: string | null
   groupRestTime: number | null
@@ -67,6 +66,8 @@ type ExerciseData = Readonly<{
   bestSetVolume: number | null
   exerciseId: string | null
   exerciseType: string
+  isMachine: boolean
+  hasWeightRecommendation: boolean
 }>
 
 type WorkoutDetailsResponse = Readonly<{
@@ -88,6 +89,11 @@ type WorkoutDetailsResponse = Readonly<{
     imageUrl?: string | null
     bestWeight?: number | null
     bestSetVolume?: number | null
+    isMachine?: boolean
+    estimation?: {
+      weight: number | null
+      reps: number
+    } | null
     sets: Array<{
       id: string
       type: SetType
@@ -97,6 +103,8 @@ type WorkoutDetailsResponse = Readonly<{
       distance: number | null
       orderIndex: number
       restTime: number
+      previousWeight?: number | null
+      previousReps?: number | null
     }>
     groupId?: string | null
     groupType?: string | null
@@ -300,13 +308,16 @@ function buildSessionSegs(exercises: ExerciseData[]): SessionSegment[] {
   return segs
 }
 
-const toSessSet = (set: WorkoutDetailsResponse['exercises'][number]['sets'][number]): SetData => ({
+const toSessSet = (
+  set: WorkoutDetailsResponse['exercises'][number]['sets'][number],
+  estimation: WorkoutDetailsResponse['exercises'][number]['estimation'],
+): SetData => ({
   id: set.id,
   sourceSetId: set.id,
   type: set.type,
-  previous: buildPreviousText(set.weight, set.reps),
-  kg: set.weight ?? '',
-  reps: set.reps ?? '',
+  previous: buildPreviousText(set.previousWeight ?? null, set.previousReps ?? null),
+  kg: set.type === 'Normal' && estimation?.weight != null ? estimation.weight : set.weight ?? '',
+  reps: set.type === 'Normal' && estimation ? estimation.reps : set.reps ?? '',
   rpe: '',
   duration: set.duration ?? '',
   distance: set.distance ?? '',
@@ -328,7 +339,11 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   bestWeight: exercise.bestWeight ?? null,
   bestSetVolume: exercise.bestSetVolume ?? null,
   exerciseType: exercise.exerciseType,
-  sets: [...exercise.sets].sort((a, b) => a.orderIndex - b.orderIndex).map(toSessSet),
+  isMachine: exercise.isMachine ?? false,
+  hasWeightRecommendation: exercise.estimation?.weight != null,
+  sets: [...exercise.sets]
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((set) => toSessSet(set, exercise.estimation ?? null)),
 })
 
 const backfillImage = (exercise: ExerciseData, images: Map<string, string | null>): ExerciseData => {
@@ -646,6 +661,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             groupRestTime: null,
             imageUrl: ex.imageUrl ?? null,
             exerciseType: ex.exerciseType,
+            isMachine: false,
+            hasWeightRecommendation: false,
             sets: (ex.sets ?? []).map((s) => ({
               id: s.id,
               sourceSetId: s.setId ?? s.id,
@@ -963,6 +980,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         groupRestTime: null,
         imageUrl: exercise.imageUrl ?? null,
         exerciseType: exercise.exerciseType ?? 'WeightReps',
+        isMachine: false,
+        hasWeightRecommendation: false,
         sets: [
           {
             id: createClientSetId(),
@@ -1193,7 +1212,11 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     const setLabels = buildLabels(exercise.sets)
 
     return (
-      <Card key={exercise.id} className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
+      <div key={exercise.id}>
+        {exercise.isMachine && exercise.hasWeightRecommendation && (
+          <OfflineBanner message="Match the weight as closely as you can on you gym's machine." />
+        )}
+        <Card className="border-border bg-card shadow-sm rounded-xl overflow-hidden pt-4 pb-2">
         <CardHeader className="flex flex-row items-start justify-between pb-4 px-5 pt-0">
           <div className="flex items-center gap-4">
             <Avatar size="lg" className="shrink-0 bg-surface-2">
@@ -1261,6 +1284,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
           </Button>
         </CardContent>
       </Card>
+      </div>
     )
   }
 

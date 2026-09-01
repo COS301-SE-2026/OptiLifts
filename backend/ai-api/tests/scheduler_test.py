@@ -74,7 +74,24 @@ def test_tier1_1missedworkout_nextdaytaken():
     data = response.json()
 
     # schedules for Tuesday the 9th
-    assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-01T08:00:00Z"
+    assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-02T08:00:00Z"
+
+
+def test_tier1_missedworkout_musclehoursconflict(): 
+    payload = get_base_payload()
+    payload["preferences"]["max_workouts_per_day"] = 2
+    payload["preferences"]["min_muscle_rest_hours"] = 72
+    payload["entries"].append(create_entry("1", "Missed", "2026-08-31T08:00:00Z", ["Chest"]))
+    payload["entries"].append(create_entry("2", "Scheduled", "2026-09-01T08:00:00Z", ["Chest"]))
+    
+    response = client.post("/ai-api/reschedule", json=payload)
+
+    assert response.status_code == 200
+
+    data = response.json()
+    
+    assert data["execution_tier"] == "Tier1_FastPath"
+    assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-04T08:00:00Z"
 
 
 def test_tier2_musclerest_enforced_fortwowithsamemuscle():

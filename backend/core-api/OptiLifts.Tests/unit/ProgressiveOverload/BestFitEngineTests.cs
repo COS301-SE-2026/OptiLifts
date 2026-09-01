@@ -71,31 +71,31 @@ public class BestFitEngineTests
         var start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var points = new List<PODataPoint>
         {
-            new(start, 100d),
-            new(start.AddDays(7), 120d),
+            new(start.AddDays(21), 160d),
             new(start.AddDays(14), 140d),
-            new(start.AddDays(21), 160d)
+            new(start.AddDays(7), 120d),
+            new(start, 100d)
         };
 
         var result = BestFitEngine.PredictNextVal(points);
 
-        result.Should().BeApproximately(110d, 0.0001d);
+        result.Should().BeApproximately(176d, 0.0001d);
     }
 
     [Fact]
-    public void PredictNextVal_PredictionBelowCap_ReturnsRegressionPrediction()
+    public void PredictNextVal_PredictionBelowCap_AppliesMinimumGrowthFloor()
     {
         var start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var points = new List<PODataPoint>
         {
-            new(start, 100d),
-            new(start.AddDays(7), 101d),
+            new(start.AddDays(21), 103d),
             new(start.AddDays(14), 102d),
-            new(start.AddDays(21), 103d)
+            new(start.AddDays(7), 101d),
+            new(start, 100d)
         };
 
         var result = BestFitEngine.PredictNextVal(points);
 
-        result.Should().BeApproximately(101d, 0.0001d);
+        result.Should().BeApproximately(105.06d, 0.0001d);
     }
 }

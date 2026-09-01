@@ -100,6 +100,11 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
 builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+//platandfat
+builder.Services.AddScoped<OptiLifts.Infrastructure.Training.ISeriesBuilder, OptiLifts.Infrastructure.Training.SeriesBuilder>();
+builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionService, OptiLifts.Infrastructure.Training.PlateauDetectionService>();
+builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IChronicFatigueService, OptiLifts.Infrastructure.Training.ChronicFatigueService>();
+builder.Services.AddHostedService<OptiLifts.Infrastructure.Training.ChronicFatigueDailyJob>();
 
 //badges
 builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();

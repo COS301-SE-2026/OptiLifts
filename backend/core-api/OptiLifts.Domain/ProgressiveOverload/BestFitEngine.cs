@@ -8,6 +8,7 @@ public static class BestFitEngine
 {
 
     private const double predictionCap = 1.10; //10%
+    private const double minGrowthFactor = 1.02; //2% floor so a flat trend still nudges forward
 
     //get line using OLS linear regression
     public static (double m, double c) GetBestFitLine(List<PODataPoint> points)
@@ -58,20 +59,18 @@ public static class BestFitEngine
         double gapTotal = 0;
         for (int i = 0; i < points.Count - 1; i++)
         {
-            gapTotal += (points[i + 1].Date - points[i].Date).TotalDays;
+            gapTotal += (points[i].Date - points[i + 1].Date).TotalDays;
         }
         int avgGap = (int)Math.Round(gapTotal / (points.Count - 1));
 
         var lastP = points[0];
-        var firstP = points[0];
-
-        var nextDate = lastP.Date.AddDays(avgGap);
-
-        double x = (nextDate - firstP.Date).TotalDays;
+        double x = avgGap;
         var y = (m * x) + c;
 
+        double flooredY = Math.Max(y, lastP.Metric * minGrowthFactor);
+
         double cappedY = lastP.Metric * predictionCap;
-        return Math.Min(y, cappedY);
+        return Math.Min(flooredY, cappedY);
 
     }
 }

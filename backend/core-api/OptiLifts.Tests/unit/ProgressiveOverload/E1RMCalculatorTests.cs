@@ -7,27 +7,64 @@ namespace OptiLifts.Tests.ProgressiveOverload;
 public class E1RMCalculatorTests
 {
     [Fact]
-    public void CalculateE1RM_BodyweightExercise_ReturnsReps()
+    public void CalculateE1RM_BodyweightExercise_UsesFiftyPercentOfBodyweight()
     {
-        var result = E1RMCalculator.CalculateE1RM(0f, 12, "compound", ExerciseType.BodyweightReps);
+        var result = E1RMCalculator.CalculateE1RM(0f, 10, "compound", ExerciseType.BodyweightReps, 80f);
 
-        result.Should().Be(12);
+        result.Should().BeApproximately(80d * 0.50d * (1 + 10 / 30d), 0.01d);
     }
 
     [Fact]
-    public void ReverseEpleyReps_WeightedExercise_ReturnsRoundedRepTarget()
+    public void CalculateE1RM_WeightedBodyweightExercise_UsesBodyweightPlusAddedWeight()
     {
-        var result = E1RMCalculator.ReverseEpleyReps(100d, 75f, "compound", ExerciseType.WeightReps);
+        var result = E1RMCalculator.CalculateE1RM(20f, 8, "compound", ExerciseType.WeightedBodyweight, 80f);
+
+        result.Should().BeApproximately((80d + 20d) * (1 + 8 / 30d), 0.01d);
+    }
+
+    [Fact]
+    public void ReverseEpleyReps_WeightedCompoundExercise_UsesEpleyFormula()
+    {
+        var result = E1RMCalculator.ReverseEpleyReps(133.3d, 100f, "compound", ExerciseType.WeightReps);
 
         result.Should().Be(10);
     }
 
     [Fact]
-    public void ReverseEpleyReps_BodyweightExercise_ReturnsRoundedMetricAsReps()
+    public void ReverseEpleyReps_WeightedIsolationExercise_ReturnsRoundedRepTarget()
     {
-        var result = E1RMCalculator.ReverseEpleyReps(12.6d, 0f, null, ExerciseType.BodyweightReps);
+        var result = E1RMCalculator.ReverseEpleyReps(100d, 75f, null, ExerciseType.WeightReps);
 
-        result.Should().Be(13);
+        result.Should().Be(10);
+    }
+
+    [Fact]
+    public void ReverseEpleyReps_BodyweightExercise_UsesFlatRatioForTargetReps()
+    {
+        var liftedWeight = 80f * 0.50f;
+        var targetE1RM = liftedWeight * (1 + 10 / 30d);
+
+        var result = E1RMCalculator.ReverseEpleyReps(targetE1RM, 0f, null, ExerciseType.BodyweightReps, 80f);
+
+        result.Should().Be(10);
+    }
+
+    [Fact]
+    public void ReverseEpleyReps_BodyweightExercise_WithoutBodyweight_ThrowsArgumentOutOfRangeException()
+    {
+        var action = () => E1RMCalculator.ReverseEpleyReps(12.6d, 0f, null, ExerciseType.BodyweightReps);
+
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void ReverseEpleyReps_WeightedBodyweightExercise_UsesBodyweightPlusAddedWeight()
+    {
+        var targetE1RM = 100d * (1 + 8 / 30d);
+
+        var result = E1RMCalculator.ReverseEpleyReps(targetE1RM, 20f, null, ExerciseType.WeightedBodyweight, 80f);
+
+        result.Should().Be(8);
     }
 
     [Fact]
@@ -79,11 +116,30 @@ public class E1RMCalculatorTests
     }
 
     [Fact]
+    public void ReverseEpleyWeight_CompoundExercise_MatchesEpleyE1RMFormula()
+    {
+        var result = E1RMCalculator.ReverseEpleyWeight(133.3d, 10, "compound", ExerciseType.WeightReps);
+
+        var roundTripE1RM = E1RMCalculator.CalculateE1RM(result, 10, "compound", ExerciseType.WeightReps);
+        roundTripE1RM.Should().BeApproximately(133.3d, 0.01d);
+    }
+
+    [Fact]
     public void ReverseEpleyWeight_BodyweightExercise_ThrowsInvalidOperationException()
     {
         var action = () => E1RMCalculator.ReverseEpleyWeight(100d, 8, null, ExerciseType.BodyweightReps);
 
         action.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void ReverseEpleyWeight_WeightedBodyweightExercise_ReturnsAddedWeight()
+    {
+        var targetE1RM = 100d * (1 + 8 / 30d);
+
+        var result = E1RMCalculator.ReverseEpleyWeight(targetE1RM, 8, null, ExerciseType.WeightedBodyweight, 80f);
+
+        result.Should().BeApproximately(20f, 0.01f);
     }
 
     [Theory]

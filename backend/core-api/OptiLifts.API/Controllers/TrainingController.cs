@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Training.GetPlateauPage;
+using OptiLifts.Application.Training.RecordAcuteFatigue;
 
 namespace OptiLifts.API.Controllers;
 
@@ -37,5 +38,19 @@ public sealed class TrainingController : ControllerBase
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return Guid.TryParse(userIdVal, out userId);
+    }
+
+    public sealed record RecordAcuteFatigueRequest(string MuscleGroup);
+
+    [HttpPost("acute-fatigue")]
+    public async Task<IActionResult> RecordAcuteFatigue([FromBody] RecordAcuteFatigueRequest request, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await _sender.Send(new RecordAcuteFatigueCommand(userId, request.MuscleGroup), cancellationToken);
+        return Ok();
     }
 }

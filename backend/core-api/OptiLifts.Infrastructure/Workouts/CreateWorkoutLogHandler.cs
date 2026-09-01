@@ -3,16 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Training;
+
 
 namespace OptiLifts.Infrastructure.Workouts;
 
 public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCom, CreateWorkoutLogRes?>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPlateauDetectionService _plateauDetectionService;
 
-    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext)
+    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService)
     {
         _dbContext = dbContext;
+        _plateauDetectionService = plateauDetectionService;
     }
 
     public async Task<CreateWorkoutLogRes?> Handle(CreateWorkoutLogCom request, CancellationToken cancellationToken)
@@ -138,6 +142,10 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        foreach (var exerciseId in orderedExercises.Select(e => e.ExerciseId).Distinct())
+        {
+            await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
+        }
         return new CreateWorkoutLogRes(log.Id, entryId, AlreadyExisted: false);
     }
 

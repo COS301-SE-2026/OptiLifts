@@ -6,6 +6,7 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Workouts;
+using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Tests.Api.Tests;
 
@@ -29,7 +30,7 @@ public sealed class UpdateWorkoutLogHandlerTests
     public async Task Handle_ReturnsFalse_WhenLogDoesNotExist()
     {
         using var db = await CreateMemoryDb();
-        var handler = new UpdateWorkoutLogHandler(db);
+        var handler = new UpdateWorkoutLogHandler(db, new PlateauDetectionService(new SeriesBuilder(db), db));
 
         var result = await handler.Handle(
             new UpdateWorkoutLogCommand(
@@ -130,7 +131,7 @@ public sealed class UpdateWorkoutLogHandlerTests
         db.WorkoutLogSets.Add(oldSet);
         await db.SaveChangesAsync();
 
-        var handler = new UpdateWorkoutLogHandler(db);
+        var handler = new UpdateWorkoutLogHandler(db, new PlateauDetectionService(new SeriesBuilder(db), db));
 
         var updateCommand = new UpdateWorkoutLogCommand(
             userId,

@@ -6,6 +6,7 @@ using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Workouts;
+using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Tests.Api.Tests;
 
@@ -29,7 +30,7 @@ public sealed class DeleteWorkoutLogHandlerTests
     public async Task Handle_ReturnsFalse_WhenLogDoesNotExist()
     {
         using var db = await CreateMemoryDb();
-        var handler = new DeleteWorkoutLogHandler(db);
+        var handler = new DeleteWorkoutLogHandler(db, new PlateauDetectionService(new SeriesBuilder(db), db));
 
         var result = await handler.Handle(
             new DeleteWorkoutLogCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()),
@@ -96,7 +97,7 @@ public sealed class DeleteWorkoutLogHandlerTests
         db.WorkoutLogs.Add(log);
         await db.SaveChangesAsync();
 
-        var handler = new DeleteWorkoutLogHandler(db);
+        var handler = new DeleteWorkoutLogHandler(db, new PlateauDetectionService(new SeriesBuilder(db), db));
 
         var result = await handler.Handle(
             new DeleteWorkoutLogCommand(workout.Id, log.Id, otherUserId),
@@ -192,7 +193,7 @@ public sealed class DeleteWorkoutLogHandlerTests
         db.WorkoutLogSets.Add(logSet);
         await db.SaveChangesAsync();
 
-        var handler = new DeleteWorkoutLogHandler(db);
+        var handler = new DeleteWorkoutLogHandler(db, new PlateauDetectionService(new SeriesBuilder(db), db));
 
         var result = await handler.Handle(
             new DeleteWorkoutLogCommand(workout.Id, log.Id, userId),

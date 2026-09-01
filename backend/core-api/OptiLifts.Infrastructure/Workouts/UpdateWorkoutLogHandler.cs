@@ -3,16 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Infrastructure.Workouts;
 
 public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCommand, bool>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPlateauDetectionService _plateauDetectionService;
 
-    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext)
+    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService)
     {
         _dbContext = dbContext;
+        _plateauDetectionService = plateauDetectionService;
     }
 
     public async Task<bool> Handle(UpdateWorkoutLogCommand request, CancellationToken cancellationToken)
@@ -67,6 +70,7 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         var oldLogExercises = await _dbContext.WorkoutLogExercises
             .Where(e => e.LogId == log.Id)
             .ToListAsync(cancellationToken);
+        var oldExerciseIds = oldLogExercises.Select(e => e.ExerciseId).ToArray();
         _dbContext.WorkoutLogExercises.RemoveRange(oldLogExercises);
 
         var orderedExercises = request.Exercises
@@ -122,6 +126,11 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        var affectedExerciseIds = oldExerciseIds.Concat(orderedExercises.Select(e => e.ExerciseId)).Distinct();
+        foreach (var exerciseId in affectedExerciseIds)
+        {
+            await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
+        }
         return true;
     }
 

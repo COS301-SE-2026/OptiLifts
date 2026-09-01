@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -9,10 +10,12 @@ namespace OptiLifts.Infrastructure.Workouts;
 public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCommand, bool>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly ISender? _sender;
 
-    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext)
+    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _sender = sender;
     }
 
     public async Task<bool> Handle(UpdateWorkoutLogCommand request, CancellationToken cancellationToken)
@@ -30,6 +33,11 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         {
             return false;
         }
+
+        var affectedExerciseIds = await _dbContext.WorkoutLogSets
+            .Where(set => set.LogId == log.Id)
+            .Select(set => set.ExerciseId)
+            .ToListAsync(cancellationToken);
 
         if (request.StartedAt.HasValue)
         {
@@ -122,6 +130,15 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        if (log.CompletedAt.HasValue && _sender is not null)
+        {
+            affectedExerciseIds.AddRange(orderedExercises.Select(exercise => exercise.ExerciseId));
+            foreach (var exerciseId in affectedExerciseIds.Distinct())
+            {
+                await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
+            }
+        }
+
         return true;
     }
 

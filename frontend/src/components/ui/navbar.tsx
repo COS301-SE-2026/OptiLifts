@@ -13,9 +13,11 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/workouts',  label: 'Workouts'  },
   { to: '/schedule',  label: 'Schedule'  },
+  { to: '/plateau',   label: 'Plateau'   },
   { to: '/help',  label: 'Help'  },
   { to: '/profile',   label: 'Profile'   },
 ]
+
 
 export function Navbar() {
   const { pathname } = useLocation()

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -9,10 +10,12 @@ namespace OptiLifts.Infrastructure.Workouts;
 public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCom, CreateWorkoutLogRes?>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly ISender? _sender;
 
-    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext)
+    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _sender = sender;
     }
 
     public async Task<CreateWorkoutLogRes?> Handle(CreateWorkoutLogCom request, CancellationToken cancellationToken)
@@ -138,7 +141,22 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await GenerateOverloadAsync(request.UserId, log.CompletedAt.HasValue, orderedExercises.Select(exercise => exercise.ExerciseId), cancellationToken);
+
         return new CreateWorkoutLogRes(log.Id, entryId, AlreadyExisted: false);
+    }
+
+    private async Task GenerateOverloadAsync(Guid userId, bool isCompleted, IEnumerable<Guid> exerciseIds, CancellationToken cancellationToken)
+    {
+        if (!isCompleted || _sender is null)
+        {
+            return;
+        }
+
+        foreach (var exerciseId in exerciseIds.Distinct())
+        {
+            await _sender.Send(new GenerateOverloadCommand(userId, exerciseId), cancellationToken);
+        }
     }
 
     private async Task<Dictionary<(Guid ExerciseId, ExercisePrType PrType), float>> LoadCurrentBestValuesAsync(

@@ -132,7 +132,7 @@ export default function PlateauPage() {
                                 {exercise.status}
                             </span>
                         </div>
-                        {exercise.recommendation && (
+                        {exercise.recommendation && !(exercise.canSwapExercise && exercise.workouts.length === 0) && (
                             <p className="mb-2 text-sm text-foreground/90 border-t border-border pt-4">
                                 {exercise.recommendation}
                             </p>
@@ -159,7 +159,7 @@ export default function PlateauPage() {
                             </div>
                         )}
                         {exercise.canSwapExercise && exercise.workouts.length === 0 && (
-                            <p className="mt-4 text-sm text-muted-foreground border-t border-border pt-4">
+                            <p className="text-sm text-muted-foreground border-t border-border pt-4">
                                 You have already swapped this exercise to an alternative exercise.
                             </p>
                         )}

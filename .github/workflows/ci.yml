@@ -12,7 +12,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     env:
-      PLAYWRIGHT_PROJECTS: ${{ (github.base_ref == 'main' || github.ref_name == 'main') && 'all' || 'chromium' }}
+      PLAYWRIGHT_PROJECTS: 'all'
 
     steps:
     - name: Checkout Repository

@@ -178,10 +178,12 @@ const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
+        activeRevisionsMode: "Multiple",
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
             customDomains: customDomain(frontendDomain, frontendCert),
+            traffic: [{ latestRevision: true, weight: 100 }],
         },
         registries: [{
             server: acrServer,
@@ -212,10 +214,12 @@ const coreApiApp = new app.ContainerApp("core-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
+        activeRevisionsMode: "Multiple",
         ingress: {
             external: true, //give public url
             targetPort: 8080,
             customDomains: customDomain(backendDomain, backendCert),
+            traffic: [{ latestRevision: true, weight: 100 }],
         },
 
         secrets: [
@@ -247,7 +251,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
     template: {
         scale: {
             minReplicas: 0,
-            maxReplicas: 2,
+            maxReplicas: 3,
         },
         containers: [{
             name: "core-api",
@@ -289,9 +293,11 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
+        activeRevisionsMode: "Multiple",
         ingress: {
             external: false, // can only be accessed by core-api 
             targetPort: 8000,
+            traffic: [{ latestRevision: true, weight: 100 }],
         },
         registries: [{
             server: acrServer,

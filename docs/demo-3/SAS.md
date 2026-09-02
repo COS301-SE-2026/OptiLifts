@@ -12,7 +12,7 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [Quality Requirements](#quality-requirements)
 	- [Architectural Patterns](#architectural-patterns)
 	- [Design Patterns](#design-patterns)
-	- [Mapping Quality Requirements to Architectural Decisions](#mapping-quality-requirements-to-architectural-decisions)
+	- [NFR Traceability Matrix](#nfr-traceability-matrix)
 	- [Constraints](#constraints)
 
 - [Technology Requirements](#technology-requirements)
@@ -179,17 +179,19 @@ This pattern can be used if we have a request that needs to pass through multipl
 
 This pattern applies wherever an object behaves differently depending on what phase it is in. In OptiLifts, our active session page can use it as you go through multiple different states whilst in a workout. For example you have busy, resting or complete. State design pattern can be used anywhere in which we need to track the user's current state in order to re-render or adapt our pages.
 
-### Mapping Quality Requirements to Architectural Decisions
+### NFR Traceability Matrix
 
-| Quality Requirement |Architectural Decision |
-| :--- | :--- |
-|Response time <=1.5 seconds for core-api| Seperation of api into core-api and ai-api services, and planned caching in future |
-| 100 concurrent users | Container app service architecture with horizontal scaling | 
-| Increase in workload of up to 200% | Container app service architecture with horizontal scaling that has an automatic load balancer with stateless autherization meaning users are able to send requests to different replicas |
-| Encrypted data at rest | Encryption layer in API that encrypts data writen to the database and decrypts data fetched from the database |
-| Authenticated access | Stateless JSON JWTs communicated and stored via HTTP-only cookies | 
-| Deployment within 30 minutes | A CI/CD pipeline incorperated with IaC limits any manual overhead allowing the pipeline to deploy within 30 minutes |
-| Keyboard accessibility and User satisfaction | Using a brand-style guide that aligns with the WCAG standards, and  components we have made that are designed to be user friendly and keyboard accessible. Using an SPA allows for better user experience and navigation as there are no full page reloads |
+| ID | Quantified requirement | Tactic in SAS | Test / tool | Target / actual |
+| :--- | :--- | :--- | :--- | :--- |
+| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 1.5s | MediatR Caching + Asynchronous non-blocking I/O | k6 | < 1500ms / TBD |
+| **NFR1.3** | < 10% average latency increase at 100 concurrent users | MediatR Caching | k6 | < 10% increase / TBD |
+| **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease | Azure Container Apps with Horizontal Scaling | k6 | < 10% decrease / TBD |
+| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`DatabaseEncryptionIntegrationTests`) | Test Passes / Pass |
+| **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
+| **NFR3.2** | Bcrypt password hashing with salt factor 12 | `BcryptPasswordHasher` algorithm | xUnit (`BcryptPasswordHasherTests`) | Test Passes / Pass |
+| **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(11 minutes) + CD(4 minutes) |
+| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline | ≥ 80% / 85.7% |
+| **NFR5.2** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
 
 ### Constraints
 
@@ -228,7 +230,7 @@ This pattern applies wherever an object behaves differently depending on what ph
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **API Framework** | Python + FastAPI | Lightweight and highly performant with extensive libararies, ideal for serving machine learning models and AI endpoints. |
-| **Optimization Engine** | Genetic Algorithm (DEAP) | Provides a deterministic, light weight solution for the dynamic scheduler and time contraints mode via its GA supprot an dintegrates with the FastAPI backend.  |
+| **Dynamic scheduler Engine** | Google ORTools | Provides a deterministic, light weight constraint solver solution for the dynamic scheduler and integrates with the FastAPI backend.  |
 
 
 #### Persistence Layer
@@ -1747,7 +1749,13 @@ Body:
 When new deployments are triggered in production, new revisioins of the apps are made ( the green images) whilst the current apps continue to run and have traffic routed to them (the blue images). Once the new revisions are fully deployed and health checks pass, traffic is routed to the new (green) images. If the new revisions were to crash or fail health checks then traffic would never be routed to them and the previous working revision (blue revision) continues to handle all traffic. 
 
 #### Afer Deployment: Image Tag Pinning
-If an error is noticed after deployment, rollbacks are done via Image tag pinning. All revisions of the apps are tagged with their git commit hash and stored in the Azure Container Registry. This means if a rollback is needed we are able change to a previous revision instantly via the azure portal, alternatively we are able to roll it back via the CD by either creating a revert commit on main or by running the CD on a previous commit.
+If an error is noticed after deployment, rollbacks are done via Image tag pinning. All revisions of the apps are tagged with their git commit hash and stored in the Azure Container Registry. This means if a rollback is needed we are able change to a previous revision instantly via our rollback workflow that makes use of the image tag pinning and pulumi(IaC). The workflow can be triggered via github actions (manual trigger) or via the command line with the following command:
+
+The command to rollback is as follows:
+```bash
+pnpm run rollback -- -f commit_sha=hash123 -f target_migration=MigrationName
+```
+- The database migration rollback parameter is optional, it will run a down migration of the database if a `target_migration` is specified.
 
 #### Daily Database Backups
 Azure Database for PostgresSQL provides automated continous backups for the database. The backups are run daily and streams transaction logs every 5 minutes. These backups are retained for 10 days. This allows us to restore the database to any point in time in the last 10 days allowing us to recover from accidental data loss and destructive migrations instantly via the azure portal. 

@@ -5,6 +5,7 @@ using Moq;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Auth.Register;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Security;
@@ -56,6 +57,20 @@ public class RegisterUserHandlerTests
         var userInDb = await context.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail("jdawg@gmail.com"));
         userInDb.Should().NotBeNull();
         userInDb.PasswordHash.Should().StartWith("HASHED_");
+
+        var repRanges = await context.UserRepRanges
+            .Where(r => r.UserId == userInDb.Id)
+            .ToListAsync();
+
+        repRanges.Should().HaveCount(2);
+        repRanges.Should().ContainSingle(r =>
+            r.ExerciseType == UserRepRangeExerciseType.Compound &&
+            r.LowerLimit == 6 &&
+            r.UpperLimit == 10);
+        repRanges.Should().ContainSingle(r =>
+            r.ExerciseType == UserRepRangeExerciseType.Isolation &&
+            r.LowerLimit == 8 &&
+            r.UpperLimit == 12);
     }
 
     //email alrady exists, should throw exception

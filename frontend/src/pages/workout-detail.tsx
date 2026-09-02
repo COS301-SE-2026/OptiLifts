@@ -45,8 +45,8 @@ function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanIt
       imageUrl: exercise.imageUrl,
       sets: orderedSets.map((set, setIndex) => ({
         label: labels[setIndex],
-        reps: set.reps,
-        weight: set.weight,
+        reps: set.previousReps ?? set.reps,
+        weight: set.previousWeight ?? set.weight,
         duration: set.duration,
         distance: set.distance,
         restTime: formatRestTime(set.restTime),
@@ -179,8 +179,8 @@ export default function WorkoutDetailPage() {
 
     return workout.exercises.reduce((exerciseSum, item) => {
       const exerciseVolume = item.sets.reduce((setSum, set) => {
-        const weight = set.weight ?? 0
-        const reps = set.reps ?? 0
+        const weight = set.previousWeight ?? set.weight ?? 0
+        const reps = set.previousReps ?? set.reps ?? 0
         return setSum + weight * reps
       }, 0)
 

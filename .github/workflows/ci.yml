@@ -64,7 +64,7 @@ jobs:
     - name: Run Coverage
       run: pnpm test:coverage
 
-    - name: Compute combined coverage
+    - name: Compute and check combined coverage
       id: cov
       run: |
         FE_JSON="frontend/coverage/coverage-summary.json"
@@ -91,6 +91,13 @@ jobs:
 
         echo "percentage=$PCT" >> "$GITHUB_OUTPUT"
         echo "color=$COLOR" >> "$GITHUB_OUTPUT"
+
+        echo "Calculated Total Code Coverage: $PCT%"
+
+        if (( $(echo "$PCT < 80.0" | bc -l) )); then
+          echo "Code coverage ($PCT%) is below 80%"
+          exit 1
+        fi
 
     - name: Update coverage badge gist
       uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483

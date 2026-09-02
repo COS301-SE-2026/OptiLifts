@@ -63,7 +63,9 @@
     "test:coverage": "concurrently \"pnpm test:coverage:frontend\" \"pnpm test:coverage:backend\" \"pnpm test:coverage:ai\"",
     "test:coverage:frontend": "pnpm --filter frontend cov",
     "test:coverage:backend": "cd backend/core-api && dotnet test --collect:\"XPlat Code Coverage\"",
-    "test:coverage:ai": "cd backend/ai-api && ./venv/bin/pytest --cov --cov-report=xml"
+    "test:coverage:ai": "cd backend/ai-api && ./venv/bin/pytest --cov --cov-report=xml",
+
+    "rollback": "gh workflow run rollback.yml"
   },
   "keywords": [],
   "author": "",

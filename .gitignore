@@ -17,6 +17,7 @@ __pycache__/
 *$py.class
 venv/
 .pytest_cache/
+.ruff_cache
 
 # OS
 .DS_Store

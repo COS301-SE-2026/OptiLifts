@@ -113,6 +113,17 @@ builder.Services.AuthProgramHelper(builder.Configuration);
 
 builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 
+var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
+if (!aiApiUrl.EndsWith("/"))
+{
+    aiApiUrl += "/";
+}
+builder.Services.AddHttpClient("AiApi", client =>
+{
+    client.BaseAddress = new Uri(aiApiUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 var app = builder.Build();
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);

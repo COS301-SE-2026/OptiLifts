@@ -246,4 +246,115 @@ describe('SchedulePage', () => {
         });
     });
 
+    it("renders missed sessions card, triggers reschedule on btn click and opens proposal modal", async() => {
+        const now = new Date();
+        const testDate = now.toISOString();
+        const cyclestart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+        mockFetch.mockImplementation(async (url: string) => {
+            if (url.includes("/api/users/me/schedule/reschedule")){
+                return {
+                    ok: true,
+                    json: async() => ({
+                        executionTier: "Tier1_FastPath",
+                        rescheduledEntries: [
+                            {
+                                entryId: "missed-1",
+                                workoutId: "w-1",
+                                workoutName: "Leg Day",
+                                originalScheduledAt: testDate,
+                                newScheduledAt: new Date(now.getTime() + 86400000).toISOString(),
+                                action: "Rescheduled",
+                            },
+                        ],
+                    }),
+                };
+            }
+            if (url.includes("/api/users/me/schedule/config")){
+                return {
+                    ok: true,
+                    json: async() => ({
+                        dynamicSchedulerEnabled: true,
+                        cycleWindowLengthDays: 7,
+                        cycleStartDate: cyclestart,
+                    }),
+                };
+            }
+            if (url.includes("/api/users/me/schedule/analytics")){
+                return {
+                    ok: true,
+                    json: async() => ({
+                        totalWorkouts: 4,
+                        totalVolume: 5000,
+                        totalSets: 20,
+                        muscleDistributin: [{
+                            muscleGroup: "Chest",
+                            setCount: 10,
+                            percentage: 50
+                        }],
+                    }),
+                };
+            }
+            
+            
+            if (url.includes("/api/users/me/schedule/missed")){
+                return {
+                    ok: true,
+                    json: async () => ({
+                        updatedCount: 1
+                    }),
+                };
+            }
+            if (url.includes("/api/profile/calendar")){
+                return {
+                    ok: true,
+                    json: async () => ({
+                        entries: []
+                    })
+                }
+            }
+            if (url.includes("/api/users/me/schedule")){
+                return {
+                    ok: true,
+                    json: async() => [{
+                        id: "missed-1",
+                        workoutId: "w-1",
+                        workoutName: "Leg Day",
+                        scheduled: testDate,
+                        status: "Missed",
+                        primaryMuscleGroups: ["Legs"],
+                        exerciseCount: 3,
+                        exercisePreview: ["Squats"],
+                        totalVolume: 4000,
+                        totalSets: 12,
+                    },],
+                };
+            }
+            return {
+                ok: true,
+                json: async() => ([])
+            };
+        });
+        render(<SchedulePage/>);
+        await waitFor(() => {
+            expect(screen.getByText("Missed Workouts Detected")).toBeDefined();
+            expect(screen.getAllByText(/Leg Day/i).length).toBeGreaterThan(0);
+        });
+
+        const checkbox = screen.getByRole("checkbox");
+        fireEvent.click(checkbox);
+        const reschdulebtn = screen.getByRole("button", {
+            name: /reschedule cycle/i
+        });
+        expect((reschdulebtn as HTMLButtonElement).disabled).toBe(false);
+        fireEvent.click(reschdulebtn);
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith("/api/users/me/schedule/reschedule", expect.objectContaining({
+                method: "POST"
+            }));
+            expect(screen.getByText("Proposed Schedule Comparison")).toBeDefined();
+            expect(screen.getByText("Accept Proposed Schedule")).toBeDefined();
+        });
+    });
+
 });

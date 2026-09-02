@@ -51,6 +51,8 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<TrainingEvent> TrainingEvents { get; set; }
 
 
+    public DbSet<UserScheduleConfig> UserScheduleConfigs { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

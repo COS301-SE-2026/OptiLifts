@@ -80,7 +80,7 @@ describe('PlateauPage', () => {
     render(<PlateauPage />)
 
     expect(await screen.findByText('Bench Press')).toBeDefined()
-    expect(screen.getByText('Plateau')).toBeDefined()
+  expect(screen.getByText('Plateau', { selector: 'span.rounded-full' })).toBeDefined()
     expect(screen.getByText('Try changing this exercise or adjusting your rep range.')).toBeDefined()
   })
 

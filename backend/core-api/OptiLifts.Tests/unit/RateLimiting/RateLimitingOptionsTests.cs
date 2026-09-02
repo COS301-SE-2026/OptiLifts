@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using OptiLifts.API.RateLimiting;
 using Xunit;
 
@@ -58,5 +59,50 @@ public sealed class RateLimitingOptionsTests
         options.AiPermitLimit.Should().Be(10);
         options.AiWindowSeconds.Should().Be(45);
         options.QueueLimit.Should().Be(2);
+    }
+
+    [Fact]
+    public void AddRateLimitingServices_WhenE2eTestingTrueAndNotExplicitlyConfigured_DisablesRateLimiting()
+    {
+        // Arrange
+        var inMemorySettings = new Dictionary<string, string?>
+        {
+            ["E2E_TESTING"] = "true"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings)
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        services.AddRateLimitingServices(configuration);
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<RateLimitingOptions>();
+
+        // Assert
+        options.Enabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void AddRateLimitingServices_WhenE2eTestingTrueButExplicitlyEnabled_KeepsRateLimitingEnabled()
+    {
+        // Arrange
+        var inMemorySettings = new Dictionary<string, string?>
+        {
+            ["E2E_TESTING"] = "true",
+            ["RateLimiting:Enabled"] = "true"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings)
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        services.AddRateLimitingServices(configuration);
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<RateLimitingOptions>();
+
+        // Assert
+        options.Enabled.Should().BeTrue();
     }
 }

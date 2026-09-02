@@ -9,6 +9,14 @@ public static class RateLimitingExtensions
     {
         var options = new RateLimitingOptions();
         configuration.GetSection(RateLimitingOptions.SectionName).Bind(options);
+
+        var isE2e = string.Equals(configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
+        var isExplicitlyConfigured = configuration.GetSection(RateLimitingOptions.SectionName).GetSection(nameof(RateLimitingOptions.Enabled)).Exists();
+        if (isE2e && !isExplicitlyConfigured)
+        {
+            options.Enabled = false;
+        }
+
         services.AddSingleton(options);
 
         services.AddRateLimiter(limiterOptions =>

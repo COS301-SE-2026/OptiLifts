@@ -1,6 +1,6 @@
 # Rate limiting zones per client IP address
-limit_req_zone $binary_remote_addr zone=general_limit:10m rate=30r/s;
-limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=5r/s;
+limit_req_zone $binary_remote_addr zone=general_limit:10m rate=${NGINX_GENERAL_RATE_LIMIT};
+limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=${NGINX_AUTH_RATE_LIMIT};
 limit_req_status 429;
 
 server {
@@ -15,7 +15,7 @@ server {
 
     # Strict rate limit for authentication endpoints
     location /api/auth/ {
-        limit_req zone=auth_limit burst=10 nodelay;
+        limit_req zone=auth_limit burst=${NGINX_AUTH_BURST} nodelay;
 
         proxy_pass ${NGINX_BACKEND_URL};
         proxy_ssl_server_name on;
@@ -32,7 +32,7 @@ server {
 
     # General rate limit for all API endpoints
     location /api/ {
-        limit_req zone=general_limit burst=50 nodelay;
+        limit_req zone=general_limit burst=${NGINX_GENERAL_BURST} nodelay;
 
         proxy_pass ${NGINX_BACKEND_URL};
         proxy_ssl_server_name on;

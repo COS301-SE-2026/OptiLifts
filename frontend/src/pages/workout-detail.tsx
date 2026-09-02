@@ -245,7 +245,7 @@ export default function WorkoutDetailPage() {
                 </DropdownMenuEllipsisTrigger>
                 <DropdownMenuEllipsisContent align="end">
                   <DropdownMenuSub>
-                    <DropdownMenuSubTrigger disabled={!isOnline}>Start Quick Workout</DropdownMenuSubTrigger>
+                    <DropdownMenuSubTrigger disabled={!isOnline}>Quick Workout</DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                       <DropdownMenuSubContent>
                         <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 15 } })}>15 Minutes</DropdownMenuItem>

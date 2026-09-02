@@ -1661,6 +1661,32 @@ Update the status of an existing scheduled workout session
 	}
 }
 ```
+---
+### POST /api/users/me/schedule/missed
+**Service Name:** Missed Sessions Status Update Service
+
+**Description:**
+Evaluates all past scheduled entries of the user that are still marked as `Scheduled`, and makes their status `Missed`
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `updatedCount`: integer - number of scheduled workout entries whose status was updated to be Missed
+
+**Usage/Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/schedule/missed`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"updatedCount": 2
+}
+```
+
+---
 
 ## Dynamic Scheduling
 
@@ -1718,6 +1744,285 @@ Body:
     }
   ],
   "dropped_entries": []
+}
+```
+
+---
+
+### POST /api/users/me/schedule/reschedule
+**Service Name:** AI Reschedule Trigger Service
+
+**Description:**
+Triggers an AI rescheduling calculation for selected missed entries by taking the user's constraints, upcoming scheduled workouts, and triggering the AI engine solver service. It returns proposed new workout dates and any dropped entries that could not be rescheduled
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+- `selectedMissedEntryIds`: array of guids - list of missed scheduled entry ids that the user wishes to reschedule
+
+**Outputs:**
+- `userId`: Guid - unique user identifier
+- `executionTier`: string - the solver tier used
+- `executionTimeMs`: integer - computation time in milliseconds
+- `rescheduledEntries`: array of `RescheduledEntryDto`:
+  - `entryId`: Guid - scheduled entry ID
+  - `workoutId`: Guid - workout ID
+  - `workoutName`: string - workout name
+  - `originalScheduledAt`: datetime - original scheduled date
+  - `newScheduledAt`: datetime - proposed new scheduled date
+  - `action`: string - action performed (e.g. `"Shifted"`)
+- `droppedEntries`: array of `RescheduleEntryDetailDto`:
+  - `id`: Guid - scheduled entry ID
+  - `workoutId`: Guid - workout ID
+  - `workoutName`: string - workout name
+  - `scheduledAt`: datetime - scheduled date
+  - `status`: string - entry status
+  - `primaryMuscles`: array of string - primary muscle groups
+
+**Usage/Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/schedule/reschedule` with JSON payload
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"userId": "userid1234",
+	"executionTier": "Tier2_CPSAT",
+	"executionTimeMs": 18,
+	"rescheduledEntries": [
+		{
+			"entryId": "e1111111-1111-1111-1111-111111111111",
+			"workoutId": "w1111111-1111-1111-1111-111111111111",
+			"workoutName": "Chest & Triceps",
+			"originalScheduledAt": "2026-08-31T08:00:00Z",
+			"newScheduledAt": "2026-09-03T08:00:00Z",
+			"action": "Shifted"
+		}
+	],
+	"droppedEntries": []
+}
+```
+
+---
+
+### POST /api/users/me/schedule/reschedule/confirm
+**Service Name:** Confirm Reschedule Service
+
+**Description:**
+Confirms and applies the proposed rescheduled dates for the workout entries. Updates their scheduled timestamps and their status (to now be `Scheduled`)
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+- Request body: array of `ConfirmRescheduleItemDto`:
+  - `entryId`: Guid - Sscheduled entry ID to update
+  - `newScheduledAt`: datetime - confirmed new scheduled date and time
+
+**Outputs:**
+- `message`: string - success confirmation message
+
+**Usage/Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/schedule/reschedule/confirm` with an array of objects containing `entryId` and `newScheduledAt`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"message": "Schedule updated successfully"
+}
+```
+
+---
+
+### GET /api/users/me/schedule/config
+**Service Name:** User Schedule Configuration Query Service
+
+**Description:**
+Retrieves user's dynamic scheduler configuation, including max workouts per day, minimum rest hours, preferred rest days, cycle window length and start date
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `dynamicSchedulerEnabled`: boolean - whether dynamic AI rescheduling is enabled or not
+- `maxWorkoutsPerDay`: integer - maximum workouts allowed per day
+- `minMuscleRestHours`: integer - minimum rest hours required before targeting the same primary muscle group once more
+- `restDays`: array of strings - days of the week that workouts must not be scheduled on
+- `cycleWindowLengthDays`: integer - length of the planning window in days
+- `cycleStartDate`: datetime - start date of the current scheduling cycle
+
+**Usage/Interaction Rules:**
+- Clients must send a GET request to `/api/users/me/schedule/config`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"dynamicSchedulerEnabled": true,
+	"maxWorkoutsPerDay": 1,
+	"minMuscleRestHours": 48,
+	"restDays": ["Sunday"],
+	"cycleWindowLengthDays": 7,
+	"cycleStartDate": "2026-08-30T00:00:00Z"
+}
+```
+---
+
+### PUT /api/users/me/schedule/config
+**Service Name:** User Schedule Configuration Update Service
+
+**Description:**
+Updates the user's dynamic AI scheduler preferences and settings
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+- `dynamicSchedulerEnabled`: boolean - whether dynamic AI rescheduling is enabled or not
+- `maxWorkoutsPerDay`: integer - maximum workouts allowed per day
+- `minMuscleRestHours`: integer - minimum rest hours required before targeting the same primary muscle group once more
+- `restDays`: array of strings - days of the week that workouts must not be scheduled on
+- `cycleWindowLengthDays`: integer - length of the planning window in days
+- `cycleStartDate`: datetime - start date of the current scheduling cycle
+
+**Outputs:**
+- `dynamicSchedulerEnabled`: boolean - updated setting
+- `maxWorkoutsPerDay`: integer - updated setting
+- `minMuscleRestHours`: integer - updated setting
+- `restDays`: array of strings - updated setting
+- `cycleWindowLengthDays`: integer - updated setting
+- `cycleStartDate`: datetime - updated setting
+
+**Usage/Interaction Rules:**
+- Clients must send a PUT request to `/api/users/me/schedule/config` with JSON payload
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+
+**Example Response:**
+```json
+{
+	"dynamicSchedulerEnabled": true,
+	"maxWorkoutsPerDay": 1,
+	"minMuscleRestHours": 48,
+	"restDays": ["Sunday"],
+	"cycleWindowLengthDays": 7,
+	"cycleStartDate": "2026-08-30T00:00:00Z"
+}
+```
+
+---
+
+## Google Calendar
+
+### GET /api/users/me/google-calendar/settings
+**Service Name:** Google Calendar Settings Query Service
+
+**Description:**
+Retrieves the Google Calendar integration status for the authenticated user, showing whether a Google account is connected and whether the calendar synchronisation is currently enabled.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `isConnected`: boolean - True if the user has connected a Google Calendar account (has a stored Google refresh token).
+- `syncEnabled`: boolean - True if automatic calendar synchronization is currently active.
+
+**Usage/Interaction Rules:**
+- Clients must send a GET request to `/api/users/me/google-calendar/settings`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+- Returns `404 Not Found` if the workout does not exist or is not owned by the user
+
+**Example Response:**
+```json
+{
+	"isConnected": true,
+	"syncEnabled": true
+}
+```
+
+---
+
+### POST /api/users/me/google-calendar/connect
+**Service Name:** Google Calendar Connection Service
+
+**Description:**
+Exchanges a Google OAuth authorisation code for a refresh token, gets or created a OPtiLifts Google Calendar, enables synchronisation, and syncs all upcoming scheduled workouts for the user
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+- `code`: string - Google OAuth authorization code obtained from the frontend OAuth consent flow (required)
+- `redirectUri`: string - The redirect URI specified during the Google OAuth flow (required)
+
+**Outputs:**
+- `connected`: boolean - True on successful connection.
+- `syncEnabled`: boolean - True indicating sync is active.
+
+**Usage/Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/google-calendar/connect` with JSON payload
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+- Returns `400 Bad Request` if token exchange fails or returns an invalid token
+
+**Example Response:**
+```json
+{
+	"connected": true,
+	"syncEnabled": true
+}
+```
+
+---
+
+### POST /api/users/me/google-calendar/disconnect
+**Service Name:** Google Calendar Disconnect Service
+
+**Description:**
+Disconnects the user's Google Calendar account by clearing stored Google refresh tokens and calendar Ids. It also disables calendar synchronisation
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+
+**Outputs:**
+- `connected`: boolean - false for disconnected
+
+**Usage/Interaction Rules:**
+- Clients must send a GET request to `/api/users/me/google-calendar/settings`
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+- Returns `404 Not Found` if the workout does not exist or is not owned by the user
+
+**Example Response:**
+```json
+{
+	"connected": false
+}
+```
+
+---
+
+### POST /api/users/me/google-calendar/toggle
+**Service Name:** Google Calendar Sync Toggle Service
+
+**Description:**
+Enables or disables automatic Google Calendar synchronisation for the user without disconnecting their account. If re-enabled while connected, it triggers an immediate sync of any future scheduled workouts.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie for current user
+- `enabled`: boolean - sync status (true for enable and false for disabled)
+
+**Outputs:**
+- `syncEnabled`: boolean - updated synchronisation status
+
+**Usage/Interaction Rules:**
+- Clients must send a POST request to `/api/users/me/google-calendar/toggle` with JSON payload
+- The browser automatically attaches the `access_token` cookie
+- Returns `401 Unauthorised` if the cookie is missing or it is invalid
+- Returns `404 Not Found` if the workout does not exist or is not owned by the user
+
+**Example Response:**
+```json
+{
+	"syncEnabled": true
 }
 ```
 

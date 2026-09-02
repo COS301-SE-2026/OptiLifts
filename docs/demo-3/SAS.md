@@ -21,9 +21,11 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [Exercise Management](#exercise-management)
 	- [Workouts](#workouts)
 	- [Workout Exercises & Sets](#workout-exercises-and-sets)
-	- [Global & Custom Exercises](#global-and-custom-exercises)
 	- [Scheduling](#scheduling)
-- [Deployment](#Deployment)
+	- [Dynamic Scheduling](#dynamic-scheduling)
+	- [Google Calendar](#google-calendar)
+	- [User Profile and Analytics](#user-profile-and-analytics)
+- [Deployment](#deployment)
 	- [Deployment Diagrams](#deployment-diagrams)
 	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
 	- [Rollback Strategy](#rollback-strategy)
@@ -501,7 +503,7 @@ Exchanges a valid HTTP-Only refresh cookie for a new access and refresh cookie.
 
 - Headers: 
 	- Set-Cookie: `access_token`
-	- Set-Coolie: `refresh_token`
+	- Set-Cookie: `refresh_token`
 
 **Usage / Interaction Rules:**
 
@@ -1468,7 +1470,7 @@ Returns the user's scheduled workout entries between a date range
     - `totalVolume`: float - Total volume for the workout
     - `totalSets`: integer Total
 	- `startedAt`: datetime | null - Start timestamp if session has started
-	- `completedAt`: datetime | null - Completion teimstamp is the session has been finished
+	- `completedAt`: datetime | null - Completion timestamp is the session has been finished
 	- `recordCount`: integer | null - Number of personal records for the session
 	- `logId`: Guid | null - Linked workout log identifer
 
@@ -1694,7 +1696,7 @@ Evaluates all past scheduled entries of the user that are still marked as `Sched
 **Service Name:** Dynamic AI schedular service
 
 **Description:** 
-Evaluates a list of missed and scheduled workouts and calculates an optimal new scheule witha cascading two-tier system. Tier 1 is a fasth path single workout shifter and tier 2 is a OR-Tools constraint solver for multiple workouts. 
+Evaluates a list of missed and scheduled workouts and calculates an optimal new schedule with cascading two-tier system. Tier 1 is a fasth path single workout shifter and tier 2 is a OR-Tools constraint solver for multiple workouts. 
 
 **Inputs:**
 - `user_id`: string - Unique identifier for the user.
@@ -1814,7 +1816,7 @@ Confirms and applies the proposed rescheduled dates for the workout entries. Upd
 **Inputs:**
 - `access_token` cookie: string - HTTP-only cookie for current user
 - Request body: array of `ConfirmRescheduleItemDto`:
-  - `entryId`: Guid - Sscheduled entry ID to update
+  - `entryId`: Guid - scheduled entry ID to update
   - `newScheduledAt`: datetime - confirmed new scheduled date and time
 
 **Outputs:**
@@ -1986,10 +1988,9 @@ Disconnects the user's Google Calendar account by clearing stored Google refresh
 - `connected`: boolean - false for disconnected
 
 **Usage/Interaction Rules:**
-- Clients must send a GET request to `/api/users/me/google-calendar/settings`
+- Clients must send a POST request to `/api/users/me/google-calendar/disconnect`
 - The browser automatically attaches the `access_token` cookie
 - Returns `401 Unauthorised` if the cookie is missing or it is invalid
-- Returns `404 Not Found` if the workout does not exist or is not owned by the user
 
 **Example Response:**
 ```json
@@ -2017,12 +2018,148 @@ Enables or disables automatic Google Calendar synchronisation for the user witho
 - Clients must send a POST request to `/api/users/me/google-calendar/toggle` with JSON payload
 - The browser automatically attaches the `access_token` cookie
 - Returns `401 Unauthorised` if the cookie is missing or it is invalid
-- Returns `404 Not Found` if the workout does not exist or is not owned by the user
 
 **Example Response:**
 ```json
 {
 	"syncEnabled": true
+}
+```
+
+---
+
+## User Profile and Analytics
+
+### GET /api/profile/overview
+**Service Name:** User Profile Overview Service
+
+**Description:**
+Retrieves comprehensive profile information for the authenticated user, including personal details, earned achievement badges, recent completed workout activity summaries with metrics (PRs, duration, volume, sets), and volume trend chart visualization data.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- `ProfileOverviewDto`:
+    - `profile`: `ProfileUserDto` - User profile details:
+        - `name`: string - Display name.
+        - `email`: string - Email address.
+        - `bio`: string | null - User biography / about text.
+        - `profileImageUrl`: string | null - Public URL to profile avatar.
+    - `badges`: array of `ProfileBadgeDto` - Earned achievement badges:
+        - `name`: string - Badge title.
+        - `description`: string - Detailed description of the achievement.
+        - `category`: string - Badge category (e.g., `"Consistency"`, `"Strength"`).
+        - `earnedAt`: datetime - Timestamp when the badge was awarded.
+    - `recentWorkouts`: array of `ProfileWorkoutDto` - Recent completed workout sessions:
+        - `workoutId`: Guid - Workout template identifier.
+        - `logId`: Guid | null - Completed log identifier.
+        - `name`: string - Workout name.
+        - `exercises`: array of string - List of exercise names performed.
+        - `prs`: string - Formatted personal records achieved count or label.
+        - `duration`: string - Formatted workout duration string.
+        - `volume`: string - Formatted total volume string.
+        - `sets`: string - Formatted total completed sets count.
+    - `chartTitle`: string - Title describing the trend chart dataset.
+    - `chartData`: array of `ProfileChartDatumDto` - Historical data points for charts:
+        - `label`: string - Date or category bucket label.
+        - `value`: float - Numeric metric value.
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/profile/overview`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401 Unauthorized` if the cookie is missing or invalid.
+- Returns `404 Not Found` if the user record does not exist.
+
+**Example Response:**
+```json
+{
+	"profile": {
+		"name": "Alex Johnson",
+		"email": "alex@example.com",
+		"bio": "Powerlifting enthusiast",
+		"profileImageUrl": "https://storage.example.com/profiles/avatar.png"
+	},
+	"badges": [
+		{
+			"name": "First Workout",
+			"description": "Completed your first logged workout session",
+			"category": "Milestone",
+			"earnedAt": "2026-06-01T08:30:00Z"
+		}
+	],
+	"recentWorkouts": [
+		{
+			"workoutId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"logId": "d3b07384-d113-4e89-8d39-e4d0d3d5f1d0",
+			"name": "Push Day A",
+			"exercises": ["Barbell Bench Press", "Incline Dumbbell Press", "Tricep Pushdown"],
+			"prs": "2 PRs",
+			"duration": "1h 15m",
+			"volume": "12,450 kg",
+			"sets": "16"
+		}
+	],
+	"chartTitle": "Weekly Volume (kg)",
+	"chartData": [
+		{
+			"label": "Week 32",
+			"value": 34500.0
+		},
+		{
+			"label": "Week 33",
+			"value": 38200.0
+		}
+	]
+}
+```
+
+---
+
+### GET /api/profile/calendar
+**Service Name:** Profile Calendar Query Service
+
+**Description:**
+Retrieves historical workout completion logs mapped by calendar date for a given month and year, enabling calendar visualization and streak tracking on the user's profile.
+
+**Inputs:**
+- `year`: integer | null - Query parameter for the calendar year (e.g., `2026`). Defaults to current UTC year if omitted.
+- `month`: integer | null - Query parameter for the calendar month (`1` - `12`). Defaults to current UTC month if omitted.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- `ProfileCalendarDto`:
+    - `entries`: array of `ProfileCalendarEntryDto` - List of completed workout logs for the requested month:
+        - `workoutId`: Guid - Identifier of the workout.
+        - `logId`: Guid - Identifier of the completed workout log.
+        - `date`: string - ISO date string in `"yyyy-MM-dd"` format.
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/profile/calendar` with optional `year` and `month` query parameters.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401 Unauthorized` if the cookie is missing or invalid.
+- Returns `400 Bad Request` if `month` is outside the valid range of 1 to 12.
+
+**Example Request:**
+```http
+GET /api/profile/calendar?year=2026&month=7 HTTP/1.1
+```
+
+**Example Response:**
+```json
+{
+	"entries": [
+		{
+			"workoutId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"logId": "d3b07384-d113-4e89-8d39-e4d0d3d5f1d0",
+			"date": "2026-07-16"
+		},
+		{
+			"workoutId": "7ca241b1-2947-49f3-8b7a-6b45a34e0a91",
+			"logId": "e1f18210-9b48-4e8a-bf90-349f50e7b892",
+			"date": "2026-07-18"
+		}
+	]
 }
 ```
 
@@ -2053,7 +2190,7 @@ Enables or disables automatic Google Calendar synchronisation for the user witho
 #### During Deployment: Blue-Green Deployment
 When new deployments are triggered in production, new revisioins of the apps are made ( the green images) whilst the current apps continue to run and have traffic routed to them (the blue images). Once the new revisions are fully deployed and health checks pass, traffic is routed to the new (green) images. If the new revisions were to crash or fail health checks then traffic would never be routed to them and the previous working revision (blue revision) continues to handle all traffic. 
 
-#### Afer Deployment: Image Tag Pinning
+#### After Deployment: Image Tag Pinning
 If an error is noticed after deployment, rollbacks are done via Image tag pinning. All revisions of the apps are tagged with their git commit hash and stored in the Azure Container Registry. This means if a rollback is needed we are able change to a previous revision instantly via our rollback workflow that makes use of the image tag pinning and pulumi(IaC). The workflow can be triggered via github actions (manual trigger) or via the command line with the following command:
 
 The command to rollback is as follows:

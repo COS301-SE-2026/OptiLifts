@@ -1,23 +1,27 @@
 import { useCallback, useEffect, useState } from 'react'
 import { PageTitle } from '@/components/ui/page-title'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { customFetch } from '@/lib/custom-fetch'
 import { useOnlineStatus } from '@/lib/use-online-status'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
-import { Input } from '@/components/ui/input'
+import { AlertTriangle } from 'lucide-react'
 
 type WorkoutRefDto = {
     workoutId: string
     workoutName: string
 }
 
+type TrendStatus = 'Progressing' | 'Regressing' | 'Plateau'
+
 type ExerciseDiagnosisDto = {
     exerciseId: string
     exerciseName: string
     muscleGroup: string
-    status: 'Progressing' | 'Regressing' | 'Plateau'
+    status: TrendStatus
     slopePctPerWeek: number
     recommendation: string | null
     canSwapExercise: boolean
@@ -38,13 +42,23 @@ const STATUS_STYLES: Record<string, string> = {
     Regressing: 'bg-red-500/10 text-red-600 dark:text-red-400',
 }
 
-export default function PlateauPage() {
+const BAR_COLORS: Record<TrendStatus, string> = {
+    Progressing: 'bg-emerald-500',
+    Plateau: 'bg-amber-500',
+    Regressing: 'bg-red-500',
+}
+
+const STATUS_FILTER_OPTIONS = ['All Statuses', 'Plateau', 'Regressing', 'Progressing'] as const
+type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number]
+
+export default function ProgressionPage() {
     const [exercises, setExercises] = useState<ExerciseDiagnosisDto[]>([])
     const [loading, setLoading] = useState(true)
     const [swapTarget, setSwapTarget] = useState<SwapTarg | null>(null)
     const [swapping, setSwapping] = useState(false)
     const isOnline = useOnlineStatus()
     const [searchQuery, setSearchQuery] = useState('')
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('All Statuses')
 
     const fetchDiagn = useCallback(async () => {
         setLoading(true)
@@ -65,7 +79,6 @@ export default function PlateauPage() {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
         void fetchDiagn()
     }, [fetchDiagn])
-
 
     const handleSwapExer = async (newExercise: CatalogExercise) => {
         if (!swapTarget) {
@@ -91,32 +104,38 @@ export default function PlateauPage() {
         }
     }
 
-    let pageContent
+    const amountOfStatuses: Record<TrendStatus, number> = {
+        Plateau: exercises.filter((e) => e.status === 'Plateau').length,
+        Regressing: exercises.filter((e) => e.status === 'Regressing').length,
+        Progressing: exercises.filter((e) => e.status === 'Progressing').length,
+    }
+    const maxCount = Math.max(1, amountOfStatuses.Plateau, amountOfStatuses.Regressing, amountOfStatuses.Progressing)
+
+    const filtered = exercises.filter((e) => {
+        const matchesSearch = e.exerciseName.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesStatus = statusFilter === 'All Statuses' || e.status === statusFilter
+        return matchesSearch && matchesStatus
+    })
+
+    let listOfCont
 
     if (loading) {
-        pageContent = (
-            <div className="text-center text-muted-foreground py-10">
-                Loading progress...
-            </div>
+        listOfCont = (
+            <p className="text-center text-muted-foreground py-10">Loading progress...</p>
         )
     } else if (exercises.length === 0) {
-        pageContent = (
-            <div className="text-center text-muted-foreground py-10">
+        listOfCont = (
+            <p className="text-center text-muted-foreground py-10">
                 No exercises have enough data yet. Keep logging your workouts and check back soon.
-            </div>
+            </p>
+        )
+    } else if (filtered.length === 0) {
+        listOfCont = (
+            <p className="text-center text-muted-foreground py-10">No exercises match your filters.</p>
         )
     } else {
-        const filtered = exercises.filter((e) => e.exerciseName.toLowerCase().includes(searchQuery.toLowerCase()))
-        pageContent = (
-            <div className="space-y-5">
-                <Input
-                    placeholder="Search exercises..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {filtered.length === 0 && (
-                    <p className="text-center text-muted-foreground py-10">No exercises match "{searchQuery}".</p>
-                )}
+        listOfCont = (
+            <div className="flex flex-col gap-3">
                 {filtered.map((exercise) => (
                     <Card key={exercise.exerciseId} className="p-6">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -151,7 +170,6 @@ export default function PlateauPage() {
                                             workoutName: workout.workoutName,
                                             muscleGroup: exercise.muscleGroup,
                                         })}
-
                                     >
                                         Swap in {workout.workoutName}
                                     </Button>
@@ -170,7 +188,7 @@ export default function PlateauPage() {
     }
 
     return (
-        <section className="mx-auto max-w-6xl px-6 py-12">
+        <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
             <div className="mb-6">
                 <PageTitle title="PROGRESSION" />
             </div>
@@ -179,7 +197,69 @@ export default function PlateauPage() {
                 <OfflineBanner message="You're offline - progress data may be out of date until you reconnect." />
             )}
 
-            {pageContent}
+            <div className="grid grid-cols-12 gap-6 lg:h-full lg:min-h-0">
+                <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">
+                    <div className="max-h-[calc(100dvh-15rem)] overflow-y-auto pr-1">
+                        {listOfCont}
+                    </div>
+                </div>
+
+                <div className="col-span-12 lg:col-span-5 min-w-0">
+                    <div className="flex w-full flex-col gap-4 lg:sticky lg:top-[1.5rem] lg:max-h-[calc(100dvh-6.5rem)] lg:overflow-y-auto lg:[scrollbar-gutter:stable]">
+                        <Card className="w-full overflow-hidden border-border bg-card">
+                            <CardHeader className="px-4 py-1">
+                                <CardTitle className="text-base font-bold text-foreground">Filter</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex min-h-0 flex-col gap-2 px-4 pb-4">
+                                <SearchInput
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search exercises"
+                                    aria-label="Search exercises"
+                                    className="h-8 w-full"
+                                />
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
+                                        <span>{statusFilter}</span>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                                        {STATUS_FILTER_OPTIONS.map((o) => (
+                                            <DropdownMenuItem key={o} onSelect={() => setStatusFilter(o)}>{o}</DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="w-full overflow-hidden border-border bg-card">
+                            <CardHeader className="px-4 py-1">
+                                <CardTitle className="text-base font-bold text-foreground">Overview</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-3 px-4 pb-4">
+                                {(['Plateau', 'Regressing', 'Progressing'] as const).map((status) => (
+                                    <div key={status} className="flex items-center gap-2 text-xs">
+                                        <span className="w-20 shrink-0 font-semibold text-muted-foreground">{status}</span>
+                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
+                                            <div
+                                                className={`h-full rounded-full ${BAR_COLORS[status]}`}
+                                                style={{ width: `${(amountOfStatuses[status] / maxCount) * 100}%` }}
+                                            />
+                                        </div>
+                                        <span className="w-4 shrink-0 text-right font-semibold text-foreground">{amountOfStatuses[status]}</span>
+                                    </div>
+                                ))}
+                                {amountOfStatuses.Plateau === 0 && amountOfStatuses.Regressing === 0 && (
+                                    <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                                        No plateaus or regressions right now.
+                                    </p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
 
             <ExercisePickerDialog
                 isOpen={swapTarget !== null}

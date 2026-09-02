@@ -23,7 +23,7 @@ public class GetPlateauPageHandlerTests
 
     private static async Task<Guid> SeedUserAsync(OptiLiftsDbContext db)
     {
-        var user = new User { Id = Guid.NewGuid(), Email = $"{Guid.NewGuid()}@x.com", PasswordHash = "x", DisplayName = "U" };
+        var user = new User { Id = Guid.NewGuid(), Email = $"{Guid.NewGuid()}@x.com", EmailHash = Guid.NewGuid().ToString(), PasswordHash = "x", DisplayName = "U" };
         db.Users.Add(user);
         await db.SaveChangesAsync();
         return user.Id;
@@ -45,9 +45,9 @@ public class GetPlateauPageHandlerTests
 
     [Theory]
     [InlineData(TrendStatus.Progressing, false, null)]
-    [InlineData(TrendStatus.Plateau, false, "Try changing this exercise or adjusting your rep range - your effort looks steady, so a change of stimulus is more likely to help than more recovery.")]
+    [InlineData(TrendStatus.Plateau, false, "Only your progress is stalling. Try changing this exercise or adjusting your rep range for a change of stimulus")]
     [InlineData(TrendStatus.Plateau, true, "Your effort has been climbing while progress has stalled. Prioritise sleep, nutrition and workout consistency before pushing harder on this exercise.")]
-    [InlineData(TrendStatus.Regressing, false, "Try changing this exercise or adjusting your rep range - your effort looks steady, so a change of stimulus is more likely to help than more recovery.")]
+    [InlineData(TrendStatus.Regressing, false, "Only your progress is stalling. Try changing this exercise or adjusting your rep range for a change of stimulus")]
     public async Task Handle_BuildsExpectedRecom(TrendStatus status, bool rpeTrendRising, string? expected)
     {
         var db = await NewDbAsync();
@@ -64,7 +64,7 @@ public class GetPlateauPageHandlerTests
     [Theory]
     [InlineData(TrendStatus.Plateau, false, true)]
     [InlineData(TrendStatus.Regressing, false, true)]
-    [InlineData(TrendStatus.Plateau, true, false)]   // RPE trending up -> recover, not swap
+    [InlineData(TrendStatus.Plateau, true, false)]
     [InlineData(TrendStatus.Progressing, false, false)]
     public async Task Handle_ComputesCanSwapExer(TrendStatus status, bool rpeTrendRising, bool expectedCanSwap)
     {
@@ -105,15 +105,16 @@ public class GetPlateauPageHandlerTests
         res.Should().BeEmpty();
     }
 
-    [Fact]
+        [Fact]
     public async Task Handle_ListsWorkoutsOwnedByUserContainingThatExer()
     {
         var db = await NewDbAsync();
         var userId = await SeedUserAsync(db);
+        var otherUserId = await SeedUserAsync(db);
         var exerId = await SeedTrendAsync(db, userId, TrendStatus.Plateau, false, DateTime.UtcNow);
 
         var ownWorkout = new Workout { Id = Guid.NewGuid(), Name = "My Push Day", CreatedBy = userId };
-        var otherUsersWorkout = new Workout { Id = Guid.NewGuid(), Name = "Someone Else's", CreatedBy = Guid.NewGuid() };
+        var otherUsersWorkout = new Workout { Id = Guid.NewGuid(), Name = "Someone Else's", CreatedBy = otherUserId };
         db.AddRange(ownWorkout, otherUsersWorkout);
         await db.SaveChangesAsync();
 

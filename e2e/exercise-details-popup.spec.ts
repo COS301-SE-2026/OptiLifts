@@ -43,6 +43,7 @@ test.describe('Custom Exercise Details Popup', () => {
 
         await page.goto('/workouts');
         await page.waitForLoadState('networkidle');
+        await expect(page.getByText('Loading workouts...')).toBeHidden({ timeout: 15000 });
         await page.getByTestId(`workout-card-${customWorkoutName}`).click();
         await page.waitForLoadState('networkidle');
 

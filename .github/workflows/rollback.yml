@@ -1,0 +1,77 @@
+name: Optilifts Rollback Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: 'The Commit SHA (Image Tag) to roll back the application to'
+        required: true
+        type: string
+      target_migration:
+        description: 'The EF Core migration to roll back to. Leave blank if the database is fine'
+        required: false
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d
+        with: 
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Setup .NET
+        if: ${{ github.event.inputs.target_migration != '' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          
+      - name: Install EF Core CLI
+        if: ${{ github.event.inputs.target_migration != '' }}
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Execute Database Down-Migration
+        if: ${{ github.event.inputs.target_migration != '' }}
+        run: |
+          DB_CONN=$(az containerapp secret show --name core-api --resource-group rgoptilifts --secret-name postgres-connection-string --query value -o tsv)
+          
+          if [ -z "$DB_CONN" ]; then
+            echo "Failed to retrieve connection string"
+            exit 1
+          fi
+          
+          dotnet ef database update ${{ github.event.inputs.target_migration }} \
+            --connection "$DB_CONN" \
+            --project backend/core-api/OptiLifts.Infrastructure \
+            --startup-project backend/core-api/OptiLifts.API
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: 
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Pulumi
+        working-directory: infrastructure
+        run: pnpm install --frozen-lockfile #NOSONAR
+
+      - name: Deploy Revision via Pulumi
+        uses: pulumi/actions@cd99a7f8865434dd3532b586a26f9ebea596894f
+        with:
+          command: up
+          stack-name: prod
+          work-dir: infrastructure
+          refresh: true
+        env:
+          PULUMI_ACCESS_TOKEN: ${{secrets.PULUMI_ACCESS_TOKEN}}
+          IMAGE_TAG: ${{ github.event.inputs.commit_sha }}
+          NAMEDOTCOM_USERNAME: ${{secrets.NAMEDOTCOM_USERNAME}}
+          NAMEDOTCOM_TOKEN: ${{secrets.NAMEDOTCOM_TOKEN}}

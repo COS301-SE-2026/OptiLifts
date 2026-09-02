@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808182812_AddExerciseEstimationAndUserRepRange")]
+    partial class AddExerciseEstimationAndUserRepRange
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -134,130 +137,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.ToTable("messages", (string)null);
                 });
 
-            modelBuilder.Entity("OptiLifts.Domain.Training.ExerciseTrend", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("trend_id");
-
-                    b.Property<DateTime>("ComputedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("computed_at");
-
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("exercise_id");
-
-                    b.Property<float>("MeanE1rm")
-                        .HasColumnType("real")
-                        .HasColumnName("mean_e1rm");
-
-                    b.Property<bool>("RpeTrendRising")
-                        .HasColumnType("boolean")
-                        .HasColumnName("rpe_trend_rising");
-
-                    b.Property<int>("SessionsUsed")
-                        .HasColumnType("integer")
-                        .HasColumnName("sessions_used");
-
-                    b.Property<float>("SlopeCiHigh")
-                        .HasColumnType("real")
-                        .HasColumnName("slope_ci_high");
-
-                    b.Property<float>("SlopeCiLow")
-                        .HasColumnType("real")
-                        .HasColumnName("slope_ci_low");
-
-                    b.Property<float>("SlopePctPerWeek")
-                        .HasColumnType("real")
-                        .HasColumnName("slope_pct_per_week");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("status");
-
-                    b.Property<Guid?>("SupersedesExerciseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("supersedes_exercise_id");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<DateTime>("WindowEnd")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("window_end");
-
-                    b.Property<DateTime>("WindowStart")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("window_start");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("SupersedesExerciseId");
-
-                    b.HasIndex("UserId", "ExerciseId")
-                        .IsUnique();
-
-                    b.ToTable("exercise_trends", (string)null);
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Training.TrainingEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
-                    b.Property<DateTime?>("AcknowledgedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("acknowledged_at");
-
-                    b.Property<float?>("Confidence")
-                        .HasColumnType("real")
-                        .HasColumnName("confidence");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Diagnosis")
-                        .HasColumnType("text")
-                        .HasColumnName("diagnosis");
-
-                    b.Property<string>("Outcome")
-                        .HasColumnType("text")
-                        .HasColumnName("outcome");
-
-                    b.Property<string>("Recommendation")
-                        .HasColumnType("text")
-                        .HasColumnName("recommendation");
-
-                    b.Property<string>("Scope")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("scope");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("type");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "CreatedAt");
-
-                    b.ToTable("training_events", (string)null);
-                });
-
             modelBuilder.Entity("OptiLifts.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -294,25 +173,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("email_hash");
 
-                    b.Property<string>("GoogleCalendarId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_id");
-
-                    b.Property<string>("GoogleCalendarRefreshToken")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_refresh_token");
-
-                    b.Property<bool>("GoogleCalendarSyncEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("google_calendar_sync_enabled");
-
-                    b.Property<string>("GoogleId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("google_id");
-
                     b.Property<string>("Height")
                         .HasColumnType("text")
                         .HasColumnName("height");
@@ -330,6 +190,7 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnName("metric");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
 
@@ -357,9 +218,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EmailHash")
-                        .IsUnique();
-
-                    b.HasIndex("GoogleId")
                         .IsUnique();
 
                     b.HasIndex("RefreshTokenHash");
@@ -457,6 +315,10 @@ namespace OptiLifts.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("estimate_id");
+
+                    b.Property<bool>("Deload")
+                        .HasColumnType("boolean")
+                        .HasColumnName("deload");
 
                     b.Property<Guid>("ExerciseId")
                         .HasColumnType("uuid")
@@ -624,10 +486,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("entry_id");
 
-                    b.Property<string>("GoogleEventId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_event_id");
-
                     b.Property<DateTime>("Scheduled")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("scheduled");
@@ -691,15 +549,11 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnName("exercise_type");
 
                     b.Property<int>("LowerLimit")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(8)
                         .HasColumnName("lower_limit");
 
                     b.Property<int>("UpperLimit")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(10)
                         .HasColumnName("upper_limit");
 
                     b.Property<Guid>("UserId")
@@ -711,12 +565,7 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasIndex("UserId", "ExerciseType")
                         .IsUnique();
 
-                    b.ToTable("user_rep_range", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_user_rep_range_bounds", "lower_limit <= upper_limit");
-
-                            t.HasCheckConstraint("CK_user_rep_range_exercise_type", "exercise_type IN ('Compound', 'Isolation')");
-                        });
+                    b.ToTable("user_rep_range", (string)null);
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Workout", b =>
@@ -967,7 +816,7 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("rest_time");
 
-                    b.Property<float?>("Rpe")
+                    b.Property<float>("Rpe")
                         .HasColumnType("real")
                         .HasColumnName("rpe");
 
@@ -1023,35 +872,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Training.ExerciseTrend", b =>
-                {
-                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
-                        .WithMany()
-                        .HasForeignKey("SupersedesExerciseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("OptiLifts.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Training.TrainingEvent", b =>
-                {
-                    b.HasOne("OptiLifts.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

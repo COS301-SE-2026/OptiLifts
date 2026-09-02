@@ -4,6 +4,7 @@ public record UserSettingsDto
 {
     public ProfileDto Profile { get; init; } = null!;
     public PreferencesDto Preferences { get; init; } = null!;
+    public List<UserRepRangeDto> RepRanges { get; init; } = new();
     public SecurityDto Security { get; init; } = null!;
 }
 
@@ -22,6 +23,12 @@ public record PreferencesDto(
     string Units
 );
 
+public record UserRepRangeDto(
+    Guid Id,
+    string ExerciseType,
+    int LowerLimit,
+    int UpperLimit
+);
 public record SecurityDto(
     bool HasPassword
 );

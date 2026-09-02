@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -11,11 +12,13 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
 {
     private readonly OptiLiftsDbContext _dbContext;
     private readonly IPlateauDetectionService _plateauDetectionService;
+    private readonly ISender? _sender;
 
-    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService)
+    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
     {
         _dbContext = dbContext;
         _plateauDetectionService = plateauDetectionService;
+        _sender = sender;
     }
 
     public async Task<bool> Handle(UpdateWorkoutLogCommand request, CancellationToken cancellationToken)
@@ -33,6 +36,11 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         {
             return false;
         }
+
+        var affectedExerciseIds = await _dbContext.WorkoutLogSets
+            .Where(set => set.LogId == log.Id)
+            .Select(set => set.ExerciseId)
+            .ToListAsync(cancellationToken);
 
         if (request.StartedAt.HasValue)
         {
@@ -70,7 +78,6 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         var oldLogExercises = await _dbContext.WorkoutLogExercises
             .Where(e => e.LogId == log.Id)
             .ToListAsync(cancellationToken);
-        var oldExerciseIds = oldLogExercises.Select(e => e.ExerciseId).ToArray();
         _dbContext.WorkoutLogExercises.RemoveRange(oldLogExercises);
 
         var orderedExercises = request.Exercises
@@ -126,11 +133,25 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        var affectedExerciseIds = oldExerciseIds.Concat(orderedExercises.Select(e => e.ExerciseId)).Distinct();
-        foreach (var exerciseId in affectedExerciseIds)
+
+        affectedExerciseIds.AddRange(orderedExercises.Select(exercise => exercise.ExerciseId));
+
+        var distinctExerciseIds = affectedExerciseIds.Distinct().ToArray();
+
+        foreach (var exerciseId in distinctExerciseIds)
         {
             await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
         }
+
+        if (log.CompletedAt.HasValue && _sender is not null)
+        {
+            foreach (var exerciseId in distinctExerciseIds)
+            {
+                await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
+            }
+        }
+
+
         return true;
     }
 

@@ -2,6 +2,7 @@ using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Users;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Users;
@@ -22,6 +23,33 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
         if (user == null)
         {
             throw new KeyNotFoundException("User not found.");
+        }
+
+        var repRanges = await _dbContext.UserRepRanges
+            .Where(r => r.UserId == request.UserId)
+            .ToListAsync(cancellationToken);
+
+        if (repRanges.Count == 0)
+        {
+            var defaultCompound = new UserRepRange
+            {
+                UserId = request.UserId,
+                ExerciseType = UserRepRangeExerciseType.Compound,
+                LowerLimit = 5,
+                UpperLimit = 8
+            };
+
+            var defaultIsolation = new UserRepRange
+            {
+                UserId = request.UserId,
+                ExerciseType = UserRepRangeExerciseType.Isolation,
+                LowerLimit = 8,
+                UpperLimit = 12
+            };
+            _dbContext.UserRepRanges.AddRange(defaultCompound, defaultIsolation);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            repRanges.Add(defaultCompound);
+            repRanges.Add(defaultIsolation);
         }
 
         double? weight = null;
@@ -58,6 +86,12 @@ public sealed class UserSettingsHandler : IRequestHandler<GetUserSettingsQuery, 
                 user.LightTheme ? "light" : "dark",
                 user.Metric ? "metric" : "imperial"
             ),
+            RepRanges = repRanges.Select(r => new UserRepRangeDto(
+                r.Id,
+                r.ExerciseType.ToString(),
+                r.LowerLimit,
+                r.UpperLimit
+            )).ToList(),
             Security = new SecurityDto(!string.IsNullOrWhiteSpace(user.PasswordHash))
         };
     }

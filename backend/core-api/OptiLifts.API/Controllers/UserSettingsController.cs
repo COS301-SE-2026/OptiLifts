@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Users;
+using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.API.Controllers;
 
@@ -150,6 +151,12 @@ public sealed class UserSettingsController : ControllerBase
         string Units
     );
 
+    public sealed record UpdateRepRangeRequest(
+        string ExerciseType,
+        int LowerLimit,
+        int UpperLimit
+    );
+
     [HttpPatch("preferences")]
     public async Task<IActionResult> UpdateUserPreferences([FromBody] PreferencesRequest request, CancellationToken cancellationToken)
     {
@@ -178,6 +185,54 @@ public sealed class UserSettingsController : ControllerBase
         catch (KeyNotFoundException)
         {
             return NotFound();
+        }
+    }
+
+    [HttpPatch("rep-ranges/{repRangeId:guid}")]
+    public async Task<IActionResult> UpdateUserRepRange(Guid repRangeId, [FromBody] UpdateRepRangeRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (request.LowerLimit > request.UpperLimit)
+        {
+            return BadRequest("Lower limit must be less than or equal to upper limit.");
+        }
+
+        if (request.LowerLimit < 4)
+        {
+            return BadRequest("Lower limit cannot be less than 4.");
+        }
+
+        if (!Enum.TryParse<UserRepRangeExerciseType>(request.ExerciseType, true, out var exerciseType))
+        {
+            return BadRequest("Exercise type must be Compound or Isolation.");
+        }
+
+        try
+        {
+            var command = new UpdateUserRepRangeCommand(
+                userId,
+                repRangeId,
+                exerciseType,
+                request.LowerLimit,
+                request.UpperLimit
+            );
+
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(new { error = e.Message });
         }
     }
 

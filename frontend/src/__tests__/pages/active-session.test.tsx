@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import type { ReactNode } from 'react'
 import ActiveSessionPage from '@/pages/active-session'
@@ -219,4 +219,100 @@ describe('ActiveSessionPage edit mode', () => {
     expect(screen.getByText('Save Changes')).toBeDefined()
     expect(screen.getByText('Back to Workout Log')).toBeDefined()
   })
+
+function getSetRow(container: HTMLElement, index: number): HTMLElement {
+  const removeButtons = container.querySelectorAll('button[aria-label="Remove set"]')
+  return removeButtons[index].closest('.grid') as HTMLElement
+}
+
+function getRowInpts(row: HTMLElement) {
+  const inpts = row.querySelectorAll('input')
+  return { kg: inpts[1], reps: inpts[2], rpe: inpts[3] }
+}
+
+function getToggleBtn(row: HTMLElement): HTMLButtonElement {
+  const removeBtn = row.querySelector('button[aria-label="Remove set"]') as HTMLButtonElement
+  return removeBtn.parentElement!.querySelector('div > button') as HTMLButtonElement
+}
+
+const benchPressWorkout = (sets: { id: string; reps: number; weight: number }[]) => ({
+  id: 'workout-1', name: 'Push Day', folderId: null, dayIndex: null, createdAt: '2026-07-28T12:00:00.000Z',
+  primaryMuscleGroups: ['Chest'], exercisePreview: [],
+  exercises: [{
+    id: 'we-1', exerciseId: 'ex-1', name: 'Bench Press', primaryMuscle: 'Chest', exerciseType: 'WeightReps', orderIndex: 0,
+    sets: sets.map((s, i) => ({ ...s, type: 'Normal' as const, duration: null, distance: null, orderIndex: i, restTime: 90 })),
+  }],
+})
+
+describe('Acute Fatigue', () => {
+  const fetchMock = customFetch as unknown as Mock
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    mockParams = {}
+    locationState = { workout: { id: 'workout-1', name: 'Push Day', primaryMuscleGroups: ['Chest'] } }
+  })
+
+  afterEach(() => {
+    cleanup()
+    localStorage.clear()
+  })
+
+  it('flags the missing-RPE icon when no RPE', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => benchPressWorkout([{ id: 'set-1', reps: 10, weight: 100 }]) })
+
+    const { container } = render(<ActiveSessionPage />)
+    await screen.findByText('Bench Press')
+
+    const row = getSetRow(container, 0)
+    const { kg } = getRowInpts(row)
+
+    fireEvent.change(kg, { target: { value: '80' } })
+
+    getToggleBtn(row).click()
+    expect(await screen.findByLabelText('Log RPE to enable fatigue detection')).toBeDefined()
+
+    getToggleBtn(row).click()
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Log RPE to enable fatigue detection')).toBeNull()
+    })
+  })
+
+  it('flags muscle-group fatigue for more than 2 sets and clears when unflagged', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => benchPressWorkout([{ id: 'set-1', reps: 10, weight: 100 }, { id: 'set-2', reps: 10, weight: 100 }]),
+    })
+
+    const { container } = render(<ActiveSessionPage />)
+    await screen.findByText('Bench Press')
+
+    const rows = [getSetRow(container, 0), getSetRow(container, 1)]
+    for (const row of rows) {
+      const { kg, rpe } = getRowInpts(row)
+      fireEvent.change(kg, { target: { value: '80' } })
+      fireEvent.change(rpe, { target: { value: '9' } })
+    }
+
+    getToggleBtn(rows[0]).click()
+    getToggleBtn(rows[1]).click()
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/api/training/acute-fatigue', expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ muscleGroup: 'Chest' }),
+      }))
+    })
+
+    const nameBtn = screen.getByText('Bench Press')
+    expect(nameBtn.nextElementSibling).not.toBeNull() 
+
+    getToggleBtn(rows[1]).click()
+    await waitFor(() => {
+      expect(nameBtn.nextElementSibling).toBeNull()
+    })
+  })
+})
+
 })

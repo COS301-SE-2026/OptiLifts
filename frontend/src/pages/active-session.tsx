@@ -28,6 +28,8 @@ import confetti from 'canvas-confetti'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 
 type WorkoutLocationState = Readonly<{
+  isTimeConstrained?: boolean
+  timeBudgetMinutes?: number
   workout?: Readonly<{
     id?: string
     name: string
@@ -708,7 +710,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     // drafts don't carry images or muscle groups - backfill from the workout
     const backfillDraft = async () => {
       try {
-        const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
+        let url = `/api/workouts/${workoutId}`
+        if (sessionState?.isTimeConstrained) {
+          url += `?isTimeConstrained=true`
+          if (sessionState.timeBudgetMinutes) url += `&timeBudgetMinutes=${sessionState.timeBudgetMinutes}`
+        }
+        const draftResp = await customFetch(url, {
           headers: { Accept: 'application/json' },
         })
 
@@ -733,7 +740,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     const fetchWorkout = async () => {
       try {
-        const resp = await customFetch(`/api/workouts/${workoutId}`, {
+        let url = `/api/workouts/${workoutId}`
+        if (sessionState?.isTimeConstrained) {
+          url += `?isTimeConstrained=true`
+          if (sessionState.timeBudgetMinutes) url += `&timeBudgetMinutes=${sessionState.timeBudgetMinutes}`
+        }
+        const resp = await customFetch(url, {
           headers: { Accept: 'application/json' },
         })
 
@@ -805,7 +817,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     return () => {
       isMounted = false
     }
-  }, [isEditMode, workoutId, logId, startKey])
+  }, [isEditMode, workoutId, logId, startKey, sessionState?.isTimeConstrained, sessionState?.timeBudgetMinutes])
 
   useEffect(() => {
     if (isEditMode) {

@@ -52,6 +52,10 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenuEllipsisTrigger: () => <button data-testid="dropdown-trigger">...</button>,
     DropdownMenuEllipsisContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
     DropdownMenuItem: ({ children, onSelect }: Readonly<{ children: ReactNode; onSelect: () => void }>) => (<button onClick={onSelect} data-testid={`dropdown-item-${children}`}>{children}</button>),
+    DropdownMenuSub: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-sub">{children}</div>,
+    DropdownMenuSubTrigger: ({children}: Readonly<{children: ReactNode}>) => <button data-testid="dropdown-sub-trigger">{children}</button>,
+    DropdownMenuPortal: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-portal">{children}</div>,
+    DropdownMenuSubContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-sub-content">{children}</div>,
 }));
 
 //'describe' defines suite of related tests
@@ -285,4 +289,30 @@ describe('WorkoutDetailPage', () => {
             expect(screen.getByText(/Failed to delete workout/i)).toBeDefined();
         });
     });
+    it('starts time constrained workout when 15 Minutes is clicked', async () => {
+        mockAuth.mockReturnValue({ isHydrated: true, isAuthenticated: true });
+        mockFetch.mockImplementation(async (url) => {
+            if (url.includes('/api/workouts/workout-abc')) {
+                return { ok: true, json: async () => ({
+                    id: 'w-1',
+                    name: 'Push Day A',
+                    primaryMuscleGroups: ['Chest'],
+                    exercises: []
+                }) };
+            }
+            return { ok: false };
+        });
+        
+        render(<WorkoutDetailPage />);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day A')).toBeDefined();
+        });
+
+        const quickBtn = screen.getAllByTestId('dropdown-item-15 Minutes')[0];
+        fireEvent.click(quickBtn);
+        expect(mockNavigate).toHaveBeenCalledWith('/active-session', expect.objectContaining({
+            state: expect.objectContaining({ isTimeConstrained: true, timeBudgetMinutes: 15 })
+        }));
+    });
+
 });

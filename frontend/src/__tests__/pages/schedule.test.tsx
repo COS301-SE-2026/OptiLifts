@@ -34,6 +34,10 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenuTrigger: ({children, ...props}: Readonly<{ children: ReactNode; className?: string; variant?: string}>) => <button {...props}>{children}</button>,
     DropdownMenuContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
     DropdownMenuItem: ({ children, onClick }: Readonly<{ children: ReactNode; onClick: () => void }>) => (<button onClick={onClick} data-testid={`dropdown-item-${children}`}>{children}</button>),
+    DropdownMenuSub: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-sub">{children}</div>,
+    DropdownMenuSubTrigger: ({children}: Readonly<{children: ReactNode}>) => <button data-testid="dropdown-sub-trigger">{children}</button>,
+    DropdownMenuPortal: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-portal">{children}</div>,
+    DropdownMenuSubContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-sub-content">{children}</div>,
 }));
 
 describe('SchedulePage', () => {

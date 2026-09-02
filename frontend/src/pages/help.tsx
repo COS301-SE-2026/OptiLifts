@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { PageTitle } from "@/components/ui/page-title";
 import { FaqAccordion } from "@/components/help/faq-accordion";
-import type { FaqItem } from "@/components/help/faq-accordion";
 import { Search, HelpCircle, Video, BookOpen, Sparkles, Layers, Flame, Zap, RefreshCw, Info, CheckCircle2, ArrowRight } from "lucide-react";
 import { TutorialCard, type TutorialVideo } from "@/components/help/tutorial-card";
 import { ResourcePanel } from "@/components/help/resource-panel";

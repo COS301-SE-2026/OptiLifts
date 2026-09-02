@@ -403,8 +403,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ### NFR1: Performance
 1. NFR1.1: 95% of `GET /api/workouts` requests (core API) will complete within 1.5 seconds under normal operating conditions.
-2. NFR1.2: 95% of `POST /ai-api/reschedule` requests (AI-API) will complete within 3 seconds under normal operating conditions.
-3. NFR1.3: The system will support 100 concurrent active users with less than a 10% increase in average response time compared to the single-user baseline.
+3. NFR1.2: The system will support 100 concurrent active users with less than a 10% increase in average response time compared to the single-user baseline.
 
 ### NFR2: Scalability
 1. NFR2.1: The system will support a 200% increase in workload (scaling from a baseline of 100 up to 300 concurrent users) with no more than a 10% decrease in response time.
@@ -412,19 +411,15 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 ### NFR3: Security
 1. NFR3.1: The system will encrypt sensitive user data (specifically  emails, usernames and bodily/health-orientated infromation such as height, weight etc.) at rest using application-level AES-256 encryption via Entity Framework Core value converters before the data is stored in the database. 
 2. NFR3.2: The system will hash user passwords when stored in the database using bcrypt with a salt factor of 12.
-3. NFR3.3: The system will use HTTPS (TLS 1.2) for all data transmission between the client and server.
+3. NFR3.3: The system will use HTTPS (TLS 1.3) for all data transmission between the client and server.
 4. NFR3.4: The system will prevent unauthorized access to the business logic and data of the app by enforcing stateless JSON Web Token (JWT) authentication, transmitted via HttpOnly cookies, and applying resource-based authorization (ensuring users can only access and modify their own personal data).
 
 ### NFR4: Maintainability
 1. NFR4.1: The automated CI/CD pipeline execution time (from code merge to production deployment) will complete within 30 minutes for new features or bug fixes.
-2. NFR4.2: The system will maintain an automated line coverage of at least 80%.
-3. NFR4.3: The backend architecture will allow for the addition of new features with no changes to existing routing or controller configuration logic via the use of MediatR and the CQRS pattern. 
+2. NFR4.2: The system will maintain an automated line coverage of at least 80%. 
 
-### NFR5: Usability
-1. NFR5.1: 95% of new users will be able to complete account registration and create their first workout within 5 minutes of first use during usability testing.
-2. NFR5.2: The system's user interface will meet WCAG 2.1 Level AA accessibility standards (including full keyboard navigability), achieving an automated accessibility score of at least 90% as measured by Google Lighthouse audits.
-3. NFR5.3: The system will achieve at least an 85% user satisfaction rating via a System Usability Scale (SUS) questionnaire across a minimum of 5 test users.
-
+### NFR5: Accesability
+1. NFR5.1: The system's user interface will meet WCAG 2.1 Level AA accessibility standards (including full keyboard navigability), achieving an automated accessibility score of at least 90% as measured by Google Lighthouse audits.
 
 ## Domain Model
 

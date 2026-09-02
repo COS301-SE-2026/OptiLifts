@@ -34,12 +34,13 @@ type ExercisePickerDialogProps = Readonly<{
   onClose: () => void
   onSelect: (exercise: CatalogExercise) => void
   title?: string
+  initialMuscle?: string
 }>
 
 const MUSCLE_OPTS = ['All Muscles', ...MUSCLE_GROUPS]
 const EQUIPMENT_OPTS = ['All Equipment', ...DEFAULT_EQUIPMENT_OPTIONS]
 
-export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add Exercise' }: ExercisePickerDialogProps) {
+export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add Exercise', initialMuscle }: ExercisePickerDialogProps) {
   const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +51,15 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [customOnly, setCustomOnly] = useState(false)
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+  
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
+    if (isOpen) {
+      setSelectedMuscle(initialMuscle && MUSCLE_OPTS.includes(initialMuscle) ? initialMuscle : 'All Muscles')
+    }
+  }
+
 
   useEffect(() => {
     if (!isOpen) {

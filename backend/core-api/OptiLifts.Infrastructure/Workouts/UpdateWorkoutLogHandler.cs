@@ -4,17 +4,20 @@ using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Infrastructure.Workouts;
 
 public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCommand, bool>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPlateauDetectionService _plateauDetectionService;
     private readonly ISender? _sender;
 
-    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
+    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _plateauDetectionService = plateauDetectionService;
         _sender = sender;
     }
 
@@ -130,14 +133,24 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        affectedExerciseIds.AddRange(orderedExercises.Select(exercise => exercise.ExerciseId));
+
+        var distinctExerciseIds = affectedExerciseIds.Distinct().ToArray();
+
+        foreach (var exerciseId in distinctExerciseIds)
+        {
+            await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
+        }
+
         if (log.CompletedAt.HasValue && _sender is not null)
         {
-            affectedExerciseIds.AddRange(orderedExercises.Select(exercise => exercise.ExerciseId));
-            foreach (var exerciseId in affectedExerciseIds.Distinct())
+            foreach (var exerciseId in distinctExerciseIds)
             {
                 await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
             }
         }
+
 
         return true;
     }

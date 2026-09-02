@@ -24,7 +24,7 @@ public class WorkoutLogSetConfiguration : IEntityTypeConfiguration<WorkoutSetLog
         builder.Property(w => w.Distance).HasColumnName("distance");
         builder.Property(w => w.RestTime).HasColumnName("rest_time").IsRequired();
         builder.Property(w => w.GroupNumber).HasColumnName("group_number").IsRequired();
-        builder.Property(w => w.Rpe).HasColumnName("rpe").IsRequired();
+        builder.Property(w => w.Rpe).HasColumnName("rpe");
         builder.Property(w => w.OrderIndex).HasColumnName("order_index").IsRequired();
         builder.Property(w => w.AiSuggested).HasColumnName("ai_suggested").IsRequired();
         builder.Property(w => w.LoggedAt).HasColumnName("logged_at").IsRequired();

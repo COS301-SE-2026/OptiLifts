@@ -4,17 +4,21 @@ using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Training;
+
 
 namespace OptiLifts.Infrastructure.Workouts;
 
 public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCom, CreateWorkoutLogRes?>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPlateauDetectionService _plateauDetectionService;
     private readonly ISender? _sender;
 
-    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
+    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _plateauDetectionService = plateauDetectionService;
         _sender = sender;
     }
 
@@ -141,6 +145,11 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var exerciseId in orderedExercises.Select(e => e.ExerciseId).Distinct())
+        {
+            await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
+        }
         await GenerateOverloadAsync(request.UserId, log.CompletedAt.HasValue, orderedExercises.Select(exercise => exercise.ExerciseId), cancellationToken);
 
         return new CreateWorkoutLogRes(log.Id, entryId, AlreadyExisted: false);

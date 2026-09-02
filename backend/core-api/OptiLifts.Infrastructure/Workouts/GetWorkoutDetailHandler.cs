@@ -67,10 +67,37 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
 
             var targetMuscleIds = targetPrimaryMuscles.Union(targetSecondaryMuscles).ToList();
 
+            var originalExerciseTypes = workoutExercises.Select(we => we.ExerciseType).Distinct().ToHashSet();
+            bool isBodyweightOnly = originalExerciseTypes.Count > 0 && originalExerciseTypes.All(t =>
+                t == ExerciseType.BodyweightReps ||
+                t == ExerciseType.AssistedWeightReps ||
+                t == ExerciseType.WeightedBodyweight);
+
             var compoundExercises = await _dbContext.Exercises
                 .AsNoTracking()
                 .Where(e => e.Mechanic == "compound" || e.Mechanic == "Compound")
                 .ToListAsync(cancellationToken);
+
+            if (isBodyweightOnly)
+            {
+                var bodyweightCompounds = compoundExercises.Where(e =>
+                    e.ExerciseType == ExerciseType.BodyweightReps ||
+                    e.ExerciseType == ExerciseType.AssistedWeightReps ||
+                    e.ExerciseType == ExerciseType.WeightedBodyweight).ToList();
+
+                if (bodyweightCompounds.Count > 0)
+                {
+                    compoundExercises = bodyweightCompounds;
+                }
+            }
+            else if (originalExerciseTypes.Count > 0)
+            {
+                var matchingTypeCompounds = compoundExercises.Where(e => originalExerciseTypes.Contains(e.ExerciseType)).ToList();
+                if (matchingTypeCompounds.Count > 0)
+                {
+                    compoundExercises = matchingTypeCompounds;
+                }
+            }
 
             var compoundIds = compoundExercises.Select(e => e.Id).ToList();
 

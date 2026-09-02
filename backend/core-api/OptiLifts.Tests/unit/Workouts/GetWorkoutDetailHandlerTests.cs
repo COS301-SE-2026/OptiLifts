@@ -260,4 +260,77 @@ public class GetWorkoutDetailHandlerTests
         totalTime.Should().BeLessThanOrEqualTo(360);
     }
 
+    [Fact]
+    public async Task Handle_TimeConstrained_BodyweightWorkout_PreservesBodyweightExerciseType()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "bw@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "BW User"
+        };
+
+        var back = new Muscle { Id = Guid.NewGuid(), Name = "Back" };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bodyweight Workout",
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var pullups = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Pull-Ups",
+            Mechanic = "compound",
+            Equipment = "bodyweight",
+            PrimaryMuscleId = back.Id,
+            ExerciseType = ExerciseType.BodyweightReps
+        };
+
+        var barbellRow = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Barbell Row",
+            Mechanic = "compound",
+            Equipment = "barbell",
+            PrimaryMuscleId = back.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        context.Users.Add(user);
+        context.Muscles.Add(back);
+        context.Workouts.Add(workout);
+        context.Exercises.AddRange(pullups, barbellRow);
+        await context.SaveChangesAsync();
+
+        var bwWorkoutExercise = new WorkoutExercise
+        {
+            Id = Guid.NewGuid(),
+            WorkoutId = workout.Id,
+            ExerciseId = pullups.Id,
+            OrderIndex = 0
+        };
+
+        context.WorkoutExercises.Add(bwWorkoutExercise);
+        await context.SaveChangesAsync();
+
+        var handler = new GetWorkoutDetailHandler(context);
+
+        var result = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 30), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Exercises.Should().HaveCount(1);
+        result.Exercises[0].ExerciseType.Should().Be("BodyweightReps");
+    }
+
 }

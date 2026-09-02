@@ -348,6 +348,7 @@ public static class DatabaseSeeder
 
         var affectedExerciseIds = new List<Guid>();
         var startDate = DateTime.UtcNow.AddDays(-24 * 7);
+        var workoutExerciseOrderIndex = 0;
 
         foreach (var (exerciseName, sessionAt) in scenarios)
         {
@@ -359,55 +360,14 @@ public static class DatabaseSeeder
 
             affectedExerciseIds.Add(exercise.Id);
 
-            for (var i = 0; i < 24; i++)
+            dbContext.WorkoutExercises.Add(new WorkoutExercise
             {
-                var (weight, reps, rpe) = sessionAt(i);
-                var sessionDate = startDate.AddDays(i * 7);
+                WorkoutId = workout.Id,
+                ExerciseId = exercise.Id,
+                OrderIndex = workoutExerciseOrderIndex++
+            });
 
-                var entry = new ScheduledEntry
-                {
-                    WorkoutId = workout.Id,
-                    UserId = user.Id,
-                    Scheduled = sessionDate,
-                    Status = ScheduleStatus.Completed
-                };
-                dbContext.ScheduledEntries.Add(entry);
-
-                var log = new WorkoutLog
-                {
-                    EntryId = entry.Id,
-                    StartedAt = sessionDate,
-                    CompletedAt = sessionDate.AddMinutes(45),
-                    AiModified = false
-                };
-                dbContext.WorkoutLogs.Add(log);
-
-                dbContext.WorkoutLogExercises.Add(new WorkoutLogExercise
-                {
-                    LogId = log.Id,
-                    ExerciseId = exercise.Id,
-                    OrderIndex = 0,
-                    GroupNumber = 0
-                });
-
-                for (var setIdx = 0; setIdx < 3; setIdx++)
-                {
-                    dbContext.WorkoutLogSets.Add(new WorkoutSetLog
-                    {
-                        LogId = log.Id,
-                        ExerciseId = exercise.Id,
-                        Type = SetType.Normal,
-                        Reps = reps,
-                        Weight = weight,
-                        GroupNumber = 0,
-                        Rpe = rpe,
-                        RestTime = 90,
-                        OrderIndex = setIdx,
-                        LoggedAt = sessionDate,
-                        AiSuggested = false
-                    });
-                }
-            }
+            SeedExerciseSessions(dbContext, workout, user, exercise, sessionAt, startDate);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -418,6 +378,68 @@ public static class DatabaseSeeder
         foreach (var exerciseId in affectedExerciseIds)
         {
             await plateauDetectionService.DetectAsync(user.Id, exerciseId, cancellationToken);
+        }
+    }
+
+    private static void SeedExerciseSessions(
+        OptiLiftsDbContext dbContext,
+        Workout workout,
+        User user,
+        Exercise exercise,
+        Func<int, (float Weight, int Reps, float Rpe)> sessionAt,
+        DateTime startDate)
+    {
+        const int sessionCount = 24;
+        const int setsPerSession = 3;
+
+        for (var i = 0; i < sessionCount; i++)
+        {
+            var (weight, reps, rpe) = sessionAt(i);
+            var sessionDate = startDate.AddDays(i * 7);
+
+            var entry = new ScheduledEntry
+            {
+                WorkoutId = workout.Id,
+                UserId = user.Id,
+                Scheduled = sessionDate,
+                Status = ScheduleStatus.Completed
+            };
+            dbContext.ScheduledEntries.Add(entry);
+
+            var log = new WorkoutLog
+            {
+                EntryId = entry.Id,
+                StartedAt = sessionDate,
+                CompletedAt = sessionDate.AddMinutes(45),
+                AiModified = false
+            };
+            dbContext.WorkoutLogs.Add(log);
+
+            dbContext.WorkoutLogExercises.Add(new WorkoutLogExercise
+            {
+                LogId = log.Id,
+                ExerciseId = exercise.Id,
+                OrderIndex = 0,
+                GroupNumber = 0
+            });
+
+            for (var setIdx = 0; setIdx < setsPerSession; setIdx++)
+            {
+                dbContext.WorkoutLogSets.Add(new WorkoutSetLog
+                {
+                    LogId = log.Id,
+                    ExerciseId = exercise.Id,
+                    Type = SetType.Normal,
+                    Reps = reps,
+                    Weight = weight,
+                    GroupNumber = 0,
+                    Rpe = rpe,
+                    RestTime = 90,
+                    OrderIndex = setIdx,
+                    LoggedAt = sessionDate,
+                    AiSuggested = false
+                });
+            }
         }
     }
 

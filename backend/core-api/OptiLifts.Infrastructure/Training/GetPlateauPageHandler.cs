@@ -24,9 +24,11 @@ public sealed class GetPlateauPageHandler : IRequestHandler<GetPlateauPageQuery,
         var rows = await (
             from trend in _dbContext.ExerciseTrends.AsNoTracking()
             join exercise in _dbContext.Exercises.AsNoTracking() on trend.ExerciseId equals exercise.Id
+            join muscle in _dbContext.Muscles.AsNoTracking() on exercise.PrimaryMuscleId equals muscle.Id
             where trend.UserId == request.UserId
-                && (trend.Status == TrendStatus.Plateau || trend.Status == TrendStatus.Regressing || trend.Status == TrendStatus.Progressing) && trend.WindowEnd >= monthCutOff
-            select new { trend, exercise.Name }
+                && (trend.Status == TrendStatus.Plateau || trend.Status == TrendStatus.Regressing || trend.Status == TrendStatus.Progressing)
+                && trend.WindowEnd >= monthCutOff
+            select new { trend, exercise.Name, MuscleName = muscle.Name }
         ).ToListAsync(cancellationToken);
 
         if (rows.Count == 0)
@@ -47,11 +49,12 @@ public sealed class GetPlateauPageHandler : IRequestHandler<GetPlateauPageQuery,
             .GroupBy(w => w.ExerciseId).ToDictionary(
                 g => g.Key,
                 g => (IReadOnlyList<WorkoutRefDto>)g.Select(w => new WorkoutRefDto(w.Id, w.Name)).Distinct().ToList());
-
+        
         return rows
             .Select(r => new ExerciseDiagnosisDto(
                 r.trend.ExerciseId,
                 r.Name,
+                r.MuscleName,
                 r.trend.Status,
                 r.trend.SlopePctPerWeek,
                 BuildRecommendation(r.trend.Status, r.trend.RpeTrendRising),
@@ -59,6 +62,7 @@ public sealed class GetPlateauPageHandler : IRequestHandler<GetPlateauPageQuery,
                 r.trend.ComputedAt,
                 workoutsByExer.TryGetValue(r.trend.ExerciseId, out var workouts) ? workouts : []))
             .ToList();
+
     }
 
     private static string? BuildRecommendation(TrendStatus status, bool rpeTrendRising)
@@ -70,6 +74,6 @@ public sealed class GetPlateauPageHandler : IRequestHandler<GetPlateauPageQuery,
 
         return rpeTrendRising
             ? "Your effort has been climbing while progress has stalled. Prioritise sleep, nutrition and workout consistency before pushing harder on this exercise."
-            : "Try changing this exercise or adjusting your rep range - your effort looks steady, so a change of stimulus is more likely to help than more recovery.";
+            : "Only your progress is stalling. Try changing this exercise or adjusting your rep range for a change of stimulus";
     }
 }

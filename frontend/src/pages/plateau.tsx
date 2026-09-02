@@ -1,17 +1,34 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { PageTitle } from '@/components/ui/page-title'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { customFetch } from '@/lib/custom-fetch'
 import { useOnlineStatus } from '@/lib/use-online-status'
 import { OfflineBanner } from '@/components/ui/offline-banner'
+import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
+
+type WorkoutRefDto = {
+    workoutId: string
+    workoutName: string
+}
 
 type ExerciseDiagnosisDto = {
     exerciseId: string
     exerciseName: string
+    muscleGroup: string
     status: 'Progressing' | 'Regressing' | 'Plateau'
     slopePctPerWeek: number
     recommendation: string | null
+    canSwapExercise: boolean
     computedAt: string
+    workouts: WorkoutRefDto[]
+}
+
+type SwapTarg = {
+    exerciseId: string
+    workoutId: string
+    workoutName: string
+    muscleGroup: string
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -23,26 +40,52 @@ const STATUS_STYLES: Record<string, string> = {
 export default function PlateauPage() {
     const [exercises, setExercises] = useState<ExerciseDiagnosisDto[]>([])
     const [loading, setLoading] = useState(true)
+    const [swapTarget, setSwapTarget] = useState<SwapTarg | null>(null)
+    const [swapping, setSwapping] = useState(false)
     const isOnline = useOnlineStatus()
 
-    useEffect(() => {
-        const fetchDiagn = async () => {
-            setLoading(true)
-            try {
-                const resp = await customFetch('/api/training/plateau-page')
-                if (resp.ok) {
-                    const out = await resp.json()
-                    setExercises(out)
-                }
-            } catch (error) {
-                console.error('Error fetching plateau page:', error)
-            } finally {
-                setLoading(false)
+    const fetchDiagn = useCallback(async () => {
+        setLoading(true)
+        try {
+            const resp = await customFetch('/api/training/plateau-page')
+            if (resp.ok) {
+                const out = await resp.json()
+                setExercises(out)
             }
+        } catch (error) {
+            console.error('Error fetching plateau page:', error)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        void fetchDiagn()
+    }, [fetchDiagn])
+
+    const handleSwapExer = async (newExercise: CatalogExercise) => {
+        if (!swapTarget) {
+            return
         }
 
-        void fetchDiagn()
-    }, [])
+        setSwapping(true)
+        try {
+            const resp = await customFetch(`/api/workouts/${swapTarget.workoutId}/exercises/${swapTarget.exerciseId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newExerciseId: newExercise.id }),
+            })
+
+            if (resp.ok) {
+                setSwapTarget(null)
+                await fetchDiagn()
+            }
+        } catch (error) {
+            console.error('Error replacing workout exercise:', error)
+        } finally {
+            setSwapping(false)
+        }
+    }
 
     let pageContent
 
@@ -81,6 +124,32 @@ export default function PlateauPage() {
                                 {exercise.recommendation}
                             </p>
                         )}
+                        {exercise.canSwapExercise && exercise.workouts.length > 0 && (
+                            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                                {exercise.workouts.map((workout) => (
+                                    <Button
+                                        key={workout.workoutId}
+                                        variant="outline"
+                                        className="h-8 text-xs"
+                                        disabled={!isOnline}
+                                        onClick={() => setSwapTarget({
+                                            exerciseId: exercise.exerciseId,
+                                            workoutId: workout.workoutId,
+                                            workoutName: workout.workoutName,
+                                            muscleGroup: exercise.muscleGroup,
+                                        })}
+
+                                    >
+                                        Swap in {workout.workoutName}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+                        {exercise.canSwapExercise && exercise.workouts.length === 0 && (
+                            <p className="mt-4 text-sm text-muted-foreground border-t border-border pt-4">
+                                You have already swapped this exercise to an alternative exercise.
+                            </p>
+                        )}
                     </Card>
                 ))}
             </div>
@@ -98,6 +167,14 @@ export default function PlateauPage() {
             )}
 
             {pageContent}
+
+            <ExercisePickerDialog
+                isOpen={swapTarget !== null}
+                onClose={() => { if (!swapping) setSwapTarget(null) }}
+                onSelect={(newExercise) => { void handleSwapExer(newExercise) }}
+                title={swapTarget ? `Swap exercise in ${swapTarget.workoutName}` : 'Swap exercise'}
+                initialMuscle={swapTarget?.muscleGroup}
+            />
         </section>
     )
 }

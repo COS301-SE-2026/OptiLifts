@@ -21,6 +21,24 @@ export async function customFetch( inputURL: RequestInfo | URL, init?: RequestIn
     const input: RequestInit = { ...init, credentials: 'include' }; //adds request into an object, then adds credentails to it
     const response = await fetch(inputURL, input);
 
+    if (response.status === 429) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : 60;
+        let requrl: string;
+        if (typeof inputURL === 'string') {
+            requrl = inputURL;
+        } else {
+            requrl = (inputURL as Request).url;
+        }
+
+        globalThis.dispatchEvent(new CustomEvent('rateLimitExceeded', {
+            detail: {
+                retryAfter: Number.isNaN(retryAfterSeconds) ? 60 : retryAfterSeconds,
+                url: requrl,
+            }
+        }));
+    }
+
     if (response.status == 401){
         let requrl: string;
         if (typeof inputURL == 'string'){

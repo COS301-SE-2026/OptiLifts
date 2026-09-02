@@ -3,17 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.DeleteWorkoutLog;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Infrastructure.Workouts;
 
 public sealed class DeleteWorkoutLogHandler : IRequestHandler<DeleteWorkoutLogCommand, bool>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPlateauDetectionService _plateauDetectionService;
     private readonly ISender? _sender;
 
-    public DeleteWorkoutLogHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
+    public DeleteWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _plateauDetectionService = plateauDetectionService;
         _sender = sender;
     }
 
@@ -33,23 +36,26 @@ public sealed class DeleteWorkoutLogHandler : IRequestHandler<DeleteWorkoutLogCo
             return false;
         }
 
-        var exerciseIds = await _dbContext.WorkoutLogSets
-            .Where(set => set.LogId == log.Id)
-            .Select(set => set.ExerciseId)
+        var affectedExerciseIds = await _dbContext.WorkoutLogSets
+            .Where(s => s.LogId == log.Id)
+            .Select(s => s.ExerciseId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         _dbContext.WorkoutLogs.Remove(log);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        if (_sender is null)
+        foreach (var exerciseId in affectedExerciseIds)
         {
-            return true;
+            await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
         }
 
-        foreach (var exerciseId in exerciseIds)
+        if (_sender is not null)
         {
-            await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
+            foreach (var exerciseId in affectedExerciseIds)
+            {
+                await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
+            }
         }
 
         return true;

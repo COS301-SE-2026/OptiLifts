@@ -3,6 +3,8 @@ using Google.Apis.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OptiLifts.API.RateLimiting;
 using OptiLifts.Application.Auth.Google;
 using OptiLifts.Application.Auth.Login;
 using OptiLifts.Application.Auth.Logout;
@@ -15,6 +17,7 @@ namespace OptiLifts.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Auth)]
 public sealed class AuthController : ControllerBase
 {
     private readonly ISender _sender;

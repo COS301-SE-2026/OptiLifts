@@ -1,6 +1,7 @@
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.API;
+using OptiLifts.API.RateLimiting;
 using OptiLifts.Application;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
@@ -113,6 +114,7 @@ builder.Services.AuthProgramHelper(builder.Configuration);
 
 builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 
+builder.Services.AddRateLimitingServices(builder.Configuration);
 var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
 if (!aiApiUrl.EndsWith("/"))
 {
@@ -143,22 +145,26 @@ if (runMigrations)
     }
 }
 
-// Swagger UI available at http://localhost:<port>/swagger
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "OptiLifts Core API v1");
-    options.RoutePrefix = "swagger";
-});
+    // Swagger UI available at http://localhost:<port>/swagger
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "OptiLifts Core API v1");
+        options.RoutePrefix = "swagger";
+    });
+}
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication(); //authentication middleware 
 app.UseAuthorization(); //authorization middleware
+app.UseRateLimiter(); //rate limiting middleware
 app.MapControllers();
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq
-app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
+app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow })).DisableRateLimiting();
 await app.RunAsync();
 
 public partial class Program

@@ -1723,6 +1723,143 @@ Body:
 
 ---
 
+## User Profile and Analytics
+
+### GET /api/profile/overview
+**Service Name:** User Profile Overview Service
+
+**Description:**
+Retrieves comprehensive profile information for the authenticated user, including personal details, earned achievement badges, recent completed workout activity summaries with metrics (PRs, duration, volume, sets), and volume trend chart visualization data.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- `ProfileOverviewDto`:
+    - `profile`: `ProfileUserDto` - User profile details:
+        - `name`: string - Display name.
+        - `email`: string - Email address.
+        - `bio`: string | null - User biography / about text.
+        - `profileImageUrl`: string | null - Public URL to profile avatar.
+    - `badges`: array of `ProfileBadgeDto` - Earned achievement badges:
+        - `name`: string - Badge title.
+        - `description`: string - Detailed description of the achievement.
+        - `category`: string - Badge category (e.g., `"Consistency"`, `"Strength"`).
+        - `earnedAt`: datetime - Timestamp when the badge was awarded.
+    - `recentWorkouts`: array of `ProfileWorkoutDto` - Recent completed workout sessions:
+        - `workoutId`: Guid - Workout template identifier.
+        - `logId`: Guid | null - Completed log identifier.
+        - `name`: string - Workout name.
+        - `exercises`: array of string - List of exercise names performed.
+        - `prs`: string - Formatted personal records achieved count or label.
+        - `duration`: string - Formatted workout duration string.
+        - `volume`: string - Formatted total volume string.
+        - `sets`: string - Formatted total completed sets count.
+    - `chartTitle`: string - Title describing the trend chart dataset.
+    - `chartData`: array of `ProfileChartDatumDto` - Historical data points for charts:
+        - `label`: string - Date or category bucket label.
+        - `value`: float - Numeric metric value.
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/profile/overview`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401 Unauthorized` if the cookie is missing or invalid.
+- Returns `404 Not Found` if the user record does not exist.
+
+**Example Response:**
+```json
+{
+	"profile": {
+		"name": "Alex Johnson",
+		"email": "alex@example.com",
+		"bio": "Powerlifting enthusiast",
+		"profileImageUrl": "https://storage.example.com/profiles/avatar.png"
+	},
+	"badges": [
+		{
+			"name": "First Workout",
+			"description": "Completed your first logged workout session",
+			"category": "Milestone",
+			"earnedAt": "2026-06-01T08:30:00Z"
+		}
+	],
+	"recentWorkouts": [
+		{
+			"workoutId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"logId": "d3b07384-d113-4e89-8d39-e4d0d3d5f1d0",
+			"name": "Push Day A",
+			"exercises": ["Barbell Bench Press", "Incline Dumbbell Press", "Tricep Pushdown"],
+			"prs": "2 PRs",
+			"duration": "1h 15m",
+			"volume": "12,450 kg",
+			"sets": "16"
+		}
+	],
+	"chartTitle": "Weekly Volume (kg)",
+	"chartData": [
+		{
+			"label": "Week 32",
+			"value": 34500.0
+		},
+		{
+			"label": "Week 33",
+			"value": 38200.0
+		}
+	]
+}
+```
+
+---
+
+### GET /api/profile/calendar
+**Service Name:** Profile Calendar Query Service
+
+**Description:**
+Retrieves historical workout completion logs mapped by calendar date for a given month and year, enabling calendar visualization and streak tracking on the user's profile.
+
+**Inputs:**
+- `year`: integer | null - Query parameter for the calendar year (e.g., `2026`). Defaults to current UTC year if omitted.
+- `month`: integer | null - Query parameter for the calendar month (`1` - `12`). Defaults to current UTC month if omitted.
+- `access_token` cookie: string - HTTP-only cookie passed by the browser identifying the current user.
+
+**Outputs:**
+- `ProfileCalendarDto`:
+    - `entries`: array of `ProfileCalendarEntryDto` - List of completed workout logs for the requested month:
+        - `workoutId`: Guid - Identifier of the workout.
+        - `logId`: Guid - Identifier of the completed workout log.
+        - `date`: string - ISO date string in `"yyyy-MM-dd"` format.
+
+**Usage / Interaction Rules:**
+- Clients must send a GET request to `/api/profile/calendar` with optional `year` and `month` query parameters.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401 Unauthorized` if the cookie is missing or invalid.
+- Returns `400 Bad Request` if `month` is outside the valid range of 1 to 12.
+
+**Example Request:**
+```http
+GET /api/profile/calendar?year=2026&month=7 HTTP/1.1
+```
+
+**Example Response:**
+```json
+{
+	"entries": [
+		{
+			"workoutId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"logId": "d3b07384-d113-4e89-8d39-e4d0d3d5f1d0",
+			"date": "2026-07-16"
+		},
+		{
+			"workoutId": "7ca241b1-2947-49f3-8b7a-6b45a34e0a91",
+			"logId": "e1f18210-9b48-4e8a-bf90-349f50e7b892",
+			"date": "2026-07-18"
+		}
+	]
+}
+```
+
+---
+
 # Deployment
 
 ## Deployment Diagrams

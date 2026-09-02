@@ -47,6 +47,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
             builder.UseSetting("JWT_EXP_MINUTES", "60");
             builder.UseSetting("FRONTEND_ORIGIN", "localhost:5173");
             builder.UseSetting("RUN_MIGRATIONS", "false");
+            builder.UseSetting("RateLimiting:Enabled", "false");
 
             builder.ConfigureTestServices(services =>
             {

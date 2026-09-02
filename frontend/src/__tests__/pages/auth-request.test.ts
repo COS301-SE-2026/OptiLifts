@@ -101,4 +101,29 @@ describe('submitGoogleAuthRequest and auth-request utilities', () => {
     expect(mockNavigate).not.toHaveBeenCalled()
     expect(mockSetErrorMessage).toHaveBeenCalledWith('Google authentication failed. Please try again.')
   })
+
+  it('handles 429 rate limit response with custom detail message', async () => {
+    mockCustomFetch.mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: vi.fn().mockResolvedValue({
+        status: 429,
+        title: 'Too Many Requests',
+        detail: 'Rate limit exceeded. Please wait before trying again.',
+      }),
+    })
+
+    await submitGoogleAuthRequest({
+      idToken: 'some-token',
+      login: mockLogin,
+      navigate: mockNavigate,
+      fromPath: '/dashboard',
+      setErrorMessage: mockSetErrorMessage,
+      setIsSubmitting: mockSetIsSubmitting,
+    })
+
+    expect(mockLogin).not.toHaveBeenCalled()
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(mockSetErrorMessage).toHaveBeenCalledWith('Rate limit exceeded. Please wait before trying again.')
+  })
 })

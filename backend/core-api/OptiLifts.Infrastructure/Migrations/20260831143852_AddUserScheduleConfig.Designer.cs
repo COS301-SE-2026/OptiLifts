@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OptiLifts.Infrastructure.Database;
@@ -11,9 +12,11 @@ using OptiLifts.Infrastructure.Database;
 namespace OptiLifts.Infrastructure.Migrations
 {
     [DbContext(typeof(OptiLiftsDbContext))]
-    partial class OptiLiftsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260831143852_AddUserScheduleConfig")]
+    partial class AddUserScheduleConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,20 +173,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("email_hash");
 
-                    b.Property<string>("GoogleCalendarId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_id");
-
-                    b.Property<string>("GoogleCalendarRefreshToken")
-                        .HasColumnType("text")
-                        .HasColumnName("google_calendar_refresh_token");
-
-                    b.Property<bool>("GoogleCalendarSyncEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("google_calendar_sync_enabled");
-
                     b.Property<string>("GoogleId")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
@@ -281,14 +270,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CycleStartDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cycle_start_date");
-
-                    b.Property<int>("CycleWindowLengthDays")
-                        .HasColumnType("integer")
-                        .HasColumnName("cycle_window_length_days");
-
                     b.Property<bool>("DynamicSchedulerEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("dynamic_scheduler_enabled");
@@ -369,47 +350,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasIndex("UserId", "IsDeleted");
 
                     b.ToTable("exercise_dictionary", (string)null);
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExerciseEstimation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("estimate_id");
-
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("exercise_dict_id");
-
-                    b.Property<string>("ExerciseType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("exercise_type");
-
-                    b.Property<int>("Reps")
-                        .HasColumnType("integer")
-                        .HasColumnName("reps");
-
-                    b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("time_stamp");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<float?>("Weight")
-                        .HasColumnType("real")
-                        .HasColumnName("weight");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("UserId", "ExerciseId", "TimeStamp");
-
-                    b.ToTable("exercise_estimation", (string)null);
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.ExerciseGroup", b =>
@@ -544,10 +484,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("entry_id");
 
-                    b.Property<string>("GoogleEventId")
-                        .HasColumnType("text")
-                        .HasColumnName("google_event_id");
-
                     b.Property<DateTime>("Scheduled")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("scheduled");
@@ -596,47 +532,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasIndex("MuscleId");
 
                     b.ToTable("sec_muscles", (string)null);
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Workouts.UserRepRange", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("rep_range_id");
-
-                    b.Property<string>("ExerciseType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("exercise_type");
-
-                    b.Property<int>("LowerLimit")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(8)
-                        .HasColumnName("lower_limit");
-
-                    b.Property<int>("UpperLimit")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(10)
-                        .HasColumnName("upper_limit");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "ExerciseType")
-                        .IsUnique();
-
-                    b.ToTable("user_rep_range", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_user_rep_range_bounds", "lower_limit <= upper_limit");
-
-                            t.HasCheckConstraint("CK_user_rep_range_exercise_type", "exercise_type IN ('Compound', 'Isolation')");
-                        });
                 });
 
             modelBuilder.Entity("OptiLifts.Domain.Workouts.Workout", b =>
@@ -979,21 +874,6 @@ namespace OptiLifts.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("OptiLifts.Domain.Workouts.ExerciseEstimation", b =>
-                {
-                    b.HasOne("OptiLifts.Domain.Workouts.Exercise", null)
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OptiLifts.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("OptiLifts.Domain.Workouts.ExerciseGroup", b =>
                 {
                     b.HasOne("OptiLifts.Domain.Workouts.Workout", null)
@@ -1059,15 +939,6 @@ namespace OptiLifts.Infrastructure.Migrations
                     b.HasOne("OptiLifts.Domain.Workouts.Muscle", null)
                         .WithMany()
                         .HasForeignKey("MuscleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("OptiLifts.Domain.Workouts.UserRepRange", b =>
-                {
-                    b.HasOne("OptiLifts.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

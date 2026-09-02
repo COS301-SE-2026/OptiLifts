@@ -1662,6 +1662,65 @@ Update the status of an existing scheduled workout session
 }
 ```
 
+## Dynamic Scheduling
+
+### POST /ai-api/reschedule 
+**Service Name:** Dynamic AI schedular service
+
+**Description:** 
+Evaluates a list of missed and scheduled workouts and calculates an optimal new scheule witha cascading two-tier system. Tier 1 is a fasth path single workout shifter and tier 2 is a OR-Tools constraint solver for multiple workouts. 
+
+**Inputs:**
+- `user_id`: string - Unique identifier for the user.
+- `planning_window_start`: datetime - The start of the scheduling window.
+- `planning_window_end`: datetime - The end of the scheduling window.
+- `preferences`: object - The user's scheduling constraints.
+- `max_workouts_per_day`: integer - Maximum allowed workouts on a single day.
+- `min_muscle_rest_hours`: integer - Minimum rest hours required between workouts targeting the same primary muscles.
+- `fixed_rest_days`: string array - Days of the week (e.g. ["Sunday"]) where no workouts can be scheduled.
+
+**Outputs:**
+- `user_id`: string - The user's identifier.
+- `execution_tier`: string - Indicates which solver handled the request ("Tier1_FastPath" or "Tier2_CPSAT").
+- `execution_time_ms`: integer - The compute time taken by the solver in milliseconds.
+- `rescheduled_entries`: entry array - Workouts that were successfully assigned new dates.
+- `entry_id`: string - The unique entry identifier.
+- `workout_id`: string - The workout identifier.
+- `workout_name`: string - The workout name.
+- `original_scheduled_at`: datetime - The original scheduled date.
+- `new_scheduled_at`: datetime - The newly scheduled date.
+- `action`: string - The action performed (e.g., "Shifted").
+- `dropped_entries`: entity array - Workouts that could not be scheduled due to mathematically infeasible constraints.
+
+**Usage/Interaction Rules:**
+- Clients must send a POST request to /ai-api/reschedule with JSON data.
+- If constraints make the schedule mathematically impossible (e.g. 4 workouts with 48-hour rest gaps within 3 days), the service returns the "Failed" execution tier and populates the dropped_entries array.
+- Missing required fields will return a `422` Unprocessable Entity Pydantic validation error.
+
+**Example Response:**
+
+HTTP/1.1 200 OK
+
+Body:
+```json
+{
+  "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "execution_tier": "Tier2_CPSAT",
+  "execution_time_ms": 12,
+  "rescheduled_entries": [
+    {
+      "entry_id": "e1111111-1111-1111-1111-111111111111",
+      "workout_id": "w1111",
+      "workout_name": "Chest & Triceps",
+      "original_scheduled_at": "2026-08-31T08:00:00Z",
+      "new_scheduled_at": "2026-09-05T08:00:00Z",
+      "action": "Shifted"
+    }
+  ],
+  "dropped_entries": []
+}
+```
+
 ---
 
 ## User Profile and Analytics

@@ -68,6 +68,13 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how to update your personal details, password, and app settings.',
         duration: '2:07',
         youtubeId: 'Zq-3h3d25ww', fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-6',
+        title: 'Editing a past workout',
+        description: 'Learn how to edit a past workout session and update its details.',
+        duration: '1:41',
+        youtubeId: 'JzNjcwk9aGw', fallbackVideoUrl: '',
     }
 ]
 

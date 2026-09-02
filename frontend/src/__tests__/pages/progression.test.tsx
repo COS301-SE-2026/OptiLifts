@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
-import PlateauPage from '@/pages/plateau'
+import PlateauPage from '@/pages/progression'
 import { customFetch } from '@/lib/custom-fetch'
 import { useOnlineStatus } from '@/lib/use-online-status'
 
@@ -126,7 +126,7 @@ describe('PlateauPage', () => {
   })
 
   it('Opens the picker, selects an exer, PUTs, and refetches', async () => {
-    fetchMock.mockImplementation(async (url: string, options?: RequestInit) => {
+    fetchMock.mockImplementation(async (_url: string, options?: RequestInit) => {
       if (options?.method === 'PUT') {
         return { ok: true, json: async () => ({}) }
       }

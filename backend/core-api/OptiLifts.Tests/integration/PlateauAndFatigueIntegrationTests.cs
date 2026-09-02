@@ -95,7 +95,7 @@ public class PlateauAndFatigueIntegrationTests : IntegrationTestBase
             await db.SaveChangesAsync();
         }
 
-        var resp = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/exercises/{oldExerId}", new { newExerId });
+        var resp = await Client.PutAsJsonAsync($"/api/workouts/{workoutId}/exercises/{oldExerId}", new { NewExerciseId = newExerId });
         resp.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using var verifyScope = Fixture.Factory.Services.CreateAsyncScope();

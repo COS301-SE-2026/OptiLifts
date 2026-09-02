@@ -227,7 +227,7 @@ function getSetRow(container: HTMLElement, index: number): HTMLElement {
 
 function getRowInpts(row: HTMLElement) {
   const inpts = row.querySelectorAll('input')
-  return { kg: inpts[1], reps: inpts[2], rpe: inpts[3] }
+  return { kg: inpts[1], reps: inpts[2], rpe: row.querySelector('input[placeholder="RPE"]') as HTMLInputElement }
 }
 
 function getToggleBtn(row: HTMLElement): HTMLButtonElement {

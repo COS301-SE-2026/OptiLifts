@@ -6,6 +6,7 @@ import { customFetch } from '@/lib/custom-fetch'
 import { useOnlineStatus } from '@/lib/use-online-status'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
+import { Input } from '@/components/ui/input'
 
 type WorkoutRefDto = {
     workoutId: string
@@ -43,6 +44,7 @@ export default function PlateauPage() {
     const [swapTarget, setSwapTarget] = useState<SwapTarg | null>(null)
     const [swapping, setSwapping] = useState(false)
     const isOnline = useOnlineStatus()
+    const [searchQuery, setSearchQuery] = useState('')
 
     const fetchDiagn = useCallback(async () => {
         setLoading(true)
@@ -104,9 +106,18 @@ export default function PlateauPage() {
             </div>
         )
     } else {
+        const filtered = exercises.filter((e) => e.exerciseName.toLowerCase().includes(searchQuery.toLowerCase()))
         pageContent = (
             <div className="space-y-5">
-                {exercises.map((exercise) => (
+                <Input
+                    placeholder="Search exercises..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {filtered.length === 0 && (
+                    <p className="text-center text-muted-foreground py-10">No exercises match "{searchQuery}".</p>
+                )}
+                {filtered.map((exercise) => (
                     <Card key={exercise.exerciseId} className="p-6">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -122,12 +133,12 @@ export default function PlateauPage() {
                             </span>
                         </div>
                         {exercise.recommendation && (
-                            <p className="mt-4 text-sm text-foreground/90 border-t border-border pt-4">
+                            <p className="mb-2 text-sm text-foreground/90 border-t border-border pt-4">
                                 {exercise.recommendation}
                             </p>
                         )}
                         {exercise.canSwapExercise && exercise.workouts.length > 0 && (
-                            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                            <div className="mb-2 flex flex-wrap gap-2 border-t border-border pt-4">
                                 {exercise.workouts.map((workout) => (
                                     <Button
                                         key={workout.workoutId}
@@ -161,7 +172,7 @@ export default function PlateauPage() {
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
             <div className="mb-6">
-                <PageTitle title="PLATEAU" />
+                <PageTitle title="PROGRESSION" />
             </div>
 
             {!isOnline && (

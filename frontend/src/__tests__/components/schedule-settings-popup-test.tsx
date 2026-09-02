@@ -1,4 +1,3 @@
-import { ReschedulingConfig } from "@/components/ui/rescheduling-config";
 import { ScheduleSettingsPopup } from "@/components/ui/schedule-settings-popup";
 import { customFetch } from "@/lib/custom-fetch";
 import { cleanup, render, waitFor, screen, fireEvent } from "@testing-library/react";

@@ -53,7 +53,7 @@ public sealed class UpdateUserScheduleConfigHandlerTests
         result.Should().NotBeNull();
         result.MaxWorkoutsPerDay.Should().Be(2);
         result.MinMuscleRestHours.Should().Be(36);
-        result.RestDays.Should().BeEquivalentTo(new[] {"Wednesday", "Sunday"});
+        result.RestDays.Should().BeEquivalentTo(new[] { "Wednesday", "Sunday" });
 
         var createdinDb = await db.UserScheduleConfigs.FirstOrDefaultAsync(c => c.UserId == userId);
         createdinDb.Should().NotBeNull();
@@ -79,8 +79,8 @@ public sealed class UpdateUserScheduleConfigHandlerTests
         {
             UserId = userId,
             MaxWorkoutsPerDay = 2,
-            MinMuscleRestHours  = 72,
-            RestDays = new List<string> {"Saturday","Sunday"},
+            MinMuscleRestHours = 72,
+            RestDays = new List<string> { "Saturday", "Sunday" },
         });
         await db.SaveChangesAsync();
 
@@ -100,6 +100,6 @@ public sealed class UpdateUserScheduleConfigHandlerTests
         result.DynamicSchedulerEnabled.Should().BeFalse();
         result.MaxWorkoutsPerDay.Should().Be(3);
         result.MinMuscleRestHours.Should().Be(72);
-        result.RestDays.Should().BeEquivalentTo(new[] {"Saturday", "Sunday"});
+        result.RestDays.Should().BeEquivalentTo(new[] { "Saturday", "Sunday" });
     }
 }

@@ -1,20 +1,20 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Moq;
+using Moq.Protected;
+using Npgsql.Internal;
 using OptiLifts.Application.Scheduling.GetSchedule;
+using OptiLifts.Application.Scheduling.Reschedule;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
-using OptiLifts.Application.Scheduling.Reschedule;
 using OptiLifts.Infrastructure.Scheduling.Reschedule;
-using Moq;
-using Moq.Protected;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Npgsql.Internal;
-using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
-using System.Net;
-using System.Net.Http.Json;
 
 namespace OptiLifts.Tests.Api.Tests.Schedule;
 
@@ -67,8 +67,8 @@ public sealed class TriggerRescheduleHandlerTests
         {
             UserId = userId,
             MaxWorkoutsPerDay = 2,
-            MinMuscleRestHours  = 24,
-            RestDays = new List<string> {"Sunday"},
+            MinMuscleRestHours = 24,
+            RestDays = new List<string> { "Sunday" },
             CycleWindowLengthDays = 7,
             CycleStartDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc)
         });
@@ -151,11 +151,11 @@ public sealed class TriggerRescheduleHandlerTests
         {
             BaseAddress = new Uri("http://localhost:8000")
         };
-        
+
         var mockFactory = new Mock<IHttpClientFactory>();
         mockFactory.Setup(f => f.CreateClient("AiApi")).Returns(httpclient);
         var handler = new TriggerRescheduleHandler(db, mockFactory.Object);
-        var command = new TriggerRescheduleCommand(userId, new List<Guid>{missedEntry});
+        var command = new TriggerRescheduleCommand(userId, new List<Guid> { missedEntry });
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -215,11 +215,11 @@ public sealed class TriggerRescheduleHandlerTests
         {
             BaseAddress = new Uri("http://localhost:8000")
         };
-        
+
         var mockFactory = new Mock<IHttpClientFactory>();
         mockFactory.Setup(f => f.CreateClient("AiApi")).Returns(httpclient);
         var handler = new TriggerRescheduleHandler(db, mockFactory.Object);
-        var command = new TriggerRescheduleCommand(userId, new List<Guid>{entryid});
+        var command = new TriggerRescheduleCommand(userId, new List<Guid> { entryid });
         var result = async () => await handler.Handle(command, CancellationToken.None);
         await result.Should().ThrowAsync<InvalidOperationException>().WithMessage("Invalid response from Python ai");
 

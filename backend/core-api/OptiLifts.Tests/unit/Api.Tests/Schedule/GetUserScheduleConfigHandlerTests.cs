@@ -25,7 +25,7 @@ public sealed class GetUserScheduleConfigHandlerTests
 
     [Fact]
     public async Task Handle_ReturnsExistingConfig_WhenConfigExists()
-    {        
+    {
         using var db = await CreateDbContextAsync();
         var userId = Guid.NewGuid();
         var user = new User
@@ -43,8 +43,8 @@ public sealed class GetUserScheduleConfigHandlerTests
             UserId = userId,
             DynamicSchedulerEnabled = true,
             MaxWorkoutsPerDay = 3,
-            MinMuscleRestHours  = 72,
-            RestDays = new List<string> {"Saturday","Sunday"},
+            MinMuscleRestHours = 72,
+            RestDays = new List<string> { "Saturday", "Sunday" },
             CycleWindowLengthDays = 14,
             CycleStartDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc)
         });
@@ -63,7 +63,7 @@ public sealed class GetUserScheduleConfigHandlerTests
 
     [Fact]
     public async Task Handle_CreatedandReturnsDefaultConfig_WhenNoConfigExists()
-    {        
+    {
         using var db = await CreateDbContextAsync();
         var userId = Guid.NewGuid();
         var user = new User
@@ -85,7 +85,7 @@ public sealed class GetUserScheduleConfigHandlerTests
         result.MaxWorkoutsPerDay.Should().Be(1);
         result.MinMuscleRestHours.Should().Be(48);
         result.RestDays.Should().ContainSingle().Which.Should().Be("Sunday");
-        
+
         var createdinDb = await db.UserScheduleConfigs.FirstOrDefaultAsync(c => c.UserId == userId);
         createdinDb.Should().NotBeNull();
     }

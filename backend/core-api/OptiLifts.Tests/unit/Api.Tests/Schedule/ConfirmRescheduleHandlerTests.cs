@@ -2,10 +2,10 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Scheduling.Reschedule;
+using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Scheduling.Reschedule;
-using OptiLifts.Domain.Users;
 
 namespace OptiLifts.Tests.Api.Tests.Schedule;
 

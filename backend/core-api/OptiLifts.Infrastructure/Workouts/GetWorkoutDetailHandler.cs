@@ -122,8 +122,11 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             var selectedCompounds = new List<WorkoutExerciseRow>();
             var uncoveredMuscles = new HashSet<Guid>(targetMuscleIds);
             int orderIndex = 0;
+            int maxExercisesToConsider = request.TimeBudgetMinutes.HasValue
+                ? Math.Max(1, request.TimeBudgetMinutes.Value / 7)
+                : int.MaxValue;
 
-            while (uncoveredMuscles.Count > 0 && compoundCandidates.Count > 0)
+            while (uncoveredMuscles.Count > 0 && compoundCandidates.Count > 0 && selectedCompounds.Count < maxExercisesToConsider)
             {
                 var bestCandidate = compoundCandidates
                     .OrderByDescending(c => c.CoveredMuscles.Count(m => uncoveredMuscles.Contains(m)))
@@ -153,6 +156,34 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                     uncoveredMuscles.Remove(m);
                 }
                 compoundCandidates.Remove(bestCandidate);
+            }
+
+            while (compoundCandidates.Count > 0 && selectedCompounds.Count < maxExercisesToConsider)
+            {
+                var nextCandidate = compoundCandidates
+                    .OrderByDescending(c => c.CoveredMuscles.Count(m => targetMuscleIds.Contains(m)))
+                    .FirstOrDefault();
+
+                if (nextCandidate == null || !nextCandidate.CoveredMuscles.Any(m => targetMuscleIds.Contains(m)))
+                {
+                    break;
+                }
+
+                selectedCompounds.Add(new WorkoutExerciseRow(
+                    Guid.NewGuid(),
+                    nextCandidate.Exercise.Id,
+                    orderIndex++,
+                    null,
+                    nextCandidate.Exercise.Name,
+                    nextCandidate.MuscleName,
+                    nextCandidate.Exercise.ExerciseType,
+                    null,
+                    null,
+                    nextCandidate.Exercise.ImageUrl,
+                    nextCandidate.Exercise.Equipment
+                ));
+
+                compoundCandidates.Remove(nextCandidate);
             }
 
             workoutExercises = selectedCompounds;
@@ -249,6 +280,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
 
                 if (totalTimeSeconds > maxTimeSeconds)
                 {
+                    // 1. Reduce Rest Times: Shave 30s off rest periods down to 60s
                     bool reducedRest = true;
                     while (reducedRest && totalTimeSeconds > maxTimeSeconds)
                     {
@@ -261,7 +293,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                                 {
                                     if (sets[i].RestTime > 60)
                                     {
-                                        sets[i] = sets[i] with { RestTime = sets[i].RestTime - 10 };
+                                        sets[i] = sets[i] with { RestTime = Math.Max(60, sets[i].RestTime - 30) };
                                         reducedRest = true;
                                     }
                                 }
@@ -270,6 +302,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                         totalTimeSeconds = CalculateTotalTime();
                     }
 
+                    // 2. Trim Sets: Drop total number of sets for exercises from 3 down to 2, then down to 1
                     if (totalTimeSeconds > maxTimeSeconds)
                     {
                         var orderedExercises = workoutExercises.OrderByDescending(we => 
@@ -288,6 +321,18 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                             }
                             orderedExercises = orderedExercises.OrderByDescending(we => 
                                 setsByWorkoutExerciseId.TryGetValue(we.Id, out var sets) ? sets.Count : 0).ToList();
+                        }
+                    }
+
+                    // 3. Prune the Small Stuff: If still over budget, drop secondary compound exercises to protect core movements
+                    if (totalTimeSeconds > maxTimeSeconds && workoutExercises.Count > 1)
+                    {
+                        for (int i = workoutExercises.Count - 1; i >= 1 && totalTimeSeconds > maxTimeSeconds; i--)
+                        {
+                            var toRemove = workoutExercises[i];
+                            workoutExercises.RemoveAt(i);
+                            setsByWorkoutExerciseId.Remove(toRemove.Id);
+                            totalTimeSeconds = CalculateTotalTime();
                         }
                     }
                 }

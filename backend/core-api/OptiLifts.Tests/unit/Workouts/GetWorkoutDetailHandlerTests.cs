@@ -333,4 +333,92 @@ public class GetWorkoutDetailHandlerTests
         result.Exercises[0].ExerciseType.Should().Be("BodyweightReps");
     }
 
+    [Fact]
+    public async Task Handle_TimeConstrained_DifferentBudgets_ProduceDifferentWorkoutDurationsAndSets()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "budgets@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "Budgets User"
+        };
+
+        var chest = new Muscle { Id = Guid.NewGuid(), Name = "Chest" };
+        var shoulders = new Muscle { Id = Guid.NewGuid(), Name = "Shoulders" };
+        var triceps = new Muscle { Id = Guid.NewGuid(), Name = "Triceps" };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Push Day",
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var bench = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bench Press",
+            Mechanic = "compound",
+            Equipment = "barbell",
+            PrimaryMuscleId = chest.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        var overheadPress = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Overhead Press",
+            Mechanic = "compound",
+            Equipment = "barbell",
+            PrimaryMuscleId = shoulders.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        var dips = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Dips",
+            Mechanic = "compound",
+            Equipment = "bodyweight",
+            PrimaryMuscleId = triceps.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        context.Users.Add(user);
+        context.Muscles.AddRange(chest, shoulders, triceps);
+        context.Workouts.Add(workout);
+        context.Exercises.AddRange(bench, overheadPress, dips);
+        await context.SaveChangesAsync();
+
+        context.WorkoutExercises.AddRange(
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = bench.Id, OrderIndex = 0 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = overheadPress.Id, OrderIndex = 1 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = dips.Id, OrderIndex = 2 }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetWorkoutDetailHandler(context);
+
+        // 10 minutes budget vs 45 minutes budget
+        var resultShort = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 10), CancellationToken.None);
+        var resultLong = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 45), CancellationToken.None);
+
+        resultShort.Should().NotBeNull();
+        resultLong.Should().NotBeNull();
+
+        int shortTime = resultShort.Exercises.Sum(e => e.Sets.Sum(s => ((s.Reps ?? 10) * 4) + s.RestTime));
+        int longTime = resultLong.Exercises.Sum(e => e.Sets.Sum(s => ((s.Reps ?? 10) * 4) + s.RestTime));
+
+        shortTime.Should().BeLessThanOrEqualTo(10 * 60 + 60);
+        longTime.Should().BeGreaterThan(shortTime);
+    }
+
 }

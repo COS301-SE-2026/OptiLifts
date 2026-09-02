@@ -127,6 +127,8 @@ type SessionDraft = {
   logId: string
   exercises: ExerciseData[]
   restTimer: RestTimer | null
+  isTimeConstrained?: boolean
+  timeBudgetMinutes?: number
 }
 
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
@@ -797,9 +799,13 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
       const sessdraft = getDraft<SessionDraft>(workoutId)
       if (sessdraft) {
-        restoreDraft(sessdraft)
-        await backfillDraft()
-        return
+        const isTimeConstrainedMatch = Boolean(sessdraft.isTimeConstrained) === Boolean(sessionState?.isTimeConstrained)
+        const budgetMatch = (sessdraft.timeBudgetMinutes ?? null) === (sessionState?.timeBudgetMinutes ?? null)
+        if (isTimeConstrainedMatch && budgetMatch) {
+          restoreDraft(sessdraft)
+          await backfillDraft()
+          return
+        }
       }
 
       const otherDraft = getDraftFromStorage()
@@ -833,9 +839,18 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
     if (workoutId && exercises.length > 0) {
-      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer })
+      saveDraft<SessionDraft>(workoutId, {
+        workoutId,
+        workoutName,
+        startedAtMs,
+        logId,
+        exercises,
+        restTimer,
+        isTimeConstrained: sessionState?.isTimeConstrained,
+        timeBudgetMinutes: sessionState?.timeBudgetMinutes,
+      })
     }
-  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer])
+  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer, sessionState?.isTimeConstrained, sessionState?.timeBudgetMinutes])
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
@@ -1138,7 +1153,16 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     const keep = () => {
     if (workoutId) {
-      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer })
+      saveDraft<SessionDraft>(workoutId, {
+        workoutId,
+        workoutName,
+        startedAtMs,
+        logId,
+        exercises,
+        restTimer,
+        isTimeConstrained: sessionState?.isTimeConstrained,
+        timeBudgetMinutes: sessionState?.timeBudgetMinutes,
+      })
     }
 
     navigate(pendingNavTo ?? '/workouts')

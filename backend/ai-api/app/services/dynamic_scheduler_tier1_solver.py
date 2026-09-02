@@ -9,13 +9,18 @@ from app.models.reschedule import (
 
 
 def _has_max_capacity(curr_date, scheduled_workouts, max_workouts: int) -> bool:
-    count = sum(1 for entry in scheduled_workouts if entry.scheduled_at.date() == curr_date)
+    count = sum(
+        1 for entry in scheduled_workouts if entry.scheduled_at.date() == curr_date
+    )
     return count >= max_workouts
 
-def _has_muscle_conflict(curr_date, missed_workout, scheduled_workouts, min_days: float) -> bool:
+
+def _has_muscle_conflict(
+    curr_date, missed_workout, scheduled_workouts, min_days: float
+) -> bool:
     if min_days <= 0:
         return False
-        
+
     first_muscles = set(missed_workout.primary_muscles)
     for entry in scheduled_workouts:
         if first_muscles.intersection(entry.primary_muscles):
@@ -24,11 +29,12 @@ def _has_muscle_conflict(curr_date, missed_workout, scheduled_workouts, min_days
                 return True
     return False
 
+
 def attempt_tier_one(
     request: RescheduleRequest, execution_time_ms: int = 0
 ) -> Optional[RescheduleResponse]:
     missed_workouts = [entry for entry in request.entries if entry.status == "Missed"]
-    
+
     if len(missed_workouts) != 1:
         return None  # python is funky
 
@@ -36,26 +42,30 @@ def attempt_tier_one(
     scheduled_workouts = [
         entry for entry in request.entries if entry.status == "Scheduled"
     ]
-    
+
     min_days = request.preferences.min_muscle_rest_hours / 24
     curr_day = request.planning_window_start
     end_date = request.planning_window_end.date()
 
     while curr_day.date() <= end_date:
         curr_date = curr_day.date()
-        
+
         # rest day
         if curr_day.strftime("%A") in request.preferences.fixed_rest_days:
             curr_day += timedelta(days=1)
             continue
 
         # max workouts per day check
-        if _has_max_capacity(curr_date, scheduled_workouts, request.preferences.max_workouts_per_day):
+        if _has_max_capacity(
+            curr_date, scheduled_workouts, request.preferences.max_workouts_per_day
+        ):
             curr_day += timedelta(days=1)
             continue
 
         # muscle conflict
-        if _has_muscle_conflict(curr_date, missed_workout, scheduled_workouts, min_days):
+        if _has_muscle_conflict(
+            curr_date, missed_workout, scheduled_workouts, min_days
+        ):
             curr_day += timedelta(days=1)
             continue
 

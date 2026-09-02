@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
-import {X, Plus, Loader2, AlertCircle, Settings} from 'lucide-react'
+import {X, Plus, Loader2, AlertCircle, Settings, Info} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import {Card, CardTitle} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
@@ -21,6 +21,8 @@ import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } 
 import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { ScheduleSettingsPopup } from '@/components/ui/schedule-settings-popup'
+import { toast } from '@/components/ui/alert'
+import { ReschedulePreviewModal, type RescheduledItem } from '@/components/ui/reschedule-preview-modal'
 
 //styling constants for same style aspects
 const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
@@ -76,6 +78,13 @@ interface ScheduledEntryDto {
     readonly totalVolume: number
     readonly totalSets: number
 }
+
+interface ScheduleConfig{
+    readonly dynamicSchedulerEnabled?: boolean
+    readonly cycleWindowLengthDays: number
+    readonly cycleStartDate: string
+}
+
 const DAYS = [
     {
         name: 'MON',
@@ -135,6 +144,10 @@ export default function SchedulePage() {
     const [isOfflineData, setIsOfflineData] = useState(false)
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    
+    const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig | null>(null)
+    const [cycleScheduleEntries, setCycleScheduleEntries] = useState<ScheduledEntryDto[]>([])
+    const [droppedSchedule, setDroppedSchedule] = useState<RescheduledItem[]>([]);
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -174,6 +187,35 @@ export default function SchedulePage() {
         }
         return dates
     }, [currentWeekDate])
+    
+    const cycleRange = useMemo(()=>{
+        const cycleLength = scheduleConfig?.cycleWindowLengthDays ?? 7
+        const rawStart = scheduleConfig?.cycleStartDate ? new Date(scheduleConfig?.cycleStartDate) : new Date()
+        const cycleStartDate = Date.UTC(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate())
+        const today = new Date()
+        const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+
+        const diffDays = Math.max(0, Math.floor((todayUtc - cycleStartDate) / (1000 * 60 * 60 * 24)))
+        const cycleIndex = Math.floor(diffDays / cycleLength)
+        const start = new Date(cycleStartDate + cycleIndex * cycleLength * 24*60*60*1000)
+        const end = new Date(start.getTime() + (cycleLength - 1) *24*60*60*1000 + (23*3600 + 59*60 + 59)*1000)
+        return {
+            start, end
+        }
+    }, [scheduleConfig])
+
+    const cycledateRangeText = useMemo(() => {
+        if (!cycleRange) return ''
+        const startStr = cycleRange.start.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'long'
+        })
+        const endStr = cycleRange.end.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'long'
+        })
+        return `${startStr} and ${endStr}`
+    }, [cycleRange])
 
     const fetchRange = useMemo(() => {
         if (viewMode === 'week'){
@@ -191,6 +233,55 @@ export default function SchedulePage() {
         }
     }, [currentWeekDate, weekDates, viewMode])
 
+    const aggreMuscleSetCounts = (
+        distribution?: readonly {
+            muscleGroup: string;
+            setCount: number
+        }[]): Record<string, number> => {
+        const aggre: Record<string, number> = {
+            Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
+        }
+        if (!distribution) {
+            return aggre
+        }
+        distribution.forEach((item) => {
+            const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
+            if (mappedCat && mappedCat in aggre) {
+                aggre[mappedCat] += item.setCount
+            }
+        })
+        return aggre
+    }
+    const fetchCycleSchedule = async (confData: ScheduleConfig): Promise<ScheduledEntryDto[] | null> => {
+        const cycleLength = confData.cycleWindowLengthDays ?? 7
+        const rawStart = confData.cycleStartDate ? new Date(confData.cycleStartDate) : new Date()
+        const cycleStartDate = Date.UTC(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate())
+        const today = new Date()
+        const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+        const diffDays = Math.max(0, Math.floor((todayUtc - cycleStartDate) / (1000 * 60 * 60 * 24)))
+        const cycleIndex = Math.floor(diffDays / cycleLength)
+        const cStart = new Date(cycleStartDate + cycleIndex * cycleLength * 24 * 60 * 60 * 1000)
+        const cEnd = new Date(cStart.getTime() + (cycleLength - 1) * 24 * 60 * 60 * 1000 + (23 * 3600 + 59 * 60 + 59) * 1000)
+        const cycleResp = await customFetch(`/api/users/me/schedule?startDate=${cStart.toISOString()}&endDate=${cEnd.toISOString()}`)
+        if (cycleResp.ok) {
+            return (await cycleResp.json()) as ScheduledEntryDto[]
+        }
+        return null
+    }
+    const fetchCalendarLogs = async (currentWeekDate: Date): Promise<Record<string, string>> => {
+        const year = currentWeekDate.getFullYear()
+        const month = currentWeekDate.getMonth() + 1
+        const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
+        if (!calendarRes.ok) return {}
+        const calendarData = await calendarRes.json()
+        const mapping: Record<string, string> = {}
+        calendarData.entries.forEach((entry: { workoutId: string, date: string, logId: string }) => {
+            mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
+        })
+        return mapping
+    }
+
+
     const fetchScheduleAndAnalytics = useCallback(async () => {
         await Promise.resolve()
         setIsLoading(true)
@@ -201,11 +292,11 @@ export default function SchedulePage() {
                 method: 'POST'
             }).catch(() => {})
 
-
             const {start, end} = fetchRange
-            const [scheduleResp, analyticsResp] = await Promise.all([
+            const [scheduleResp, analyticsResp, configResp] = await Promise.all([
                 customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
-                customFetch(`/api/users/me/schedule/analytics?startDate=${start.toISOString()}&endDate=${end.toISOString()}`)
+                customFetch(`/api/users/me/schedule/analytics?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
+                customFetch('/api/users/me/schedule/config').catch(() => null)
             ])
             if (!scheduleResp.ok) {
                 throw new Error(`Failed to load schedules (${scheduleResp.status})`)
@@ -221,47 +312,26 @@ export default function SchedulePage() {
             setIsOfflineData(false)
             void cacheScheduleEntries(scheduleData)
 
-            try{
-                const year = currentWeekDate.getFullYear()
-                const month = currentWeekDate.getMonth() + 1
-                const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
-                if (calendarRes.ok){
-                    const calendarData = await calendarRes.json()
-                    const mapping: Record<string, string> = {}
-                    calendarData.entries.forEach((entry: {workoutId:string, date:string, logId:string}) => {
-                        mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
-                    })
-                    setCompletedLogs(mapping)
+            if (configResp?.ok){
+                const confData = (await configResp.json()) as ScheduleConfig
+                setScheduleConfig(confData)
+                const cycleData = await fetchCycleSchedule(confData)
+                if (cycleData){
+                    setCycleScheduleEntries(cycleData)
                 }
-            } catch(e){
+            }
+            
+
+            try {
+                const logsMapping = await fetchCalendarLogs(currentWeekDate)
+                setCompletedLogs(logsMapping)
+            }
+            catch (e) {
                 setError(e instanceof Error ? e.message : 'Error fetching calendar logs')
             }
 
-            const aggre: Record<string, number> = {
-                    Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
-            }
-            if (analyticsData.muscleDistribution) {
-                analyticsData.muscleDistribution.forEach((item) => {
-                    const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
-                    if (mappedCat && mappedCat in aggre) {
-                        aggre[mappedCat] += item.setCount
-                    }
-                })
-            }
-            setMuscleValues(aggre)
-
-            const secondaryAggre: Record<string, number> = {
-                    Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
-            }
-            if (analyticsData.secondaryMuscleDistribution) {
-                analyticsData.secondaryMuscleDistribution.forEach((item) => {
-                    const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
-                    if (mappedCat && mappedCat in secondaryAggre) {
-                        secondaryAggre[mappedCat] += item.setCount
-                    }
-                })
-            }
-            setSecondaryMuscleValues(secondaryAggre)
+            setMuscleValues(aggreMuscleSetCounts(analyticsData.muscleDistribution))
+            setSecondaryMuscleValues(aggreMuscleSetCounts(analyticsData.secondaryMuscleDistribution))
         } catch (error) {
             const cached = await getCachedScheduleEntries<ScheduledEntryDto>()
 
@@ -401,6 +471,70 @@ export default function SchedulePage() {
         }
     })
 
+    // rescheduling
+    const [selectedMissedIds, setSelectedMissedIds] = useState<string[]>([]);
+    const [isRescheduling, setIsRescheduling] = useState(false);
+    const [proposedSchedule, setProposedSchedule] = useState<RescheduledItem[]>([]);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isConfirmingReschedule, setIsConfirmingReschedule] = useState(false);
+
+    const missedSessions = useMemo(() => {
+        const entriestouse = cycleScheduleEntries.length > 0 ? cycleScheduleEntries : scheduleEntries
+        return entriestouse.filter((e) => e.status === "Missed");
+    }, [cycleScheduleEntries, scheduleEntries]);
+
+    const handleTriggerReschedule = async () => {
+        if (selectedMissedIds.length === 0) return;
+        setIsRescheduling(true);
+        try{
+            const res = await customFetch("/api/users/me/schedule/reschedule", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    selectedMissedEntryIds: selectedMissedIds 
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setProposedSchedule(data.rescheduledEntries || []);
+                setDroppedSchedule(data.droppedEntries || []);
+                setIsPreviewOpen(true);
+            } else {
+                toast.error("Failed to generate proposed schedule", "Error");
+            }
+        } catch{
+            toast.error("An error occurred while rescheduling", "Error");
+        } finally {
+            setIsRescheduling(false);
+        }
+    };
+    const handleConfirmReschedule = async () =>{
+        setIsConfirmingReschedule(true);
+        try {
+            const payload = proposedSchedule.map((item) => ({
+                entryId: item.entryId,
+                newScheduledAt: item.newScheduledAt,
+            }));
+            const res = await customFetch("/api/users/me/schedule/reschedule/confirm",{
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (res.ok){
+                toast.success("Schedule updated successfully", "Rescheduled");
+                setIsPreviewOpen(false);
+                setSelectedMissedIds([]);
+                await fetchScheduleAndAnalytics();
+            } else {
+                toast.error("Failed to confirm schedule changes", "Error");
+            }
+        } catch {
+            toast.error("Failed to confirm schedule changes", "Error");
+        } finally {
+            setIsConfirmingReschedule(false);
+        }
+    }
+
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
 
@@ -496,6 +630,7 @@ export default function SchedulePage() {
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
                                             disabled={isBeforeToday || !isOnline}
+                                            // disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
                                             title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
@@ -507,6 +642,51 @@ export default function SchedulePage() {
 
                 {/* summary section */}
                 <div className="col-span-12 lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+                        {/* rescheduling stuff */}
+                        {scheduleConfig?.dynamicSchedulerEnabled && missedSessions.length > 0 && (
+                            <div>
+                                <div className="flex-1 p-4 bg-destructive/10 border border-brand rounded-2xl flex flex-col gap-3 font-sans animate-fadeIn shadow-sm">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2">
+                                            <h2 className="font-display font-bold text-brand text-base uppercase tracking-wider">Missed Workouts Detected</h2>
+                                            <div className="relative group/info flex items-center">
+                                                <Info size={16} className="text-brand/80 hover:text-warning cursor-pointer transition-colors" />
+                                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover/info:block w-64 p-2.5 bg-surface border border-border rounded-xl text-xs shadow-xl z-20 pointer-events-none leading-relaxed">
+                                                    Select missed workouts to dynamically reschedule around your cycle.</div>
+                                            </div>
+                                        </div>
+                                        {cycledateRangeText && (
+                                            <span className="text-xs font-semibold text-foreground rounded-lg">
+                                                Missed workouts between {cycledateRangeText}
+                                            </span>
+                                        )}
+                                        </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {missedSessions.map((s) => (
+                                        <label key={s.id} className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer bg-surface px-3 py-1.5 rounded-xl border border-border hover:border-brand/30 focus-within:ring-2 focus-within:ring-brand outline-none transition-all">
+                                            <input type="checkbox" checked={selectedMissedIds.includes(s.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedMissedIds((prev) => [...prev, s.id]);
+                                                    } else {
+                                                        setSelectedMissedIds((prev) => prev.filter((id) => id !== s.id));
+                                                    }
+                                                }}
+                                                className="rounded border-border text-brand accent-brand cursor-pointer" />
+                                            <span>{s.workoutName} ({new Date(s.scheduled).toLocaleDateString(undefined, {
+                                                month: "short",
+                                                day: 'numeric'})} {formatScheduledTime(s.scheduled)})</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                    <Button size="sm" disabled={selectedMissedIds.length === 0 || isRescheduling} onClick={handleTriggerReschedule}
+                                        className="bg-brand hover:bg-brand-2 text-white font-display uppercase tracking-wider transition-all">
+                                        {isRescheduling ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
+                                        Reschedule Cycle
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     <SummaryCard
                         totalWorkouts={analytics?.totalWorkouts ?? 0}
                         totalVolume={analytics?.totalVolume ?? 0}
@@ -567,7 +747,15 @@ export default function SchedulePage() {
             }
             }}/>
 
-            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}/>
+            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => { setIsSettingsOpen(false); void fetchScheduleAndAnalytics(); }}/>
+            <ReschedulePreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                proposedItems={proposedSchedule}
+                droppedItems={droppedSchedule}
+                onConfirm={handleConfirmReschedule}
+                isConfirming={isConfirmingReschedule}
+                selectedMissedIds={selectedMissedIds}/>
         </section>
     )
 }
@@ -722,7 +910,7 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
     return (
         <Card className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="mb-4">
-                <h3 className="font-display text-lg tracking-wider uppercase">Weekly Summary</h3>
+                <h2 className="font-display text-lg tracking-wider uppercase">Weekly Summary</h2>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="px-1">

@@ -39,4 +39,3 @@ def test_swagger_endpoints_disabled_in_production(monkeypatch):
     # Reset back to dev
     monkeypatch.setenv("ENVIRONMENT", "development")
     importlib.reload(main)
-

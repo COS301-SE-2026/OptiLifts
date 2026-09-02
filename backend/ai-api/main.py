@@ -10,7 +10,9 @@ tags_metadata = [
     {"name": "workouts", "description": "AI-powered workout recommendations."},
 ]
 
-is_dev = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", os.getenv("PYTHON_ENV", "development"))).lower() in (
+is_dev = os.getenv(
+    "ENVIRONMENT", os.getenv("APP_ENV", os.getenv("PYTHON_ENV", "development"))
+).lower() in (
     "dev",
     "development",
 )

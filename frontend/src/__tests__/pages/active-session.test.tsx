@@ -295,8 +295,9 @@ describe('Acute Fatigue', () => {
       fireEvent.change(rpe, { target: { value: '9' } })
     }
 
-    getToggleBtn(rows[0]).click()
-    getToggleBtn(rows[1]).click()
+    fireEvent.click(getToggleBtn(rows[0]))
+    fireEvent.click(getToggleBtn(rows[1]))
+
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('/api/training/acute-fatigue', expect.objectContaining({
@@ -305,10 +306,10 @@ describe('Acute Fatigue', () => {
       }))
     })
 
-    const nameBtn = screen.getByText('Bench Press')
+    const nameBtn = screen.getByRole('button', { name: 'Bench Press' })
     expect(nameBtn.nextElementSibling).not.toBeNull() 
 
-    getToggleBtn(rows[1]).click()
+    fireEvent.click(getToggleBtn(rows[1]))
     await waitFor(() => {
       expect(nameBtn.nextElementSibling).toBeNull()
     })

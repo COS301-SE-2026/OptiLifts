@@ -14,7 +14,7 @@ public class WorkoutSetLog
     public float? Distance { get; set; }
     public int RestTime { get; set; }
     public int GroupNumber { get; set; }
-    public float Rpe { get; set; }
+    public float? Rpe { get; set; }
     public int OrderIndex { get; set; }
     public bool AiSuggested { get; set; }
     public DateTime LoggedAt { get; set; } = DateTime.UtcNow;

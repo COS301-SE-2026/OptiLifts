@@ -7,7 +7,6 @@ public static class ClientIpResolver
 {
     public static string GetClientIpAddress(HttpContext context)
     {
-        // 1. Check X-Forwarded-For header (standard for reverse proxies)
         if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor) && !string.IsNullOrWhiteSpace(forwardedFor))
         {
             var ips = forwardedFor.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -17,13 +16,11 @@ public static class ClientIpResolver
             }
         }
 
-        // 2. Check X-Real-IP header
         if (context.Request.Headers.TryGetValue("X-Real-IP", out var realIp) && !string.IsNullOrWhiteSpace(realIp))
         {
             return realIp.ToString().Trim();
         }
 
-        // 3. Fallback to connection remote IP address
         if (context.Connection.RemoteIpAddress != null)
         {
             if (context.Connection.RemoteIpAddress.IsIPv4MappedToIPv6)
@@ -38,14 +35,12 @@ public static class ClientIpResolver
 
     public static string GetPartitionKey(HttpContext context)
     {
-        // For authenticated users, rate limit by User ID
         var userId = context.User.FindFirst("sub")?.Value ?? context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrWhiteSpace(userId))
         {
             return $"user:{userId}";
         }
 
-        // For anonymous users, rate limit by IP address
         return $"ip:{GetClientIpAddress(context)}";
     }
 }

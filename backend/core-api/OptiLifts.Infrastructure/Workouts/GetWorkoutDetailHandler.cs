@@ -53,19 +53,46 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
 
         if (request.IsTimeConstrained && workoutExercises.Count > 0)
         {
-            var targetPrimaryMuscles = await _dbContext.WorkoutExercises
+            var originalExerciseCount = workoutExercises.Count;
+
+            var originalPrimaryMuscles = await _dbContext.WorkoutExercises
                 .Where(we => we.WorkoutId == workout.Id)
                 .Join(_dbContext.Exercises, we => we.ExerciseId, e => e.Id, (we, e) => e.PrimaryMuscleId)
-                .Distinct()
                 .ToListAsync(cancellationToken);
 
-            var targetSecondaryMuscles = await _dbContext.WorkoutExercises
+            var originalSecondaryMuscles = await _dbContext.WorkoutExercises
                 .Where(we => we.WorkoutId == workout.Id)
                 .Join(_dbContext.SecMuscles, we => we.ExerciseId, sm => sm.ExerciseId, (we, sm) => sm.MuscleId)
-                .Distinct()
                 .ToListAsync(cancellationToken);
 
-            var targetMuscleIds = targetPrimaryMuscles.Union(targetSecondaryMuscles).ToList();
+            // Calculate muscle group priority based on frequency in original workout:
+            var primaryMuscleCounts = originalPrimaryMuscles
+                .GroupBy(m => m)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var orderedPrimaryMuscleGroups = originalPrimaryMuscles
+                .GroupBy(m => m)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .ToList();
+
+            var topPrimaryMuscleId = orderedPrimaryMuscleGroups.Count > 0 ? (Guid?)orderedPrimaryMuscleGroups[0] : null;
+
+            // Primary muscle targets weighted 3x, secondary targets weighted 1x
+            var muscleFrequency = new Dictionary<Guid, int>();
+            foreach (var m in originalPrimaryMuscles)
+            {
+                muscleFrequency[m] = muscleFrequency.GetValueOrDefault(m, 0) + 3;
+            }
+            foreach (var m in originalSecondaryMuscles)
+            {
+                muscleFrequency[m] = muscleFrequency.GetValueOrDefault(m, 0) + 1;
+            }
+
+            var targetMuscleIds = muscleFrequency
+                .OrderByDescending(kvp => kvp.Value)
+                .Select(kvp => kvp.Key)
+                .ToList();
 
             var originalExerciseTypes = workoutExercises.Select(we => we.ExerciseType).Distinct().ToHashSet();
             bool isBodyweightOnly = originalExerciseTypes.Count > 0 && originalExerciseTypes.All(t =>
@@ -120,48 +147,108 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             }).ToList();
 
             var selectedCompounds = new List<WorkoutExerciseRow>();
-            var uncoveredMuscles = new HashSet<Guid>(targetMuscleIds);
+            var coveredPrimaryMuscles = new HashSet<Guid>();
             int orderIndex = 0;
-            int maxExercisesToConsider = request.TimeBudgetMinutes.HasValue
-                ? Math.Max(1, request.TimeBudgetMinutes.Value / 7)
-                : int.MaxValue;
-
-            while (uncoveredMuscles.Count > 0 && compoundCandidates.Count > 0 && selectedCompounds.Count < maxExercisesToConsider)
+            int maxExercisesToConsider;
+            if (request.TimeBudgetMinutes.HasValue)
             {
-                var bestCandidate = compoundCandidates
-                    .OrderByDescending(c => c.CoveredMuscles.Count(m => uncoveredMuscles.Contains(m)))
+                int budget = request.TimeBudgetMinutes.Value;
+                int budgetCap = budget switch
+                {
+                    <= 15 => 2,
+                    <= 30 => 3,
+                    <= 45 => 5,
+                    _ => 6
+                };
+                maxExercisesToConsider = Math.Min(originalExerciseCount, budgetCap);
+            }
+            else
+            {
+                maxExercisesToConsider = originalExerciseCount;
+            }
+
+            // Step 1: Ensure the most targeted muscle group from the original workout is present
+            if (topPrimaryMuscleId.HasValue && selectedCompounds.Count < maxExercisesToConsider)
+            {
+                var topCandidate = compoundCandidates
+                    .Where(c => c.Exercise.PrimaryMuscleId == topPrimaryMuscleId.Value)
+                    .OrderByDescending(c => c.CoveredMuscles.Count(m => targetMuscleIds.Contains(m)))
                     .FirstOrDefault();
 
-                if (bestCandidate == null || !bestCandidate.CoveredMuscles.Any(m => uncoveredMuscles.Contains(m)))
+                topCandidate ??= compoundCandidates
+                    .Where(c => c.CoveredMuscles.Contains(topPrimaryMuscleId.Value))
+                    .OrderByDescending(c => c.CoveredMuscles.Count(m => targetMuscleIds.Contains(m)))
+                    .FirstOrDefault();
+
+                if (topCandidate != null)
+                {
+                    selectedCompounds.Add(new WorkoutExerciseRow(
+                        Guid.NewGuid(),
+                        topCandidate.Exercise.Id,
+                        orderIndex++,
+                        null,
+                        topCandidate.Exercise.Name,
+                        topCandidate.MuscleName,
+                        topCandidate.Exercise.ExerciseType,
+                        null,
+                        null,
+                        topCandidate.Exercise.ImageUrl,
+                        topCandidate.Exercise.Equipment
+                    ));
+                    coveredPrimaryMuscles.Add(topPrimaryMuscleId.Value);
+                    compoundCandidates.Remove(topCandidate);
+                }
+            }
+
+            // Step 2: Include the other muscle groups from the original workout that can fit in the budget
+            foreach (var muscleId in orderedPrimaryMuscleGroups)
+            {
+                if (selectedCompounds.Count >= maxExercisesToConsider)
                 {
                     break;
                 }
 
-                selectedCompounds.Add(new WorkoutExerciseRow(
-                    Guid.NewGuid(),
-                    bestCandidate.Exercise.Id,
-                    orderIndex++,
-                    null,
-                    bestCandidate.Exercise.Name,
-                    bestCandidate.MuscleName,
-                    bestCandidate.Exercise.ExerciseType,
-                    null,
-                    null,
-                    bestCandidate.Exercise.ImageUrl,
-                    bestCandidate.Exercise.Equipment
-                ));
-
-                foreach (var m in bestCandidate.CoveredMuscles)
+                if (coveredPrimaryMuscles.Contains(muscleId))
                 {
-                    uncoveredMuscles.Remove(m);
+                    continue;
                 }
-                compoundCandidates.Remove(bestCandidate);
+
+                var candidate = compoundCandidates
+                    .Where(c => c.Exercise.PrimaryMuscleId == muscleId)
+                    .OrderByDescending(c => c.CoveredMuscles.Count(m => targetMuscleIds.Contains(m)))
+                    .FirstOrDefault();
+
+                candidate ??= compoundCandidates
+                    .Where(c => c.CoveredMuscles.Contains(muscleId))
+                    .OrderByDescending(c => c.CoveredMuscles.Count(m => targetMuscleIds.Contains(m)))
+                    .FirstOrDefault();
+
+                if (candidate != null)
+                {
+                    selectedCompounds.Add(new WorkoutExerciseRow(
+                        Guid.NewGuid(),
+                        candidate.Exercise.Id,
+                        orderIndex++,
+                        null,
+                        candidate.Exercise.Name,
+                        candidate.MuscleName,
+                        candidate.Exercise.ExerciseType,
+                        null,
+                        null,
+                        candidate.Exercise.ImageUrl,
+                        candidate.Exercise.Equipment
+                    ));
+                    coveredPrimaryMuscles.Add(muscleId);
+                    compoundCandidates.Remove(candidate);
+                }
             }
 
+            // Step 3: If all muscle groups are represented and budget allows more, add additional compound movements
             while (compoundCandidates.Count > 0 && selectedCompounds.Count < maxExercisesToConsider)
             {
                 var nextCandidate = compoundCandidates
-                    .OrderByDescending(c => c.CoveredMuscles.Count(m => targetMuscleIds.Contains(m)))
+                    .OrderByDescending(c => c.CoveredMuscles.Where(m => targetMuscleIds.Contains(m)).Sum(m => muscleFrequency.GetValueOrDefault(m, 1)))
+                    .ThenByDescending(c => muscleFrequency.GetValueOrDefault(c.Exercise.PrimaryMuscleId, 0))
                     .FirstOrDefault();
 
                 if (nextCandidate == null || !nextCandidate.CoveredMuscles.Any(m => targetMuscleIds.Contains(m)))
@@ -241,13 +328,15 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             var dynamicExerciseIds = workoutExercises.Where(we => !setsByWorkoutExerciseId.ContainsKey(we.Id)).Select(we => we.ExerciseId).Distinct().ToArray();
             var recentSetsByExId = await GetRecentSetsByExerciseIdAsync(request.UserId, dynamicExerciseIds, cancellationToken);
 
+            int maxSetsPerExercise = request.TimeBudgetMinutes.HasValue && request.TimeBudgetMinutes.Value <= 15 ? 2 : 3;
+
             foreach (var we in workoutExercises.Where(we => !setsByWorkoutExerciseId.ContainsKey(we.Id)))
             {
                 if (recentSetsByExId.TryGetValue(we.ExerciseId, out var recentSets) && recentSets.Count > 0)
                 {
                     var newSets = new List<WorkoutSetDto>();
                     int orderIndex = 1;
-                    foreach (var rs in recentSets)
+                    foreach (var rs in recentSets.Take(maxSetsPerExercise))
                     {
                         newSets.Add(new WorkoutSetDto(Guid.NewGuid(), "Normal", rs.Reps, rs.Weight, rs.Duration, rs.Distance, orderIndex++, 90, rs.Weight, rs.Reps));
                     }
@@ -255,25 +344,36 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 }
                 else
                 {
-                    setsByWorkoutExerciseId[we.Id] = new List<WorkoutSetDto>
+                    var defaultSets = new List<WorkoutSetDto>();
+                    for (int s = 1; s <= maxSetsPerExercise; s++)
                     {
-                        new WorkoutSetDto(Guid.NewGuid(), "Normal", 10, null, null, null, 1, 90),
-                        new WorkoutSetDto(Guid.NewGuid(), "Normal", 10, null, null, null, 2, 90),
-                        new WorkoutSetDto(Guid.NewGuid(), "Normal", 10, null, null, null, 3, 90)
-                    };
+                        defaultSets.Add(new WorkoutSetDto(Guid.NewGuid(), "Normal", 10, null, null, null, s, 90));
+                    }
+                    setsByWorkoutExerciseId[we.Id] = defaultSets;
                 }
             }
-            
+
+            foreach (var we in workoutExercises)
+            {
+                if (setsByWorkoutExerciseId.TryGetValue(we.Id, out var existingSets) && existingSets.Count > maxSetsPerExercise)
+                {
+                    setsByWorkoutExerciseId[we.Id] = existingSets.Take(maxSetsPerExercise).ToList();
+                }
+            }
+
             if (request.TimeBudgetMinutes.HasValue)
             {
                 int maxTimeSeconds = request.TimeBudgetMinutes.Value * 60;
 
                 int CalculateTotalTime()
                 {
-                    return workoutExercises.Sum(we => 
-                        setsByWorkoutExerciseId.TryGetValue(we.Id, out var sets) 
-                        ? sets.Sum(s => ((s.Reps ?? 10) * 4) + s.RestTime) 
+                    int activeAndRest = workoutExercises.Sum(we =>
+                        setsByWorkoutExerciseId.TryGetValue(we.Id, out var sets)
+                        ? sets.Sum(s => ((s.Reps ?? 10) * 4) + s.RestTime)
                         : 0);
+
+                    int transitionTime = Math.Max(0, workoutExercises.Count - 1) * 60;
+                    return activeAndRest + transitionTime;
                 }
 
                 int totalTimeSeconds = CalculateTotalTime();
@@ -305,9 +405,9 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                     // 2. Trim Sets: Drop total number of sets for exercises from 3 down to 2, then down to 1
                     if (totalTimeSeconds > maxTimeSeconds)
                     {
-                        var orderedExercises = workoutExercises.OrderByDescending(we => 
+                        var orderedExercises = workoutExercises.OrderByDescending(we =>
                             setsByWorkoutExerciseId.TryGetValue(we.Id, out var sets) ? sets.Count : 0).ToList();
-                        
+
                         while (totalTimeSeconds > maxTimeSeconds && orderedExercises.Any(we => setsByWorkoutExerciseId.ContainsKey(we.Id) && setsByWorkoutExerciseId[we.Id].Count > 1))
                         {
                             foreach (var we in orderedExercises)
@@ -319,7 +419,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                                     if (totalTimeSeconds <= maxTimeSeconds) break;
                                 }
                             }
-                            orderedExercises = orderedExercises.OrderByDescending(we => 
+                            orderedExercises = orderedExercises.OrderByDescending(we =>
                                 setsByWorkoutExerciseId.TryGetValue(we.Id, out var sets) ? sets.Count : 0).ToList();
                         }
                     }
@@ -538,10 +638,10 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
         int? GroupRestTime,
         string? ImageUrl,
         string? Equipment);
-private async Task<Dictionary<Guid, List<(float? Weight, int? Reps, int? Duration, float? Distance)>>> GetRecentSetsByExerciseIdAsync(
-        Guid userId,
-        Guid[] exerciseIds,
-        CancellationToken cancellationToken)
+    private async Task<Dictionary<Guid, List<(float? Weight, int? Reps, int? Duration, float? Distance)>>> GetRecentSetsByExerciseIdAsync(
+            Guid userId,
+            Guid[] exerciseIds,
+            CancellationToken cancellationToken)
     {
         if (exerciseIds.Length == 0) return new Dictionary<Guid, List<(float?, int?, int?, float?)>>();
 

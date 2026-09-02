@@ -242,19 +242,20 @@ public class GetWorkoutDetailHandlerTests
         await context.SaveChangesAsync();
 
         var handler = new GetWorkoutDetailHandler(context);
-        
+
         // 5 minute budget = 300 seconds
         var result = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 5), CancellationToken.None);
 
         result.Should().NotBeNull();
         result.Exercises.Should().HaveCount(1);
-        
+
         var sets = result.Exercises[0].Sets;
         sets.Should().NotBeEmpty();
-        
+
         // Total time should be <= 360 seconds (5 min + 1 min margin)
         var totalTime = 0;
-        foreach (var s in sets) {
+        foreach (var s in sets)
+        {
             totalTime += ((s.Reps ?? 10) * 4) + s.RestTime;
         }
         totalTime.Should().BeLessThanOrEqualTo(360);
@@ -419,6 +420,167 @@ public class GetWorkoutDetailHandlerTests
 
         shortTime.Should().BeLessThanOrEqualTo(10 * 60 + 60);
         longTime.Should().BeGreaterThan(shortTime);
+    }
+
+    [Fact]
+    public async Task Handle_TimeConstrained_PrioritizesMostTargetedMuscleInOriginalWorkout()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "priority@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "Priority User"
+        };
+
+        var chest = new Muscle { Id = Guid.NewGuid(), Name = "Chest" };
+        var biceps = new Muscle { Id = Guid.NewGuid(), Name = "Biceps" };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Chest Heavy Day",
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var bench = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bench Press",
+            Mechanic = "compound",
+            Equipment = "barbell",
+            PrimaryMuscleId = chest.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        var inclinePress = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Incline Dumbbell Press",
+            Mechanic = "compound",
+            Equipment = "dumbbell",
+            PrimaryMuscleId = chest.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        var chinUp = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Chin-Ups",
+            Mechanic = "compound",
+            Equipment = "bodyweight",
+            PrimaryMuscleId = biceps.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        context.Users.Add(user);
+        context.Muscles.AddRange(chest, biceps);
+        context.Workouts.Add(workout);
+        context.Exercises.AddRange(bench, inclinePress, chinUp);
+        await context.SaveChangesAsync();
+
+        // 2 Chest exercises vs 1 Bicep exercise -> Chest is heavily prioritized
+        context.WorkoutExercises.AddRange(
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = bench.Id, OrderIndex = 0 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = inclinePress.Id, OrderIndex = 1 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = chinUp.Id, OrderIndex = 2 }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetWorkoutDetailHandler(context);
+
+        // Budget of 10 min -> fits 1 exercise
+        var result = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 10), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Exercises.Should().NotBeEmpty();
+        // The first and highest priority exercise must target Chest (top muscle group)
+        result.Exercises[0].PrimaryMuscle.Should().Be("Chest");
+
+        // Budget of 15 min -> fits 2 exercises
+        // Must contain Chest (top muscle group) AND Biceps (other muscle group in workout), not 2 Chest exercises
+        var result15 = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 15), CancellationToken.None);
+        result15.Should().NotBeNull();
+        result15.Exercises.Length.Should().Be(2);
+        result15.Exercises.Should().Contain(e => e.PrimaryMuscle == "Chest");
+        result15.Exercises.Should().Contain(e => e.PrimaryMuscle == "Biceps");
+    }
+
+    [Fact]
+    public async Task Handle_TimeConstrained_15MinCappedTo2ExercisesWith2Sets_And30MinCappedTo3ExercisesWith3Sets()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "caps@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "Caps User"
+        };
+
+        var chest = new Muscle { Id = Guid.NewGuid(), Name = "Chest" };
+        var shoulders = new Muscle { Id = Guid.NewGuid(), Name = "Shoulders" };
+        var triceps = new Muscle { Id = Guid.NewGuid(), Name = "Triceps" };
+        var back = new Muscle { Id = Guid.NewGuid(), Name = "Back" };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Full Body Workout",
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var bench = new Exercise { Id = Guid.NewGuid(), Name = "Bench Press", Mechanic = "compound", PrimaryMuscleId = chest.Id, ExerciseType = ExerciseType.WeightReps };
+        var overheadPress = new Exercise { Id = Guid.NewGuid(), Name = "Overhead Press", Mechanic = "compound", PrimaryMuscleId = shoulders.Id, ExerciseType = ExerciseType.WeightReps };
+        var dips = new Exercise { Id = Guid.NewGuid(), Name = "Dips", Mechanic = "compound", PrimaryMuscleId = triceps.Id, ExerciseType = ExerciseType.WeightReps };
+        var row = new Exercise { Id = Guid.NewGuid(), Name = "Barbell Row", Mechanic = "compound", PrimaryMuscleId = back.Id, ExerciseType = ExerciseType.WeightReps };
+
+        context.Users.Add(user);
+        context.Muscles.AddRange(chest, shoulders, triceps, back);
+        context.Workouts.Add(workout);
+        context.Exercises.AddRange(bench, overheadPress, dips, row);
+        await context.SaveChangesAsync();
+
+        context.WorkoutExercises.AddRange(
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = bench.Id, OrderIndex = 0 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = overheadPress.Id, OrderIndex = 1 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = dips.Id, OrderIndex = 2 },
+            new WorkoutExercise { Id = Guid.NewGuid(), WorkoutId = workout.Id, ExerciseId = row.Id, OrderIndex = 3 }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetWorkoutDetailHandler(context);
+
+        // 15 Minutes
+        var result15 = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 15), CancellationToken.None);
+        result15.Should().NotBeNull();
+        result15.Exercises.Length.Should().Be(2);
+        foreach (var ex in result15.Exercises)
+        {
+            ex.Sets.Length.Should().Be(2);
+        }
+
+        // 30 Minutes
+        var result30 = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, user.Id, true, 30), CancellationToken.None);
+        result30.Should().NotBeNull();
+        result30.Exercises.Length.Should().Be(3);
+        foreach (var ex in result30.Exercises)
+        {
+            ex.Sets.Length.Should().Be(3);
+        }
     }
 
 }

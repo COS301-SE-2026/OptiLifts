@@ -73,7 +73,7 @@ public class GetWorkoutDetailIntegrationTests : IntegrationTestBase
                 null,
                 [
                     new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 1, 300), // 5 min rest + 40s work
-                    new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 2, 300), 
+                    new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 2, 300),
                     new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 3, 300)
                 ])],
             []);
@@ -93,13 +93,14 @@ public class GetWorkoutDetailIntegrationTests : IntegrationTestBase
         detail.Should().NotBeNull();
         detail.Name.Should().Be("Push Day Time");
         detail.Exercises.Should().HaveCount(1);
-        
+
         // It should have reduced rest times or dropped sets.
         var totalSets = detail.Exercises[0].Sets.Length;
         totalSets.Should().BeGreaterThan(0);
-        
+
         var totalTime = 0;
-        foreach (var s in detail.Exercises[0].Sets) {
+        foreach (var s in detail.Exercises[0].Sets)
+        {
             totalTime += ((s.Reps ?? 10) * 4) + s.RestTime;
         }
         totalTime.Should().BeLessThanOrEqualTo(5 * 60 + 60); // 5 min + 1 min margin of error for the last set

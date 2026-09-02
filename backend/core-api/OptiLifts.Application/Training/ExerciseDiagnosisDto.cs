@@ -1,12 +1,15 @@
-using System.Text.Json.Serialization;
 using OptiLifts.Domain.Training;
 
 namespace OptiLifts.Application.Training.GetPlateauPage;
 
+public sealed record WorkoutRefDto(Guid WorkoutId, string WorkoutName);
+
 public sealed record ExerciseDiagnosisDto(
     Guid ExerciseId,
     string ExerciseName,
-    [property: JsonConverter(typeof(JsonStringEnumConverter))] TrendStatus Status,
+    TrendStatus Status,
     float SlopePctPerWeek,
     string? Recommendation,
-    DateTime ComputedAt);
+    bool CanSwapExercise,
+    DateTime ComputedAt,
+    IReadOnlyList<WorkoutRefDto> Workouts);

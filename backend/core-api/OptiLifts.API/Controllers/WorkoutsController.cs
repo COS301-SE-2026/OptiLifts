@@ -15,6 +15,7 @@ using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
 using OptiLifts.Application.Workouts.UpdateWorkout;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
+using OptiLifts.Application.Workouts.ReplaceWorkoutExercise;
 
 namespace OptiLifts.API.Controllers;
 
@@ -179,6 +180,27 @@ public sealed class WorkoutsController : ControllerBase
             cancellationToken);
 
         return added ? NoContent() : NotFound();
+    }
+
+    public sealed record ReplaceWorkoutExerciseRequest(Guid NewExerciseId);
+
+    [HttpPut("{workoutId:guid}/exercises/{exerciseId:guid}")]
+    public async Task<IActionResult> ReplaceWorkoutExercise(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid exerciseId,
+        [FromBody] ReplaceWorkoutExerciseRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var replaced = await _sender.Send(
+            new ReplaceWorkoutExerciseCommand(userId, workoutId, exerciseId, request.NewExerciseId),
+            cancellationToken);
+
+        return replaced ? NoContent() : NotFound();
     }
 
     private bool TryGetUserId(out Guid userId)

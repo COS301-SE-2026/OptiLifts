@@ -36,8 +36,13 @@ public class GetPlateauPageHandlerTests
         db.AddRange(muscle, exer);
         db.ExerciseTrends.Add(new ExerciseTrend
         {
-            UserId = userId, ExerciseId = exer.Id, Status = status, RpeTrendRising = rpeTrendRising,
-            WindowEnd = windowEnd, WindowStart = windowEnd.AddDays(-77), SessionsUsed = 12
+            UserId = userId,
+            ExerciseId = exer.Id,
+            Status = status,
+            RpeTrendRising = rpeTrendRising,
+            WindowEnd = windowEnd,
+            WindowStart = windowEnd.AddDays(-77),
+            SessionsUsed = 12
         });
         await db.SaveChangesAsync();
         return exer.Id;
@@ -105,7 +110,7 @@ public class GetPlateauPageHandlerTests
         res.Should().BeEmpty();
     }
 
-        [Fact]
+    [Fact]
     public async Task Handle_ListsWorkoutsOwnedByUserContainingThatExer()
     {
         var db = await NewDbAsync();

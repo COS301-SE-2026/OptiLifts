@@ -51,12 +51,15 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [customOnly, setCustomOnly] = useState(false)
-
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+  
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
     if (isOpen) {
       setSelectedMuscle(initialMuscle && MUSCLE_OPTS.includes(initialMuscle) ? initialMuscle : 'All Muscles')
     }
-  }, [isOpen, initialMuscle])
+  }
+
 
   useEffect(() => {
     if (!isOpen) {

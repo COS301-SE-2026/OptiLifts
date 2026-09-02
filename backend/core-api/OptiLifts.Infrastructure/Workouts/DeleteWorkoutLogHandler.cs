@@ -7,8 +7,8 @@ using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Infrastructure.Workouts;
 
-    public sealed class DeleteWorkoutLogHandler : IRequestHandler<DeleteWorkoutLogCommand, bool>
-    {
+public sealed class DeleteWorkoutLogHandler : IRequestHandler<DeleteWorkoutLogCommand, bool>
+{
     private readonly OptiLiftsDbContext _dbContext;
     private readonly IPlateauDetectionService _plateauDetectionService;
     private readonly ISender? _sender;

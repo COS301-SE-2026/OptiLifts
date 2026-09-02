@@ -13,9 +13,9 @@ using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.ReplaceWorkoutExercise;
 using OptiLifts.Application.Workouts.UpdateWorkout;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
-using OptiLifts.Application.Workouts.ReplaceWorkoutExercise;
 
 namespace OptiLifts.API.Controllers;
 

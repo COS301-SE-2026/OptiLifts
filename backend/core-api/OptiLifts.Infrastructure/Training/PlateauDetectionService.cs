@@ -21,8 +21,8 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
     private const float EpsiFactor = 0.3f;
     private const float MinEpsi = 0.3f;
     private const float MaxEpsi = 1.5f;
-    private const double TCritical = 2.228; 
-    private const int LookbackDays = 400; 
+    private const double TCritical = 2.228;
+    private const int LookbackDays = 400;
     private const int EventCooldownDays = 14;
 
     private readonly ISeriesBuilder _seriesBuilder;
@@ -63,7 +63,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
         var wndwStart = wndw[0].Date;
         var xs = wndw.Select(p => (p.Date - wndwStart).TotalDays).ToArray();
         var ys = wndw.Select(p => (double)p.E1rm).ToArray();
-        
+
         var (aWindow, bWindow) = LeastSqLineFit(xs, ys);
         var meanE1rmWindow = ys.Average();
         var slopePercPerWeek = bWindow * 7 / meanE1rmWindow * 100;
@@ -94,7 +94,7 @@ public sealed class PlateauDetectionService : IPlateauDetectionService
             baselineOrig = baselinePts[0].Date;
             var bxs = baselinePts.Select(p => (p.Date - baselineOrig).TotalDays).ToArray();
             var bys = baselinePts.Select(p => (double)p.E1rm).ToArray();
-            
+
             (aBase, bBase) = LeastSqLineFit(bxs, bys);
 
             var meanBase = bys.Average();

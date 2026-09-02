@@ -52,7 +52,7 @@ public class PlateauDetectionServiceTests
     }
 
     [Theory]
-    [InlineData(2f, TrendStatus.Progressing)]         
+    [InlineData(2f, TrendStatus.Progressing)]
     [InlineData(0f, TrendStatus.InsufficientBaseline)]
     [InlineData(-2f, TrendStatus.Regressing)]
     public async Task DetectAsync_ClassifiesWithNoBaseline(float weeklyPct, TrendStatus expected)
@@ -68,7 +68,7 @@ public class PlateauDetectionServiceTests
     }
 
     [Theory]
-    [InlineData(0f, TrendStatus.Plateau)]    
+    [InlineData(0f, TrendStatus.Plateau)]
     [InlineData(-3f, TrendStatus.Regressing)]
     public async Task DetectAsync_ClassifiesAgainstRisingBaseline(float windowWeeklyPct, TrendStatus expected)
     {

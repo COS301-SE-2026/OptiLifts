@@ -145,7 +145,7 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        
+
         foreach (var exerciseId in orderedExercises.Select(e => e.ExerciseId).Distinct())
         {
             await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);

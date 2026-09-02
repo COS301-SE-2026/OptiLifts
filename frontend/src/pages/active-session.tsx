@@ -855,7 +855,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     if (workoutId && exercises.length > 0) {
       saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe) })
     }
-  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer])
+  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups, exercisesMissingRpe])
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 

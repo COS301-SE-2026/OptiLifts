@@ -21,7 +21,7 @@ public class PlateauAndFatigueIntegrationTests : IntegrationTestBase
     {
         await using var scope = Fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-        
+
         db.ExerciseTrends.Add(new ExerciseTrend
         {
             UserId = userId,
@@ -39,7 +39,7 @@ public class PlateauAndFatigueIntegrationTests : IntegrationTestBase
     {
         var userId = await SeedUserAsync("plateau-int@example.com");
         var exerId = await SeedExerciseAsync("Integration Bench");
-        
+
         await SeedingTrendsAsync(userId, exerId);
         Client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
 
@@ -104,7 +104,7 @@ public class PlateauAndFatigueIntegrationTests : IntegrationTestBase
         updated.ExerciseId.Should().Be(newExerId);
     }
 
-        [Fact]
+    [Fact]
     public async Task ReplaceWorkoutExerReturnsNotFoundForWorkoutBelongsToAnotherUser()
     {
         var ownerId = await SeedUserAsync("swap-owner@example.com");

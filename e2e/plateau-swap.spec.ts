@@ -42,4 +42,3 @@ import { test, expect } from '@playwright/test'
     expect(putResp.status()).toBe(204)
     await expect(page.getByText(workoutLbl, { exact: true })).not.toBeVisible({ timeout: 5000 })
   })
-})

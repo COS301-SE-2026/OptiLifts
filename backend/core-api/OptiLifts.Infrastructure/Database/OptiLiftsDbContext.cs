@@ -5,10 +5,10 @@ using Microsoft.Extensions.Configuration;
 using OptiLifts.Domain.Common;
 using OptiLifts.Domain.Gamification;
 using OptiLifts.Domain.Messaging;
+using OptiLifts.Domain.Training;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
-using OptiLifts.Domain.Training;
 
 namespace OptiLifts.Infrastructure.Database;
 

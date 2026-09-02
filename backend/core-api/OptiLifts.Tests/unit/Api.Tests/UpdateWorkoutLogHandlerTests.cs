@@ -5,8 +5,8 @@ using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
-using OptiLifts.Infrastructure.Workouts;
 using OptiLifts.Infrastructure.Training;
+using OptiLifts.Infrastructure.Workouts;
 
 namespace OptiLifts.Tests.Api.Tests;
 

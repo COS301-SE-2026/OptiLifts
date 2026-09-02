@@ -31,7 +31,7 @@ public static class DatabaseSeeder
             await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
         }
 
-        
+
         if (!testing)
         {
             await SeedPlateauDemoDataAsync(dbContext, cancellationToken);
@@ -290,7 +290,7 @@ public static class DatabaseSeeder
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    
+
     private static async Task SeedPlateauDemoDataAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
     {
         const string demoWorkoutName = "Plateau Demo History";

@@ -60,8 +60,10 @@ export default function PlateauPage() {
     }, [])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
         void fetchDiagn()
     }, [fetchDiagn])
+
 
     const handleSwapExer = async (newExercise: CatalogExercise) => {
         if (!swapTarget) {

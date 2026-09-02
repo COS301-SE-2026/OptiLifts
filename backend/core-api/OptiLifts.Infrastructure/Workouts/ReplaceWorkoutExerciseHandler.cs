@@ -46,7 +46,7 @@ public sealed class ReplaceWorkoutExerciseHandler : IRequestHandler<ReplaceWorko
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        
+
         return true;
     }
 }

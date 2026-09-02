@@ -49,7 +49,7 @@ public sealed class GetPlateauPageHandler : IRequestHandler<GetPlateauPageQuery,
             .GroupBy(w => w.ExerciseId).ToDictionary(
                 g => g.Key,
                 g => (IReadOnlyList<WorkoutRefDto>)g.Select(w => new WorkoutRefDto(w.Id, w.Name)).Distinct().ToList());
-        
+
         return rows
             .Select(r => new ExerciseDiagnosisDto(
                 r.trend.ExerciseId,

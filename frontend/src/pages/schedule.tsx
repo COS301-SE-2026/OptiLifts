@@ -629,8 +629,8 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            // disabled={isBeforeToday || !isOnline}
-                                            disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
+                                            disabled={isBeforeToday || !isOnline}
+                                            // disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
                                             title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
@@ -663,7 +663,7 @@ export default function SchedulePage() {
                                         </div>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     {missedSessions.map((s) => (
-                                        <label key={s.id} className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer bg-surface px-3 py-1.5 rounded-xl border border-border hover:border-brand/30 transition-all">
+                                        <label key={s.id} className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer bg-surface px-3 py-1.5 rounded-xl border border-border hover:border-brand/30 focus-within:ring-2 focus-within:ring-brand outline-none transition-all">
                                             <input type="checkbox" checked={selectedMissedIds.includes(s.id)}
                                                 onChange={(e) => {
                                                     if (e.target.checked) {

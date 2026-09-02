@@ -7,8 +7,10 @@ import { ResourcePanel } from "@/components/help/resource-panel";
 import { ExerciseCard } from "@/components/ui/exercise-card";
 import { ChainLink } from "./create-workout";
 import type { WorkoutExercise } from "@/types/create-workout";
-import { FAQ_DATA } from "@/types/faqs";
+import type { FaqItem } from "@/components/help/faq-accordion";
+import rawFaqs from "@/data/faqs.json";
 
+export const FAQ_DATA = rawFaqs as readonly FaqItem[];
 
 // tutorial data
 const TUTORIAL_DATA: readonly TutorialVideo[] = [

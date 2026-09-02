@@ -12,7 +12,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     env:
-      PLAYWRIGHT_PROJECTS: ${{ (github.base_ref == 'main' || github.ref_name == 'main') && 'all' || 'chromium' }}
+      PLAYWRIGHT_PROJECTS: 'all'
 
     steps:
     - name: Checkout Repository
@@ -48,9 +48,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-playwright-all-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-playwright-
+          ${{ runner.os }}-playwright-all
 
     - name: Install Dependencies
       run: pnpm install --frozen-lockfile && pnpm run setup

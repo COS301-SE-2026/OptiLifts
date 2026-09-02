@@ -2,8 +2,7 @@
 # Copy this pattern when adding real routes
 
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI
 from app.api.scheduler_router import router as scheduler_router
 
 tags_metadata = [

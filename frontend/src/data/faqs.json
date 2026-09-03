@@ -70,5 +70,23 @@
         "category": "Schedule",
         "question": "Does the Dynamic Scheduler check for conflicts with external personal meetings or events?",
         "answer": "The Dynamic Scheduler optimises based on your OptiLifts schedule configuration (rest days, max workouts per day, rest hours). We recommend setting your preferred weekly rest days and daily caps in OptiLifts to reflect your overall real-world availability."
+    },
+    {
+        "id": "faq-13",
+        "category": "Workouts",
+        "question": "How can I use the progressive overload engine?",
+        "answer": "You do not have to explicity attempt to use the progressive overload engine. The progressive overload engine will automatically start recommending weight and rep increases in the workout once the minimun threshold is met of at least 4 workouts with the same exercise."
+    },
+    {
+        "id": "faq-14",
+        "category": "Workouts",
+        "question": "Can I manually adjust the recommendations from the progressive overload engine?",
+        "answer": "Yes. While the progressive overload engine provides automated recommendations, you can manually adjust weights and reps for any exercise. The engine will take your manual changes into account for future recommendations."
+    },
+    {
+        "id": "faq-15",
+        "category": "Workouts",
+        "question": "How does the progressive overload engine work?",
+        "answer": "The progressive overload engine looks at your last 4-8 workouts for each exercise and based on the e1RM of those exercises calculates what your next workout should look like, whether it is a 1 rep increase or when the engine mathematically detemines you can increase the weight by a minimum of 5kg."
     }
 ]

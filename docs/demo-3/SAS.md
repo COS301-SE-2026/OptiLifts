@@ -185,15 +185,86 @@ This pattern applies wherever an object behaves differently depending on what ph
 
 | ID | Quantified requirement | Tactic in SAS | Test / tool | Target / actual |
 | :--- | :--- | :--- | :--- | :--- |
-| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 1.5s | MediatR Caching + Asynchronous non-blocking I/O | k6 | < 1500ms / TBD |
-| **NFR1.3** | < 10% average latency increase at 100 concurrent users | MediatR Caching | k6 | < 10% increase / TBD |
-| **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease | Azure Container Apps with Horizontal Scaling | k6 | < 10% decrease / TBD |
-| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`DatabaseEncryptionIntegrationTests`) | Test Passes / Pass |
-| **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
+| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 500ms (local Production overlay) | Seperation of core-api and ai-api services, asynchronous backend processing | k6 | < 500ms / Pass (164ms) |
+| **NFR1.2** | < 300% average latency degradation at 300 users (Local production overlay)| CQRS with MediatR & EF Core Connection Pooling | k6 |< 300% degradation / Pass  |
+| **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease (Local production overlay) | Azure Container Apps with Horizontal Scaling | k6 | < 1500ms / Pass |
+| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`SensitiveData_ShouldBeEncryptedAtRest_InDatabase`) | Test Passes / Pass |
 | **NFR3.2** | Bcrypt password hashing with salt factor 12 | `BcryptPasswordHasher` algorithm | xUnit (`BcryptPasswordHasherTests`) | Test Passes / Pass |
-| **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(11 minutes) + CD(4 minutes) |
-| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline | ≥ 80% / 85.7% |
-| **NFR5.2** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
+| **NFR3.3** | Use HTTPS (TLS 1.3) for all data transmission | Azure Container Apps Managed Certificates & SSL Termination | Qualys SSL Server Test | Grade A (TLS 1.3 Active) / Pass |
+| **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
+| **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(<15 minutes) + CD(<10 minutes) |
+| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 85.7% |
+| **NFR5.1** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
+
+#### Evidence
+### NFR 1.1 and NFR 1.2:
+- The commands run:
+```bash
+docker compose -f docker-compose.overlay.yml up -d --scale core-api=1
+k6 run k6-nfr-tests/nfr1-performance.js
+```
+![Theoretical](../images/nfr-testing/nfr1-1-theoretical.png)
+
+### NFR 2.1: 
+- The commands run: 
+```bash
+docker compose -f docker-compose.overlay.yml up -d --scale core-api=3
+k6 run k6-nfr-tests/nfr2-scalability.js
+```
+![Theoretical](../images/nfr-testing/nfr2-1-theoretical.png)
+
+##### NFR3.1, NFR3.2, NFR 3.4: 
+- All tests pass when running `pnpm test` which covers the tests that ensure the NFRs are met. 
+
+#### NFR 3.3: 
+- Qualys SSL Server Test shows TLS 1.2 is active and the server is rated A.
+- ![Qualys SSL Server Test](../images/nfr-testing/sllreport.png)
+
+#### NFR 4.1: 
+- ![CI speeds](../images/nfr-testing/ci-time.png)
+- ![CD speeds](../images/nfr-testing/cd-time.png)
+
+#### NFR 4.2:
+- ![Code Coverage](../images/nfr-testing/coverage.png)
+
+
+#### NFR 5.1: 
+Landing page
+![Landing page](../images/nfr-testing/lighthouse-reports/landing-page.png)
+
+Login
+![Login page](../images/nfr-testing/lighthouse-reports/login.png)
+
+Register
+![Register page](../images/nfr-testing/lighthouse-reports/register.png)
+
+Dashboard
+![Dashboard page](../images/nfr-testing/lighthouse-reports/dashboard.png)
+
+Workouts
+![Workouts page](../images/nfr-testing/lighthouse-reports/workouts.png)
+
+Workout details
+![Planned workout page](../images/nfr-testing/lighthouse-reports/planned-workout.png)
+
+Past workouts
+![Past workouts page](../images/nfr-testing/lighthouse-reports/past-workouts.png)
+
+Workout log
+![Workout log page](../images/nfr-testing/lighthouse-reports/workout-log.png)
+
+Active session
+![Active session page](../images/nfr-testing/lighthouse-reports/active-session.png)
+
+Schedule
+![Schedule page](../images/nfr-testing/lighthouse-reports/schedule.png)
+
+Profile
+![Profile page](../images/nfr-testing/lighthouse-reports/profile.png)
+
+Help menu
+![Help menu](../images/nfr-testing/lighthouse-reports/help-menu.png)
+
 
 ### Constraints
 

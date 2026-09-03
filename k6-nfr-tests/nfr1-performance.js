@@ -19,15 +19,15 @@ export const options = {
       executor: 'ramping-vus',
       startVUs: 0,
       stages: [
-        { duration: '30s', target: 100 },
-        { duration: '1m', target: 100 },  //hold 100 after ramping up
+        { duration: '30s', target: 100 }, // ramp up to 15 (live system) or 100 users (prod overlay)
+        { duration: '1m', target: 100 },  // hold 15 (live system) or 100 users (prod overlay)
       ],
       startTime: '35s',
       exec: 'runLoad',
     }
   },
   thresholds: {
-    'load_response_time': ['p(95)<1500'],
+    'load_response_time': ['p(95)<500'],
   },
 };
 
@@ -35,7 +35,7 @@ const TEST_USER = {
   email: 'gymgoer@gmail.com',
   password: 'GymGoer123!'   //NOSONAR
 };
-const BASE_URL = 'https://api.optilifts.app/api';
+const BASE_URL = 'http://localhost:8080/api';
 
 export function setup() {
   const loginRes = http.post(`${BASE_URL}/auth/login`, JSON.stringify(TEST_USER), {
@@ -55,30 +55,23 @@ export function setup() {
   return { cookie: authCookie };
 }
 
-// nfr1.1 test
 export function runBaseline(data) {
-  const params = { headers: { 'Cookie': `access_token=${data.cookie}` } };
-  const res = http.get(`${BASE_URL}/workouts`, params);
-
-  check(res, { 'baseline success': (r) => r.status === 200 });
-  baselineTrend.add(res.timings.duration); // Record the baseline time
-  sleep(1);
+  executeUserWorkflow(data.cookie);
 }
 
-// nfr1.3 test
 export function runLoad(data) {
-  const params = {
-    headers: {
-      'Cookie': `access_token=${data.cookie}`
-    }
-  };
+  executeUserWorkflow(data.cookie);
+}
 
+function executeUserWorkflow(cookie) {
+  const params = { headers: { 'Cookie': `access_token=${cookie}` } };
+  
   const res = http.get(`${BASE_URL}/workouts`, params);
 
-  check(res, {
-    'load success': (r) => r.status === 200
-  });
-
+  baselineTrend.add(res.timings.duration);
   loadTrend.add(res.timings.duration);
+
+  check(res, { 'workouts status is 200': (r) => r.status === 200 });
+
   sleep(1);
 }

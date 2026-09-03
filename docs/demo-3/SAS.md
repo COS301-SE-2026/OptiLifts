@@ -1208,6 +1208,35 @@ HTTP/1.1 204 No Content
 
 ---
 
+### PUT /api/workouts/{workoutId}/exercises/{exerciseId}
+**Service Name:** Workout Exercise Replacement Service
+
+**Description:**
+Replaces an exercise within a specific workout owned by the authenticated user with a different exercise, updating every matching template row in that workout.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout containing the exercise to replace (path parameter).
+- `exerciseId`: Guid - The exercise being replaced (path parameter).
+- `newExerciseId`: Guid - The exercise to replace it with (request body).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout is not owned by the user, the new exercise does not exist, or the exercise being replaced is not present in that workout.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a PUT request to `/api/workouts/{workoutId}/exercises/{exerciseId}` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- A successful replacement returns `204 No Content`; a failed replacement returns `404 Not Found`.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
 
 ### POST /api/workouts/{workoutId}/duplicate
 **Service Name:** Workout Duplication Service
@@ -1440,6 +1469,66 @@ Updates an existing completed workout log entry. Used when editing a completed p
 {
 	"message": "Workout log updated successfully."
 }
+```
+---
+
+## Training
+
+### GET /api/training/plateau-page
+**Service Name:** Plateau & Regression Diagnosis Service
+
+**Description:**
+Returns the authenticated user's exercises currently showing a Plateau, Regressing, or Progressing trend within the last 30 days, each with a recommendation, whether the exercise is eligible to be swapped, and which of the user's current workouts contain it.
+
+**Inputs:**
+
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- Body: array of `ExerciseDiagnosisDto`.
+
+`ExerciseDiagnosisDto` fields:
+
+- `exerciseId`: Guid - Exercise identifier.
+- `exerciseName`: string - Exercise name.
+- `muscleGroup`: string - Primary muscle group.
+- `status`: string enum (`Progressing` | `Regressing` | `Plateau`) - Current trend classification.
+- `slopePctPerWeek`: number - Estimated 1RM trend, percent change per week.
+- `recommendation`: string | null - Suggested next step, or `null` when progressing normally.
+- `canSwapExercise`: boolean - Whether the exercise is eligible for a swap suggestion.
+- `computedAt`: datetime - When the trend was last computed.
+- `workouts`: array of `WorkoutRefDto` - The user's current workouts containing this exercise.
+
+`WorkoutRefDto` fields:
+
+- `workoutId`: Guid - Workout identifier.
+- `workoutName`: string - Workout name.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/training/plateau-page`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- Returns an empty array if the user has no exercises with enough recent training data.
+
+**Example Response:**
+```json
+[
+	{
+		"exerciseId": "string",
+		"exerciseName": "Barbell Bench Press",
+		"muscleGroup": "Chest",
+		"status": "Plateau",
+		"slopePctPerWeek": 0.0,
+		"recommendation": "Only your progress is stalling. Try changing this exercise or adjusting your rep range for a change of stimulus",
+		"canSwapExercise": true,
+		"computedAt": "2026-09-02T09:00:00Z",
+		"workouts": [
+			{ "workoutId": "string", "workoutName": "Push Day" }
+		]
+	}
+]
 ```
 ---
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/ui/page-title'
@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy } from 'lucide-react'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
 import { buildLabels } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
+import { TapHint } from '@/components/ui/tap-hint'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 
 type WorkoutLocationState = Readonly<{
@@ -51,6 +52,8 @@ type SetData = {
   restTime: number
   completed: boolean
   sourceSetId: string | null
+  targetKg: number | ''
+  targetReps: number | ''
 }
 
 type ExerciseData = Readonly<{
@@ -129,6 +132,8 @@ type SessionDraft = {
   restTimer: RestTimer | null
   isTimeConstrained?: boolean
   timeBudgetMinutes?: number
+  fatiguedMuscleGroups: string[]
+  exercisesMissingRpe: string[]
 }
 
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
@@ -171,9 +176,10 @@ type SetRowProps = Readonly<{
   onUpdate: (updater: (current: SetData) => SetData) => void
   onRemove: () => void
   onRestStart: () => void
+  onToggle: (willComplete: boolean) => void
 }>
 
-function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart }: SetRowProps) {
+function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
     onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
 
@@ -233,6 +239,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
               if (willComplete) {
                 onRestStart()
               }
+              onToggle(willComplete)
             }}
           >
             {isPR ? <Trophy className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
@@ -327,6 +334,8 @@ const toSessSet = (
   distance: set.distance ?? '',
   restTime: set.restTime,
   completed: false,
+  targetKg: set.weight ?? '',
+  targetReps: set.reps ?? '',
 })
 
 const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): ExerciseData => ({
@@ -380,6 +389,22 @@ const secureRandomHex = (): string => {
   const res = globalThis.crypto?.getRandomValues?.(new Uint8Array(6))
 
   return res ? Array.from(res, (b) => b.toString(16).padStart(2, '0')).join('') : Date.now().toString(36)
+}
+
+const RPE_FATIGUE_THRESHOLD = 9
+
+const setMissedTarget = (set: SetData): boolean => {
+  if (set.targetKg === '' && set.targetReps === '') return false
+  const actualKg = set.kg === '' ? 0 : Number(set.kg)
+  const actualReps = set.reps === '' ? 0 : Number(set.reps)
+  const targetKg = set.targetKg === '' ? 0 : Number(set.targetKg)
+  const targetReps = set.targetReps === '' ? 0 : Number(set.targetReps)
+  return actualKg < targetKg || actualReps < targetReps
+}
+
+const setAtHighRpe = (set: SetData): boolean => {
+  if (set.rpe === '') return false
+  return Number(set.rpe) >= RPE_FATIGUE_THRESHOLD
 }
 
 type PrHit = { exerciseName: string; kind: 'weight' | 'volume'; value: number }
@@ -618,6 +643,9 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const [prSetIds, setPrSetIds] = useState<string[]>([])
   const [isOfflineData, setIsOfflineData] = useState(false)
   const isOnline = useOnlineStatus()
+  const [fatiguedMuscleGroups, setFatiguedMuscleGroups] = useState<Set<string>>(new Set())
+  const reportedMuscleGroupsRef = useRef<Set<string>>(new Set())
+  const [exercisesMissingRpe, setExercisesMissingRpe] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!workoutId) {
@@ -675,6 +703,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               kg: s.weight ?? '',
               reps: s.reps ?? '',
               rpe: s.rpe ?? '',
+              targetKg: s.weight ?? '',
+              targetReps: s.reps ?? '',
               duration: s.duration ?? '',
               distance: s.distance ?? '',
               restTime: s.restTime ?? 0,
@@ -705,6 +735,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       setStartedAtMs(draft.startedAtMs)
       setExercises(draft.exercises)
       setRestTimer(revivedRestTimer(draft.restTimer))
+      setFatiguedMuscleGroups(new Set(draft.fatiguedMuscleGroups ?? []))
+      setExercisesMissingRpe(new Set(draft.exercisesMissingRpe ?? []))
       setIsLoading(false)
     }
 
@@ -839,18 +871,9 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
     if (workoutId && exercises.length > 0) {
-      saveDraft<SessionDraft>(workoutId, {
-        workoutId,
-        workoutName,
-        startedAtMs,
-        logId,
-        exercises,
-        restTimer,
-        isTimeConstrained: sessionState?.isTimeConstrained,
-        timeBudgetMinutes: sessionState?.timeBudgetMinutes,
-      })
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe), isTimeConstrained: sessionState?.isTimeConstrained,timeBudgetMinutes: sessionState?.timeBudgetMinutes })
     }
-  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer, sessionState?.isTimeConstrained, sessionState?.timeBudgetMinutes])
+  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups, exercisesMissingRpe, sessionState?.isTimeConstrained, sessionState?.timeBudgetMinutes])
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
@@ -919,6 +942,63 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     void confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, disableForReducedMotion: true })
   }
 
+  const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean) => {
+    if (isEditMode || set.type !== 'Normal') {
+      return
+    }
+
+    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, completed: willComplete } : s))
+    const completedNormSets = effectiveSets.filter((s) => s.type === 'Normal' && s.completed)
+
+    const missedWithoutRPE = completedNormSets.some((s) => setMissedTarget(s) && s.rpe === '')
+    setExercisesMissingRpe((current) => {
+      if (missedWithoutRPE === current.has(exercise.id)) {
+        return current
+      }
+
+      const next = new Set(current)
+      
+      if (missedWithoutRPE) {
+        next.add(exercise.id); 
+      }
+      else {
+        next.delete(exercise.id)
+      }
+      return next
+    })
+
+    const ExerciseMissedHighRPE = completedNormSets.filter((s) => setMissedTarget(s) && setAtHighRpe(s)).length
+    const ExerciseFatigued = ExerciseMissedHighRPE >= 2
+
+    const anotherExerciseInGroupFatigued = exercises.some((other) => {
+      if (other.id === exercise.id || other.muscleGroup !== exercise.muscleGroup) {
+        return false
+      }
+
+      const otherCompletedNorm = other.sets.filter((s) => s.type === 'Normal' && s.completed)
+
+      return otherCompletedNorm.filter((s) => setMissedTarget(s) && setAtHighRpe(s)).length >= 2
+    })
+
+    const isFatigued = ExerciseFatigued || anotherExerciseInGroupFatigued
+
+    setFatiguedMuscleGroups((current) => {
+      if (isFatigued === current.has(exercise.muscleGroup)) return current
+      const next = new Set(current)
+      if (isFatigued) next.add(exercise.muscleGroup); else next.delete(exercise.muscleGroup)
+      return next
+    })
+
+    if (isFatigued && !reportedMuscleGroupsRef.current.has(exercise.muscleGroup)) {
+      reportedMuscleGroupsRef.current.add(exercise.muscleGroup)
+      void customFetch('/api/training/acute-fatigue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ muscleGroup: exercise.muscleGroup }),
+      }).catch(() => {})
+    }
+  }
+
   const startRest = (exercise: ExerciseData, set: SetData) => {
     if (isEditMode) {
       return
@@ -964,6 +1044,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               kg: '',
               reps: '',
               rpe: '',
+              targetKg: '',
+              targetReps: '',
               duration: '',
               distance: '',
               restTime: 0,
@@ -1018,6 +1100,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             kg: '',
             reps: '',
             rpe: '',
+            targetKg: '',
+            targetReps: '',
             duration: '',
             distance: '',
             restTime: 0,
@@ -1153,16 +1237,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     const keep = () => {
     if (workoutId) {
-      saveDraft<SessionDraft>(workoutId, {
-        workoutId,
-        workoutName,
-        startedAtMs,
-        logId,
-        exercises,
-        restTimer,
-        isTimeConstrained: sessionState?.isTimeConstrained,
-        timeBudgetMinutes: sessionState?.timeBudgetMinutes,
-      })
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe), isTimeConstrained: sessionState?.isTimeConstrained,timeBudgetMinutes: sessionState?.timeBudgetMinutes,})
     }
 
     navigate(pendingNavTo ?? '/workouts')
@@ -1260,14 +1335,21 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               <AvatarFallback className="bg-surface-2 text-transparent" />
             </Avatar>
             <div>
-              <button
-                type="button"
-                className="block text-left text-base font-bold leading-snug text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
-                disabled={!exercise.exerciseId || !isOnline}
-                onClick={() => { if (exercise.exerciseId) setDetailsExerciseId(exercise.exerciseId) }}
-              >
-                {exercise.name}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className="block text-left text-base font-bold leading-snug text-foreground cursor-pointer hover:underline disabled:cursor-default disabled:no-underline"
+                  disabled={!exercise.exerciseId || !isOnline}
+                  onClick={() => { if (exercise.exerciseId) setDetailsExerciseId(exercise.exerciseId) }}
+                >
+                  {exercise.name}
+                </button>
+                {fatiguedMuscleGroups.has(exercise.muscleGroup) && (
+                  <TapHint message={`We've noticed you are experiencing fatigue in your ${exercise.muscleGroup}. We suggest you lower your weight slightly for this session.`}>
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
+                  </TapHint>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
             </div>
           </div>
@@ -1292,7 +1374,14 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             <div>SET</div>
             <div className="hidden lg:block">PREVIOUS</div>
             {cols.map((col) => <div key={col.field}>{col.label}</div>)}
-            <div className="hidden lg:block">RPE</div>
+            <div className="hidden lg:flex items-center justify-center gap-1">
+              RPE
+              {exercisesMissingRpe.has(exercise.id) && (
+                <TapHint message="Log RPE to enable fatigue detection">
+                  <AlertTriangle className="h-3 w-3 text-warning" aria-label="Log RPE to enable fatigue detection" />
+                </TapHint>
+              )}
+            </div>
             <div />
           </div>
 
@@ -1309,6 +1398,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 onRemove={() => removeSet(exercise.id, set.id)}
                 isPR={prSetIds.includes(set.id)}
                 onRestStart={() => handleSetCompleted(exercise, set)}
+                onToggle={(willComplete) => checkAcuteFatigue(exercise, set, willComplete)}
               />
             ))}
           </div>

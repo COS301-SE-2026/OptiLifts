@@ -1,40 +1,16 @@
 import { useState } from "react";
 import { PageTitle } from "@/components/ui/page-title";
 import { FaqAccordion } from "@/components/help/faq-accordion";
-import type { FaqItem } from "@/components/help/faq-accordion";
 import { Search, HelpCircle, Video, BookOpen, Sparkles, Layers, Flame, Zap, RefreshCw, Info, CheckCircle2, ArrowRight } from "lucide-react";
 import { TutorialCard, type TutorialVideo } from "@/components/help/tutorial-card";
 import { ResourcePanel } from "@/components/help/resource-panel";
 import { ExerciseCard } from "@/components/ui/exercise-card";
 import { ChainLink } from "./create-workout";
 import type { WorkoutExercise } from "@/types/create-workout";
+import type { FaqItem } from "@/components/help/faq-accordion";
+import rawFaqs from "@/data/faqs.json";
 
-const FAQ_DATA: readonly FaqItem[] = [
-    {
-        id: 'faq-1',
-        category: 'Workouts',
-        question: 'How do I create and customise a workout routine?',
-        answer: 'Navigate to the "Workouts" page via the top navbar, then click the + button. You can name your workout, add exercises, set target sets and repititions, and create custom exercises.',
-    },
-    {
-        id: 'faq-2',
-        category: 'Offline Sync',
-        question: 'What happens if I lose internet connection during an active workout?',
-        answer: 'OptiLifts has full offline logging capabilities. Your sets, weights, and reps are automatically stored locally in your bwoser. When your connection is restored, your information sync back to the server.',
-    },
-    {
-        id: 'faq-3',
-        category: 'Schedule',
-        question: 'How do I schedule workout sessions on specific days?',
-        answer: 'Go to the "Schedule" page to view your weekly calendar. Click on the day you wish to assign a workout to, and select the routine to schedule.',
-    },
-    {
-        id: 'faq-4',
-        category: 'Profile',
-        question: 'Where can I view my workout history and total lifting stats?',
-        answer: 'Go to the "Profile" page to see your logged sections, and click on "View All" to see total volume lifted, and summaries of each of your completed sessions. ',
-    },
-]
+export const FAQ_DATA = rawFaqs as readonly FaqItem[];
 
 // tutorial data
 const TUTORIAL_DATA: readonly TutorialVideo[] = [
@@ -68,6 +44,13 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how to update your personal details, password, and app settings.',
         duration: '2:07',
         youtubeId: 'Zq-3h3d25ww', fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-6',
+        title: 'Editing a past workout',
+        description: 'Learn how to edit a past workout session and update its details.',
+        duration: '1:41',
+        youtubeId: 'JzNjcwk9aGw', fallbackVideoUrl: '',
     }
 ]
 

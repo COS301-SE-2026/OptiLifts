@@ -119,8 +119,8 @@ export default function PastWorkoutsPage() {
                 }
             } catch (error) {
                 console.error('Error fetching workouts:', error)
-            } finally {
                 setIsOfflineData(true)
+            } finally {
                 setLoading(false)
             }
         }

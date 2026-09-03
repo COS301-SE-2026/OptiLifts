@@ -311,9 +311,9 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR1.2.3: The system will allow the user to remove an exercise from their workout routine.
 4. FR1.2.4: The system will allow the user to change the set type for an exercise.
 5. FR1.2.5: The system will allow the user to add rest time to a specific exercise.
-7. FR1.2.7: The system will allow the user to save the workout to the database.
-8. FR1.2.8: The system will allow the user to delete a saved workout routine from the database.
-9. FR1.2.9: The system will allow the user to duplicate an existing saved workout.
+6. FR1.2.6: The system will allow the user to save the workout to the database.
+7. FR1.2.7: The system will allow the user to delete a saved workout routine from the database.
+8. FR1.2.8: The system will allow the user to duplicate an existing saved workout.
 
 ### Subsystem 2: Custom Exercise Creation
 
@@ -370,13 +370,23 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 6. FR5.1.6: The system will allow the user to filter their displayed schedule using specific date ranges.
 7. FR5.1.7: The system will generate and display a muscle balance chart based on the user's scheduled training blocks.
 
-#### FR5.2: Active workout tracking
-1. FR5.2.1: The system will allow the user to start an active workout session.
-2. FR5.2.2: The system will allow the user to log weight (kg) and reps for each set in real-time.
-3. FR5.2.3: The system will allow the user to mark a set as complete or uncomplete.
-4. FR5.2.4: The system will allow the user to add or remove exercises during an active session.
-5. FR5.2.5: The system will allow the user to end and save the workout or cancel the session.
-6. FR5.2.6: The system will allow the user to append additional sets to an exercise dynamically during an active session.
+#### FR5.2: Dynamic Scheduler & Rescheduling
+1. FR5.2.1: The system will automatically detect past-due uncompleted workouts and flag them as missed sessions.
+2. FR5.2.2: The system will allow the user to trigger dynamic AI rescheduling for selected missed workout sessions.
+3. FR5.2.3: The system will calculate proposed reschedule dates that respect user availability constraints, rest days, daily workout limits, and muscle group recovery periods.
+4. FR5.2.4: The system will flag workouts as dropped if they cannot be rescheduled without violating recovery and schedule constraints.
+5. FR5.2.5: The system will present proposed reschedule dates and dropped workout notifications to the user for review.
+6. FR5.2.6: The system will allow the user to confirm and apply the proposed rescheduled dates to their training schedule.
+
+#### FR5.3: Active workout tracking and offline synchronization
+1. FR5.3.1: The system will allow the user to start an active workout session.
+2. FR5.3.2: The system will allow the user to log weight (kg) and reps for each set in real-time.
+3. FR5.3.3: The system will allow the user to mark a set as complete or uncomplete.
+4. FR5.3.4: The system will allow the user to add or remove exercises during an active session.
+5. FR5.3.5: The system will allow the user to end and save the workout or cancel the session.
+6. FR5.3.6: The system will allow the user to append additional sets to an exercise dynamically during an active session.
+7. FR5.3.7: The system will cache workout routines locally to support uninterrupted logging during network disconnection.
+8. FR5.3.8: The system will store logged active session data locally when offline and automatically synchronize completed workout logs with the server once connectivity is restored.
 
 ### Subsystem 6: Dashboard
 
@@ -391,13 +401,25 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 2. FR7.2: The system will allow the user to filter their completed workout history by specific weeks.
 3. FR7.3: The system will display a detailed post-workout summary containing the exact weights, reps, and total time achieved for any previously completed session.
 
-### Subsystem 8: Preferences and Help Menu
+### Subsystem 8: Preferences, Google Calendar, and Help Menu
 
 1. FR8.1: The system will allow the user to configure app-wide preferences, including unit measurements and UI themes.
-2. FR8.2: The system will provide a search function allowing the user to query FAQs and tutorials.
-3. FR8.3: The system will display a list of frequently asked questions and their corresponding answers.
-4. FR8.4: The system will display instructional tutorials and guides on how to utilize the application's features.
-5. FR8.5: The system will provide access to a help centre containing comprehensive support documentation and contact resources.
+2. FR8.2: The system will allow the user to connect and authenticate their Google Calendar account via OAuth 2.0.
+3. FR8.3: The system will automatically create and sync scheduled workouts to a dedicated OptiLifts Google Calendar.
+4. FR8.4: The system will update or remove corresponding Google Calendar events when workouts are modified, rescheduled, or cancelled in OptiLifts.
+5. FR8.5: The system will allow the user to toggle automatic Google Calendar synchronization on or off and disconnect their Google account.
+6. FR8.6: The system will provide a search function allowing the user to query FAQs and tutorials.
+7. FR8.7: The system will display a list of frequently asked questions and their corresponding answers.
+8. FR8.8: The system will display instructional video tutorials and guides on how to utilize the application's features.
+9. FR8.9: The system will provide access to a help centre containing comprehensive support documentation and contact resources.
+
+### Subsystem 9: Progression and Exercise Analytics
+
+1. FR9.1: The system will track individual exercise performance trends over time (Progressing, Plateau, or Regressing).
+2. FR9.2: The system will calculate performance slope percentages per week for exercises based on logged workout volume and weight.
+3. FR9.3: The system will provide actionable recommendations when an exercise reaches a plateau or regression state.
+4. FR9.4: The system will allow the user to swap plateaued exercises across assigned workouts with alternative movements targeting the same muscle group.
+5. FR9.5: The system will display volume progression and frequency trends across completed training cycles.
 
 ## Non-Functional Requirements
 

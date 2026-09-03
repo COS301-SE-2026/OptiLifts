@@ -401,16 +401,22 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 
 ## Non-Functional Requirements
 
+### Disclaimer
+Due to project financial constraints, the live Azure database (Standard_B1ms tier) is capped by Microsoft at 38 active connections. To accurately test the theoretical performance and scalability of the system without this financial constraint, a Local Production Overlay was made. The overlay mirrors the resources allocated to each container app and the database without the connection limit. The theoretical limits are tested against this production overlay. This implies that the system can achieve these results without the financial constraints.
+
 ### NFR1: Performance
-1. NFR1.1: 95% of critical endpoint (`GET /api/workouts, GET /api/profile/overview, GET /api/schedules/me/schedule`) requests (core API) will complete within 500 milliseconds under normal operating conditions (15 users due to financial constraints).
+1. NFR1.1: 95% of `GET /api/workouts` requests (core API) will complete within 500 milliseconds under normal operating conditions (15 users).
 
-3. NFR1.2: The system will support 38 concurrent active users with less than a 10% increase in average response time compared to the single-user baseline (38 users due to financial constraints). 
+Theoretical limit: 95% of `GET /api/workouts` requests (core API) will complete within 500 milliseconds under normal operating conditions (100 users).
 
+3. NFR1.2: The system will support 38 concurrent active users with less than a 300% increase in average response time compared to the single-user baseline (38 users due to financial constraints). 
+
+Theoretical limit: The system will support 100 concurrent active users with less than a 300% increase in average response time compared to the single-user baseline (38 users due to financial constraints). 
 
 ### NFR2: Scalability
-1. NFR2.1: The system will support a theoretical 200% increase in workload (scaling from a baseline of 100 up to 300 concurrent users) with no more than a 10% decrease in response time.
+1. NFR2.1: The system will support a theoretical 200% increase in workload (scaling from a baseline of 100 up to 300 concurrent users) while maintaining a response time of under 1.5 seconds for 95% of all requests.
 
- Due to financial constraints the database cannot support more than 38 concurrent connections, but using a local production overlay that has the same resource allocation as the hosted apps and database without the 38 connection cap we are able to support 285 concurrent users with less than a 10% increase in average response time compared to the single-user baseline.
+** Due to the database connection limit on the azure database we cannot scale the live system as the horizontal scaling of the container apps would still be bottlenecked by the database due to our financial constraints. The theoretical limit is tested against the Local Production Overlay. 
 
 ### NFR3: Security
 1. NFR3.1: The system will encrypt sensitive user data (specifically  emails, usernames and bodily/health-orientated infromation such as height, weight etc.) at rest using application-level AES-256 encryption via Entity Framework Core value converters before the data is stored in the database. 

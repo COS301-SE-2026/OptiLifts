@@ -27,6 +27,9 @@ export const options = {
       exec: 'runScaled',
     }
   },
+  thresholds: {
+    'scaled_response_time': ['p(95)<1500'], // Assert the 1.5s SLA for the 300 user load
+  },
 };
 
 
@@ -34,7 +37,7 @@ const TEST_USER = {
   email: 'gymgoer@gmail.com',
   password: 'GymGoer123!'   //NOSONAR
 };
-const BASE_URL = 'https://api.optilifts.app/api';
+const BASE_URL = 'http://localhost:8080/api';
 
 export function setup() {
   const loginRes = http.post(`${BASE_URL}/auth/login`, JSON.stringify(TEST_USER), {

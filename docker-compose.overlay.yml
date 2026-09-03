@@ -19,6 +19,7 @@ services:
       - ENCRYPTION_KEY=SuperSecretEncryptionKeyThatIs32Bytes!
       - DEV_SEEDING=true
       - E2E_TESTING=true
+      - RateLimiting__Enabled=${RATE_LIMITING_ENABLED:-false}
     deploy:
       resources:
         limits:

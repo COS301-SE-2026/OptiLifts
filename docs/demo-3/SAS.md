@@ -185,7 +185,7 @@ This pattern applies wherever an object behaves differently depending on what ph
 
 | ID | Quantified requirement | Tactic in SAS | Test / tool | Target / actual |
 | :--- | :--- | :--- | :--- | :--- |
-| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 1.5s | MediatR Caching + Asynchronous non-blocking I/O | k6 | < 1500ms / TBD |
+| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 1.5s | Seperation of core-api and ai-api services Asynchronous processing | k6 | < 1500ms / TBD |
 | **NFR1.3** | < 10% average latency increase at 100 concurrent users | MediatR Caching | k6 | < 10% increase / TBD |
 | **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease | Azure Container Apps with Horizontal Scaling | k6 | < 10% decrease / TBD |
 | **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`SensitiveData_ShouldBeEncryptedAtRest_InDatabase`) | Test Passes / Pass |
@@ -197,6 +197,22 @@ This pattern applies wherever an object behaves differently depending on what ph
 | **NFR5.1** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
 
 #### Evidence
+### NFR 1.1 and NFR 1.2:
+- The commands run:
+```bash
+docker compose -f docker-compose.overlay.yml up -d --scale core-api=1
+k6 run k6-nfr-tests/nfr1-performance.js
+```
+![Theoretical](../images/nfr-testing/nfr1-1-theoretical.png)
+
+### NFR 2.1: 
+- The commands run: 
+```bash
+docker compose -f docker-compose.overlay.yml up -d --scale core-api=3
+k6 run k6-nfr-tests/nfr2-scalability.js
+```
+![Theoretical](../images/nfr-testing/nfr2-1-theoretical.png)
+
 ##### NFR3.1, NFR3.2, NFR 3.4: 
 - All tests pass when running `pnpm test` which covers the tests that ensure the NFRs are met. 
 

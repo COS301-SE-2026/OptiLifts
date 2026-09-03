@@ -182,9 +182,12 @@ type SetRowProps = Readonly<{
 
 function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
-    onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
-    onFieldEdit(key, raw)
+    const numeric = raw === '' ? '' : Number(raw)
+    const clamped = key === 'rpe' && numeric !== '' ? Math.min(10, Math.max(1, numeric)) : numeric
+    onUpdate((current) => ({ ...current, [key]: clamped }))
+    onFieldEdit(key, clamped === '' ? '' : String(clamped))
   }
+
 
   return (
     <div
@@ -953,7 +956,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, ...override, completed: willComplete } : s))
     const completedNormSets = effectiveSets.filter((s) => s.type === 'Normal' && s.completed)
 
-    const missedWithoutRPE = completedNormSets.filter((s) => setMissedTarget(s) && s.rpe === '').length >= 2
+    const missedWithoutRPE = completedNormSets.length >= 2 && completedNormSets.some((s) => setMissedTarget(s) && s.rpe === '')
     setExercisesMissingRpe((current) => {
       if (missedWithoutRPE === current.has(exercise.id)) {
         return current

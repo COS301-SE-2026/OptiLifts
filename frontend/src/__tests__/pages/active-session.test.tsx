@@ -259,25 +259,31 @@ describe('Acute Fatigue', () => {
     localStorage.clear()
   })
 
-  it('flags the missing-RPE icon when no RPE', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => benchPressWorkout([{ id: 'set-1', reps: 10, weight: 100 }]) })
+  it('flags the missing-RPE icon when 2+ sets miss target with no RPE', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => benchPressWorkout([{ id: 'set-1', reps: 10, weight: 100 }, { id: 'set-2', reps: 10, weight: 100 }]),
+    })
 
     const { container } = render(<ActiveSessionPage />)
     await screen.findByText('Bench Press')
 
-    const row = getSetRow(container, 0)
-    const { kg } = getRowInpts(row)
+    const rows = [getSetRow(container, 0), getSetRow(container, 1)]
+    for (const row of rows) {
+      const { kg } = getRowInpts(row)
+      fireEvent.change(kg, { target: { value: '80' } })
+    }
 
-    fireEvent.change(kg, { target: { value: '80' } })
-
-    getToggleBtn(row).click()
+    fireEvent.click(getToggleBtn(rows[0]))
+    fireEvent.click(getToggleBtn(rows[1]))
     expect(await screen.findByLabelText('Log RPE to enable fatigue detection')).toBeDefined()
 
-    getToggleBtn(row).click()
+    fireEvent.click(getToggleBtn(rows[1]))
     await waitFor(() => {
       expect(screen.queryByLabelText('Log RPE to enable fatigue detection')).toBeNull()
     })
   })
+
 
   it('flags muscle-group fatigue for more than 2 sets and clears when unflagged', async () => {
     fetchMock.mockResolvedValue({

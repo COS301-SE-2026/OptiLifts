@@ -1,4 +1,4 @@
- import WorkoutsPage from '@/pages/workouts';
+import WorkoutsPage from '@/pages/workouts';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';

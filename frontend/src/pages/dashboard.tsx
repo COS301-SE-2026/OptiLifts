@@ -14,7 +14,7 @@ import { useAuth } from '@/context/auth-context'
 import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
-import { Dumbbell } from 'lucide-react'
+import { Dumbbell, AlertTriangle } from 'lucide-react'
 import { PageTitle } from '@/components/ui/page-title'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 
@@ -216,6 +216,7 @@ export default function DashboardPage() {
     const [error, setError] = useState<string | null>(null)
     const [refreshToken, setRefreshToken] = useState(0)
     const [isOfflineData, setIsOfflineData] = useState(false)
+    const [plateauCount, setPlateauCount] = useState(0)
 
     useEffect(() => {
         if (!isHydrated || !isAuthenticated){
@@ -403,6 +404,19 @@ export default function DashboardPage() {
         return { name, count: stats.count, imageUrl: stats.imageUrl }
     }, [completedWorkoutDetails, completedEntries])
 
+    useEffect(() => {
+        if (!isHydrated || !isAuthenticated) return
+        let isActive = true
+
+        customFetch('/api/training/plateau-page')
+            .then((resp) => (resp.ok ? resp.json() : []))
+            .then((data: { status: string }[]) => {
+                if (isActive) setPlateauCount(data.filter((e) => e.status === 'Plateau' || e.status === 'Regressing').length)
+            })
+            .catch(() => {})
+        return () => { isActive = false }
+    }, [isAuthenticated, isHydrated, refreshToken])
+
     const muscleValues = useMemo(() => {
         const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
             Chest: 0,
@@ -471,45 +485,69 @@ export default function DashboardPage() {
             )}
 
             <div className="mb-8">
-                <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
-                <p className="mt-2 text-lg text-muted-foreground">
-                    Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
-                </p>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
+                        <p className="mt-2 text-lg text-muted-foreground">
+                            Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
+                        </p>
 
-                <div className="mt-2 flex flex-wrap gap-2">
-                    <Button
-                        disabled={!upcomingWorkouts[0]}
-                        onClick={() => {
-                            if (upcomingWorkouts[0]){
-                                navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
-                            }
-                        }}
-                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
-                    >
-                        View Workout
-                    </Button>
-                    <Button
-                        disabled={!upcomingWorkouts[0]}
-                        onClick={() => {
-                            if (upcomingWorkouts[0]){
-                                navigate('/active-session', {
-                                    state: {
-                                        workout: {
-                                            id: upcomingWorkouts[0].workoutId,
-                                            name: upcomingWorkouts[0].name,
-                                            primaryMuscleGroups: [],
-                                        },
-                                    },
-                                })
-                            }
-                        }}
-                        className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
-                    >
-                        Start Session
-                    </Button>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            <Button
+                                disabled={!upcomingWorkouts[0]}
+                                onClick={() => {
+                                    if (upcomingWorkouts[0]){
+                                        navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
+                                    }
+                                }}
+                                className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
+                            >
+                                View Workout
+                            </Button>
+                            <Button
+                                disabled={!upcomingWorkouts[0]}
+                                onClick={() => {
+                                    if (upcomingWorkouts[0]){
+                                        navigate('/active-session', {
+                                            state: {
+                                                workout: {
+                                                    id: upcomingWorkouts[0].workoutId,
+                                                    name: upcomingWorkouts[0].name,
+                                                    primaryMuscleGroups: [],
+                                                },
+                                            },
+                                        })
+                                    }
+                                }}
+                                className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
+                            >
+                                Start Session
+                            </Button>
+                        </div>
+                    </div>
+
+                    {plateauCount > 0 && (
+                        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-red-950/30">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                                <span className="text-sm font-bold uppercase tracking-wide text-red-700 dark:text-red-400">
+                                    Plateau Detected
+                                </span>
+                            </div>
+                            <p className="mt-1 text-sm text-red-900/80 dark:text-red-200/80">
+                                We've noticed a plateau in one or more of your exercises
+                            </p>
+                            <Button
+                                onClick={() => navigate('/progression')}
+                                className="mt-3 h-7 w-full border-red-500 bg-red-500 px-5 py-0 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-600"
+                            >
+                                View
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">        
                 {/*Volume chart*/}
                 <div className="md:col-span-2 h-full">

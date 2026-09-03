@@ -294,7 +294,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                         row.Distance,
                         row.RestTime,
                         row.GroupNumber,
-                        row.Rpe))
+                        row.Rpe ?? 0))
                     .ToArray());
     }
 
@@ -335,7 +335,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         float? Distance,
         int RestTime,
         int GroupNumber,
-        float Rpe);
+        float? Rpe);
 
     private sealed record WorkoutLogExerciseRow(
         Guid Id,
@@ -372,5 +372,5 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         float? Distance,
         int RestTime,
         int GroupNumber,
-        float Rpe);
+        float? Rpe);
 }

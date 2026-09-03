@@ -42,7 +42,7 @@ public sealed class UserSettingsController : ControllerBase
 
     [HttpPatch("profilePicture")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile profilePicture, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadProfilePicture([FromForm] UploadProfilePictureRequest request, CancellationToken cancellationToken)
     {
         var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -51,6 +51,7 @@ public sealed class UserSettingsController : ControllerBase
             return Unauthorized();
         }
 
+        var profilePicture = request.ProfilePicture;
         if (profilePicture == null || profilePicture.Length == 0)
         {
             return BadRequest("No file uploaded or file is empty.");
@@ -99,6 +100,10 @@ public sealed class UserSettingsController : ControllerBase
             return NotFound();
         }
     }
+
+    public sealed record UploadProfilePictureRequest(
+        IFormFile? ProfilePicture
+    );
 
     public sealed record UserDetailsRequest(
         string DisplayName,

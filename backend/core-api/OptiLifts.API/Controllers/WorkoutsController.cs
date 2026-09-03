@@ -13,6 +13,7 @@ using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.ReplaceWorkoutExercise;
 using OptiLifts.Application.Workouts.UpdateWorkout;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 
@@ -49,6 +50,8 @@ public sealed class WorkoutsController : ControllerBase
     [HttpGet("{workoutId:guid}")]
     public async Task<ActionResult<WorkoutDetailDto>> GetWorkoutDetail(
         [FromRoute] Guid workoutId,
+        [FromQuery] bool isTimeConstrained,
+        [FromQuery] int? timeBudgetMinutes,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
@@ -56,7 +59,7 @@ public sealed class WorkoutsController : ControllerBase
             return Unauthorized();
         }
 
-        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId), cancellationToken);
+        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId, isTimeConstrained, timeBudgetMinutes), cancellationToken);
 
         if (result is null)
         {
@@ -179,6 +182,27 @@ public sealed class WorkoutsController : ControllerBase
             cancellationToken);
 
         return added ? NoContent() : NotFound();
+    }
+
+    public sealed record ReplaceWorkoutExerciseRequest(Guid NewExerciseId);
+
+    [HttpPut("{workoutId:guid}/exercises/{exerciseId:guid}")]
+    public async Task<IActionResult> ReplaceWorkoutExercise(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid exerciseId,
+        [FromBody] ReplaceWorkoutExerciseRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var replaced = await _sender.Send(
+            new ReplaceWorkoutExerciseCommand(userId, workoutId, exerciseId, request.NewExerciseId),
+            cancellationToken);
+
+        return replaced ? NoContent() : NotFound();
     }
 
     private bool TryGetUserId(out Guid userId)

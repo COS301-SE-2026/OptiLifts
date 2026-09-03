@@ -65,6 +65,9 @@ export async function submitAuthRequest({
         setErrorMessage(unauthorizedErrorMessage)
       } else if (res.status === 409 && conflictErrorMessage) {
         setErrorMessage(conflictErrorMessage)
+      } else if (res.status === 429) {
+        const payload = await res.json().catch(() => null)
+        setErrorMessage(payload?.detail ?? payload?.title ?? 'Too many attempts. Please wait a moment before trying again.')
       } else {
         const payload = await res.json().catch(() => null)
         setErrorMessage(payload?.title ?? fallbackErrorMessage)

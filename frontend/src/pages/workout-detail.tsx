@@ -14,7 +14,7 @@ import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 import { MoreVertical } from 'lucide-react'
-import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { buildLabels } from '@/lib/exercise-format'
 import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -244,6 +244,17 @@ export default function WorkoutDetailPage() {
                   <MoreVertical />
                 </DropdownMenuEllipsisTrigger>
                 <DropdownMenuEllipsisContent align="end">
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger disabled={!isOnline}>Quick Workout</DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 15 } })}>15 Minutes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 30 } })}>30 Minutes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 45 } })}>45 Minutes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 60 } })}>60 Minutes</DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
                   <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
                   <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
                     Delete

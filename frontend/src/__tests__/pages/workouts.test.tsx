@@ -1,48 +1,40 @@
- import WorkoutsPage from '@/pages/workouts';
+import WorkoutsPage from '@/pages/workouts';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';
 import { customFetch } from '@/lib/custom-fetch';
 import type { ReactNode } from 'react';
 
-const mockNavigate = vi.fn(); //mock trackin function (spies on nav calls)
+const mockNav = vi.fn(); //mock trackin function (spies on nav calls)
 vi.mock('react-router-dom', async() => {
     const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
     return {
         ...actual,
-        useNavigate: () => mockNavigate, //inject trackable spy func
-        Link: ({children, to}: Readonly<{ children: ReactNode; to: string }>) => <a href={to}>{children}</a>,
-    };
+        useNavigate: () => mockNav,
+        Link: ({children, to}: Readonly<{ children: ReactNode; to: string }>) => <a href={to}>{children}</a>,};
 });
 
-vi.mock('@/context/auth-context', () =>({
-    useAuth: vi.fn(),
-}));
+vi.mock('@/context/auth-context', () =>({useAuth: vi.fn(),}));
 
 //mock customfetch
-vi.mock('@/lib/custom-fetch', () => ({
-    customFetch: vi.fn()
-}));
+vi.mock('@/lib/custom-fetch', () => ({customFetch: vi.fn()}));
 
-vi.mock('@/componentts/ui/muscle-diagram', () =>({
-    default: () => <div data-testid="muscle-diagram"/>
-}));
+vi.mock('@/componentts/ui/muscle-diagram', () =>({default: () => <div data-testid="muscle-diagram"/>}));
 
-vi.mock('@/components/ui/confirm-dialog', () => ({
-    ConfirmDialog: ({isOpen, onConfirm}: Readonly<{ isOpen: boolean; onConfirm: () => void}>) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
-}));
+vi.mock('@/components/ui/confirm-dialog', async () => {
+    const { mockConfirmDialog } = await import('../mocks/ui-mocks');
+    return mockConfirmDialog();});
 
-//mock dropdown comp into html btns
-vi.mock('@/components/ui/dropdown-menu', () => ({
-    DropdownMenu: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown">{children}</div>,
-    DropdownMenuEllipsisTrigger: () => <button data-testid="dropdown-trigger">...</button>,
-    DropdownMenuEllipsisContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
-    DropdownMenuItem: ({ children, onSelect }: Readonly<{ children: ReactNode; onSelect: () => void }>) => (<button onClick={onSelect} data-testid={`dropdown-item-${children}`}>{children}</button>),
-}));
+vi.mock('@/components/ui/dropdown-menu', async () => {
+    const { mockDropdownMenu } = await import('../mocks/ui-mocks');
+    return mockDropdownMenu();
+});
+
+
 
 describe('WorkoutsPage', () => {
-    const mockAuth = useAuth as unknown as Mock;
-    const mockFetch = customFetch as unknown as Mock;
+    const mAuth = useAuth as unknown as Mock;
+    const mFetch = customFetch as unknown as Mock;
 
     afterEach(() => {
         cleanup();
@@ -50,7 +42,7 @@ describe('WorkoutsPage', () => {
 
     beforeEach(() => { //runs each 'it' test block + resets spy functions
         vi.clearAllMocks();
-        mockFetch.mockImplementation(async (url: string) => {
+        mFetch.mockImplementation(async (url: string) => {
             if(url === '/api/workouts'){
                 return {
                     ok: true,
@@ -79,7 +71,7 @@ describe('WorkoutsPage', () => {
     });
 
     it('renders auth warning when unathed', () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: false
         });
@@ -89,7 +81,7 @@ describe('WorkoutsPage', () => {
     });
     
     it ('loads and lists workouts and supports searching', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -110,7 +102,7 @@ describe('WorkoutsPage', () => {
         expect(screen.queryByText('Push Day')).toBeNull(); //sonarqube might get me here
     });
     it('handles duplicating a workout', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -120,7 +112,7 @@ describe('WorkoutsPage', () => {
             expect(screen.getByText('Push Day')).toBeDefined();
         });
 
-        mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+        mFetch.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url === '/api/workouts/w-1/duplicate' && init?.method === 'POST'){
                 return {
                     ok: true,
@@ -157,7 +149,7 @@ describe('WorkoutsPage', () => {
     });
 
     it('handles deleting workout w/ confirm dialog', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -172,7 +164,7 @@ describe('WorkoutsPage', () => {
 
         expect(screen.getByTestId('confirm-dialog')).toBeDefined();
 
-        mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+        mFetch.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url === '/api/workouts/w-1' && init?.method === 'DELETE'){
                 return {
                     ok: true
@@ -193,7 +185,7 @@ describe('WorkoutsPage', () => {
     //coverage 80%
 
     it ('supports searching primary muscle group', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -213,7 +205,7 @@ describe('WorkoutsPage', () => {
     });
 
     it ('returns no workouts found when no search match', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -228,7 +220,7 @@ describe('WorkoutsPage', () => {
     });
 
     it ('handles clickign card to navigate to details page', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -240,11 +232,11 @@ describe('WorkoutsPage', () => {
 
         const card = screen.getByRole('button', {name: /Push Day/i});
         fireEvent.click(card);
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1');
+        expect(mockNav).toHaveBeenCalledWith('/workouts/w-1');
     });
 
     it ('handles keyboard nav on workout cards', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -259,11 +251,11 @@ describe('WorkoutsPage', () => {
             key: 'Enter',
             code: 'Enter'
         });
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/w-1');
+        expect(mockNav).toHaveBeenCalledWith('/workouts/w-1');
     });
 
     it ('goes to create workout page when add button clicked', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -272,13 +264,13 @@ describe('WorkoutsPage', () => {
         const addbtn = screen.getByRole('button', {name: 'Add'});
         fireEvent.click(addbtn);
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenCalledWith('/workouts/create');
+            expect(mockNav).toHaveBeenCalledWith('/workouts/create');
         });
         
     });
 
     it ('goes to edit workout page when edit dropdown clicked', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -289,15 +281,15 @@ describe('WorkoutsPage', () => {
 
         const editbtn = screen.getAllByTestId('dropdown-item-Edit')[0];
         fireEvent.click(editbtn);
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/edit/w-1');
+        expect(mockNav).toHaveBeenCalledWith('/workouts/edit/w-1');
     });
 
     it ('display error banner when loading workouts fails', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
-        mockFetch.mockImplementationOnce(async () => ({
+        mFetch.mockImplementationOnce(async () => ({
             ok: false,
             status: 500
         }));
@@ -308,7 +300,7 @@ describe('WorkoutsPage', () => {
     });
 
     it ('display error banner when duplicating workout fails', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -317,7 +309,7 @@ describe('WorkoutsPage', () => {
             expect(screen.getByText('Push Day')).toBeDefined();
         });
 
-        mockFetch.mockImplementationOnce(async () => ({
+        mFetch.mockImplementationOnce(async () => ({
             ok: false,
             status: 400
         }));
@@ -330,7 +322,7 @@ describe('WorkoutsPage', () => {
     });
 
     it ('display error banner when deleting workout fails', async () => {
-        mockAuth.mockReturnValue({
+        mAuth.mockReturnValue({
             isHydrated: true,
             isAuthenticated: true
         });
@@ -342,7 +334,7 @@ describe('WorkoutsPage', () => {
         const deletebtn = screen.getAllByTestId('dropdown-item-Delete')[0];
         fireEvent.click(deletebtn);
 
-        mockFetch.mockImplementationOnce(async () => ({
+        mFetch.mockImplementationOnce(async () => ({
             ok: false,
             status: 403
         }));
@@ -354,4 +346,21 @@ describe('WorkoutsPage', () => {
             expect(screen.getByText(/Failed to delete workout/i)).toBeDefined();
         });
     });
+    it('starts time constrained workout when 15 Minutes is clicked', async () => {
+        mAuth.mockReturnValue({
+            isHydrated: true,
+            isAuthenticated: true
+        });
+        render(<WorkoutsPage/>);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day')).toBeDefined();
+        });
+
+        const quickBtn = screen.getAllByTestId('dropdown-item-15 Minutes')[0];
+        fireEvent.click(quickBtn);
+        expect(mockNav).toHaveBeenCalledWith('/active-session', expect.objectContaining({
+            state: expect.objectContaining({ isTimeConstrained: true, timeBudgetMinutes: 15 })
+        }));
+    });
+
 });

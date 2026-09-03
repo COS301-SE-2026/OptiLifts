@@ -7,7 +7,7 @@ test.describe('Workout Log Detail Page', () => {
     });
 
     test('User can view a workout log\'s detail', async ({ page }) => {
-        await expect (page.getByText('Push Day A')).toBeVisible();
+        await expect (page.getByText('Push Day A').first()).toBeVisible();
         await expect (page.getByText('Duration55m')).toBeVisible();
         await expect (page.getByText('Volume1,080 KG')).toBeVisible();
         await expect (page.getByText('Sets2')).toBeVisible();

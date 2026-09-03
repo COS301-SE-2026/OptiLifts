@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
-import { PageTitle } from '@/components/ui/page-title'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -24,6 +23,7 @@ const SchedulePage = lazy(() => import('@/pages/schedule'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const LandingPage = lazy(() => import('@/pages/landing'))
 const HelpPage= lazy(() => import('@/pages/help'))
+const ProgressionPage = lazy(() => import('@/pages/progression'))
 
 function AppLayout() {
   return (
@@ -93,22 +93,6 @@ function RequireGuest({ children }: Readonly<{ children: React.ReactNode }>) {
   return children
 }
 
-
-type PlaceholderPageProps = Readonly<{
-  title: string
-  description: string
-}>
-
-function PlaceholderPage({ title, description }: PlaceholderPageProps) {
-  return (
-    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col justify-center px-6 py-16">
-      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Route ready</p>
-      <PageTitle title={title} />
-      <p className="mt-4 max-w-2xl text-lg text-muted-foreground">{description}</p>
-    </section>
-  )
-}
-
 function App() {
   useEffect(() => initOfflineWorkoutLogSync(), [])
   return (
@@ -126,7 +110,7 @@ function App() {
           <Route path="workouts/edit/:id" element={<CreateWorkoutPage />} />
           <Route path="active-session" element={<ActiveSessionPage />} />
           <Route path="schedule" element={<SchedulePage />} />
-          <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
+          <Route path="progression" element={<ProgressionPage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />

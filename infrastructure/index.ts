@@ -29,6 +29,7 @@ const googleClientId = config.getSecret("googleClientId");
 const googleClientSecret = config.getSecret("googleClientSecret");
 
 const domainStage = config.get("domainStage") ?? "none";
+const rateLimitingEnabled = "false";
 
 const imageTag = process.env.IMAGE_TAG;
 if (!imageTag) {
@@ -93,13 +94,13 @@ const profilePicturesContainer = new storage.BlobContainer("bc-profile-pictures"
     resourceGroupName: resourceGroup.name,
     accountName: storageAcc.name,
     containerName: "profile-pictures",
-    publicAccess: storage.PublicAccess.Blob, 
+    publicAccess: storage.PublicAccess.Blob,
 });
 const exercisesContainer = new storage.BlobContainer("bc-exercises", {
     resourceGroupName: resourceGroup.name,
     accountName: storageAcc.name,
     containerName: "exercises",
-    publicAccess: storage.PublicAccess.Blob, 
+    publicAccess: storage.PublicAccess.Blob,
 });
 
 const storageAccKeys = storage.listStorageAccountKeysOutput({
@@ -203,7 +204,15 @@ const frontendApp = new app.ContainerApp("frontend", {
             name: "frontend",
             image: pulumi.interpolate`${acrServer}/optilifts-frontend:${imageTag}`,
             resources: { cpu: 0.5, memory: "1.0Gi" },
-            env: [{ name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }]
+            env: [
+                { name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }, 
+                ...(rateLimitingEnabled === "false" ? [ //makeshift disabling 
+                    { name: "NGINX_AUTH_RATE_LIMIT", value: "10000r/s" },
+                    { name: "NGINX_GENERAL_RATE_LIMIT", value: "10000r/s" },
+                    { name: "NGINX_AUTH_BURST", value: "10000" },
+                    { name: "NGINX_GENERAL_BURST", value: "10000" },
+                ] : []),
+            ]
 
         }],
     },
@@ -266,6 +275,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "AUTH_COOKIE_SECURE", value: "true" },
                 { name: "DEV_SEEDING", value: devSeeding },
                 { name: "FRONTEND_ORIGIN", value: frontendUrl },
+                { name: "RateLimiting__Enabled", value: rateLimitingEnabled },
                 { name: "JWT_SECRET", secretRef: "jwt-secret" },
                 { name: "JWT_EXP_MINUTES", value: jwtExpMin },
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
@@ -283,7 +293,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 },
                 initialDelaySeconds: 10,
                 periodSeconds: 10,
-                failureThreshold: 30, 
+                failureThreshold: 30,
             }],
         }],
     },

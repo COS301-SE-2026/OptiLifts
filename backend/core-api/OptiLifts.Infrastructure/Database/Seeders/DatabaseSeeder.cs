@@ -31,10 +31,37 @@ public static class DatabaseSeeder
             await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
         }
 
-
         if (!testing)
         {
-            await SeedPlateauDemoDataAsync(dbContext, cancellationToken);
+            await RunPlateauDetectionForSeededHistoryAsync(dbContext, cancellationToken);
+        }
+    }
+
+    // Runs plateau/regression detection over whatever exercises the demo account(s)
+    // actually have logged history for (from seed-demo-data.sql), rather than hardcoding
+    // exercise names here - so this stays correct if that SQL script's history changes.
+    private static async Task RunPlateauDetectionForSeededHistoryAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail("gymgoer@gmail.com"), cancellationToken);
+        if (user is null)
+        {
+            return;
+        }
+
+        var exerciseIds = await (
+            from setLog in dbContext.WorkoutLogSets
+            join log in dbContext.WorkoutLogs on setLog.LogId equals log.Id
+            join entry in dbContext.ScheduledEntries on log.EntryId equals entry.Id
+            where entry.UserId == user.Id
+            select setLog.ExerciseId
+        ).Distinct().ToListAsync(cancellationToken);
+
+        var seriesBuilder = new SeriesBuilder(dbContext);
+        var plateauDetectionService = new PlateauDetectionService(seriesBuilder, dbContext);
+
+        foreach (var exerciseId in exerciseIds)
+        {
+            await plateauDetectionService.DetectAsync(user.Id, exerciseId, cancellationToken);
         }
     }
 
@@ -290,158 +317,6 @@ public static class DatabaseSeeder
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-
-    private static async Task SeedPlateauDemoDataAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
-    {
-        const string demoWorkoutName = "Plateau Demo History";
-
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail("gymgoer@gmail.com"), cancellationToken);
-        if (user is null)
-        {
-            return;
-        }
-
-        var alreadySeeded = await dbContext.Workouts.AnyAsync(w => w.CreatedBy == user.Id && w.Name == demoWorkoutName, cancellationToken);
-        if (alreadySeeded)
-        {
-            return;
-        }
-
-        var workout = new Workout
-        {
-            Name = demoWorkoutName,
-            CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        dbContext.Workouts.Add(workout);
-
-        // (exercise name, per-session generator over 24 weekly sessions: i=0..11 is the baseline
-        // period, i=12..23 is the 12-point detection window). Exercise names are chosen to avoid
-        // anything already used by Alex's existing seed-demo-data.sql history, so this synthetic
-        // data doesn't mix with his real seeded sessions for the same exercise.
-        var scenarios = new List<(string ExerciseName, Func<int, (float Weight, int Reps, float Rpe)> Session)>
-        {
-            // Progressing: steady rise throughout, effort constant
-            ("Barbell front squat", i => (70f + i * 0.9f, 6, 7.5f)),
-            ("Barbell close-grip bench press", i => (50f + i * 0.7f, 8, 7.0f)),
-
-            // Plateau: rises for 12 weeks then goes flat for 12 weeks.
-            // Deadlift: RPE climbs sharply during the flat period -> recovery-style recommendation.
-            ("Barbell deadlift", i => i < 12
-                ? (120f + i * 1.5f, 5, 7.5f)
-                : (136.5f, 5, 6.0f + (i - 12) * (4.0f / 11f))),
-            // Romanian deadlift: RPE stays flat -> exercise-change recommendation.
-            ("Dumbbell romanian deadlift", i => i < 12
-                ? (40f + i * 0.8f, 10, 7.0f)
-                : (48.8f, 10, 7.0f)),
-
-            // Regressing: rises for 12 weeks then genuinely declines for 12 weeks.
-            // Bent over row: effort stays flat -> exercise-change recommendation.
-            ("Barbell bent over row", i => i < 12
-                ? (60f + i, 8, 7.0f)
-                : (71f - (i - 11) * 1.5f, 8, 7.0f)),
-            // Lateral raise: RPE climbs sharply during the decline -> recovery-style recommendation.
-            ("Dumbbell lateral raise", i => i < 12
-                ? (10f + i * 0.3f, 12, 7.0f)
-                : (13.3f - (i - 11) * 0.4f, 12, 6.0f + (i - 12) * (4.0f / 11f))),
-        };
-
-        var affectedExerciseIds = new List<Guid>();
-        var startDate = DateTime.UtcNow.AddDays(-24 * 7);
-        var workoutExerciseOrderIndex = 0;
-
-        foreach (var (exerciseName, sessionAt) in scenarios)
-        {
-            var exercise = await dbContext.Exercises.FirstOrDefaultAsync(e => e.Name == exerciseName, cancellationToken);
-            if (exercise is null)
-            {
-                continue;
-            }
-
-            affectedExerciseIds.Add(exercise.Id);
-
-            dbContext.WorkoutExercises.Add(new WorkoutExercise
-            {
-                WorkoutId = workout.Id,
-                ExerciseId = exercise.Id,
-                OrderIndex = workoutExerciseOrderIndex++
-            });
-
-            SeedExerciseSessions(dbContext, workout, user, exercise, sessionAt, startDate);
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var seriesBuilder = new SeriesBuilder(dbContext);
-        var plateauDetectionService = new PlateauDetectionService(seriesBuilder, dbContext);
-
-        foreach (var exerciseId in affectedExerciseIds)
-        {
-            await plateauDetectionService.DetectAsync(user.Id, exerciseId, cancellationToken);
-        }
-    }
-
-    private static void SeedExerciseSessions(
-        OptiLiftsDbContext dbContext,
-        Workout workout,
-        User user,
-        Exercise exercise,
-        Func<int, (float Weight, int Reps, float Rpe)> sessionAt,
-        DateTime startDate)
-    {
-        const int sessionCount = 24;
-        const int setsPerSession = 3;
-
-        for (var i = 0; i < sessionCount; i++)
-        {
-            var (weight, reps, rpe) = sessionAt(i);
-            var sessionDate = startDate.AddDays(i * 7);
-
-            var entry = new ScheduledEntry
-            {
-                WorkoutId = workout.Id,
-                UserId = user.Id,
-                Scheduled = sessionDate,
-                Status = ScheduleStatus.Completed
-            };
-            dbContext.ScheduledEntries.Add(entry);
-
-            var log = new WorkoutLog
-            {
-                EntryId = entry.Id,
-                StartedAt = sessionDate,
-                CompletedAt = sessionDate.AddMinutes(45),
-                AiModified = false
-            };
-            dbContext.WorkoutLogs.Add(log);
-
-            dbContext.WorkoutLogExercises.Add(new WorkoutLogExercise
-            {
-                LogId = log.Id,
-                ExerciseId = exercise.Id,
-                OrderIndex = 0,
-                GroupNumber = 0
-            });
-
-            for (var setIdx = 0; setIdx < setsPerSession; setIdx++)
-            {
-                dbContext.WorkoutLogSets.Add(new WorkoutSetLog
-                {
-                    LogId = log.Id,
-                    ExerciseId = exercise.Id,
-                    Type = SetType.Normal,
-                    Reps = reps,
-                    Weight = weight,
-                    GroupNumber = 0,
-                    Rpe = rpe,
-                    RestTime = 90,
-                    OrderIndex = setIdx,
-                    LoggedAt = sessionDate,
-                    AiSuggested = false
-                });
-            }
-        }
-    }
 
     private static async Task SeedExercisesAsync(OptiLiftsDbContext dbContext, IBlobStorageService blobStorage, bool testing, CancellationToken cancellationToken)
     {

@@ -660,7 +660,9 @@ BEGIN
         SELECT * FROM (VALUES
             (TIMESTAMPTZ '2026-07-01 18:00:00+00', v_push),
             (TIMESTAMPTZ '2026-07-03 18:00:00+00', v_pull),
-            (TIMESTAMPTZ '2026-07-05 10:00:00+00', v_push)
+            (TIMESTAMPTZ '2026-07-05 10:00:00+00', v_push),
+            (TIMESTAMPTZ '2026-08-27 18:00:00+00', v_pull),
+            (TIMESTAMPTZ '2026-09-01 18:00:00+00', v_pull)
         ) AS t(scheduled_at, workout_id)
     LOOP
         INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)

@@ -2,14 +2,26 @@ import { test, expect } from './test-utils';
 
 test.describe('Profile Page', () => {
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    //ensures a clean state before test starts
+    await request.patch('/api/users/me/profileDetails', {
+      data: {
+        displayName: "Test Athlete",
+        bio: "Powerlifting enthusiast and OptiLifts demo account.",
+        sex: "Male",
+        dateOfBirth: "1998-04-23",
+        weight: 82.5,
+        height: 180
+      }
+    });
+
     await page.goto('/profile');
     await page.waitForLoadState('networkidle');
   });
 
   test.afterEach(async ({ request }) => {
     //reset Test Athlete's account after the test has completed
-    const response = await request.patch('http://localhost:5036/api/users/me/profileDetails', {
+    const response = await request.patch('/api/users/me/profileDetails', {
       data: {
         displayName: "Test Athlete",
         bio: "Powerlifting enthusiast and OptiLifts demo account.",

@@ -59,6 +59,6 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme));
+        return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme, user.Sex));
     }
 }

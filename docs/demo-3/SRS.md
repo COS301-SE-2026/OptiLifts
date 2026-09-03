@@ -38,6 +38,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **Delete workout:** As a user, I want to choose the delete option for an entire saved workout so that it is permanently removed from my account.
 *   **Create workout:** As a user, I want to click a creation button so that I can start building a new workout from scratch.
 *   **Search workout:** As a user, I want to search through my workout library so that I can locate a specific routine by its name.
+*   **Start time constraints workout:** As a user, I want to select a time budget when starting a workout so that the system tailors the routine to fit within my limited time constraints.
 
 ### Schedule
 *   **Schedule workout:** As a user, I want to assign a saved workout to a specific date in the calendar so that I can plan my upcoming training.
@@ -48,6 +49,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **View muscle balance chart:** As a user, I want to view a muscle balance chart based on my schedule so that I can ensure I am not overtraining or neglecting specific muscle groups.
 *   **View workout:** As a user, I want to click on a calendar entry to view the full workout details so that I know exactly what is planned for that day.
 *   **Filter by date:** As a user, I want to filter my schedule using date ranges so that I can quickly look at past or future training blocks.
+*   **Reshuffle schedule:** As a user, I want to automatically reshuffle my scheduled workouts so that missed or postponed sessions are rearranged optimally within my training cycle.
+*   **Configure dynamic scheduler:** As a user, I want to configure dynamic scheduling preferences (such as rest days, maximum workouts per day, and muscle recovery times) so that automated rescheduling respects my training constraints.
+*   **Toggle Google Calendar integration:** As a user, I want to enable or disable Google Calendar synchronisation via a toggle so that I can control whether scheduled workouts automatically appear on my external calendar.
+*   **Sync Google Calendar:** As a user, I want to authenticate and connect my Google Calendar so that my upcoming workouts are synchronised directly with my personal calendar.
 
 ### Profile
 *   **View profile:** As a user, I want to navigate to my profile page so that I can review my personal fitness details and account information.
@@ -63,6 +68,14 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **Add set:** As a user, I want to append an additional set to the current exercise so that I can increase my volume beyond the planned routine.
 *   **Log set:** As a user, I want to enter the weight lifted and reps completed for a set so that the system records my actual performance.
 *   **View workout summary:** As a user, I want to pull up a summary of my active session so that I can track my overall progress before finishing.
+*   **View fatigue detection recommendations:** As a user, I want to receive real-time fatigue recommendations during an active workout so that I can adjust weights or volume when excessive exertion is detected.
+
+### Progression
+*   **View exercises:** As a user, I want to view a list of my tracked exercises and their progression statuses so that I can evaluate whether I am progressing, plateauing, or regressing.
+*   **Search exercise:** As a user, I want to search for an exercise by name in the Progression view so that I can quickly inspect the progression history of a specific movement.
+*   **Filter status:** As a user, I want to filter exercises by trend status (Progressing, Plateau, or Regressing) so that I can focus on exercises needing attention.
+*   **Swap out exercise:** As a user, I want to swap out a plateaued or regressing exercise with a suitable alternative directly from the Progression page so that I can overcome training plateaus in my workouts.
+*   **View progression overview:** As a user, I want to view an overview summary of my progression statuses so that I can see the total distribution of progressing, plateaued, and regressing exercises at a glance.
 
 ### Workout Detail
 *   **View workout:** As a user, I want to open the detailed page for a workout so that I can inspect the full sequence of planned exercises and sets.
@@ -113,6 +126,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **View workout summary**
 *   TUCBW the user selects a specific workout from the list to view its summary.
 *   TUCEW the system displays the workout's high-level details, estimated time, targeted muscle groups, and the full exercise list with counts.
+
+**Start time constraints workout**
+*   TUCBW the user selects a time constraint duration (e.g., 15, 30, 45, or 60 minutes) to start a workout.
+*   TUCEW the system adapts the workout session structure to fit within the specified time budget and launches the active workout session.
 
 ### Workout Creator
 
@@ -188,6 +205,22 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user selects a scheduled workout and chooses to unschedule it.
 *   TUCEW the workout is successfully cleared from the calendar planner.
 
+**Reshuffle schedule**
+*   TUCBW the user requests to reshuffle their schedule to accommodate missed or displaced workouts.
+*   TUCEW the system computes an optimized schedule preview adhering to rest and frequency constraints, allows the user to review the changes, and applies the updated workout dates.
+
+**Configure dynamic scheduler**
+*   TUCBW the user opens the schedule settings to adjust dynamic scheduler parameters (including rest days, daily limits, and muscle recovery windows).
+*   TUCEW the system validates and saves the updated scheduling preferences to the user's profile.
+
+**Toggle Google Calendar integration**
+*   TUCBW the user toggles the Google Calendar synchronisation switch in the schedule settings.
+*   TUCEW the system updates the synchronisation preference and enables or disables automatic synchronisation of future workouts.
+
+**Sync Google Calendar**
+*   TUCBW the user initiates the Google Calendar connection process and authorizes Google OAuth permissions.
+*   TUCEW the system links the Google Calendar account, creates the dedicated OptiLifts calendar, and synchronises all upcoming scheduled workouts.
+
 ### Workout Overview
 
 **View workout**
@@ -237,6 +270,32 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **End workout**
 *   TUCBW the user presses the button to finish their current active training session.
 *   TUCEW the system saves the completed session data and displays a post-workout summary.
+
+**View fatigue detection recommendations**
+*   TUCBW the user records high RPE ratings across consecutive sets or exercises in an active workout session.
+*   TUCEW the system detects acute muscle fatigue and displays tailored recommendations suggesting weight or intensity reductions.
+
+### Progression
+
+**View exercises**
+*   TUCBW the user navigates to the Progression page.
+*   TUCEW the system displays the user's exercises along with calculated performance trends, weekly percentage changes, and diagnostic statuses.
+
+**Search exercise**
+*   TUCBW the user enters a search query into the search bar on the Progression page.
+*   TUCEW the system filters and displays only the exercises whose names match the query.
+
+**Filter status**
+*   TUCBW the user selects a status filter option (e.g., Plateau, Regressing, Progressing, or All Statuses) on the Progression page.
+*   TUCEW the system refreshes the displayed exercise list to include only exercises matching the chosen status.
+
+**Swap out exercise**
+*   TUCBW the user selects the option to swap a plateaued or regressing exercise for a specific workout routine.
+*   TUCEW the user chooses a replacement exercise from the exercise picker dialog, and the system updates the workout with the alternative movement.
+
+**View progression overview**
+*   TUCBW the user navigates to or views the overview section of the Progression page.
+*   TUCEW the system displays a visual distribution summary and counts of exercises classified as progressing, plateaued, or regressing.
 
 ### User Management
 
@@ -311,9 +370,9 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR1.2.3: The system will allow the user to remove an exercise from their workout routine.
 4. FR1.2.4: The system will allow the user to change the set type for an exercise.
 5. FR1.2.5: The system will allow the user to add rest time to a specific exercise.
-7. FR1.2.7: The system will allow the user to save the workout to the database.
-8. FR1.2.8: The system will allow the user to delete a saved workout routine from the database.
-9. FR1.2.9: The system will allow the user to duplicate an existing saved workout.
+6. FR1.2.6: The system will allow the user to save the workout to the database.
+7. FR1.2.7: The system will allow the user to delete a saved workout routine from the database.
+8. FR1.2.8: The system will allow the user to duplicate an existing saved workout.
 
 ### Subsystem 2: Custom Exercise Creation
 
@@ -370,13 +429,23 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 6. FR5.1.6: The system will allow the user to filter their displayed schedule using specific date ranges.
 7. FR5.1.7: The system will generate and display a muscle balance chart based on the user's scheduled training blocks.
 
-#### FR5.2: Active workout tracking
-1. FR5.2.1: The system will allow the user to start an active workout session.
-2. FR5.2.2: The system will allow the user to log weight (kg) and reps for each set in real-time.
-3. FR5.2.3: The system will allow the user to mark a set as complete or uncomplete.
-4. FR5.2.4: The system will allow the user to add or remove exercises during an active session.
-5. FR5.2.5: The system will allow the user to end and save the workout or cancel the session.
-6. FR5.2.6: The system will allow the user to append additional sets to an exercise dynamically during an active session.
+#### FR5.2: Dynamic Scheduler & Rescheduling
+1. FR5.2.1: The system will automatically detect past-due uncompleted workouts and flag them as missed sessions.
+2. FR5.2.2: The system will allow the user to trigger dynamic AI rescheduling for selected missed workout sessions.
+3. FR5.2.3: The system will calculate proposed reschedule dates that respect user availability constraints, rest days, daily workout limits, and muscle group recovery periods.
+4. FR5.2.4: The system will flag workouts as dropped if they cannot be rescheduled without violating recovery and schedule constraints.
+5. FR5.2.5: The system will present proposed reschedule dates and dropped workout notifications to the user for review.
+6. FR5.2.6: The system will allow the user to confirm and apply the proposed rescheduled dates to their training schedule.
+
+#### FR5.3: Active workout tracking and offline synchronization
+1. FR5.3.1: The system will allow the user to start an active workout session.
+2. FR5.3.2: The system will allow the user to log weight (kg) and reps for each set in real-time.
+3. FR5.3.3: The system will allow the user to mark a set as complete or uncomplete.
+4. FR5.3.4: The system will allow the user to add or remove exercises during an active session.
+5. FR5.3.5: The system will allow the user to end and save the workout or cancel the session.
+6. FR5.3.6: The system will allow the user to append additional sets to an exercise dynamically during an active session.
+7. FR5.3.7: The system will cache workout routines locally to support uninterrupted logging during network disconnection.
+8. FR5.3.8: The system will store logged active session data locally when offline and automatically synchronize completed workout logs with the server once connectivity is restored.
 
 ### Subsystem 6: Dashboard
 
@@ -391,13 +460,25 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 2. FR7.2: The system will allow the user to filter their completed workout history by specific weeks.
 3. FR7.3: The system will display a detailed post-workout summary containing the exact weights, reps, and total time achieved for any previously completed session.
 
-### Subsystem 8: Preferences and Help Menu
+### Subsystem 8: Preferences, Google Calendar, and Help Menu
 
 1. FR8.1: The system will allow the user to configure app-wide preferences, including unit measurements and UI themes.
-2. FR8.2: The system will provide a search function allowing the user to query FAQs and tutorials.
-3. FR8.3: The system will display a list of frequently asked questions and their corresponding answers.
-4. FR8.4: The system will display instructional tutorials and guides on how to utilize the application's features.
-5. FR8.5: The system will provide access to a help centre containing comprehensive support documentation and contact resources.
+2. FR8.2: The system will allow the user to connect and authenticate their Google Calendar account via OAuth 2.0.
+3. FR8.3: The system will automatically create and sync scheduled workouts to a dedicated OptiLifts Google Calendar.
+4. FR8.4: The system will update or remove corresponding Google Calendar events when workouts are modified, rescheduled, or cancelled in OptiLifts.
+5. FR8.5: The system will allow the user to toggle automatic Google Calendar synchronization on or off and disconnect their Google account.
+6. FR8.6: The system will provide a search function allowing the user to query FAQs and tutorials.
+7. FR8.7: The system will display a list of frequently asked questions and their corresponding answers.
+8. FR8.8: The system will display instructional video tutorials and guides on how to utilize the application's features.
+9. FR8.9: The system will provide access to a help centre containing comprehensive support documentation and contact resources.
+
+### Subsystem 9: Progression and Exercise Analytics
+
+1. FR9.1: The system will track individual exercise performance trends over time (Progressing, Plateau, or Regressing).
+2. FR9.2: The system will calculate performance slope percentages per week for exercises based on logged workout volume and weight.
+3. FR9.3: The system will provide actionable recommendations when an exercise reaches a plateau or regression state.
+4. FR9.4: The system will allow the user to swap plateaued exercises across assigned workouts with alternative movements targeting the same muscle group.
+5. FR9.5: The system will display volume progression and frequency trends across completed training cycles.
 
 ## Non-Functional Requirements
 

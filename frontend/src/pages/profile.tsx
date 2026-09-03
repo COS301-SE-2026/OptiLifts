@@ -60,7 +60,7 @@ export default function ProfilePage() {
         }
       } catch (loadError) {
         if (isActive) {
-          if (loadError instanceof TypeError) {
+          if (loadError instanceof TypeError && !navigator.onLine) {
             setIsOfflineData(true)
           }
           else {

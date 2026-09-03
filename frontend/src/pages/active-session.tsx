@@ -177,11 +177,17 @@ type SetRowProps = Readonly<{
   onRemove: () => void
   onRestStart: () => void
   onToggle: (willComplete: boolean) => void
+  onFieldEdit: (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => void
 }>
 
-function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle }: SetRowProps) {
-  const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) =>
-    onUpdate((current) => ({ ...current, [key]: raw === '' ? '' : Number(raw) }))
+function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
+  const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
+    const numeric = raw === '' ? '' : Number(raw)
+    const clamped = key === 'rpe' && numeric !== '' ? Math.min(10, Math.max(1, numeric)) : numeric
+    onUpdate((current) => ({ ...current, [key]: clamped }))
+    onFieldEdit(key, clamped === '' ? '' : String(clamped))
+  }
+
 
   return (
     <div
@@ -942,15 +948,15 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     void confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, disableForReducedMotion: true })
   }
 
-  const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean) => {
+  const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean, override: Partial<SetData> = {}) => {
     if (isEditMode || set.type !== 'Normal') {
       return
     }
 
-    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, completed: willComplete } : s))
+    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, ...override, completed: willComplete } : s))
     const completedNormSets = effectiveSets.filter((s) => s.type === 'Normal' && s.completed)
 
-    const missedWithoutRPE = completedNormSets.some((s) => setMissedTarget(s) && s.rpe === '')
+    const missedWithoutRPE = completedNormSets.length >= 2 && completedNormSets.some((s) => setMissedTarget(s) && s.rpe === '')
     setExercisesMissingRpe((current) => {
       if (missedWithoutRPE === current.has(exercise.id)) {
         return current
@@ -1399,6 +1405,11 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 isPR={prSetIds.includes(set.id)}
                 onRestStart={() => handleSetCompleted(exercise, set)}
                 onToggle={(willComplete) => checkAcuteFatigue(exercise, set, willComplete)}
+                onFieldEdit={(key, raw) => {
+                  if (set.completed) {
+                    checkAcuteFatigue(exercise, set, true, { [key]: raw === '' ? '' : Number(raw) })
+                  }
+                }}
               />
             ))}
           </div>

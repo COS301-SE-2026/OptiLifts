@@ -185,15 +185,86 @@ This pattern applies wherever an object behaves differently depending on what ph
 
 | ID | Quantified requirement | Tactic in SAS | Test / tool | Target / actual |
 | :--- | :--- | :--- | :--- | :--- |
-| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 1.5s | MediatR Caching + Asynchronous non-blocking I/O | k6 | < 1500ms / TBD |
-| **NFR1.3** | < 10% average latency increase at 100 concurrent users | MediatR Caching | k6 | < 10% increase / TBD |
-| **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease | Azure Container Apps with Horizontal Scaling | k6 | < 10% decrease / TBD |
-| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`DatabaseEncryptionIntegrationTests`) | Test Passes / Pass |
-| **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
+| **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 500ms (local Production overlay) | Seperation of core-api and ai-api services, asynchronous backend processing | k6 | < 500ms / Pass (164ms) |
+| **NFR1.2** | < 300% average latency degradation at 300 users (Local production overlay)| CQRS with MediatR & EF Core Connection Pooling | k6 |< 300% degradation / Pass  |
+| **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease (Local production overlay) | Azure Container Apps with Horizontal Scaling | k6 | < 1500ms / Pass |
+| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`SensitiveData_ShouldBeEncryptedAtRest_InDatabase`) | Test Passes / Pass |
 | **NFR3.2** | Bcrypt password hashing with salt factor 12 | `BcryptPasswordHasher` algorithm | xUnit (`BcryptPasswordHasherTests`) | Test Passes / Pass |
-| **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(11 minutes) + CD(4 minutes) |
-| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline | ≥ 80% / 85.7% |
-| **NFR5.2** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
+| **NFR3.3** | Use HTTPS (TLS 1.3) for all data transmission | Azure Container Apps Managed Certificates & SSL Termination | Qualys SSL Server Test | Grade A (TLS 1.3 Active) / Pass |
+| **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
+| **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(<15 minutes) + CD(<10 minutes) |
+| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 85.7% |
+| **NFR5.1** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
+
+#### Evidence
+### NFR 1.1 and NFR 1.2:
+- The commands run:
+```bash
+docker compose -f docker-compose.overlay.yml up -d --scale core-api=1
+k6 run k6-nfr-tests/nfr1-performance.js
+```
+![Theoretical](../images/nfr-testing/nfr1-1-theoretical.png)
+
+### NFR 2.1: 
+- The commands run: 
+```bash
+docker compose -f docker-compose.overlay.yml up -d --scale core-api=3
+k6 run k6-nfr-tests/nfr2-scalability.js
+```
+![Theoretical](../images/nfr-testing/nfr2-1-theoretical.png)
+
+##### NFR3.1, NFR3.2, NFR 3.4: 
+- All tests pass when running `pnpm test` which covers the tests that ensure the NFRs are met. 
+
+#### NFR 3.3: 
+- Qualys SSL Server Test shows TLS 1.2 is active and the server is rated A.
+- ![Qualys SSL Server Test](../images/nfr-testing/sllreport.png)
+
+#### NFR 4.1: 
+- ![CI speeds](../images/nfr-testing/ci-time.png)
+- ![CD speeds](../images/nfr-testing/cd-time.png)
+
+#### NFR 4.2:
+- ![Code Coverage](../images/nfr-testing/coverage.png)
+
+
+#### NFR 5.1: 
+Landing page
+![Landing page](../images/nfr-testing/lighthouse-reports/landing-page.png)
+
+Login
+![Login page](../images/nfr-testing/lighthouse-reports/login.png)
+
+Register
+![Register page](../images/nfr-testing/lighthouse-reports/register.png)
+
+Dashboard
+![Dashboard page](../images/nfr-testing/lighthouse-reports/dashboard.png)
+
+Workouts
+![Workouts page](../images/nfr-testing/lighthouse-reports/workouts.png)
+
+Workout details
+![Planned workout page](../images/nfr-testing/lighthouse-reports/planned-workout.png)
+
+Past workouts
+![Past workouts page](../images/nfr-testing/lighthouse-reports/past-workouts.png)
+
+Workout log
+![Workout log page](../images/nfr-testing/lighthouse-reports/workout-log.png)
+
+Active session
+![Active session page](../images/nfr-testing/lighthouse-reports/active-session.png)
+
+Schedule
+![Schedule page](../images/nfr-testing/lighthouse-reports/schedule.png)
+
+Profile
+![Profile page](../images/nfr-testing/lighthouse-reports/profile.png)
+
+Help menu
+![Help menu](../images/nfr-testing/lighthouse-reports/help-menu.png)
+
 
 ### Constraints
 
@@ -1208,6 +1279,35 @@ HTTP/1.1 204 No Content
 
 ---
 
+### PUT /api/workouts/{workoutId}/exercises/{exerciseId}
+**Service Name:** Workout Exercise Replacement Service
+
+**Description:**
+Replaces an exercise within a specific workout owned by the authenticated user with a different exercise, updating every matching template row in that workout.
+
+**Inputs:**
+
+- `workoutId`: Guid - The workout containing the exercise to replace (path parameter).
+- `exerciseId`: Guid - The exercise being replaced (path parameter).
+- `newExerciseId`: Guid - The exercise to replace it with (request body).
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- No content on success.
+- `404` response if the workout is not owned by the user, the new exercise does not exist, or the exercise being replaced is not present in that workout.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a PUT request to `/api/workouts/{workoutId}/exercises/{exerciseId}` with JSON data.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- A successful replacement returns `204 No Content`; a failed replacement returns `404 Not Found`.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
 
 ### POST /api/workouts/{workoutId}/duplicate
 **Service Name:** Workout Duplication Service
@@ -1440,6 +1540,66 @@ Updates an existing completed workout log entry. Used when editing a completed p
 {
 	"message": "Workout log updated successfully."
 }
+```
+---
+
+## Training
+
+### GET /api/training/plateau-page
+**Service Name:** Plateau & Regression Diagnosis Service
+
+**Description:**
+Returns the authenticated user's exercises currently showing a Plateau, Regressing, or Progressing trend within the last 30 days, each with a recommendation, whether the exercise is eligible to be swapped, and which of the user's current workouts contain it.
+
+**Inputs:**
+
+- `access_token` cookie: string - HTTP-only cookie for the current user.
+
+**Outputs:**
+
+- Body: array of `ExerciseDiagnosisDto`.
+
+`ExerciseDiagnosisDto` fields:
+
+- `exerciseId`: Guid - Exercise identifier.
+- `exerciseName`: string - Exercise name.
+- `muscleGroup`: string - Primary muscle group.
+- `status`: string enum (`Progressing` | `Regressing` | `Plateau`) - Current trend classification.
+- `slopePctPerWeek`: number - Estimated 1RM trend, percent change per week.
+- `recommendation`: string | null - Suggested next step, or `null` when progressing normally.
+- `canSwapExercise`: boolean - Whether the exercise is eligible for a swap suggestion.
+- `computedAt`: datetime - When the trend was last computed.
+- `workouts`: array of `WorkoutRefDto` - The user's current workouts containing this exercise.
+
+`WorkoutRefDto` fields:
+
+- `workoutId`: Guid - Workout identifier.
+- `workoutName`: string - Workout name.
+
+**Usage / Interaction Rules:**
+
+- Clients must send a GET request to `/api/training/plateau-page`.
+- The browser automatically attaches the `access_token` cookie.
+- Returns `401` if the cookie is missing or invalid.
+- Returns an empty array if the user has no exercises with enough recent training data.
+
+**Example Response:**
+```json
+[
+	{
+		"exerciseId": "string",
+		"exerciseName": "Barbell Bench Press",
+		"muscleGroup": "Chest",
+		"status": "Plateau",
+		"slopePctPerWeek": 0.0,
+		"recommendation": "Only your progress is stalling. Try changing this exercise or adjusting your rep range for a change of stimulus",
+		"canSwapExercise": true,
+		"computedAt": "2026-09-02T09:00:00Z",
+		"workouts": [
+			{ "workoutId": "string", "workoutName": "Push Day" }
+		]
+	}
+]
 ```
 ---
 

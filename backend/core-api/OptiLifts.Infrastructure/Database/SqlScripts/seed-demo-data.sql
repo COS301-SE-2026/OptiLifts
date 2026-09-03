@@ -609,6 +609,208 @@ BEGIN
 END $$;
 
 -- ===========================================================================
+-- Alex's "Dorito Workout" (back day, for that wide-lat look). Reuses his "My
+-- Split" folder. Reuses the exact Progressing/Regressing/Plateau e1RM
+-- trajectories already validated for the plateau/regression detection engine,
+-- applied to exercises that aren't logged anywhere else in his history.
+-- Scheduled on a fixed weekly morning slot, structurally distinct from the
+-- Push/Pull/Legs rotating evening cadence, so sessions never collide on the
+-- same day.
+-- ===========================================================================
+DO $$
+DECLARE
+    alex_email text;
+    hex_enc text;
+    normal_set_type text;
+    dorito_name constant text := 'Back Workout';
+    my_split_name constant text := 'My Split';
+    completed_status constant text := 'Completed';
+    alex_id uuid;
+    v_folder uuid;
+    v_dorito uuid;
+    v_pullup uuid;
+    v_row uuid;
+    v_tbar uuid;
+    v_log uuid;
+    v_entry uuid;
+    v_day timestamp;
+    i int;
+    rec record;
+    occupied_dates date[];
+BEGIN
+    SELECT c.alex_user_email, c.hex_enc, c.set_type
+    INTO alex_email, hex_enc, normal_set_type
+    FROM seed_constants c
+    LIMIT 1;
+
+    SELECT user_id INTO alex_id FROM users
+    WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
+
+    IF alex_id IS NULL THEN
+        RAISE NOTICE 'Alex (%) not found - run the C# seeder (dotnet run) before this script.', alex_email;
+        RETURN;
+    END IF;
+
+    SELECT exercise_dict_id INTO v_pullup FROM exercise_dictionary WHERE name ILIKE 'Weighted pull-up' AND user_id IS NULL LIMIT 1;
+    SELECT exercise_dict_id INTO v_row FROM exercise_dictionary WHERE name ILIKE 'Barbell bent over row' AND user_id IS NULL LIMIT 1;
+    SELECT exercise_dict_id INTO v_tbar FROM exercise_dictionary WHERE name ILIKE 'T bar row' AND user_id IS NULL LIMIT 1;
+
+    IF v_pullup IS NULL OR v_row IS NULL OR v_tbar IS NULL THEN
+        RAISE NOTICE 'Dorito Workout exercises not found in the catalog - skipping.';
+        RETURN;
+    END IF;
+
+    SELECT folder_id INTO v_folder
+    FROM folders
+    WHERE user_id = alex_id AND name = my_split_name
+    LIMIT 1;
+
+    IF v_folder IS NULL THEN
+        INSERT INTO folders (folder_id, user_id, name, description, created_at)
+        VALUES (gen_random_uuid(), alex_id, my_split_name, 'Demo training split', NOW())
+        RETURNING folder_id INTO v_folder;
+    END IF;
+
+    SELECT workout_id INTO v_dorito
+    FROM workouts
+    WHERE user_id = alex_id AND name = dorito_name
+    LIMIT 1;
+
+    IF v_dorito IS NULL THEN
+        INSERT INTO workouts (workout_id, folder_id, name, user_id, created_at)
+        VALUES (gen_random_uuid(), v_folder, dorito_name, alex_id, NOW())
+        RETURNING workout_id INTO v_dorito;
+    END IF;
+
+    -- always rebuild this workout's history so re-seeding stays consistent,
+    -- matching the existing Push/Pull/Legs block's convention
+    DELETE FROM workout_log_sets
+    WHERE log_id IN (
+        SELECT log_id FROM workout_logs
+        WHERE entry_id IN (
+            SELECT entry_id FROM scheduled_entries
+            WHERE user_id = alex_id AND workout_id = v_dorito
+        )
+    );
+
+    DELETE FROM workout_logs
+    WHERE entry_id IN (
+        SELECT entry_id FROM scheduled_entries
+        WHERE user_id = alex_id AND workout_id = v_dorito
+    );
+
+    DELETE FROM scheduled_entries
+    WHERE user_id = alex_id AND workout_id = v_dorito;
+
+    DELETE FROM sets
+    WHERE workout_exercise_id IN (
+        SELECT workout_exercise_id FROM workout_exercises WHERE workout_id = v_dorito
+    );
+
+    DELETE FROM workout_exercises WHERE workout_id = v_dorito;
+
+    INSERT INTO workout_exercises (workout_exercise_id, workout_id, exercise_dict_id, order_index)
+    VALUES
+        (gen_random_uuid(), v_dorito, v_pullup, 1),
+        (gen_random_uuid(), v_dorito, v_row,    2),
+        (gen_random_uuid(), v_dorito, v_tbar,   3);
+
+    INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 6, 10, NULL, NULL, gs, 90
+    FROM workout_exercises we, generate_series(1, 3) AS gs
+    WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_pullup;
+
+    INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 8, 60, NULL, NULL, gs, 90
+    FROM workout_exercises we, generate_series(1, 3) AS gs
+    WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_row;
+
+    INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
+    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 10, 40, NULL, NULL, gs, 90
+    FROM workout_exercises we, generate_series(1, 3) AS gs
+    WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_tbar;
+
+    -- Which calendar dates Alex already has *any* logged workout on (from
+    -- Push/Pull/Legs, seeded earlier in this same script run). A pre-computed
+    -- offset list can't reliably avoid these: Push/Pull/Legs' sessions are only
+    -- ~1.7 days apart, so depending on the exact time this script happens to
+    -- run, they can occupy almost any date in their 42-day range. Querying the
+    -- real dates just created (rather than guessing) is the only way to
+    -- guarantee Dorito Workout never lands on the same day, for any run time.
+    SELECT array_agg(DISTINCT DATE(se.scheduled)) INTO occupied_dates
+    FROM scheduled_entries se
+    WHERE se.user_id = alex_id;
+
+    IF occupied_dates IS NULL THEN
+        occupied_dates := ARRAY[]::date[];
+    END IF;
+
+    -- 24 sessions on explicit days-back-from-now starting offsets: i=0..11 is
+    -- the baseline period, i=12..23 the 12-point detection window (most recent
+    -- offset only 2 days back, comfortably inside GetPlateauPageHandler's
+    -- 30-day recency cutoff). Trajectories reuse the exact
+    -- Progressing/Regressing/Plateau shapes already validated live for the
+    -- plateau/regression detection engine. Each starting offset is nudged
+    -- backward in small steps, if needed, until its calendar date is free of
+    -- every one of Alex's other logged workouts.
+    FOR rec IN
+        SELECT * FROM (VALUES
+            (0, 113), (1, 108), (2, 102), (3, 96), (4, 91), (5, 85),
+            (6, 79), (7, 74), (8, 68), (9, 63), (10, 57), (11, 51),
+            (12, 29), (13, 26), (14, 24), (15, 21), (16, 19), (17, 17),
+            (18, 14), (19, 12), (20, 9), (21, 7), (22, 5), (23, 2)
+        ) AS t(i, days_back)
+    LOOP
+        i := rec.i;
+        v_day := NOW() - (rec.days_back * INTERVAL '1 day') + INTERVAL '6 hours 30 minutes';
+
+        WHILE DATE(v_day) = ANY(occupied_dates) LOOP
+            v_day := v_day - INTERVAL '3 hours';
+        END LOOP;
+
+        occupied_dates := array_append(occupied_dates, DATE(v_day));
+
+        INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
+        VALUES (gen_random_uuid(), alex_id, v_dorito, v_day, completed_status)
+        RETURNING entry_id INTO v_entry;
+
+        INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)
+        VALUES (gen_random_uuid(), v_entry, v_day, v_day + INTERVAL '50 minutes', false, NULL)
+        RETURNING log_id INTO v_log;
+
+        INSERT INTO workout_log_exercises (log_exercise_id, log_id, exercise_id, workout_exercise_id, order_index, group_number)
+        SELECT gen_random_uuid(), v_log, we.exercise_dict_id, we.workout_exercise_id, we.order_index, 0
+        FROM workout_exercises we
+        WHERE we.workout_id = v_dorito;
+
+        -- Weighted pull-up: Progressing (steady rise, effort constant)
+        INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+        SELECT gen_random_uuid(), v_log, v_pullup, we.workout_exercise_id, NULL, normal_set_type, 6, 10 + i * 0.9, NULL, NULL, 90, 0, 7.5, gs, false, v_day
+        FROM workout_exercises we, generate_series(1, 3) AS gs
+        WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_pullup;
+
+        -- Barbell bent over row: Regressing, with RPE climbing sharply during the decline
+        -- (recovery-style recommendation, and RpeTrendRising=true forces canSwapExercise=false)
+        INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+        SELECT gen_random_uuid(), v_log, v_row, we.workout_exercise_id, NULL, normal_set_type, 8,
+            CASE WHEN i < 12 THEN 60 + i ELSE 71 - (i - 11) * 1.5 END,
+            NULL, NULL, 90, 0,
+            CASE WHEN i < 12 THEN 7.0 ELSE 6.0 + (i - 12) * (4.0 / 11) END,
+            gs, false, v_day
+        FROM workout_exercises we, generate_series(1, 3) AS gs
+        WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_row;
+
+        -- T Bar Row: Plateau (rises 12 weeks, then flat, effort flat)
+        INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
+        SELECT gen_random_uuid(), v_log, v_tbar, we.workout_exercise_id, NULL, normal_set_type, 10,
+            CASE WHEN i < 12 THEN 40 + i * 0.8 ELSE 48.8 END,
+            NULL, NULL, 90, 0, 7.0, gs, false, v_day
+        FROM workout_exercises we, generate_series(1, 3) AS gs
+        WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_tbar;
+    END LOOP;
+END $$;
+
+-- ===========================================================================
 -- Alex's upcoming schedule. Reuses Alex's own workouts and stays idempotent
 -- per (user, workout, scheduled, status) row.
 -- ===========================================================================

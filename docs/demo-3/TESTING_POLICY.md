@@ -18,6 +18,7 @@ OptiLifts uses multiple different types of testing combined, that is run on the 
 | **Unit** | An individual class, handler, or component that is tested in isolation with mocked dependencies. | Logic correctness at a granulated and singular level. |
 | **Integration** | Real HTTP request through the ASP.NET Core pipeline with a real PostgreSQL test container. | That controllers, MediatR handlers, and EF Core mappings all work together properly against a real database. |
 | **End-to-End (E2E)** | A real browser (via Playwright) testing the actual frontend, backend and database using Docker Compose. | That complete user interactions will work as intended. |
+| **Coverage** | Percentage of code run by the unit, integration, and E2E suites across all services, measured via Coveralls, `@vitest/coverage-v8`, coverlet, and `pytest-cov`. | That there is an overall good amount of tests for all our code and branches, not just that tests exist for the ideal feature case. |
 | **User Acceptance Testing (UAT)** | Manually with clients and mentor | That delivered features meet the client's needs and follow proper procedure according to clients and mentor. |
 
 ## 3. Tools and Environments
@@ -46,11 +47,11 @@ OptiLifts uses multiple different types of testing combined, that is run on the 
 - `@vitest/coverage-v8` (measures frontend coverage)
 - coverlet (measures backend coverage)
 - `pytest-cov` (measures AI API coverage)
-
+- **Threshold policy:** CI enforces an 80% minimum coverage gate on every PR; the team's internal target is 90%.
 
 **Environments:**
 - **Local** - we run unit and integration tests using `pnpm test` and end-2-end tests against using `pnpm test:e2e`.
-- **CI** - every push and pull request to `main` or `dev` will  run the entire suite (lint, unit, integration, and E2E) via GitHub Actions. Only allowing to merge after successfully running all tests.
+- **CI** - every push and pull request to `main` or `dev` will  run the entire suite (lint, coverage, unit, integration, and E2E) via GitHub Actions. Only allowing to merge after successfully running all tests.
 
 ## 4. Defect Management
 
@@ -69,7 +70,7 @@ A feature or fix is considered ready for acceptance when:
 - Any new or adjusted API endpoint must have integration test coverage that tests the endpoint against a real database.
 - Any new or adjusted user-interactive functionality that's part of a core use case has E2E coverage.
 - The feature must be manually tested against a locally running stack using `pnpm prod` before a PR is opened.
-- Our full CI pipeline - which includes lint, unit, integration, E2E and building - must pass on the PR.
+- Our full CI pipeline - which includes lint, coverage, unit, integration, E2E and building - must pass on the PR.
 - Two team members must review the PR and do quality control on the PR to ensure everything is correct.
 
 ## 6. Roles and Responsibilities

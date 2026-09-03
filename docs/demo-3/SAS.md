@@ -210,8 +210,42 @@ This pattern applies wherever an object behaves differently depending on what ph
 - ![Code Coverage](../images/nfr-testing/coverage.png)
 
 
+#### NFR 5.1: 
+Landing page
+![Landing page](../images/nfr-testing/lighthouse-reports/landing-page.png)
 
+Login
+![Login page](../images/nfr-testing/lighthouse-reports/login.png)
 
+Register
+![Register page](../images/nfr-testing/lighthouse-reports/register.png)
+
+Dashboard
+![Dashboard page](../images/nfr-testing/lighthouse-reports/dashboard.png)
+
+Workouts
+![Workouts page](../images/nfr-testing/lighthouse-reports/workouts.png)
+
+Workout details
+![Planned workout page](../images/nfr-testing/lighthouse-reports/planned-workout.png)
+
+Past workouts
+![Past workouts page](../images/nfr-testing/lighthouse-reports/past-workouts.png)
+
+Workout log
+![Workout log page](../images/nfr-testing/lighthouse-reports/workout-log.png)
+
+Active session
+![Active session page](../images/nfr-testing/lighthouse-reports/active-session.png)
+
+Schedule
+![Schedule page](../images/nfr-testing/lighthouse-reports/schedule.png)
+
+Profile
+![Profile page](../images/nfr-testing/lighthouse-reports/profile.png)
+
+Help menu
+![Help menu](../images/nfr-testing/lighthouse-reports/help-menu.png)
 
 
 ### Constraints

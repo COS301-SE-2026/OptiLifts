@@ -50,6 +50,8 @@ public sealed class WorkoutsController : ControllerBase
     [HttpGet("{workoutId:guid}")]
     public async Task<ActionResult<WorkoutDetailDto>> GetWorkoutDetail(
         [FromRoute] Guid workoutId,
+        [FromQuery] bool isTimeConstrained,
+        [FromQuery] int? timeBudgetMinutes,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
@@ -57,7 +59,7 @@ public sealed class WorkoutsController : ControllerBase
             return Unauthorized();
         }
 
-        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId), cancellationToken);
+        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId, isTimeConstrained, timeBudgetMinutes), cancellationToken);
 
         if (result is null)
         {

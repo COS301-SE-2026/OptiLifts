@@ -29,6 +29,8 @@ import { TapHint } from '@/components/ui/tap-hint'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 
 type WorkoutLocationState = Readonly<{
+  isTimeConstrained?: boolean
+  timeBudgetMinutes?: number
   workout?: Readonly<{
     id?: string
     name: string
@@ -128,6 +130,8 @@ type SessionDraft = {
   logId: string
   exercises: ExerciseData[]
   restTimer: RestTimer | null
+  isTimeConstrained?: boolean
+  timeBudgetMinutes?: number
   fatiguedMuscleGroups: string[]
   exercisesMissingRpe: string[]
 }
@@ -740,7 +744,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     // drafts don't carry images or muscle groups - backfill from the workout
     const backfillDraft = async () => {
       try {
-        const draftResp = await customFetch(`/api/workouts/${workoutId}`, {
+        let url = `/api/workouts/${workoutId}`
+        if (sessionState?.isTimeConstrained) {
+          url += `?isTimeConstrained=true`
+          if (sessionState.timeBudgetMinutes) url += `&timeBudgetMinutes=${sessionState.timeBudgetMinutes}`
+        }
+        const draftResp = await customFetch(url, {
           headers: { Accept: 'application/json' },
         })
 
@@ -765,7 +774,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     const fetchWorkout = async () => {
       try {
-        const resp = await customFetch(`/api/workouts/${workoutId}`, {
+        let url = `/api/workouts/${workoutId}`
+        if (sessionState?.isTimeConstrained) {
+          url += `?isTimeConstrained=true`
+          if (sessionState.timeBudgetMinutes) url += `&timeBudgetMinutes=${sessionState.timeBudgetMinutes}`
+        }
+        const resp = await customFetch(url, {
           headers: { Accept: 'application/json' },
         })
 
@@ -817,9 +831,13 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
       const sessdraft = getDraft<SessionDraft>(workoutId)
       if (sessdraft) {
-        restoreDraft(sessdraft)
-        await backfillDraft()
-        return
+        const isTimeConstrainedMatch = Boolean(sessdraft.isTimeConstrained) === Boolean(sessionState?.isTimeConstrained)
+        const budgetMatch = (sessdraft.timeBudgetMinutes ?? null) === (sessionState?.timeBudgetMinutes ?? null)
+        if (isTimeConstrainedMatch && budgetMatch) {
+          restoreDraft(sessdraft)
+          await backfillDraft()
+          return
+        }
       }
 
       const otherDraft = getDraftFromStorage()
@@ -837,7 +855,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     return () => {
       isMounted = false
     }
-  }, [isEditMode, workoutId, logId, startKey])
+  }, [isEditMode, workoutId, logId, startKey, sessionState?.isTimeConstrained, sessionState?.timeBudgetMinutes])
 
   useEffect(() => {
     if (isEditMode) {
@@ -853,9 +871,9 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
     if (workoutId && exercises.length > 0) {
-      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe) })
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe), isTimeConstrained: sessionState?.isTimeConstrained,timeBudgetMinutes: sessionState?.timeBudgetMinutes })
     }
-  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups, exercisesMissingRpe])
+  }, [isEditMode, workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups, exercisesMissingRpe, sessionState?.isTimeConstrained, sessionState?.timeBudgetMinutes])
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
@@ -1219,7 +1237,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     const keep = () => {
     if (workoutId) {
-      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe) })
+      saveDraft<SessionDraft>(workoutId, { workoutId, workoutName, startedAtMs, logId, exercises, restTimer, fatiguedMuscleGroups: Array.from(fatiguedMuscleGroups), exercisesMissingRpe: Array.from(exercisesMissingRpe), isTimeConstrained: sessionState?.isTimeConstrained,timeBudgetMinutes: sessionState?.timeBudgetMinutes,})
     }
 
     navigate(pendingNavTo ?? '/workouts')

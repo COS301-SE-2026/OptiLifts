@@ -3,7 +3,7 @@ import { test, expect } from './test-utils';
 test.describe('Standard Exercise Details Popup', () => {
     test('testing if a user can view an exercise\'s details', async ({ page }) => {
         await page.goto('/workouts');
-        await page.getByRole('button', { name: 'Push Day A Options Primary' }).click();
+        await page.getByRole('button', { name: 'Push Day A Options Primary' }).first().click();
         await page.waitForLoadState('networkidle');
         await page.getByTestId('exercise-item-Barbell Bench Press').click();
 

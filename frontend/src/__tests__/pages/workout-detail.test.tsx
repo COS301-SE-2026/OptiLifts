@@ -3,56 +3,47 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vite
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';
 import { customFetch } from '@/lib/custom-fetch';
-import type { ReactNode } from 'react';
+//import type { ReactNode } from 'react';
 
 //mocking dependencies -> prevents network requests + isolates component
 
-const mockNavigate = vi.fn();
+const mockNav = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
     return {
         ...actual,
-        useParams: () => ({
-            workoutId: 'workout-abc'
-        }),
-        useNavigate: () => mockNavigate,
-    };
+        useParams: () => ({workoutId: 'workout-abc'}),
+        useNavigate: () => mockNav,};
 });
 
-vi.mock('@/context/auth-context', () =>({
-    useAuth: vi.fn(),
-}));
+vi.mock('@/context/auth-context', () =>({useAuth: vi.fn()}));
 
 //mock customfetch
-vi.mock('@/lib/custom-fetch', () => ({
-    customFetch: vi.fn()
-}));
+vi.mock('@/lib/custom-fetch', () => ({customFetch: vi.fn()}));
 
 //mock barchart comp (simplified tho)
 vi.mock('@/components/ui/exercise-plan', () => ({
     default: ({exercises}:Readonly<{ exercises: readonly { name: string }[] }>) => (
     <div data-testid="exercise-plan">
         {exercises.map((e) => (
-            <div key={e.name}>{e.name}</div>
-        ))}
+            <div key={e.name}>{e.name}</div>))}
     </div>
-    ),
-}));
+    ),}));
 
 vi.mock('@/components/ui/muscle-diagram', () => ({
     default: () => <div data-testid="muscle-diagram" />,
 }));
 
-vi.mock('@/components/ui/confirm-dialog', () => ({
-    ConfirmDialog: ({isOpen, onConfirm}: Readonly<{ isOpen: boolean; onConfirm: () => void}>) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
-}));
+vi.mock('@/components/ui/confirm-dialog', async () => {
+    const { mockConfirmDialog } = await import('../mocks/ui-mocks');
+    return mockConfirmDialog();
+});
+vi.mock('@/components/ui/dropdown-menu', async () => {
+    const { mockDropdownMenu } = await import('../mocks/ui-mocks');
+    return mockDropdownMenu();
+});
 
-vi.mock('@/components/ui/dropdown-menu', () => ({
-    DropdownMenu: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown">{children}</div>,
-    DropdownMenuEllipsisTrigger: () => <button data-testid="dropdown-trigger">...</button>,
-    DropdownMenuEllipsisContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
-    DropdownMenuItem: ({ children, onSelect }: Readonly<{ children: ReactNode; onSelect: () => void }>) => (<button onClick={onSelect} data-testid={`dropdown-item-${children}`}>{children}</button>),
-}));
+
 
 //'describe' defines suite of related tests
 describe('WorkoutDetailPage', () => {
@@ -145,7 +136,7 @@ describe('WorkoutDetailPage', () => {
         const startBtn = screen.getByRole('button', { name: /Start Workout/i });
         fireEvent.click(startBtn);
 
-        expect(mockNavigate).toHaveBeenCalledWith('/active-session', {
+        expect(mockNav).toHaveBeenCalledWith('/active-session', {
             state: { workout: mockWorkoutData },
         });
     });
@@ -205,7 +196,7 @@ describe('WorkoutDetailPage', () => {
         const editBtn = screen.getByTestId('dropdown-item-Edit');
         fireEvent.click(editBtn);
 
-        expect(mockNavigate).toHaveBeenCalledWith('/workouts/edit/workout-abc');
+        expect(mockNav).toHaveBeenCalledWith('/workouts/edit/workout-abc');
     });
 
     it('handles deleting workout with confirm dialog and navigates to /workouts', async () => {
@@ -247,7 +238,7 @@ describe('WorkoutDetailPage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Confirm Delete' }));
 
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenCalledWith('/workouts');
+            expect(mockNav).toHaveBeenCalledWith('/workouts');
         });
     });
 
@@ -285,4 +276,30 @@ describe('WorkoutDetailPage', () => {
             expect(screen.getByText(/Failed to delete workout/i)).toBeDefined();
         });
     });
+    it('starts time constrained workout when 15 Minutes is clicked', async () => {
+        mockAuth.mockReturnValue({ isHydrated: true, isAuthenticated: true });
+        mockFetch.mockImplementation(async (url) => {
+            if (url.includes('/api/workouts/workout-abc')) {
+                return { ok: true, json: async () => ({
+                    id: 'w-1',
+                    name: 'Push Day A',
+                    primaryMuscleGroups: ['Chest'],
+                    exercises: []
+                }) };
+            }
+            return { ok: false };
+        });
+        
+        render(<WorkoutDetailPage />);
+        await waitFor(() => {
+            expect(screen.getByText('Push Day A')).toBeDefined();
+        });
+
+        const quickBtn = screen.getAllByTestId('dropdown-item-15 Minutes')[0];
+        fireEvent.click(quickBtn);
+        expect(mockNav).toHaveBeenCalledWith('/active-session', expect.objectContaining({
+            state: expect.objectContaining({ isTimeConstrained: true, timeBudgetMinutes: 15 })
+        }));
+    });
+
 });

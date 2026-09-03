@@ -8,6 +8,10 @@ import {
   DropdownMenuEllipsisContent,
   DropdownMenuItem,
   DropdownMenuEllipsisTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
@@ -284,6 +288,17 @@ export default function WorkoutsPage() {
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger disabled={!isOnline}>Quick Workout</DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 15 } })}>15 Minutes</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 30 } })}>30 Minutes</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 45 } })}>45 Minutes</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 60 } })}>60 Minutes</DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
                         <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${w.id}`)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem disabled={!isOnline} onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
                         <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(w.id)} data-variant="destructive">Delete</DropdownMenuItem>

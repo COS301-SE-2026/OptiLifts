@@ -3,12 +3,12 @@ import { test, expect } from './test-utils';
 test.describe('Workout Detail Page', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/workouts');
-        await page.getByRole('button', { name: 'Push Day A Options Primary' }).click();//routes to the Push Day A's workout detail
+        await page.getByRole('button', { name: 'Push Day A Options Primary' }).first().click();//routes to the Push Day A's workout detail
         await page.waitForLoadState('networkidle');
     });
 
     test('User can view a workout\'s detail', async ({ page }) => {
-        await expect (page.getByText('Push Day A')).toBeVisible();
+        await expect (page.getByText('Push Day A').first()).toBeVisible();
         await expect (page.getByText('Volume1,080 KG')).toBeVisible();
         await expect (page.getByText('Sets2')).toBeVisible();
 

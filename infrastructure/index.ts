@@ -29,6 +29,7 @@ const googleClientId = config.getSecret("googleClientId");
 const googleClientSecret = config.getSecret("googleClientSecret");
 
 const domainStage = config.get("domainStage") ?? "none";
+const rateLimitingEnabled = config.get("rateLimitingEnabled") ?? "true";
 
 const imageTag = process.env.IMAGE_TAG;
 if (!imageTag) {
@@ -203,8 +204,52 @@ const frontendApp = new app.ContainerApp("frontend", {
             name: "frontend",
             image: pulumi.interpolate`${acrServer}/optilifts-frontend:${imageTag}`,
             resources: { cpu: 0.5, memory: "1.0Gi" },
-            env: [{ name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }]
+            env: [
+                { name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` },
+                ...(rateLimitingEnabled === "false" ? [
+                    { name: "NGINX_AUTH_RATE_LIMIT", value: "10000r/s" },
+                    { name: "NGINX_GENERAL_RATE_LIMIT", value: "10000r/s" },
+                    { name: "NGINX_AUTH_BURST", value: "10000" },
+                    { name: "NGINX_GENERAL_BURST", value: "10000" },
+                ] : []),
+            ]
 
+        }],
+    },
+});
+
+// ai-api container app
+const aiApiApp = new app.ContainerApp("ai-api", {
+    resourceGroupName: resourceGroup.name,
+    managedEnvironmentId: containerAppEnv.id,
+    configuration: {
+        activeRevisionsMode: "Multiple",
+        ingress: {
+            external: false, // can only be accessed by core-api 
+            targetPort: 8000,
+            traffic: [{ latestRevision: true, weight: 100 }],
+        },
+        registries: [{
+            server: acrServer,
+            username: acrUsername,
+            passwordSecretRef: "acr-password", // NOSONAR
+        }],
+        secrets: [
+            { name: "acr-password", value: acrPassword },
+        ],
+    },
+    template: {
+        scale: {
+            minReplicas: 0,
+            maxReplicas: 2,
+        },
+        containers: [{
+            name: "ai-api",
+            image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${imageTag}`,
+            resources: {
+                cpu: 0.5,
+                memory: "1.0Gi"
+            },
         }],
     },
 });
@@ -266,6 +311,8 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "AUTH_COOKIE_SECURE", value: "true" },
                 { name: "DEV_SEEDING", value: devSeeding },
                 { name: "FRONTEND_ORIGIN", value: frontendUrl },
+                { name: "RateLimiting__Enabled", value: rateLimitingEnabled },
+                { name: "AI_API_URL", value: pulumi.interpolate`https://${aiApiApp.configuration.apply(c => c!.ingress!.fqdn!)}` },
                 { name: "JWT_SECRET", secretRef: "jwt-secret" },
                 { name: "JWT_EXP_MINUTES", value: jwtExpMin },
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
@@ -285,41 +332,6 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 periodSeconds: 10,
                 failureThreshold: 30, 
             }],
-        }],
-    },
-});
-
-const aiApiApp = new app.ContainerApp("ai-api", {
-    resourceGroupName: resourceGroup.name,
-    managedEnvironmentId: containerAppEnv.id,
-    configuration: {
-        activeRevisionsMode: "Multiple",
-        ingress: {
-            external: false, // can only be accessed by core-api 
-            targetPort: 8000,
-            traffic: [{ latestRevision: true, weight: 100 }],
-        },
-        registries: [{
-            server: acrServer,
-            username: acrUsername,
-            passwordSecretRef: "acr-password", // NOSONAR
-        }],
-        secrets: [
-            { name: "acr-password", value: acrPassword },
-        ],
-    },
-    template: {
-        scale: {
-            minReplicas: 0,
-            maxReplicas: 2,
-        },
-        containers: [{
-            name: "ai-api",
-            image: pulumi.interpolate`${acrServer}/optilifts-ai-api:${imageTag}`,
-            resources: {
-                cpu: 0.5,
-                memory: "1.0Gi"
-            },
         }],
     },
 });

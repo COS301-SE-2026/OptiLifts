@@ -624,6 +624,7 @@ DECLARE
     normal_set_type text;
     dorito_name constant text := 'Back Workout';
     my_split_name constant text := 'My Split';
+    completed_status constant text := 'Completed';
     alex_id uuid;
     v_folder uuid;
     v_dorito uuid;
@@ -770,7 +771,7 @@ BEGIN
         occupied_dates := array_append(occupied_dates, DATE(v_day));
 
         INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
-        VALUES (gen_random_uuid(), alex_id, v_dorito, v_day, 'Completed')
+        VALUES (gen_random_uuid(), alex_id, v_dorito, v_day, completed_status)
         RETURNING entry_id INTO v_entry;
 
         INSERT INTO workout_logs (log_id, entry_id, started_at, completed_at, ai_modified, notes)

@@ -9,6 +9,7 @@ type BackendUserDto = Readonly<{
   email: string
   metric: boolean
   lightTheme: boolean
+  sex?: string
 }>
 
 type SubmitAuthRequestArgs = Readonly<{
@@ -35,7 +36,7 @@ export function mapBackendUserToAuthUser(user: BackendUserDto): AuthUser {
 
   localStorage.setItem('units', user.metric ? 'metric' : 'imperial')
 
-  return { id: user.id, name: user.displayName, email: user.email, metric: user.metric, lightTheme: user.lightTheme }
+  return { id: user.id, name: user.displayName, email: user.email, metric: user.metric, lightTheme: user.lightTheme, sex: user.sex, }
 }
 
 export async function submitAuthRequest({

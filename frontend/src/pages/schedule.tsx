@@ -479,9 +479,8 @@ export default function SchedulePage() {
     const [isConfirmingReschedule, setIsConfirmingReschedule] = useState(false);
 
     const missedSessions = useMemo(() => {
-        const entriestouse = cycleScheduleEntries.length > 0 ? cycleScheduleEntries : scheduleEntries
-        return entriestouse.filter((e) => e.status === "Missed");
-    }, [cycleScheduleEntries, scheduleEntries]);
+        return cycleScheduleEntries.filter((e) => e.status === "Missed");
+    }, [cycleScheduleEntries]);
 
     const handleTriggerReschedule = async () => {
         if (selectedMissedIds.length === 0) return;

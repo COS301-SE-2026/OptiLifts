@@ -42,8 +42,8 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         id: 'tut-5',
         title: 'Configuring User Settings',
         description: 'Learn how to update your personal details, password, and app settings.',
-        duration: '2:07',
-        youtubeId: 'Zq-3h3d25ww', fallbackVideoUrl: '',
+        duration: '1:39',
+        youtubeId: 'CBhWskDaBxE', fallbackVideoUrl: '',
     },
     {
         id: 'tut-6',
@@ -51,6 +51,13 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how to edit a past workout session and update its details.',
         duration: '1:41',
         youtubeId: 'JzNjcwk9aGw', fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-7',
+        title: 'Time constraint mode',
+        description: 'Learn how to use time constraint mode for quick workouts',
+        duration: '1:19',
+        youtubeId: 'XGhp0n6mRQc', fallbackVideoUrl: '',
     }
 ]
 

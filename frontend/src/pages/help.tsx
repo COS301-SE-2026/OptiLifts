@@ -58,6 +58,13 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how to use time constraint mode for quick workouts',
         duration: '1:19',
         youtubeId: 'XGhp0n6mRQc', fallbackVideoUrl: '',
+    },    
+    {
+        id: 'tut-8',
+        title: 'Dynamic Rescheduling',
+        description: 'Learn how the dynamic rescheduling works and how to configure it to work for your lifestyle.',
+        duration: '4:58',
+        youtubeId: 'PngQU9Viz58', fallbackVideoUrl: '',
     }
 ]
 

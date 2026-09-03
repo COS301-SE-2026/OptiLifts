@@ -65,6 +65,13 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how the dynamic rescheduling works and how to configure it to work for your lifestyle.',
         duration: '4:58',
         youtubeId: 'PngQU9Viz58', fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-9',
+        title: 'Plateau & Progression Tracking',
+        description: 'Learn how OptiLifts detects plateaus and regressions in your lifts, and how to swap out a stalled exercise.',
+        duration: '2:05',
+        youtubeId: 'z9llkYJQq5c', fallbackVideoUrl: '',
     }
 ]
 

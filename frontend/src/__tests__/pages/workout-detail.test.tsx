@@ -34,20 +34,16 @@ vi.mock('@/components/ui/muscle-diagram', () => ({
     default: () => <div data-testid="muscle-diagram" />,
 }));
 
-vi.mock('@/components/ui/confirm-dialog', () => ({
-    ConfirmDialog: ({isOpen, onConfirm}: Readonly<{ isOpen: boolean; onConfirm: () => void}>) => isOpen? (<div data-testid="confirm-dialog"><button onClick={onConfirm}>Confirm Delete</button></div>):null,
-}));
+vi.mock('@/components/ui/confirm-dialog', async () => {
+    const { mockConfirmDialog } = await import('../mocks/ui-mocks');
+    return mockConfirmDialog();
+});
+vi.mock('@/components/ui/dropdown-menu', async () => {
+    const { mockDropdownMenu } = await import('../mocks/ui-mocks');
+    return mockDropdownMenu();
+});
 
-vi.mock('@/components/ui/dropdown-menu', () => ({
-    DropdownMenu: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown">{children}</div>,
-    DropdownMenuEllipsisTrigger: () => <button data-testid="dropdown-trigger">...</button>,
-    DropdownMenuEllipsisContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-content">{children}</div>,
-    DropdownMenuItem: ({ children, onSelect }: Readonly<{ children: ReactNode; onSelect: () => void }>) => (<button onClick={onSelect} data-testid={`dropdown-item-${children}`}>{children}</button>),
-    DropdownMenuSub: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-sub">{children}</div>,
-    DropdownMenuSubTrigger: ({children}: Readonly<{children: ReactNode}>) => <button data-testid="dropdown-sub-trigger">{children}</button>,
-    DropdownMenuPortal: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-portal">{children}</div>,
-    DropdownMenuSubContent: ({children}: Readonly<{children: ReactNode}>) => <div data-testid="dropdown-sub-content">{children}</div>,
-}));
+
 
 //'describe' defines suite of related tests
 describe('WorkoutDetailPage', () => {

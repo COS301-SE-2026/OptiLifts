@@ -1,3 +1,8 @@
+# Trust upstream reverse proxy (e.g. Azure Container Apps Envoy ingress)
+set_real_ip_from 0.0.0.0/0;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
 # Rate limiting zones per client IP address
 limit_req_zone $binary_remote_addr zone=general_limit:10m rate=${NGINX_GENERAL_RATE_LIMIT};
 limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=${NGINX_AUTH_RATE_LIMIT};
@@ -6,6 +11,13 @@ limit_req_status 429;
 server {
     listen 8080;
     server_name localhost;
+
+    error_page 429 = /429.json;
+    location = /429.json {
+        internal;
+        default_type application/json;
+        return 429 '{"type":"https://httpstatuses.com/429","title":"Too Many Requests","status":429,"detail":"Too many attempts. Please wait a moment before trying again."}';
+    }
 
     location / {
         root /usr/share/nginx/html;
@@ -24,7 +36,7 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         
-        proxy_set_header Host $host;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -41,7 +53,7 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         
-        proxy_set_header Host $host;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

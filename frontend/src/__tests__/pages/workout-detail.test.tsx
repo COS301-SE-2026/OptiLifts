@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vite
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useAuth } from '@/context/auth-context';
 import { customFetch } from '@/lib/custom-fetch';
-import type { ReactNode } from 'react';
+//import type { ReactNode } from 'react';
 
 //mocking dependencies -> prevents network requests + isolates component
 

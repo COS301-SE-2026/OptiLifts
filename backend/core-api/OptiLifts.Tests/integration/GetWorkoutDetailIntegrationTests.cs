@@ -72,7 +72,7 @@ public class GetWorkoutDetailIntegrationTests : IntegrationTestBase
                 1,
                 null,
                 [
-                    new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 1, 300), // 5 min rest + 40s work
+                    new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 1, 300),
                     new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 2, 300),
                     new CreateWorkoutSetRequest("Normal", 10, 80, null, null, 3, 300)
                 ])],
@@ -83,9 +83,6 @@ public class GetWorkoutDetailIntegrationTests : IntegrationTestBase
         var created = await createResp.Content.ReadFromJsonAsync<CreateWorkoutResult>();
         created.Should().NotBeNull();
 
-        // Pass isTimeConstrained=true & timeBudgetMinutes=5 (300 seconds)
-        // With 3 sets of 10 reps (40s work, 300s rest each), total is 1020s.
-        // It will trim rests down, then might pop sets.
         var detailResp = await Client.GetAsync($"/api/workouts/{created.WorkoutId}?isTimeConstrained=true&timeBudgetMinutes=5");
         detailResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -94,7 +91,6 @@ public class GetWorkoutDetailIntegrationTests : IntegrationTestBase
         detail.Name.Should().Be("Push Day Time");
         detail.Exercises.Should().HaveCount(1);
 
-        // It should have reduced rest times or dropped sets.
         var totalSets = detail.Exercises[0].Sets.Length;
         totalSets.Should().BeGreaterThan(0);
 
@@ -103,7 +99,7 @@ public class GetWorkoutDetailIntegrationTests : IntegrationTestBase
         {
             totalTime += ((s.Reps ?? 10) * 4) + s.RestTime;
         }
-        totalTime.Should().BeLessThanOrEqualTo(5 * 60 + 60); // 5 min + 1 min margin of error for the last set
+        totalTime.Should().BeLessThanOrEqualTo(5 * 60 + 60);
     }
 
 }

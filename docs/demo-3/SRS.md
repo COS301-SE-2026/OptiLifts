@@ -38,6 +38,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **Delete workout:** As a user, I want to choose the delete option for an entire saved workout so that it is permanently removed from my account.
 *   **Create workout:** As a user, I want to click a creation button so that I can start building a new workout from scratch.
 *   **Search workout:** As a user, I want to search through my workout library so that I can locate a specific routine by its name.
+*   **Start time constraints workout:** As a user, I want to select a time budget when starting a workout so that the system tailors the routine to fit within my limited time constraints.
 
 ### Schedule
 *   **Schedule workout:** As a user, I want to assign a saved workout to a specific date in the calendar so that I can plan my upcoming training.
@@ -48,6 +49,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **View muscle balance chart:** As a user, I want to view a muscle balance chart based on my schedule so that I can ensure I am not overtraining or neglecting specific muscle groups.
 *   **View workout:** As a user, I want to click on a calendar entry to view the full workout details so that I know exactly what is planned for that day.
 *   **Filter by date:** As a user, I want to filter my schedule using date ranges so that I can quickly look at past or future training blocks.
+*   **Reshuffle schedule:** As a user, I want to automatically reshuffle my scheduled workouts so that missed or postponed sessions are rearranged optimally within my training cycle.
+*   **Configure dynamic scheduler:** As a user, I want to configure dynamic scheduling preferences (such as rest days, maximum workouts per day, and muscle recovery times) so that automated rescheduling respects my training constraints.
+*   **Toggle Google Calendar integration:** As a user, I want to enable or disable Google Calendar synchronisation via a toggle so that I can control whether scheduled workouts automatically appear on my external calendar.
+*   **Sync Google Calendar:** As a user, I want to authenticate and connect my Google Calendar so that my upcoming workouts are synchronised directly with my personal calendar.
 
 ### Profile
 *   **View profile:** As a user, I want to navigate to my profile page so that I can review my personal fitness details and account information.
@@ -63,6 +68,14 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **Add set:** As a user, I want to append an additional set to the current exercise so that I can increase my volume beyond the planned routine.
 *   **Log set:** As a user, I want to enter the weight lifted and reps completed for a set so that the system records my actual performance.
 *   **View workout summary:** As a user, I want to pull up a summary of my active session so that I can track my overall progress before finishing.
+*   **View fatigue detection recommendations:** As a user, I want to receive real-time fatigue recommendations during an active workout so that I can adjust weights or volume when excessive exertion is detected.
+
+### Progression
+*   **View exercises:** As a user, I want to view a list of my tracked exercises and their progression statuses so that I can evaluate whether I am progressing, plateauing, or regressing.
+*   **Search exercise:** As a user, I want to search for an exercise by name in the Progression view so that I can quickly inspect the progression history of a specific movement.
+*   **Filter status:** As a user, I want to filter exercises by trend status (Progressing, Plateau, or Regressing) so that I can focus on exercises needing attention.
+*   **Swap out exercise:** As a user, I want to swap out a plateaued or regressing exercise with a suitable alternative directly from the Progression page so that I can overcome training plateaus in my workouts.
+*   **View progression overview:** As a user, I want to view an overview summary of my progression statuses so that I can see the total distribution of progressing, plateaued, and regressing exercises at a glance.
 
 ### Workout Detail
 *   **View workout:** As a user, I want to open the detailed page for a workout so that I can inspect the full sequence of planned exercises and sets.
@@ -113,6 +126,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **View workout summary**
 *   TUCBW the user selects a specific workout from the list to view its summary.
 *   TUCEW the system displays the workout's high-level details, estimated time, targeted muscle groups, and the full exercise list with counts.
+
+**Start time constraints workout**
+*   TUCBW the user selects a time constraint duration (e.g., 15, 30, 45, or 60 minutes) to start a workout.
+*   TUCEW the system adapts the workout session structure to fit within the specified time budget and launches the active workout session.
 
 ### Workout Creator
 
@@ -188,6 +205,22 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user selects a scheduled workout and chooses to unschedule it.
 *   TUCEW the workout is successfully cleared from the calendar planner.
 
+**Reshuffle schedule**
+*   TUCBW the user requests to reshuffle their schedule to accommodate missed or displaced workouts.
+*   TUCEW the system computes an optimized schedule preview adhering to rest and frequency constraints, allows the user to review the changes, and applies the updated workout dates.
+
+**Configure dynamic scheduler**
+*   TUCBW the user opens the schedule settings to adjust dynamic scheduler parameters (including rest days, daily limits, and muscle recovery windows).
+*   TUCEW the system validates and saves the updated scheduling preferences to the user's profile.
+
+**Toggle Google Calendar integration**
+*   TUCBW the user toggles the Google Calendar synchronisation switch in the schedule settings.
+*   TUCEW the system updates the synchronisation preference and enables or disables automatic synchronisation of future workouts.
+
+**Sync Google Calendar**
+*   TUCBW the user initiates the Google Calendar connection process and authorizes Google OAuth permissions.
+*   TUCEW the system links the Google Calendar account, creates the dedicated OptiLifts calendar, and synchronises all upcoming scheduled workouts.
+
 ### Workout Overview
 
 **View workout**
@@ -237,6 +270,32 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **End workout**
 *   TUCBW the user presses the button to finish their current active training session.
 *   TUCEW the system saves the completed session data and displays a post-workout summary.
+
+**View fatigue detection recommendations**
+*   TUCBW the user records high RPE ratings across consecutive sets or exercises in an active workout session.
+*   TUCEW the system detects acute muscle fatigue and displays tailored recommendations suggesting weight or intensity reductions.
+
+### Progression
+
+**View exercises**
+*   TUCBW the user navigates to the Progression page.
+*   TUCEW the system displays the user's exercises along with calculated performance trends, weekly percentage changes, and diagnostic statuses.
+
+**Search exercise**
+*   TUCBW the user enters a search query into the search bar on the Progression page.
+*   TUCEW the system filters and displays only the exercises whose names match the query.
+
+**Filter status**
+*   TUCBW the user selects a status filter option (e.g., Plateau, Regressing, Progressing, or All Statuses) on the Progression page.
+*   TUCEW the system refreshes the displayed exercise list to include only exercises matching the chosen status.
+
+**Swap out exercise**
+*   TUCBW the user selects the option to swap a plateaued or regressing exercise for a specific workout routine.
+*   TUCEW the user chooses a replacement exercise from the exercise picker dialog, and the system updates the workout with the alternative movement.
+
+**View progression overview**
+*   TUCBW the user navigates to or views the overview section of the Progression page.
+*   TUCEW the system displays a visual distribution summary and counts of exercises classified as progressing, plateaued, or regressing.
 
 ### User Management
 

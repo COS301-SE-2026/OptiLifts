@@ -9,7 +9,7 @@ test.describe('Profile Page', () => {
 
   test.afterEach(async ({ request }) => {
     //reset Test Athlete's account after the test has completed
-    const response = await request.patch('http://localhost:5036/api/users/me/profileDetails', {
+    const response = await request.patch('/api/users/me/profileDetails', {
       data: {
         displayName: "Test Athlete",
         bio: "Powerlifting enthusiast and OptiLifts demo account.",

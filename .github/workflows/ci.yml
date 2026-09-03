@@ -58,10 +58,7 @@ jobs:
     - name: Lint Code
       run: pnpm lint
 
-    - name: Run Tests
-      run: pnpm test
-
-    - name: Run Coverage
+    - name: Run test and Coverage
       run: pnpm test:coverage
 
     - name: Compute and check combined coverage

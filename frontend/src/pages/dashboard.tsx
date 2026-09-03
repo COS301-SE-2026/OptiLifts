@@ -239,7 +239,7 @@ export default function DashboardPage() {
                 return
             }
 
-            if (loadError instanceof TypeError) {
+            if (loadError instanceof TypeError && !navigator.onLine) {
                 setIsOfflineData(true)
                 return
             }

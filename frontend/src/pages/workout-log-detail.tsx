@@ -77,7 +77,7 @@ export default function WorkoutLogDetailPage() {
         return
       }
 
-      if (loadError instanceof TypeError) {
+      if (loadError instanceof TypeError && !navigator.onLine) {
         setError("You're offline - this workout log isn't available until you reconnect.")
         return
       }

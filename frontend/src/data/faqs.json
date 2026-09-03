@@ -88,5 +88,53 @@
         "category": "Workouts",
         "question": "How does the progressive overload engine work?",
         "answer": "The progressive overload engine looks at your last 4-8 workouts for each exercise and based on the e1RM of those exercises calculates what your next workout should look like, whether it is a 1 rep increase or when the engine mathematically detemines you can increase the weight by a minimum of 5kg."
+    },
+    {
+        "id": "faq-16",
+        "category": "Active Session",
+        "question": "How do I log my sets during an active workout session?",
+        "answer": "Start a workout session from the Workouts or Schedule page. As you perform each set, enter your completed weight and rep count, then check off the set. Completed sets are immediately recorded into your session log."
+    },
+    {
+        "id": "faq-17",
+        "category": "Workouts",
+        "question": "How do I edit or delete an existing workout template?",
+        "answer": "On the Workouts page, click the three-dots menu or edit icon on any workout card. You can modify exercise ordering, set targets, or delete the template. Modifying a template will not alter previously completed workout logic."
+    },
+    {
+        "id": "faq-18",
+        "category": "Active Session",
+        "question": "What is the difference between a Superset and a Circuit Set in OptiLifts?",
+        "answer": "A Superset pairs two exercises performed back-to-back with minimal rest in between, while a Circuit Set connects 3 or more exercises performed sequentially before taking a rest period. In OptiLifts, adding a third exercise to a superset automatically converts it into a Circuit Set."
+    },
+    {
+        "id": "faq-19",
+        "category": "Active Session",
+        "question": "What happens if I accidentally refresh or close my browser during a live workout?",
+        "answer": "OptiLifts automatically persists active session state to local browser storage. Re-opening the app will restore your active session right where you left off without losing logged sets."
+    },
+    {
+        "id": "faq-20",
+        "category": "Profile",
+        "question": "How are Workout Streaks calculated?",
+        "answer": "Streaks track consecutive weeks or days of working out. Consistently completing sessions maintains and increments your active streak."
+    },
+    {
+        "id": "faq-21",
+        "category": "Profile",
+        "question": "How do I earn Badges and Achievements?",
+        "answer": "Badges are awarded automatically as you reach key milestones in OptiLifts, such as logging your first workout, achieving volume thresholds, maintaining workout streaks, or exploring different exercise variations. Unlocked badges display on your Profile."
+    },
+    {
+        "id": "faq-22",
+        "category": "User Settings",
+        "question": "How do I switch weight units between Kilograms (kg) and Pounds (lbs)?",
+        "answer": "Go to User Settings under your profile menu and toggle your preferred weight unit. All weight inputs, history logs, and volume analytics will automatically convert to your selected unit."
+    },
+    {
+        "id": "faq-23",
+        "category": "User Settings",
+        "question": "How do I change my password or update my profile details?",
+        "answer": "Navigate to User Settings > Account Security to update your name, email address, password, or security preferences."
     }
 ]

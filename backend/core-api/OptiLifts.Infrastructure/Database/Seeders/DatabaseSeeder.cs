@@ -4,6 +4,7 @@ using OptiLifts.Application.Storage;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
+using OptiLifts.Infrastructure.Training;
 
 namespace OptiLifts.Infrastructure.Database.Seeders;
 
@@ -29,10 +30,50 @@ public static class DatabaseSeeder
 
             await dbContext.Database.ExecuteSqlRawAsync(script, cancellationToken);
         }
+
+        if (!testing)
+        {
+            await RunPlateauDetectionForSeededHistoryAsync(dbContext, cancellationToken);
+        }
+    }
+
+    // Runs plateau/regression detection over whatever exercises the demo account(s)
+    // actually have logged history for (from seed-demo-data.sql), rather than hardcoding
+    // exercise names here - so this stays correct if that SQL script's history changes.
+    private static async Task RunPlateauDetectionForSeededHistoryAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail("gymgoer@gmail.com"), cancellationToken);
+        if (user is null)
+        {
+            return;
+        }
+
+        var exerciseIds = await (
+            from setLog in dbContext.WorkoutLogSets
+            join log in dbContext.WorkoutLogs on setLog.LogId equals log.Id
+            join entry in dbContext.ScheduledEntries on log.EntryId equals entry.Id
+            where entry.UserId == user.Id
+            select setLog.ExerciseId
+        ).Distinct().ToListAsync(cancellationToken);
+
+        var seriesBuilder = new SeriesBuilder(dbContext);
+        var plateauDetectionService = new PlateauDetectionService(seriesBuilder, dbContext);
+
+        foreach (var exerciseId in exerciseIds)
+        {
+            await plateauDetectionService.DetectAsync(user.Id, exerciseId, cancellationToken);
+        }
     }
 
     private static async Task SeedUsersAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
     {
+        const string testPassword = "TestPassword123!";
+        const string testDisplayName = "Test Athlete";
+        const string testWeight = "82.5";
+        const string testHeight = "180";
+        const string testSex = "Male";
+        const string testDob = "1998-04-23";
+        const string testBio = "Powerlifting enthusiast and OptiLifts demo account.";
         var usersToEnsure = new[]
         {
             new
@@ -77,7 +118,66 @@ public static class DatabaseSeeder
                 Bio = "Loves to gym every day all day. This is their favourite app ever.",
                 Metric = true,
                 LightTheme = false
-            }
+            }, 
+            //NOSONAR - for the e2e tests, is repeat code 
+            new
+            {
+                Email = "test0@optilifts.com",  //NOSONAR 
+                Password = testPassword,  //NOSONAR 
+                DisplayName = testDisplayName,  //NOSONAR 
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "test1@optilifts.com",
+                Password = testPassword,
+                DisplayName = testDisplayName,
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "test2@optilifts.com",
+                Password = testPassword,
+                DisplayName = testDisplayName,
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "test3@optilifts.com",
+                Password = testPassword,
+                DisplayName = testDisplayName,
+                Level = 5,
+                Weight = testWeight,
+                Height = testHeight,
+                Sex = testSex,
+                DateOfBirth = testDob,
+                Bio = testBio,
+                Metric = true,
+                LightTheme = false
+            },
+
+
         };
 
         foreach (var u in usersToEnsure)
@@ -216,6 +316,8 @@ public static class DatabaseSeeder
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+
     private static async Task SeedExercisesAsync(OptiLiftsDbContext dbContext, IBlobStorageService blobStorage, bool testing, CancellationToken cancellationToken)
     {
         if (await dbContext.Exercises.AnyAsync(cancellationToken))

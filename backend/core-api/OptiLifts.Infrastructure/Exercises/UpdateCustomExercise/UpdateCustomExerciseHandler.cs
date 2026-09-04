@@ -28,11 +28,23 @@ public sealed class UpdateCustomExerciseHandler : IRequestHandler<UpdateCustomEx
             return false;
         }
 
-        var name = request.Name.Trim();
+        var name = request.Name?.Trim();
 
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new InvalidOperationException("Exercise name is required.");
+        }
+
+        var nameExists = await _dbContext.Exercises.AnyAsync(
+            e => e.Id != request.ExerciseId &&
+                 !e.IsDeleted &&
+                 (e.UserId == null || e.UserId == request.UserId) &&
+                 e.Name.ToLower() == name.ToLower(),
+            cancellationToken);
+
+        if (nameExists)
+        {
+            throw new InvalidOperationException($"An exercise with the name '{name}' already exists.");
         }
 
         ex.Name = name;

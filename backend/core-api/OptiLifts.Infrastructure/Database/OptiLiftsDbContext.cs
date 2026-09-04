@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using OptiLifts.Domain.Common;
 using OptiLifts.Domain.Gamification;
 using OptiLifts.Domain.Messaging;
+using OptiLifts.Domain.Training;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
@@ -35,6 +36,8 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<WorkoutLogExercise> WorkoutLogExercises { get; set; }
     public DbSet<WorkoutSetLog> WorkoutLogSets { get; set; }
     public DbSet<ExercisePr> ExercisePrs { get; set; }
+    public DbSet<ExerciseEstimation> ExerciseEstimations { get; set; }
+    public DbSet<UserRepRange> UserRepRanges { get; set; }
     public DbSet<Muscle> Muscles { get; set; }
     public DbSet<SecMuscle> SecMuscles { get; set; }
     public DbSet<WorkoutExercise> WorkoutExercises { get; set; }
@@ -44,6 +47,11 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<UserModel> UserModels { get; set; }
     public DbSet<Badge> Badges { get; set; }
     public DbSet<UserBadge> UserBadges { get; set; }
+    public DbSet<ExerciseTrend> ExerciseTrends { get; set; }
+    public DbSet<TrainingEvent> TrainingEvents { get; set; }
+
+
+    public DbSet<UserScheduleConfig> UserScheduleConfigs { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

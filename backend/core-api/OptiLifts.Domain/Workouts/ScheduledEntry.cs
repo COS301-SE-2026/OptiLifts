@@ -7,6 +7,8 @@ public class ScheduledEntry
     public Guid UserId { get; set; }
     public DateTime Scheduled { get; set; }
     public ScheduleStatus Status { get; set; } = ScheduleStatus.Scheduled;
+
+    public string? GoogleEventId { get; set; }
 }
 
 public enum ScheduleStatus

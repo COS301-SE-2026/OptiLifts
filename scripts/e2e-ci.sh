@@ -21,6 +21,11 @@ AZURE_STORAGE_CONNECTION="${CONNECTIONSTRINGS__AZURESTORAGE:-DefaultEndpointsPro
 export AUTH_COOKIE_SECURE="${AUTH_COOKIE_SECURE:-false}"
 export DEV_SEEDING="${DEV_SEEDING:-true}"
 export E2E_TESTING="true"
+export RATE_LIMITING_ENABLED="${RATE_LIMITING_ENABLED:-false}"
+export NGINX_AUTH_RATE_LIMIT="${NGINX_AUTH_RATE_LIMIT:-1000r/s}"
+export NGINX_GENERAL_RATE_LIMIT="${NGINX_GENERAL_RATE_LIMIT:-1000r/s}"
+export NGINX_AUTH_BURST="${NGINX_AUTH_BURST:-500}"
+export NGINX_GENERAL_BURST="${NGINX_GENERAL_BURST:-1000}"
 export FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 export POSTGRES_CONNECTION_STRING="Host=host.docker.internal;Port=${POSTGRES_HOST_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
 export JWT_SECRET
@@ -60,7 +65,11 @@ wait_app_stack() {
 
 run_e2e_tests() {
   cd "$ROOT_DIR"
-  E2E_USE_EXISTING_SERVICES=1 pnpm test:e2e
+  if [[ "${PLAYWRIGHT_PROJECTS:-all}" = "chromium" ]]; then
+    E2E_USE_EXISTING_SERVICES=1 pnpm exec playwright test --config=e2e/playwright.config.ts --project=chromium
+  else
+    E2E_USE_EXISTING_SERVICES=1 pnpm test:e2e
+  fi
 }
 
 teardown() {

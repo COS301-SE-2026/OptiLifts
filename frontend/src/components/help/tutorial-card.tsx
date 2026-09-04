@@ -38,7 +38,7 @@ export function TutorialCard({video}: TutorialCardProps){
                 <button type="button" onClick={() => setisModalOpen(true)}
                 className="absolute inset-0 bg-background/40 group-hover:bg-background/20 transition-colors flex items-center justify-center focus:outline-none"
                 aria-label={`Play ${video.title}`}>
-                    <div className="h-12 w-12 rounded-full bg-brand text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <div className="h-12 w-12 rounded-full bg-brand text-primary-foreground flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                         <Play className="h-6 w-6 fill-current ml-0.5"/>
                     </div>
                 </button>
@@ -50,7 +50,7 @@ export function TutorialCard({video}: TutorialCardProps){
                 </div>
 
                 <button type="button" onClick={() => setisModalOpen(true)}
-                className="w-full py-2.5 px-4 rounded-lg bg-surface-2 hover:bg-brand hover:text-white text-foreground text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 border border-border hover:border-brand">
+                className="w-full py-2.5 px-4 rounded-lg bg-surface-2 hover:bg-brand hover:text-primary-foreground text-foreground text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 border border-border hover:border-brand">
                     <Play className="h-3.5 w-3.5 fill-current"/>Watch Tutorial
                 </button>
             </div>
@@ -58,7 +58,7 @@ export function TutorialCard({video}: TutorialCardProps){
 
         {/* video modal */}
         {isModalOpen && (
-            <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-surface border border-border rounded-xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
                     <div className="p-4 border-b border-border flex items-center justify-between bg-surface-2">
                         <div className="flex items-center gap-3">

@@ -8,7 +8,8 @@ public class User
     [Encrypted]
     public string Email { get; set; } = string.Empty;
     public string EmailHash { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
+    public string? PasswordHash { get; set; }
+    public string? GoogleId { get; set; }
     [Encrypted]
     public string DisplayName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -30,4 +31,9 @@ public class User
     public bool Metric { get; set; }
     public bool LightTheme { get; set; }
     public string? ProfileImageUrl { get; set; }
+
+    public bool GoogleCalendarSyncEnabled { get; set; } = false;
+    [Encrypted]
+    public string? GoogleCalendarRefreshToken { get; set; }
+    public string? GoogleCalendarId { get; set; }
 }

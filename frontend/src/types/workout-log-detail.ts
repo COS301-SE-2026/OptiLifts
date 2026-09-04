@@ -17,6 +17,7 @@ export type WorkoutLogDetailExercise = Readonly<{
   exerciseId: string
   name: string
   primaryMuscle: string
+  secondaryMuscles?: string[]
   exerciseType: string
   orderIndex: number
   imageUrl?: string | null
@@ -30,6 +31,7 @@ export type WorkoutLogDetailResponse = Readonly<{
   folderId: string | null
   dayIndex: number | null
   createdAt: string
+  startedAt?: string | null
   completedAt: string | null
   duration: string | null
   primaryMuscleGroups: string[]

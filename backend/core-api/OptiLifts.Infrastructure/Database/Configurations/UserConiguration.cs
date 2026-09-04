@@ -15,7 +15,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.Email).HasColumnName("email").IsRequired();
         builder.Property(u => u.EmailHash).HasColumnName("email_hash").IsRequired().HasMaxLength(64);
-        builder.Property(u => u.PasswordHash).HasColumnName("password_hash").IsRequired();
+        builder.Property(u => u.PasswordHash).HasColumnName("password_hash").IsRequired(false);
+        builder.Property(u => u.GoogleId).HasColumnName("google_id").HasMaxLength(128).IsRequired(false);
         builder.Property(u => u.RefreshTokenHash).HasColumnName("refresh_token_hash").HasMaxLength(256).IsRequired(false);
         builder.Property(u => u.RefreshTokenExpiryTime).HasColumnName("refresh_token_expiry_time").IsRequired(false);
         builder.Property(u => u.DisplayName).HasColumnName("display_name").IsRequired();
@@ -30,9 +31,14 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Bio).HasColumnName("bio").HasMaxLength(255);
         builder.Property(u => u.ProfileImageUrl).HasColumnName("profile_image_url");
 
+        builder.Property(u => u.GoogleCalendarSyncEnabled).HasColumnName("google_calendar_sync_enabled").HasDefaultValue(false);
+        builder.Property(u => u.GoogleCalendarRefreshToken).HasColumnName("google_calendar_refresh_token").HasColumnName("google_calendar_refresh_token").IsRequired(false);
+        builder.Property(u => u.GoogleCalendarId).HasColumnName("google_calendar_id").IsRequired(false);
+
 
         //creates a unique index on the email hash as it's deterministic
         builder.HasIndex(u => u.EmailHash).IsUnique();
+        builder.HasIndex(u => u.GoogleId).IsUnique();
 
         builder.HasIndex(u => u.RefreshTokenHash);
     }

@@ -28,6 +28,7 @@ import { customFetch } from '@/lib/custom-fetch'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type CatalogExercise = {
   id: string
@@ -113,7 +114,7 @@ function buildSegs(exercises: SelectedWorkoutExercise[]): WorkoutSegment[] {
 
 const MUSCLE_OPTIONS = ['All Muscles', ...MUSCLE_GROUPS] as const
 
-function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
+export function ChainLink({ linked, onClick}: Readonly<{ linked: boolean; onClick: () => void }>) {
   return(
     <div className="flex justify-center">
       <button 
@@ -248,6 +249,7 @@ export default function CreateWorkoutPage() {
   const navigate = useNavigate()
   const [workoutName, setWorkoutName] = useState('')
   const [exercises, setExercises] = useState<SelectedWorkoutExercise[]>([])
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
@@ -259,6 +261,7 @@ export default function CreateWorkoutPage() {
   const [exercisesError, setExercisesError] = useState<string | null>(null)
   const { isAuthenticated } = useAuth()
   const [groupSettings, setGroupSettings] = useState<Record<string, { restTime: number }>>({})
+  const [customOnly, setCustomOnly] = useState(false)
 
   //edit workout
   const {id: workoutId} = useParams<{id: string}>()
@@ -314,6 +317,7 @@ export default function CreateWorkoutPage() {
 
         const mappedExercises = mapApiExercises(workout.exercises)
         setExercises(mappedExercises)
+        setHasUnsavedChanges(false)
       } catch (err){
         setLoadError(err instanceof Error ? err.message : 'Failed to load details of workout')
       } finally {
@@ -323,21 +327,48 @@ export default function CreateWorkoutPage() {
     void loadWorkoutDetails()
   }, [isEdit, workoutId])
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges || saving) {
+        return
+      }
+
+      event.preventDefault()
+      return ''
+    }
+
+    window.onbeforeunload = handleBeforeUnload
+
+    return () => {
+      if (window.onbeforeunload === handleBeforeUnload) {
+        window.onbeforeunload = null
+      }
+    }
+  }, [hasUnsavedChanges, saving])
+
   const toggleLink = (index: number) =>
-    setExercises(prev => prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e)))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.map((e, i) => (i === index ? { ...e, linkedToNext: !e.linkedToNext } : e))
+    })
 
   const setGroupSetting = (anchorId: string, field: 'restTime', value: number) =>
     setGroupSettings(prev => {
+      setHasUnsavedChanges(true)
       const current = prev[anchorId] ?? { restTime: DEFAULT_REST }
       return { ...prev, [anchorId]: { ...current, [field]: value } }
     })
 
   const updateExerciseRestTime = (id: string, value: number) =>
-    setExercises(prev => prev.map(e => (e.id === id ? { ...e, restTime: value } : e)))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.map(e => (e.id === id ? { ...e, restTime: value } : e))
+    })
 
   const fetchExercises = useCallback(async () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    const res = await customFetch('/api/exercises', { headers })
+    const url = `/api/exercises${customOnly ? '?customOnly=true' : ''}`
+    const res = await customFetch(url, { headers })
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) throw new Error('Unauthorized - please sign in')
@@ -354,7 +385,7 @@ export default function CreateWorkoutPage() {
       imageUrl: ex.imageUrl,
       exerciseType: ex.exerciseType ?? ex.category
     })) as CatalogExercise[]
-  }, [])
+  }, [customOnly])
 
   useEffect(() => {
     let mounted = true
@@ -382,29 +413,62 @@ export default function CreateWorkoutPage() {
   }, [fetchExercises])
 
   const removeExercise = (id: string) =>
-    setExercises(prev => prev.filter(e => e.id !== id))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.filter(e => e.id !== id)
+    })
 
   const updateSets = (id: string, sets: WorkoutExercise['sets']) =>
-    setExercises(prev => prev.map(e => e.id === id ? { ...e, sets } : e))
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return prev.map(e => e.id === id ? { ...e, sets } : e)
+    })
 
   const addExercise = (exercise: CatalogExercise) =>
-    setExercises(prev => [
-      ...prev,
-      {
-        id: `ex-${nextExerciseId++}`,
-        name: exercise.name,
-        muscle: exercise.muscleGroup,
-        imageUrl: exercise.imageUrl,
-        sets: [],
-        exerciseCatalogId: exercise.id,
-        exerciseType: exercise.exerciseType
-      },
-    ])
+    setExercises(prev => {
+      setHasUnsavedChanges(true)
+      return [
+        ...prev,
+        {
+          id: `ex-${nextExerciseId++}`,
+          name: exercise.name,
+          muscle: exercise.muscleGroup,
+          imageUrl: exercise.imageUrl,
+          sets: [],
+          exerciseCatalogId: exercise.id,
+          exerciseType: exercise.exerciseType
+        },
+      ]
+    })
 
-  const handleExerciseSaved = async () => {
+  const handleExerciseSaved = useCallback(async (updatedExerciseId?: string, oldExerciseId?: string) => {
     const refreshedExercises = await fetchExercises()
     setAllExercises(refreshedExercises || [])
-  }
+
+    if (!updatedExerciseId) {
+      return
+    }
+
+    const refreshedExercise = refreshedExercises.find((exercise) => exercise.id === updatedExerciseId)
+    if (!refreshedExercise) {
+      return
+    }
+
+    setExercises((prev) =>
+      prev.map((exercise) =>
+        exercise.exerciseCatalogId === updatedExerciseId || (oldExerciseId && exercise.exerciseCatalogId === oldExerciseId)
+          ? {
+              ...exercise,
+              name: refreshedExercise.name,
+              muscle: refreshedExercise.muscleGroup as MuscleName,
+              imageUrl: refreshedExercise.imageUrl,
+              exerciseType: refreshedExercise.exerciseType,
+              exerciseCatalogId: refreshedExercise.id,
+            }
+          : exercise
+      )
+    )
+  }, [fetchExercises])
 
   const saveWorkout = async () => {
     if (!workoutName.trim() || !isAuthenticated) return
@@ -468,6 +532,8 @@ export default function CreateWorkoutPage() {
         return
       }
 
+      setHasUnsavedChanges(false)
+
       navigate('/workouts')
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to save workout')
@@ -502,7 +568,7 @@ export default function CreateWorkoutPage() {
     }
 
     return filteredExercises.map((ex) => (
-      <div key={ex.id} className="flex items-center gap-3 px-2 py-2.5">
+      <div key={ex.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-2 py-2.5">
         <CircularProfileImage
           src={ex.imageUrl}
           alt={ex.name}
@@ -550,12 +616,12 @@ export default function CreateWorkoutPage() {
         <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">
 
           <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <Button 
                 variant="text"
                 size="sm"
                 onClick={() => navigate('/workouts')}
-                className="-ml-1 flex items-center gap-1 self-start text-muted-foreground hover:text-foreground"
+                className="ml-0 flex items-center gap-1 self-start p-0 text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back to Workouts</span>
@@ -571,7 +637,10 @@ export default function CreateWorkoutPage() {
                     variant="default"
                     placeholder="e.g. Push Day A"
                     value={workoutName}
-                    onChange={e => setWorkoutName(e.target.value)}
+                    onChange={e => {
+                      setWorkoutName(e.target.value)
+                      setHasUnsavedChanges(true)
+                    }}
                   />
                 </div>
                 <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim() || saving} onClick={saveWorkout}>
@@ -605,7 +674,7 @@ export default function CreateWorkoutPage() {
 
               return(
                 <Fragment key={seg.anchorId}>
-                  <div className="flex flex-col gap-2 rounded-xl border-2 border-brand/60 bg-brand/5 p-2">
+                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-2">
                     <div className="flex items-center justify-between px-2 pt-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
@@ -622,15 +691,18 @@ export default function CreateWorkoutPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <label className="flex items-center gap-1">
+                        <label htmlFor={`group-rest-${seg.anchorId}`} className="flex items-center gap-2">
                           <span>Rest (seconds)</span>
-                          <input 
-                            type = "number"
-                            min = {0}
-                            value = {settings.restTime || ''}
-                            placeholder="0"
-                            onChange = {e => setGroupSetting(seg.anchorId, 'restTime', Number(e.target.value))}
-                            className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          <Input
+                            id={`group-rest-${seg.anchorId}`}
+                            type="number"
+                            min={0}
+                            value={settings.restTime}
+                            onChange={(e) => {
+                              const nextValue = e.target.value === '' ? DEFAULT_REST : Number(e.target.value)
+                              setGroupSetting(seg.anchorId, 'restTime', Number.isFinite(nextValue) && nextValue >= 0 ? nextValue : DEFAULT_REST)
+                            }}
+                            className="h-7 w-16 text-center"
                           />
                         </label>
                       </div>
@@ -670,7 +742,7 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
                   {MUSCLE_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedMuscle(o)}>{o}</DropdownMenuItem>
                   ))}
@@ -681,25 +753,32 @@ export default function CreateWorkoutPage() {
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedEquipment}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
                   {EQUIPMENT_OPTIONS.map(o => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedEquipment(o)}>{o}</DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="[&>div]:max-w-none [&>div]:w-full">
-                <SearchInput
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search"
-                  aria-label="Search exercises"
-                  className="h-8 w-full"
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+               <div className="flex-1 [&>div]:max-w-none [&>div]:w-full">
+                 <SearchInput
+                   value={searchQuery}
+                   onChange={e => setSearchQuery(e.target.value)}
+                   placeholder="Search"
+                   aria-label="Search exercises"
+                   className="h-8 w-full"
+                 />
+               </div>
+               <Checkbox 
+                  checked={customOnly} 
+                  onChange={setCustomOnly} 
+                  label="Show custom only" 
                 />
-              </div>
+             </div>
 
               <div className="mt-2 min-h-0 max-h-72 overflow-y-auto pr-1">
-                <div className="divide-y divide-border/70">
+                <div className="space-y-2">
                 {exercisesListContent}
                 </div>
               </div>
@@ -714,11 +793,13 @@ export default function CreateWorkoutPage() {
         onClose={() => setDetailsExerciseId(null)}
         onChanged={handleExerciseSaved}
       />
-      <CreateExercise
-        isOpen={isCreateExerciseOpen}
-        onCancel={() => setIsCreateExerciseOpen(false)}
-        onSaved={handleExerciseSaved}
-      />
+     {isCreateExerciseOpen && (
+        <CreateExercise
+          isOpen={true}
+          onCancel={() => setIsCreateExerciseOpen(false)}
+          onSaved={handleExerciseSaved}
+        />
+      )}
     </section>
   )
 }

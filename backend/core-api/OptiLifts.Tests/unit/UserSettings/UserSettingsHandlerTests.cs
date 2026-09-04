@@ -65,6 +65,7 @@ public class UserSettingsHandlerTests
         result.Profile.ProfilePictureUrl.Should().Be("https://fake.url/image.jpg");
         result.Preferences.Theme.Should().Be("dark");
         result.Preferences.Units.Should().Be("metric");
+        result.Security.HasPassword.Should().BeFalse();
     }
 
     [Fact]

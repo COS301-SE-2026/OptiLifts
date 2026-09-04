@@ -14,3 +14,7 @@ config:
   infrastructure:domainStage: bind
   infrastructure:coreApiSentryDsn:
     secure: AAABAN7B+dbp1skyqkGpzzEkSF3BxZu+jGhlGgj1HB62AKwIvXVOQCOGaRtsSjvDhRlLD78RBlvTqzjjnwuMJ4mtH7YUbNwKaQ3rFQ3IGgvl3UBQxJOztw685X18JzPzVpDfp8G2dcnZ0879gs8R+xQ9yMfHvy/TfbPKP5eRRQ==
+  infrastructure:googleClientId:
+    secure: AAABAERbX7BSMHMnXSk2paMZn4jluPICb0xwFK0BeVfotur7KGYWjCl9+bMNjs1i2JsFIetrfaLrLL4ZPX8WOILhi9b+lbq9yIb+EhRsj5flactkOuJFbMx9j9C5yeloCLXgEakCl08F
+  infrastructure:googleClientSecret:
+    secure: AAABAArkAIMxoVBpNYn9gcrUb41N+mxWi/0JuYjgmI8pQUcIdNd//Kpz8JocokNW5CjorvGCKjVKKifluvWxqN3IiQ==

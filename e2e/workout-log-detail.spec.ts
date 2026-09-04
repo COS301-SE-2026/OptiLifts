@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test-utils';
 
 test.describe('Workout Log Detail Page', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/workouts/33333333-3333-3333-3333-333333333333/logs/58597dd0-e02c-416c-a4b0-cba560f21045');//route to push day A's workout log detail
-        await page.waitForLoadState('networkidle');
+        await page.goto('/past-workouts?week=2026-06-10');
+        await page.getByText('Push Day A').first().click();
     });
 
     test('User can view a workout log\'s detail', async ({ page }) => {
-        await expect (page.getByText('Push Day A')).toBeVisible();
+        await expect (page.getByText('Push Day A').first()).toBeVisible();
         await expect (page.getByText('Duration55m')).toBeVisible();
         await expect (page.getByText('Volume1,080 KG')).toBeVisible();
         await expect (page.getByText('Sets2')).toBeVisible();

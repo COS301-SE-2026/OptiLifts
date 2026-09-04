@@ -14,8 +14,12 @@ import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
 import { MoreVertical } from 'lucide-react'
-import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { buildLabels } from '@/lib/exercise-format'
+import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 function formatRestTime(restTimeSeconds: number) {
   const minutes = Math.floor(restTimeSeconds / 60)
@@ -29,24 +33,29 @@ function formatRestTime(restTimeSeconds: number) {
 }
 
 function toExercisePlanItems(exercises: WorkoutDetailExercise[]): ExercisePlanItem[] {
-  return exercises.map((exercise) => ({
-    name: exercise.name,
-    subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
-    exerciseType: exercise.exerciseType ?? 'WeightReps',
-    exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
-    imageUrl: exercise.imageUrl,
-    sets: (exercise.sets ?? []).map((set) => ({
-      label: `${set.orderIndex}`,
-      reps: set.reps,
-      weight: set.weight,
-      duration: set.duration,
-      distance: set.distance,
-      restTime: formatRestTime(set.restTime),
-    })),
-    groupId: exercise.groupId,
-    groupType: exercise.groupType,
-    groupRestTime: exercise.groupRestTime,
-  }))
+  return exercises.map((exercise) => {
+    const orderedSets = [...(exercise.sets ?? [])].sort((a, b) => a.orderIndex - b.orderIndex)
+    const labels = buildLabels(orderedSets)
+
+    return {
+      name: exercise.name,
+      subtitle: exercise.primaryMuscle ?? exercise.muscleGroup,
+      exerciseType: exercise.exerciseType ?? 'WeightReps',
+      exerciseId: exercise.exerciseId ?? exercise.id ?? exercise.workoutExerciseId,
+      imageUrl: exercise.imageUrl,
+      sets: orderedSets.map((set, setIndex) => ({
+        label: labels[setIndex],
+        reps: set.previousReps ?? set.reps,
+        weight: set.previousWeight ?? set.weight,
+        duration: set.duration,
+        distance: set.distance,
+        restTime: formatRestTime(set.restTime),
+      })),
+      groupId: exercise.groupId,
+      groupType: exercise.groupType,
+      groupRestTime: exercise.groupRestTime,
+    }
+  })
 }
 
 function formatVolume(totalVolume: number) {
@@ -63,6 +72,8 @@ export default function WorkoutDetailPage() {
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [isOfflineData, setIsOfflineData] = useState(false)
+  const isOnline = useOnlineStatus()
 
   const handleWorkoutChanged = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
@@ -121,8 +132,18 @@ export default function WorkoutDetailPage() {
         const data = (await response.json()) as WorkoutDetailResponse
         if (mounted) {
           setWorkout(data)
+          setIsOfflineData(false)
         }
       } catch (loadError) {
+        const cached = await getCachedWorkoutDetail(workoutId)
+
+        if (mounted && cached) {
+          setWorkout(cached)
+          setIsOfflineData(true)
+          return
+        }
+
+
         if (mounted) {
           setError(loadError instanceof Error ? loadError.message : 'Failed to load workout.')
         }
@@ -139,19 +160,6 @@ export default function WorkoutDetailPage() {
       mounted = false
     }
   }, [isAuthenticated, isHydrated, workoutId, refreshKey])
-
-  useEffect(() => {
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-    }
-  }, [])
 
   const workoutLabel = workout?.name ?? 'Workout Detail'
   const plannedExercises = useMemo(
@@ -171,8 +179,8 @@ export default function WorkoutDetailPage() {
 
     return workout.exercises.reduce((exerciseSum, item) => {
       const exerciseVolume = item.sets.reduce((setSum, set) => {
-        const weight = set.weight ?? 0
-        const reps = set.reps ?? 0
+        const weight = set.previousWeight ?? set.weight ?? 0
+        const reps = set.previousReps ?? set.reps ?? 0
         return setSum + weight * reps
       }, 0)
 
@@ -191,52 +199,69 @@ export default function WorkoutDetailPage() {
     () => (workout?.primaryMuscleGroups ?? []) as MuscleName[],
     [workout]
   )
+  const secondaryMuscles = useMemo(
+    () => (workout?.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[],
+    [workout]
+  )
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-8 overflow-hidden px-6 py-12">
-      <div className="flex flex-none items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Workout</p>
+    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col gap-6 md:gap-8 overflow-y-auto px-4 pt-16 pb-6 sm:px-6 sm:py-10 md:py-12">
+      {isOfflineData && (
+        <OfflineBanner message="You're offline - showing a saved copy of this workout." />
+      )}
+      <div className="flex flex-row items-center justify-between gap-3 sm:gap-6">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand sm:text-sm">Workout</p>
           <PageTitle title={workoutLabel} />
         </div>
-
-        <div className="flex flex-col items-start gap-4 lg:items-end">
-          <div className="flex flex-wrap items-center gap-8 text-left lg:text-right">
+        <div className="flex flex-col items-end gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-6 text-right">
             <div>
-              <p className="text-base text-muted-foreground">Volume</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.volume}</p>
+              <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Volume</p>
+              <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.volume}</p>
             </div>
             <div>
-              <p className="text-base text-muted-foreground">Sets</p>
-              <p className="mt-1 text-xl font-bold text-foreground">{workoutStats.sets}</p>
+              <p className="text-[0.66rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground">Sets</p>
+              <p className="text-[1.25rem] sm:text-[1.6rem] type-card-value mt-0.5 text-foreground">{workoutStats.sets}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                id="start-workout-btn"
-                size="sm"
-                disabled={!workout || isLoading}
-                onClick={() => {
-                  if (workout) {
-                    navigate('/active-session', { state: { workout } })
-                  }
-                }}
-              >
-                Start Workout
-              </Button>
-              {workout && (
-                <DropdownMenu>
-                  <DropdownMenuEllipsisTrigger aria-label="Options">
-                    <MoreVertical />
-                  </DropdownMenuEllipsisTrigger>
-                  <DropdownMenuEllipsisContent align="end">
-                    <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuEllipsisContent>
-                </DropdownMenu>
-              )}
-            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              id="start-workout-btn"
+              size="sm"
+              disabled={!workout || isLoading}
+              onClick={() => {
+                if (workout) {
+                  navigate('/active-session', { state: { workout } })
+                }
+              }}
+            >
+              Start Workout
+            </Button>
+            {workout && (
+              <DropdownMenu>
+                <DropdownMenuEllipsisTrigger aria-label="Options">
+                  <MoreVertical />
+                </DropdownMenuEllipsisTrigger>
+                <DropdownMenuEllipsisContent align="end">
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger disabled={!isOnline}>Quick Workout</DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 15 } })}>15 Minutes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 30 } })}>30 Minutes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 45 } })}>45 Minutes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 60 } })}>60 Minutes</DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                  <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuEllipsisContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
@@ -261,7 +286,7 @@ export default function WorkoutDetailPage() {
         summaryContent={
           workout ? (
             <>
-              <MuscleDiagram highlightedMuscles={highlightedMuscles} variant="both" />
+              <MuscleDiagram highlightedMuscles={highlightedMuscles} secondaryMuscles={secondaryMuscles} variant="both" />
               <MusclesSummary exercises={workout.exercises} />
             </>
           ) : null

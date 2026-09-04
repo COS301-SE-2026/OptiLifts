@@ -39,7 +39,7 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
         var user = await _dbContext.Users
             .SingleOrDefaultAsync(u => u.EmailHash == emailHash, cancellationToken);
 
-        if (user == null)
+        if (user == null || string.IsNullOrWhiteSpace(user.PasswordHash))
         {
             throw new InvalidCredentialsException();
         }
@@ -59,6 +59,6 @@ public sealed class LoginUserHandler : IRequestHandler<LoginUserCommand, AuthRes
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme));
+        return new AuthResponseDto(token, refreshToken, new AuthUserDto(user.Id, user.DisplayName, user.Email, user.CreatedAt, user.Metric, user.LightTheme, user.Sex));
     }
 }

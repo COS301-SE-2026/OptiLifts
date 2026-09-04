@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { PageTitle } from '@/components/ui/page-title'
 import { customFetch } from '@/lib/custom-fetch'
-import {X, Plus, Loader2, AlertCircle} from 'lucide-react'
+import {X, Plus, Loader2, AlertCircle, Settings, Info} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import {Card, CardTitle} from '@/components/ui/card'
 import { SelectWorkoutDialog } from '@/components/ui/select-workout-dialog'
@@ -17,9 +17,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DatePagination } from '@/components/ui/date-pagination'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { cacheScheduleEntries, getCachedScheduleEntries, getCachedWorkoutList } from '@/lib/offline/workouts-cache'
+import { useOnlineStatus, OFFLINE_HINT } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
+import { ScheduleSettingsPopup } from '@/components/ui/schedule-settings-popup'
+import { toast } from '@/components/ui/alert'
+import { ReschedulePreviewModal, type RescheduledItem } from '@/components/ui/reschedule-preview-modal'
 
 //styling constants for same style aspects
-const statLABEL = "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block"
+const statLABEL = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
 const statVALUE = "text-sm font-bold text-foreground block"
 const cardDETAIL = "text-xs text-muted-foreground leading-normal"
 
@@ -57,6 +63,7 @@ interface AnalyticsResponse {
     readonly totalVolume: number
     readonly totalSets: number
     readonly muscleDistribution: readonly MuscleDistributionItem[]
+    readonly secondaryMuscleDistribution?: readonly MuscleDistributionItem[]
 }
 
 interface ScheduledEntryDto {
@@ -71,6 +78,13 @@ interface ScheduledEntryDto {
     readonly totalVolume: number
     readonly totalSets: number
 }
+
+interface ScheduleConfig{
+    readonly dynamicSchedulerEnabled?: boolean
+    readonly cycleWindowLengthDays: number
+    readonly cycleStartDate: string
+}
+
 const DAYS = [
     {
         name: 'MON',
@@ -120,10 +134,20 @@ export default function SchedulePage() {
     const [error, setError] = useState<string | null>(null)
     const [muscleValues, setMuscleValues] = useState<Record<string, number>>({
         Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
+    const [secondaryMuscleValues, setSecondaryMuscleValues] = useState<Record<string, number>>({
+        Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,})
     const [workouts, setWorkouts] = useState<Workout[]>([])
     const [isFetchingWorkouts, setIsFetchingWorkouts] = useState(false)
     const [selectedAddDate, setSelectedAddDate] = useState<Date | null>(null)
     const [isScheduling, setIsScheduling] = useState(false)
+    const isOnline = useOnlineStatus()
+    const [isOfflineData, setIsOfflineData] = useState(false)
+
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    
+    const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig | null>(null)
+    const [cycleScheduleEntries, setCycleScheduleEntries] = useState<ScheduledEntryDto[]>([])
+    const [droppedSchedule, setDroppedSchedule] = useState<RescheduledItem[]>([]);
 
     const navigate = useNavigate()
     const [completedLogs, setCompletedLogs] = useState<Record<string, string>>({})
@@ -163,6 +187,35 @@ export default function SchedulePage() {
         }
         return dates
     }, [currentWeekDate])
+    
+    const cycleRange = useMemo(()=>{
+        const cycleLength = scheduleConfig?.cycleWindowLengthDays ?? 7
+        const rawStart = scheduleConfig?.cycleStartDate ? new Date(scheduleConfig?.cycleStartDate) : new Date()
+        const cycleStartDate = Date.UTC(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate())
+        const today = new Date()
+        const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+
+        const diffDays = Math.max(0, Math.floor((todayUtc - cycleStartDate) / (1000 * 60 * 60 * 24)))
+        const cycleIndex = Math.floor(diffDays / cycleLength)
+        const start = new Date(cycleStartDate + cycleIndex * cycleLength * 24*60*60*1000)
+        const end = new Date(start.getTime() + (cycleLength - 1) *24*60*60*1000 + (23*3600 + 59*60 + 59)*1000)
+        return {
+            start, end
+        }
+    }, [scheduleConfig])
+
+    const cycledateRangeText = useMemo(() => {
+        if (!cycleRange) return ''
+        const startStr = cycleRange.start.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'long'
+        })
+        const endStr = cycleRange.end.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'long'
+        })
+        return `${startStr} and ${endStr}`
+    }, [cycleRange])
 
     const fetchRange = useMemo(() => {
         if (viewMode === 'week'){
@@ -180,15 +233,70 @@ export default function SchedulePage() {
         }
     }, [currentWeekDate, weekDates, viewMode])
 
+    const aggreMuscleSetCounts = (
+        distribution?: readonly {
+            muscleGroup: string;
+            setCount: number
+        }[]): Record<string, number> => {
+        const aggre: Record<string, number> = {
+            Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
+        }
+        if (!distribution) {
+            return aggre
+        }
+        distribution.forEach((item) => {
+            const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
+            if (mappedCat && mappedCat in aggre) {
+                aggre[mappedCat] += item.setCount
+            }
+        })
+        return aggre
+    }
+    const fetchCycleSchedule = async (confData: ScheduleConfig): Promise<ScheduledEntryDto[] | null> => {
+        const cycleLength = confData.cycleWindowLengthDays ?? 7
+        const rawStart = confData.cycleStartDate ? new Date(confData.cycleStartDate) : new Date()
+        const cycleStartDate = Date.UTC(rawStart.getFullYear(), rawStart.getMonth(), rawStart.getDate())
+        const today = new Date()
+        const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+        const diffDays = Math.max(0, Math.floor((todayUtc - cycleStartDate) / (1000 * 60 * 60 * 24)))
+        const cycleIndex = Math.floor(diffDays / cycleLength)
+        const cStart = new Date(cycleStartDate + cycleIndex * cycleLength * 24 * 60 * 60 * 1000)
+        const cEnd = new Date(cStart.getTime() + (cycleLength - 1) * 24 * 60 * 60 * 1000 + (23 * 3600 + 59 * 60 + 59) * 1000)
+        const cycleResp = await customFetch(`/api/users/me/schedule?startDate=${cStart.toISOString()}&endDate=${cEnd.toISOString()}`)
+        if (cycleResp.ok) {
+            return (await cycleResp.json()) as ScheduledEntryDto[]
+        }
+        return null
+    }
+    const fetchCalendarLogs = async (currentWeekDate: Date): Promise<Record<string, string>> => {
+        const year = currentWeekDate.getFullYear()
+        const month = currentWeekDate.getMonth() + 1
+        const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
+        if (!calendarRes.ok) return {}
+        const calendarData = await calendarRes.json()
+        const mapping: Record<string, string> = {}
+        calendarData.entries.forEach((entry: { workoutId: string, date: string, logId: string }) => {
+            mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
+        })
+        return mapping
+    }
+
+
     const fetchScheduleAndAnalytics = useCallback(async () => {
         await Promise.resolve()
         setIsLoading(true)
         setError(null)
         try {
+            //added ze marking as missed first
+            await customFetch('/api/users/me/schedule/missed', {
+                method: 'POST'
+            }).catch(() => {})
+
             const {start, end} = fetchRange
-            const [scheduleResp, analyticsResp] = await Promise.all([
+            const [scheduleResp, analyticsResp, configResp] = await Promise.all([
                 customFetch(`/api/users/me/schedule?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
-                customFetch(`/api/users/me/schedule/analytics?startDate=${start.toISOString()}&endDate=${end.toISOString()}`)
+                customFetch(`/api/users/me/schedule/analytics?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
+                customFetch('/api/users/me/schedule/config').catch(() => null)
             ])
             if (!scheduleResp.ok) {
                 throw new Error(`Failed to load schedules (${scheduleResp.status})`)
@@ -201,36 +309,38 @@ export default function SchedulePage() {
 
             setScheduleEntries(scheduleData)
             setAnalytics(analyticsData)
+            setIsOfflineData(false)
+            void cacheScheduleEntries(scheduleData)
 
-            try{
-                const year = currentWeekDate.getFullYear()
-                const month = currentWeekDate.getMonth() + 1
-                const calendarRes = await customFetch(`/api/profile/calendar?year=${year}&month=${month}`) //use eddies endpoint from profile
-                if (calendarRes.ok){
-                    const calendarData = await calendarRes.json()
-                    const mapping: Record<string, string> = {}
-                    calendarData.entries.forEach((entry: {workoutId:string, date:string, logId:string}) => {
-                        mapping[`${entry.workoutId}-${entry.date}`] = entry.logId
-                    })
-                    setCompletedLogs(mapping)
+            if (configResp?.ok){
+                const confData = (await configResp.json()) as ScheduleConfig
+                setScheduleConfig(confData)
+                const cycleData = await fetchCycleSchedule(confData)
+                if (cycleData){
+                    setCycleScheduleEntries(cycleData)
                 }
-            } catch(e){
+            }
+            
+
+            try {
+                const logsMapping = await fetchCalendarLogs(currentWeekDate)
+                setCompletedLogs(logsMapping)
+            }
+            catch (e) {
                 setError(e instanceof Error ? e.message : 'Error fetching calendar logs')
             }
 
-            const aggre: Record<string, number> = {
-                    Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0,
-            }
-            if (analyticsData.muscleDistribution) {
-                analyticsData.muscleDistribution.forEach((item) => {
-                    const mappedCat = MUSCLECAT_MAP[item.muscleGroup]
-                    if (mappedCat && mappedCat in aggre) {
-                        aggre[mappedCat] += item.setCount
-                    }
-                })
-            }
-            setMuscleValues(aggre)
+            setMuscleValues(aggreMuscleSetCounts(analyticsData.muscleDistribution))
+            setSecondaryMuscleValues(aggreMuscleSetCounts(analyticsData.secondaryMuscleDistribution))
         } catch (error) {
+            const cached = await getCachedScheduleEntries<ScheduledEntryDto>()
+
+            if (cached && cached.length > 0) {
+                setScheduleEntries(cached)
+                setIsOfflineData(true)
+                return
+            }
+
             setError(error instanceof Error ? error.message : 'Could not load analytics')
         } finally {
             setIsLoading(false)
@@ -252,8 +362,12 @@ export default function SchedulePage() {
                     const data = await response.json()
                     setWorkouts(data)
                 } 
-            } catch(err) {
-                setError(err instanceof Error ? err.message : 'Unexpected error occured while loading workouts.')
+            } catch {
+                const cached = await getCachedWorkoutList()
+
+                if (cached) {
+                    setWorkouts(cached)
+                }
             } finally {
                 setIsFetchingWorkouts(false)
             }
@@ -280,20 +394,30 @@ export default function SchedulePage() {
     }
 
     const handleAddClick = (date: Date) => {
-        //placeholder for adding workout implementation (needs a popup)
+        if (!isOnline) {
+            return
+        }
+
         setSelectedAddDate(date)
     }
-    const handleScheduleWorkout = async(workoutId:string, repeat?:string, interval?: number, until?:string)=> {
+
+    const handleDeleteClick = (id: string) => {
+        if (!isOnline) {
+            return
+        }
+
+        setDeleteTargetId(id)
+    }
+
+    const handleScheduleWorkout = async(workoutId:string, time: string, repeat?:string, interval?: number, until?:string)=> {
         if (!selectedAddDate){
             return
         }
         setIsScheduling(true)
         setError(null)
         try{
-            const utcDate = new Date(Date.UTC( //fixing monday not being scheduled
-                selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate()
-            ))
-            const scheduledAt =utcDate.toISOString()
+            const [hours, minutes] = time.split(':').map(Number)
+            const scheduledDateTime = new Date(selectedAddDate.getFullYear(), selectedAddDate.getMonth(), selectedAddDate.getDate(), hours, minutes)
 
             const bodyPayload: {
                 workoutId: string
@@ -304,14 +428,14 @@ export default function SchedulePage() {
                 until?: string
             } = {
                 workoutId,
-                scheduledAt,
+                scheduledAt: scheduledDateTime.toISOString(),
                 status:0
             }
             if(repeat &&interval && until) {
                 bodyPayload.repeat = repeat.toLowerCase()
                 bodyPayload.interval = interval
                 const udate = new Date(until)
-                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate()))
+                const utcUntil = new Date(Date.UTC(udate.getFullYear(), udate.getMonth(), udate.getDate(), 23,59,59))
                 bodyPayload.until = utcUntil.toISOString()
             }
             const response = await customFetch('/api/users/me/schedule/sessions',{
@@ -333,6 +457,8 @@ export default function SchedulePage() {
         }
     }
 
+    
+
     const weeklydays = weekDates.map((dayDate, index) => {
         const dayM = DAYS[index]
         const sessionsOnDay = scheduleEntries.filter(entry => isSameDay(dayDate, entry.scheduled))
@@ -345,13 +471,80 @@ export default function SchedulePage() {
         }
     })
 
+    // rescheduling
+    const [selectedMissedIds, setSelectedMissedIds] = useState<string[]>([]);
+    const [isRescheduling, setIsRescheduling] = useState(false);
+    const [proposedSchedule, setProposedSchedule] = useState<RescheduledItem[]>([]);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isConfirmingReschedule, setIsConfirmingReschedule] = useState(false);
+
+    const missedSessions = useMemo(() => {
+        return cycleScheduleEntries.filter((e) => e.status === "Missed");
+    }, [cycleScheduleEntries]);
+
+    const handleTriggerReschedule = async () => {
+        if (selectedMissedIds.length === 0) return;
+        setIsRescheduling(true);
+        try{
+            const res = await customFetch("/api/users/me/schedule/reschedule", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    selectedMissedEntryIds: selectedMissedIds 
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setProposedSchedule(data.rescheduledEntries || []);
+                setDroppedSchedule(data.droppedEntries || []);
+                setIsPreviewOpen(true);
+            } else {
+                toast.error("Failed to generate proposed schedule", "Error");
+            }
+        } catch{
+            toast.error("An error occurred while rescheduling", "Error");
+        } finally {
+            setIsRescheduling(false);
+        }
+    };
+    const handleConfirmReschedule = async () =>{
+        setIsConfirmingReschedule(true);
+        try {
+            const payload = proposedSchedule.map((item) => ({
+                entryId: item.entryId,
+                newScheduledAt: item.newScheduledAt,
+            }));
+            const res = await customFetch("/api/users/me/schedule/reschedule/confirm",{
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (res.ok){
+                toast.success("Schedule updated successfully", "Rescheduled");
+                setIsPreviewOpen(false);
+                setSelectedMissedIds([]);
+                await fetchScheduleAndAnalytics();
+            } else {
+                toast.error("Failed to confirm schedule changes", "Error");
+            }
+        } catch {
+            toast.error("Failed to confirm schedule changes", "Error");
+        } finally {
+            setIsConfirmingReschedule(false);
+        }
+    }
+
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
 
             {/* top row */}
             <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <PageTitle title="Scheduler" />
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() =>setCurrentWeekDate(new Date())}
+                    className="bg-surface border border-border text-foreground hover:bg-brand/10 hover:text-brand hover:border-brand/30 font-semibold px-3.5 py-0.5 rounded-xl text-sm transition-all shadow-sm cursor-pointer">
+                        Today
+                    </Button>
                 <DatePagination
                     currentDate={currentWeekDate}
                     onChange={setCurrentWeekDate}
@@ -370,18 +563,26 @@ export default function SchedulePage() {
                         <DropdownMenuItem onClick={() => setViewMode('month')}>Month View</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Button variant="outline" size="sm" aria-label="Schedule Settings" onClick={() => setIsSettingsOpen(true)}
+                className="bg-surface border border-border text-foreground hover:bg-brand/10 hover:text-brand hover:border-brand/30 px-3 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <Settings size={16}/>
+                    <span className="hidden sm:inline">Settings</span>
+                </Button>
             </div>
             </div>
 
-
-
-            {/* error msg */}
             {error && (
                 <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3.5 text-sm text-destructive flex items-center gap-2.5 shadow-sm animate-fadeIn" role="alert">
                     <AlertCircle size={18} />
                     <span>{error}</span>
                 </div>
             )}
+
+            {isOfflineData && (
+                <OfflineBanner message="You're offline - showing your saved schedule. Reconnect for analytics." />
+            )}
+
 
             {viewMode === 'week' ? (
             <div className="grid grid-cols-12 gap-8 items-start">
@@ -418,7 +619,7 @@ export default function SchedulePage() {
                                                     key={session.id}
                                                     session={session}
                                                     isDeleting={isDeleting === session.id}
-                                                    onDelete={(id) =>setDeleteTargetId(id)}
+                                                    onDelete={handleDeleteClick}
                                                     onClick={handleWorkoutClick}
                                                 />
                                             ))}
@@ -427,7 +628,9 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            disabled={isBeforeToday}
+                                            disabled={isBeforeToday || !isOnline}
+                                            // disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
+                                            title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
                                 </div>
@@ -438,6 +641,51 @@ export default function SchedulePage() {
 
                 {/* summary section */}
                 <div className="col-span-12 lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+                        {/* rescheduling stuff */}
+                        {scheduleConfig?.dynamicSchedulerEnabled && missedSessions.length > 0 && (
+                            <div>
+                                <div className="flex-1 p-4 bg-destructive/10 border border-brand rounded-2xl flex flex-col gap-3 font-sans animate-fadeIn shadow-sm">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2">
+                                            <h2 className="font-display font-bold text-brand text-base uppercase tracking-wider">Missed Workouts Detected</h2>
+                                            <div className="relative group/info flex items-center">
+                                                <Info size={16} className="text-brand/80 hover:text-warning cursor-pointer transition-colors" />
+                                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover/info:block w-64 p-2.5 bg-surface border border-border rounded-xl text-xs shadow-xl z-20 pointer-events-none leading-relaxed">
+                                                    Select missed workouts to dynamically reschedule around your cycle.</div>
+                                            </div>
+                                        </div>
+                                        {cycledateRangeText && (
+                                            <span className="text-xs font-semibold text-foreground rounded-lg">
+                                                Missed workouts between {cycledateRangeText}
+                                            </span>
+                                        )}
+                                        </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {missedSessions.map((s) => (
+                                        <label key={s.id} className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer bg-surface px-3 py-1.5 rounded-xl border border-border hover:border-brand/30 focus-within:ring-2 focus-within:ring-brand outline-none transition-all">
+                                            <input type="checkbox" checked={selectedMissedIds.includes(s.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedMissedIds((prev) => [...prev, s.id]);
+                                                    } else {
+                                                        setSelectedMissedIds((prev) => prev.filter((id) => id !== s.id));
+                                                    }
+                                                }}
+                                                className="rounded border-border text-brand accent-brand cursor-pointer" />
+                                            <span>{s.workoutName} ({new Date(s.scheduled).toLocaleDateString(undefined, {
+                                                month: "short",
+                                                day: 'numeric'})} {formatScheduledTime(s.scheduled)})</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                    <Button size="sm" disabled={selectedMissedIds.length === 0 || isRescheduling} onClick={handleTriggerReschedule}
+                                        className="bg-brand hover:bg-brand-2 text-white font-display uppercase tracking-wider transition-all">
+                                        {isRescheduling ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
+                                        Reschedule Cycle
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     <SummaryCard
                         totalWorkouts={analytics?.totalWorkouts ?? 0}
                         totalVolume={analytics?.totalVolume ?? 0}
@@ -451,7 +699,7 @@ export default function SchedulePage() {
                                 <Loader2 className="animate-spin text-muted-foreground/60" size={24} />
                             </div>
                         ) : (
-                            <SpiderGraph data={muscleValues} />
+                            <SpiderGraph data={muscleValues} secondaryData={secondaryMuscleValues} />
                         )}
                     </div>
 
@@ -465,7 +713,8 @@ export default function SchedulePage() {
                 scheduleEntries={scheduleEntries}
                 isLoading={isLoading}
                 onAddClick={handleAddClick}
-                onDeleteSession={(id) => setDeleteTargetId(id)}
+                isOnline={isOnline}
+                onDeleteSession={handleDeleteClick}
                 onWorkoutClick={handleWorkoutClick}/>
             )}
 
@@ -496,6 +745,16 @@ export default function SchedulePage() {
                 await handleDeletingSession(id)
             }
             }}/>
+
+            <ScheduleSettingsPopup isOpen={isSettingsOpen} onClose={() => { setIsSettingsOpen(false); void fetchScheduleAndAnalytics(); }}/>
+            <ReschedulePreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                proposedItems={proposedSchedule}
+                droppedItems={droppedSchedule}
+                onConfirm={handleConfirmReschedule}
+                isConfirming={isConfirmingReschedule}
+                selectedMissedIds={selectedMissedIds}/>
         </section>
     )
 }
@@ -517,6 +776,17 @@ export default function SchedulePage() {
                 <div className={`text-xs md:text-sm font-sans font-semibold text-muted-foreground/80 mt-1 leading-none ${isToday ? 'text-brand/90' : 'text-muted-foreground/80'}`}>{date}</div>
             </div>
         )
+    }
+
+    const formatScheduledTime = (isoString: string) =>{
+        try{
+            const d = new Date(isoString)
+            const hours = String(d.getHours()).padStart(2, '0')
+            const minutes = String(d.getMinutes()).padStart(2,'0')
+            return `${hours}:${minutes}`
+        } catch {
+            return ''
+        }
     }
 
     //workoutcards
@@ -543,7 +813,12 @@ export default function SchedulePage() {
                 className="flex-1 bg-card border border-border rounded-xl p-5 hover:border-brand/40 transition-all shadow-sm cursor-pointer hover:ring-2 hover:ring-brand/45 focus-visible:ring-2 focus-visible:ring-brand/45 outline-none">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                         <div className="md:col-span-7 space-y-2">
-                            <CardTitle className="text-lg font-bold text-foreground leading-snug">{session.workoutName}</CardTitle>
+                            <CardTitle className="text-lg font-bold text-foreground leading-snug flex items-center gap-2">
+                                <span>{session.workoutName}</span>
+                                <span className="text-xs font-normal text-muted-foreground bg-surface-2/60 px-2 py-0.5 rounded-md border border-border/50">
+                                {formatScheduledTime(session.scheduled)}
+                                </span>
+                            </CardTitle>
                             <p className={cardDETAIL}>
                                 <span className="font-semibold text-foreground">Primary Muscle Groups: </span>{session.primaryMuscleGroups.join(', ') || 'None'}
                             </p>
@@ -592,13 +867,14 @@ interface EmptyDayCardProps{
     readonly fullName: string
     readonly onClick: () => void
     readonly disabled?:boolean
+    readonly title?: string
 }
-function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
+function EmptyDayCard({ fullName, onClick, disabled, title }: EmptyDayCardProps) {
     return (
         <div className="flex-1 flex items-stretch">
-            <button tabIndex={disabled? -1:0}
+            <button type="button" tabIndex={disabled? -1:0}
             disabled={disabled}
-            title={disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`}
+            title={title ?? (disabled ? "You cannot schedule a workout on a day before today" : `Add workout for ${fullName}`)}
                 className={`flex-1 min-h-[110px] border-2 border-dashed border-border/70 rounded-xl flex items-center justify-center transition-all ${ 
                     disabled
                     ? 'opacity-40 cursor-not-allowed border-border/40 bg-surface/5'
@@ -609,7 +885,7 @@ function EmptyDayCard({ fullName, onClick, disabled }: EmptyDayCardProps) {
                         event.preventDefault();
                         onClick();
                     }
-                }} aria-label={disabled ? `Cannot add workout for ${fullName} before today`: `Add workout for ${fullName}`}>
+                }} aria-label={title ?? (disabled ? `Cannot add workout for ${fullName} before today` : `Add workout for ${fullName}`)}>
                 <div className={`p-3 bg-surface border border-border rounded-full transition-all shadow-sm ${
                     disabled ? 'text-muted-foreground/40 border-border/40'
                     : 'group-hover:bg-brand/10 group-hover:text-brand group-hover:border-brand/30 text-muted-foreground'
@@ -633,7 +909,7 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
     return (
         <Card className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="mb-4">
-                <h3 className="font-display text-lg tracking-wider uppercase">Weekly Summary</h3>
+                <h2 className="font-display text-lg tracking-wider uppercase">Weekly Summary</h2>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="px-1">
@@ -656,12 +932,25 @@ function SummaryCard({totalWorkouts, totalVolume, totalSets}: SummaryCardProps){
     )
 }
 
+function addButtonTitle(isOnline: boolean, isBeforeToday: boolean) {
+    if (!isOnline) {
+        return OFFLINE_HINT
+    }
+
+    if (isBeforeToday) {
+        return "Cannot schedule in the past"
+    }
+
+    return "Add workout"
+}
+
 // month view calendar comp
 interface MonthViewCalendarProps{
     readonly currentDate: Date
     readonly scheduleEntries: readonly ScheduledEntryDto[]
     readonly isLoading: boolean
     readonly onAddClick: (date: Date) => void
+    readonly isOnline: boolean
     readonly onDeleteSession: (id: string) => void
     readonly onWorkoutClick: (session: ScheduledEntryDto) => void
 }
@@ -670,6 +959,7 @@ function MonthViewCalendar({
     scheduleEntries,
     isLoading,
     onAddClick,
+    isOnline,
     onDeleteSession,
     onWorkoutClick
 }: MonthViewCalendarProps){
@@ -760,9 +1050,12 @@ function MonthViewCalendar({
                                     className="group/item relative px-2.5 py-1.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-1.5 text-xs font-bold text-foreground transition-all hover:border-brand/40 hover:ring-2 hover:ring-brand/45 focus-visible-within:ring-2 focus-visible-within:ring-brand/45 shadow-sm">
                                         <button type="button"
                                         onClick={() => onWorkoutClick(session)}
-                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline" 
-                                        title={session.workoutName}>
-                                            {session.workoutName}
+                                        className="truncate flex-1 text-left outline-none cursor-pointer focus-visible:underline flex items-center justify-between" 
+                                        title={`${session.workoutName} at ${formatScheduledTime(session.scheduled)}`}>
+                                            <span className="truncate">{session.workoutName}</span>
+                                            <span className="text-[10px] font-normal text-muted-foreground ml-1 shrink-0">
+                                                {formatScheduledTime(session.scheduled)}
+                                            </span>
                                         </button>                                            
                                         <button 
                                         type="button" 
@@ -781,10 +1074,10 @@ function MonthViewCalendar({
                         <div className="flex justify-center py-1">
                             <button type="button" 
                             tabIndex={isBeforeToday ? -1 : 0}
-                            disabled={isBeforeToday}
+                            disabled={isBeforeToday || !isOnline}
                             onClick={() => onAddClick(cell.date)}
-                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={isBeforeToday ? "Cannot schedule in the past" : "Add workout"}>
+                            className="flex items-center justify-center w-full py-1.5 border border-dashed border-border/70 hover:border-brand/50 hover:bg-brand/5 rounded-lg transition-all text-muted-foreground hover:text-brand cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={addButtonTitle(isOnline, isBeforeToday)}>
                                 <Plus size={14} />
                             </button>
                         </div>

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Users;
+using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.API.Controllers;
 
@@ -41,7 +42,7 @@ public sealed class UserSettingsController : ControllerBase
 
     [HttpPatch("profilePicture")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile profilePicture, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadProfilePicture([FromForm] UploadProfilePictureRequest request, CancellationToken cancellationToken)
     {
         var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -50,6 +51,7 @@ public sealed class UserSettingsController : ControllerBase
             return Unauthorized();
         }
 
+        var profilePicture = request.ProfilePicture;
         if (profilePicture == null || profilePicture.Length == 0)
         {
             return BadRequest("No file uploaded or file is empty.");
@@ -98,6 +100,10 @@ public sealed class UserSettingsController : ControllerBase
             return NotFound();
         }
     }
+
+    public sealed record UploadProfilePictureRequest(
+        IFormFile? ProfilePicture
+    );
 
     public sealed record UserDetailsRequest(
         string DisplayName,
@@ -150,6 +156,12 @@ public sealed class UserSettingsController : ControllerBase
         string Units
     );
 
+    public sealed record UpdateRepRangeRequest(
+        string ExerciseType,
+        int LowerLimit,
+        int UpperLimit
+    );
+
     [HttpPatch("preferences")]
     public async Task<IActionResult> UpdateUserPreferences([FromBody] PreferencesRequest request, CancellationToken cancellationToken)
     {
@@ -178,6 +190,54 @@ public sealed class UserSettingsController : ControllerBase
         catch (KeyNotFoundException)
         {
             return NotFound();
+        }
+    }
+
+    [HttpPatch("rep-ranges/{repRangeId:guid}")]
+    public async Task<IActionResult> UpdateUserRepRange(Guid repRangeId, [FromBody] UpdateRepRangeRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (request.LowerLimit > request.UpperLimit)
+        {
+            return BadRequest("Lower limit must be less than or equal to upper limit.");
+        }
+
+        if (request.LowerLimit < 4)
+        {
+            return BadRequest("Lower limit cannot be less than 4.");
+        }
+
+        if (!Enum.TryParse<UserRepRangeExerciseType>(request.ExerciseType, true, out var exerciseType))
+        {
+            return BadRequest("Exercise type must be Compound or Isolation.");
+        }
+
+        try
+        {
+            var command = new UpdateUserRepRangeCommand(
+                userId,
+                repRangeId,
+                exerciseType,
+                request.LowerLimit,
+                request.UpperLimit
+            );
+
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(new { error = e.Message });
         }
     }
 
@@ -223,6 +283,72 @@ public sealed class UserSettingsController : ControllerBase
         catch (ArgumentException e)
         {
             return BadRequest(new { error = e.Message });
+        }
+    }
+
+    public sealed record SetPasswordRequest(
+        string NewPassword
+    );
+
+    [HttpPost("setPassword")]
+    public async Task<IActionResult> SetPassword([FromBody] SetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrEmpty(request.NewPassword))
+        {
+            return BadRequest("New password is required.");
+        }
+
+        try
+        {
+            var command = new SetPasswordCommand(
+                userId,
+                request.NewPassword
+            );
+
+            await _sender.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException e)
+        {
+            return BadRequest(new { error = e.Message });
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(new { error = e.Message });
+        }
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
+    {
+        var userIdstr = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdstr) || !Guid.TryParse(userIdstr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            await _sender.Send(new DeleteAccountCommand(userId), cancellationToken);
+
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
         }
     }
 

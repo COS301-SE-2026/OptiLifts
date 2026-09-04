@@ -11,6 +11,8 @@ jobs:
   lint-test-build:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_PROJECTS: 'all'
 
     steps:
     - name: Checkout Repository
@@ -42,12 +44,13 @@ jobs:
         cache-dependency-path: 'backend/ai-api/requirements.txt'
 
     - name: Cache Playwright Browsers
+      id: playwright-cache
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-playwright-all-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-playwright-
+          ${{ runner.os }}-playwright-all
 
     - name: Install Dependencies
       run: pnpm install --frozen-lockfile && pnpm run setup
@@ -55,13 +58,10 @@ jobs:
     - name: Lint Code
       run: pnpm lint
 
-    - name: Run Tests
-      run: pnpm test
-
-    - name: Run Coverage
+    - name: Run test and Coverage
       run: pnpm test:coverage
 
-    - name: Compute combined coverage
+    - name: Compute and check combined coverage
       id: cov
       run: |
         FE_JSON="frontend/coverage/coverage-summary.json"
@@ -89,6 +89,13 @@ jobs:
         echo "percentage=$PCT" >> "$GITHUB_OUTPUT"
         echo "color=$COLOR" >> "$GITHUB_OUTPUT"
 
+        echo "Calculated Total Code Coverage: $PCT%"
+
+        if (( $(echo "$PCT < 80.0" | bc -l) )); then
+          echo "Code coverage ($PCT%) is below 80%"
+          exit 1
+        fi
+
     - name: Update coverage badge gist
       uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483
       with:
@@ -101,7 +108,22 @@ jobs:
 
 
     - name: Install Playwright Browsers
-      run: pnpm exec playwright install --with-deps
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      run: |
+        if [[ "$PLAYWRIGHT_PROJECTS" == "chromium" ]]; then
+          ./node_modules/.bin/playwright install chromium
+        else
+          ./node_modules/.bin/playwright install
+        fi
+
+    - name: Install Playwright OS Dependencies
+      run: |
+        if [[ "$PLAYWRIGHT_PROJECTS" == "chromium" ]]; then
+          ./node_modules/.bin/playwright install-deps chromium
+        else
+          ./node_modules/.bin/playwright install-deps
+        fi
+
 
     - name: Start E2E Services
       run: bash ./scripts/e2e-ci.sh start

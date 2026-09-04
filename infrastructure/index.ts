@@ -25,8 +25,11 @@ const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
 const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
+const googleClientId = config.getSecret("googleClientId");
+const googleClientSecret = config.getSecret("googleClientSecret");
 
 const domainStage = config.get("domainStage") ?? "none";
+const rateLimitingEnabled = config.get("rateLimitingEnabled") ?? "true";
 
 const imageTag = process.env.IMAGE_TAG;
 if (!imageTag) {
@@ -176,10 +179,12 @@ const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
+        activeRevisionsMode: "Multiple",
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
             customDomains: customDomain(frontendDomain, frontendCert),
+            traffic: [{ latestRevision: true, weight: 100 }],
         },
         registries: [{
             server: acrServer,
@@ -199,93 +204,30 @@ const frontendApp = new app.ContainerApp("frontend", {
             name: "frontend",
             image: pulumi.interpolate`${acrServer}/optilifts-frontend:${imageTag}`,
             resources: { cpu: 0.5, memory: "1.0Gi" },
-            env: [{ name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` }]
-
-        }],
-    },
-});
-
-// copre-api container app
-const coreApiApp = new app.ContainerApp("core-api", {
-    resourceGroupName: resourceGroup.name,
-    managedEnvironmentId: containerAppEnv.id,
-    configuration: {
-        ingress: {
-            external: true, //give public url
-            targetPort: 8080,
-            customDomains: customDomain(backendDomain, backendCert),
-        },
-
-        secrets: [
-            //make container app secrets so can inject them
-            { name: "acr-password", value: acrPassword },
-            { name: "jwt-secret", value: jwtSecret },
-            { name: "db-encryption-key", value: dbEncryptionKey },
-            { name: "postgres-password", value: postgressPassword },
-            {
-                name: "postgres-connection-string",
-                value: pulumi.interpolate`Host=${pgServer.fullyQualifiedDomainName};Port=${pgPort};Database=${pgDatabase.name};Username=optilifts_admin;Password=${postgressPassword};SslMode=VerifyFull;`
-            },
-            {
-                name: "storage-connection-string",
-                value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
-            },
-            { name: "core-api-sentry-dsn", value: coreApiSentryDsn ?? "" }
-        ],
-
-        registries: [{
-            server: acrServer,
-            username: acrUsername,
-            // sonarqube is wrong, this is how to reference the secret
-            passwordSecretRef: "acr-password", // NOSONAR
-        }],
-    },
-    template: {
-        scale: {
-            minReplicas: 0,
-            maxReplicas: 2,
-        },
-        containers: [{
-            name: "core-api",
-            image: pulumi.interpolate`${acrServer}/optilifts-core-api:${imageTag}`,
-            resources: { cpu: 0.5, memory: "1.0Gi" },
             env: [
-                { name: "POSTGRES_HOST", value: pgServer.fullyQualifiedDomainName },
-                { name: "POSTGRES_PORT", value: "5432" },
-                { name: "POSTGRES_DB", value: pgDatabase.name },
-                { name: "POSTGRES_USER", value: "optilifts_admin" },
-                { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
-                { name: "AUTH_COOKIE_SECURE", value: "true" },
-                { name: "DEV_SEEDING", value: devSeeding },
-                { name: "FRONTEND_ORIGIN", value: frontendUrl },
-                { name: "JWT_SECRET", secretRef: "jwt-secret" },
-                { name: "JWT_EXP_MINUTES", value: jwtExpMin },
-                { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
-                { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
-                { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
-                { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
-                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
-            ],
-            probes: [{
-                type: "Startup",
-                tcpSocket: {
-                    port: 8080,
-                },
-                initialDelaySeconds: 10,
-                periodSeconds: 10,
-                failureThreshold: 30, 
-            }],
+                { name: "NGINX_BACKEND_URL", value: `https://${backendDomain}` },
+                ...(rateLimitingEnabled === "false" ? [
+                    { name: "NGINX_AUTH_RATE_LIMIT", value: "10000r/s" },
+                    { name: "NGINX_GENERAL_RATE_LIMIT", value: "10000r/s" },
+                    { name: "NGINX_AUTH_BURST", value: "10000" },
+                    { name: "NGINX_GENERAL_BURST", value: "10000" },
+                ] : []),
+            ]
+
         }],
     },
 });
 
+// ai-api container app
 const aiApiApp = new app.ContainerApp("ai-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
+        activeRevisionsMode: "Multiple",
         ingress: {
             external: false, // can only be accessed by core-api 
             targetPort: 8000,
+            traffic: [{ latestRevision: true, weight: 100 }],
         },
         registries: [{
             server: acrServer,
@@ -308,6 +250,88 @@ const aiApiApp = new app.ContainerApp("ai-api", {
                 cpu: 0.5,
                 memory: "1.0Gi"
             },
+        }],
+    },
+});
+
+// copre-api container app
+const coreApiApp = new app.ContainerApp("core-api", {
+    resourceGroupName: resourceGroup.name,
+    managedEnvironmentId: containerAppEnv.id,
+    configuration: {
+        activeRevisionsMode: "Multiple",
+        ingress: {
+            external: true, //give public url
+            targetPort: 8080,
+            customDomains: customDomain(backendDomain, backendCert),
+            traffic: [{ latestRevision: true, weight: 100 }],
+        },
+
+        secrets: [
+            //make container app secrets so can inject them
+            { name: "acr-password", value: acrPassword },
+            { name: "jwt-secret", value: jwtSecret },
+            { name: "db-encryption-key", value: dbEncryptionKey },
+            { name: "postgres-password", value: postgressPassword },
+            {
+                name: "postgres-connection-string",
+                value: pulumi.interpolate`Host=${pgServer.fullyQualifiedDomainName};Port=${pgPort};Database=${pgDatabase.name};Username=optilifts_admin;Password=${postgressPassword};SslMode=VerifyFull;`
+            },
+            {
+                name: "storage-connection-string",
+                value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
+            },
+            { name: "core-api-sentry-dsn", value: coreApiSentryDsn },
+            { name: "google-client-id", value: googleClientId },
+            { name: "google-client-secret", value: googleClientSecret }
+        ],
+
+        registries: [{
+            server: acrServer,
+            username: acrUsername,
+            // sonarqube is wrong, this is how to reference the secret
+            passwordSecretRef: "acr-password", // NOSONAR
+        }],
+    },
+    template: {
+        scale: {
+            minReplicas: 0,
+            maxReplicas: 3,
+        },
+        containers: [{
+            name: "core-api",
+            image: pulumi.interpolate`${acrServer}/optilifts-core-api:${imageTag}`,
+            resources: { cpu: 0.5, memory: "1.0Gi" },
+            env: [
+                { name: "POSTGRES_HOST", value: pgServer.fullyQualifiedDomainName },
+                { name: "POSTGRES_PORT", value: "5432" },
+                { name: "POSTGRES_DB", value: pgDatabase.name },
+                { name: "POSTGRES_USER", value: "optilifts_admin" },
+                { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
+                { name: "AUTH_COOKIE_SECURE", value: "true" },
+                { name: "DEV_SEEDING", value: devSeeding },
+                { name: "FRONTEND_ORIGIN", value: frontendUrl },
+                { name: "RateLimiting__Enabled", value: rateLimitingEnabled },
+                { name: "AI_API_URL", value: pulumi.interpolate`https://${aiApiApp.configuration.apply(c => c!.ingress!.fqdn!)}` },
+                { name: "JWT_SECRET", secretRef: "jwt-secret" },
+                { name: "JWT_EXP_MINUTES", value: jwtExpMin },
+                { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
+                { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
+                { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
+                { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
+                { name: "GOOGLE_CLIENT_ID", secretRef: "google-client-id" },
+                { name: "GOOGLE_CLIENT_SECRET", secretRef: "google-client-secret" },
+                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
+            ],
+            probes: [{
+                type: "Startup",
+                tcpSocket: {
+                    port: 8080,
+                },
+                initialDelaySeconds: 10,
+                periodSeconds: 10,
+                failureThreshold: 30, 
+            }],
         }],
     },
 });

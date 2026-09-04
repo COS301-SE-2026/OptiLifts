@@ -60,6 +60,24 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             })
             .ToListAsync(cancellationToken);
 
+        var secondaryMuscleRows = await (
+            from workoutExercise in _dbContext.WorkoutExercises.AsNoTracking()
+            where workoutExercise.WorkoutId == workout.Id
+            join secondary in _dbContext.SecMuscles.AsNoTracking()
+                on workoutExercise.ExerciseId equals secondary.ExerciseId
+            join muscle in _dbContext.Muscles.AsNoTracking()
+                on secondary.MuscleId equals muscle.Id
+            select new
+            {
+                workoutExercise.ExerciseId,
+                muscle.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        var secondaryMusclesByExerciseId = secondaryMuscleRows
+            .GroupBy(entry => entry.ExerciseId)
+            .ToDictionary(group => group.Key, group => group.Select(entry => entry.Name).Distinct().ToArray());
+
         var logExercises = await (
             from workoutLogExercise in _dbContext.WorkoutLogExercises.AsNoTracking()
             where workoutLogExercise.LogId == log.Id
@@ -174,6 +192,9 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             entry.ExerciseId,
             entry.Name,
             entry.PrimaryMuscle,
+            secondaryMusclesByExerciseId.TryGetValue(entry.ExerciseId, out var secondaryMuscles)
+                ? secondaryMuscles
+                : [],
             ToFrontendExerciseType(entry.ExerciseType),
             entry.OrderIndex,
             entry.ImageUrl,
@@ -197,6 +218,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
             workout.FolderId,
             null,
             workout.CreatedAt,
+            log.StartedAt,
             log.CompletedAt,
             log.CompletedAt is null ? null : FormatDuration(log.CompletedAt.Value - log.StartedAt),
             primaryMuscleGroups,
@@ -272,7 +294,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
                         row.Distance,
                         row.RestTime,
                         row.GroupNumber,
-                        row.Rpe))
+                        row.Rpe ?? 0))
                     .ToArray());
     }
 
@@ -313,7 +335,7 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         float? Distance,
         int RestTime,
         int GroupNumber,
-        float Rpe);
+        float? Rpe);
 
     private sealed record WorkoutLogExerciseRow(
         Guid Id,
@@ -350,5 +372,5 @@ public sealed class GetWorkoutLogDetailHandler : IRequestHandler<GetWorkoutLogDe
         float? Distance,
         int RestTime,
         int GroupNumber,
-        float Rpe);
+        float? Rpe);
 }

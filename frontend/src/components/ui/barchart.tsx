@@ -13,7 +13,7 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
 
   return (
     <section className={className}>
-      <h2 className="mb-4 text-2xl font-bold tracking-tight text-foreground">{title}</h2>
+      <h2 className="mb-4 type-section-title text-foreground">{title}</h2>
 
       <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:px-5 sm:py-5">
         <div className="flex gap-3">
@@ -44,14 +44,21 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
                 />
               ))}
 
-              <div className="relative z-10 grid h-full grid-cols-12 items-end gap-x-0.5 sm:gap-x-1">
+              <div className="relative z-10 grid h-full grid-cols-8 sm:grid-cols-12 items-end gap-x-1 sm:gap-x-1">
                 {data.map((bar, idx) => {
+                  const mobileStartIndex = Math.max(0, data.length - 8)
+                  const isHiddenOnMobile = data.length > 8 && idx < mobileStartIndex
                   const height = Math.max((bar.value / maxValue) * 100, bar.value === 0 ? 0 : 4)
                   const minutes = bar.value * 60
                   const displayValue = minutes > 0 && minutes < 1 ? '<1m' : `${Math.round(minutes)}m`
 
                   return (
-                    <div key={`bar-${idx}-${bar.value}`} className="flex h-full flex-col items-center justify-end">
+                    <div
+                      key={`bar-${idx}-${bar.label}`}
+                      className={`h-full flex-col items-center justify-end ${
+                        isHiddenOnMobile ? 'hidden sm:flex' : 'flex'
+                      }`}
+                    >
                       <div
                         className="w-full max-w-[18px] rounded-[2px] bg-brand-2 transition-opacity hover:opacity-80 cursor-pointer"
                         style={{ height: `${height}%` }}
@@ -63,12 +70,22 @@ export function BarChart({ title = 'Hours this week', data = [], className }: Ba
                 })}
               </div>
             </div>
-            <div className="grid grid-cols-12 gap-x-0.5 sm:gap-x-1 mt-2">
-              {data.map((bar, idx) => (
-                <div key={`label-${idx}-${bar.label}`} className="flex justify-center">
-                  <span className="text-[0.7rem] text-muted-foreground whitespace-nowrap">{bar.label}</span>
-                </div>
-              ))}
+            <div className="grid grid-cols-8 sm:grid-cols-12 gap-x-1 sm:gap-x-1 mt-2">
+              {data.map((bar, idx) => {
+                const mobileStartIndex = Math.max(0, data.length - 8)
+                const isHiddenOnMobile = data.length > 8 && idx < mobileStartIndex
+
+                return (
+                  <div
+                    key={`label-${idx}-${bar.label}`}
+                    className={`justify-center ${isHiddenOnMobile ? 'hidden sm:flex' : 'flex'}`}
+                  >
+                    <span className="text-[0.62rem] sm:text-[0.7rem] text-muted-foreground whitespace-nowrap">
+                      {bar.label}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

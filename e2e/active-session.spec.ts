@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test-utils';
 
 test.describe('Active Session Page', () => {
     let createdEntryId: string | null = null;
@@ -26,7 +26,7 @@ test.describe('Active Session Page', () => {
 
         await startButton.click();
 
-        await expect(page.getByRole('heading', { name: workoutName })).toBeVisible();
+        await expect(page.getByRole('heading', { name: workoutName }).first()).toBeVisible();
         await expect(page.locator('p', { hasText: /^Duration$/ })).toBeVisible();
         await expect(page.locator('p', { hasText: /^Volume$/ })).toBeVisible();
         await expect(page.locator('p', { hasText: /^Sets$/ })).toBeVisible();
@@ -69,6 +69,6 @@ test.describe('Active Session Page', () => {
         await page.goto('/profile');
         await expect(page.getByText('Loading profile...')).toBeHidden({ timeout: 15000 });
         await expect(page.getByRole('heading', { name: 'Recent Workouts' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: workoutName })).toBeVisible();
+        await expect(page.getByRole('heading', { name: workoutName }).first()).toBeVisible();
     });
 });

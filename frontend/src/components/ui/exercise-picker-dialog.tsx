@@ -9,6 +9,7 @@ import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 import { customFetch } from '@/lib/custom-fetch'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export type CatalogExercise = {
   id: string
@@ -33,12 +34,13 @@ type ExercisePickerDialogProps = Readonly<{
   onClose: () => void
   onSelect: (exercise: CatalogExercise) => void
   title?: string
+  initialMuscle?: string
 }>
 
 const MUSCLE_OPTS = ['All Muscles', ...MUSCLE_GROUPS]
 const EQUIPMENT_OPTS = ['All Equipment', ...DEFAULT_EQUIPMENT_OPTIONS]
 
-export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add Exercise' }: ExercisePickerDialogProps) {
+export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add Exercise', initialMuscle }: ExercisePickerDialogProps) {
   const [allExercises, setAllExercises] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,10 +50,19 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
   const [reloadKey, setReloadKey] = useState(0)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [detailsExerciseId, setDetailsExerciseId] = useState<string | null>(null)
+  const [customOnly, setCustomOnly] = useState(false)
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+  
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
+    if (isOpen) {
+      setSelectedMuscle(initialMuscle && MUSCLE_OPTS.includes(initialMuscle) ? initialMuscle : 'All Muscles')
+    }
+  }
+
 
   useEffect(() => {
-    if (!isOpen)
-    {
+    if (!isOpen) {
       return
     }
     let cancelled = false
@@ -59,7 +70,8 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
       setLoading(true)
       setError(null)
       try {
-        const results = await customFetch('/api/exercises', { headers: { 'Content-Type': 'application/json' } })
+        const url = `/api/exercises${(customOnly) ? '?customOnly=true' : ''}`
+        const results = await customFetch(url, { headers: { 'Content-Type': 'application/json' } })
         if (!results.ok) throw new Error(`Failed to load exercises (${results.status})`)
         const json = (await results.json()) as ExerciseApiResponse[]
         if (!cancelled) {
@@ -83,7 +95,7 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
 
     void load()
     return () => { cancelled = true }
-  }, [isOpen, reloadKey])
+  }, [isOpen, reloadKey, customOnly])
 
   useEffect(() => {
     if (!isOpen) return
@@ -108,10 +120,10 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
 
   return (
     <>
-    <div className="fixed inset-x-0 bottom-0 top-20 z-30 flex items-center justify-center p-4">
+      <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-30 flex items-center justify-center p-4">
         <button
           type="button"
-          className="absolute inset-0 block w-full cursor-default bg-foreground/50 outline-none"
+          className="absolute inset-0 block w-full cursor-default bg-black/50 backdrop-blur-xs outline-none"
           aria-label="Close exercise picker"
           onClick={onClose}
           tabIndex={-1}
@@ -130,7 +142,7 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedMuscle}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
                   {MUSCLE_OPTS.map((o) => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedMuscle(o)}>{o}</DropdownMenuItem>
                   ))}
@@ -140,21 +152,28 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
                 <DropdownMenuTrigger variant="filter" className="w-full shadow-none">
                   <span>{selectedEquipment}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-64 overflow-y-auto">
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-64 overflow-y-auto">
                   {EQUIPMENT_OPTS.map((o) => (
                     <DropdownMenuItem key={o} onSelect={() => setSelectedEquipment(o)}>{o}</DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="[&>div]:w-full [&>div]:max-w-none">
-              <SearchInput
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search exercises"
-                aria-label="Search exercises"
-                className="h-8 w-full"
-              />
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <div className="flex-1 [&>div]:w-full [&>div]:max-w-none">
+                <SearchInput
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search exercises"
+                  aria-label="Search exercises"
+                  className="h-8 w-full"
+                />
+              </div>
+              <Checkbox 
+                  checked={customOnly} 
+                  onChange={setCustomOnly} 
+                  label="Show custom only" 
+                />
             </div>
           </div>
 
@@ -165,7 +184,7 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
               <p className="px-4 py-3 text-sm text-muted-foreground">No exercises match your filters.</p>
             )}
             <div className="divide-y divide-border/70">
-                            {filtered.map((ex) => (
+              {filtered.map((ex) => (
                 <div key={ex.id} className="flex items-center gap-3 px-4 py-2.5">
                   <CircularProfileImage src={ex.imageUrl} alt={ex.name}
                     className="size-9 shrink-0 border-border" fallbackIcon={<Dumbbell className="size-4 text-muted-foreground" />}
@@ -214,11 +233,13 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
         onClose={() => setDetailsExerciseId(null)}
         onChanged={() => setReloadKey((k) => k + 1)}
       />
-      <CreateExercise
-        isOpen={isCreateOpen}
-        onCancel={() => setIsCreateOpen(false)}
-        onSaved={() => setReloadKey((k) => k + 1)}
-      />
+      {isCreateOpen && (
+        <CreateExercise
+          isOpen={true}
+          onCancel={() => setIsCreateOpen(false)}
+          onSaved={() => setReloadKey((k) => k + 1)}
+        />
+      )}
     </>
   )
 }

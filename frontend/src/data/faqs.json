@@ -1,0 +1,140 @@
+[
+    {
+        "id": "faq-1",
+        "category": "Workouts",
+        "question": "How do I create and customise a workout routine?",
+        "answer": "Navigate to the \"Workouts\" page via the top navbar, then click the + button. You can name your workout, add exercises, set target sets and repititions, and create custom exercises."
+    },
+    {
+        "id": "faq-2",
+        "category": "Offline Sync",
+        "question": "What happens if I lose internet connection during an active workout?",
+        "answer": "OptiLifts has full offline logging capabilities. Your sets, weights, and reps are automatically stored locally in your bwoser. When your connection is restored, your information sync back to the server."
+    },
+    {
+        "id": "faq-3",
+        "category": "Schedule",
+        "question": "How do I schedule workout sessions on specific days?",
+        "answer": "Go to the \"Schedule\" page to view your weekly calendar. Click on the day you wish to assign a workout to, and select the routine to schedule."
+    },
+    {
+        "id": "faq-4",
+        "category": "Profile",
+        "question": "Where can I view my workout history and total lifting stats?",
+        "answer": "Go to the \"Profile\" page to see your logged sections, and click on \"View All\" to see total volume lifted, and summaries of each of your completed sessions. "
+    },
+    {
+        "id": "faq-5",
+        "category": "Schedule",
+        "question": "How do I connect my schedule to Google Calendar?",
+        "answer": "Go to the \"Schedule\" page and click on the \"Settings\" button. Select the \"Sync with Google Calendar\" button, and pick which Google Account you wish to connect with."
+    },
+    {
+        "id": "faq-6",
+        "category": "Schedule",
+        "question": "How does OptiLifts sync with my Google Calendar?",
+        "answer": "When you connect Google Calendar in your account settings, OptiLifts creates a dedicated calendar named \"OptiLifts\" in your Google account. Upcoming scheduled workout sessions are automatically synced to this calendar, as well as exercise lists and sets."
+    },
+    {
+        "id": "faq-7",
+        "category": "Schedule",
+        "question": "What happens if I disconnect or reconnect my Google Calendar?",
+        "answer": "Disconnecting revokes calendar permissions and turns off sync settings. When you reconnect, OptiLifts re-authenticates with Google, reconnects to your calendar, and automatically re-sync all upcoming workouts."
+    },
+    {
+        "id": "faq-8",
+        "category": "Schedule",
+        "question": "If I reschedule or edit a workout in OptiLifts, will Google Calendar update?",
+        "answer": "Yes. Whenever you add, modify, or reschedule a workout session in OptiLifts, all future events in your connected Google Calendar are updated to match your new schedule."
+    },
+    {
+        "id": "faq-9",
+        "category": "Schedule",
+        "question": "How does OptiLifts handle missed workout sessions?",
+        "answer": "Uncompleted workouts past their scheduled time are flagged as \"Missed\". Triggering a reschedule lets OptiLifts evaluate all selected missed entries and suggest new dates that fit your schedule."
+    },
+    {
+        "id": "faq-10",
+        "category": "Schedule",
+        "question": "What is the Dynamic Scheduler and how does it work?",
+        "answer": "The Dynamic Scheduler is an automated planning engine that adjusts your trainign routine when life gets in the way. If you miss sessions or need to change your routine, it calculated a revised workout schedule while protecting your recovery and rest constraints, such as muscle rest periods and mandatory rest days."
+    },
+    {
+        "id": "faq-11",
+        "category": "Schedule",
+        "question": "Why was one of my missed workouts marked as \"Dropped\" during rescheduling?",
+        "answer": "A session is marked as \"Dropped\" if fitting it into your remaining cycle window would violate your max daily workout limit, rest day settings, or muscle recovery rules. Dropping over-constrained workouts prevents schedule compounding and burnout."
+    },
+    {
+        "id": "faq-12",
+        "category": "Schedule",
+        "question": "Does the Dynamic Scheduler check for conflicts with external personal meetings or events?",
+        "answer": "The Dynamic Scheduler optimises based on your OptiLifts schedule configuration (rest days, max workouts per day, rest hours). We recommend setting your preferred weekly rest days and daily caps in OptiLifts to reflect your overall real-world availability."
+    },
+    {
+        "id": "faq-13",
+        "category": "Workouts",
+        "question": "How can I use the progressive overload engine?",
+        "answer": "You do not have to explicity attempt to use the progressive overload engine. The progressive overload engine will automatically start recommending weight and rep increases in the workout once the minimun threshold is met of at least 4 workouts with the same exercise."
+    },
+    {
+        "id": "faq-14",
+        "category": "Workouts",
+        "question": "Can I manually adjust the recommendations from the progressive overload engine?",
+        "answer": "Yes. While the progressive overload engine provides automated recommendations, you can manually adjust weights and reps for any exercise. The engine will take your manual changes into account for future recommendations."
+    },
+    {
+        "id": "faq-15",
+        "category": "Workouts",
+        "question": "How does the progressive overload engine work?",
+        "answer": "The progressive overload engine looks at your last 4-8 workouts for each exercise and based on the e1RM of those exercises calculates what your next workout should look like, whether it is a 1 rep increase or when the engine mathematically detemines you can increase the weight by a minimum of 5kg."
+    },
+    {
+        "id": "faq-16",
+        "category": "Active Session",
+        "question": "How do I log my sets during an active workout session?",
+        "answer": "Start a workout session from the Workouts or Schedule page. As you perform each set, enter your completed weight and rep count, then check off the set. Completed sets are immediately recorded into your session log."
+    },
+    {
+        "id": "faq-17",
+        "category": "Workouts",
+        "question": "How do I edit or delete an existing workout template?",
+        "answer": "On the Workouts page, click the three-dots menu or edit icon on any workout card. You can modify exercise ordering, set targets, or delete the template. Modifying a template will not alter previously completed workout logic."
+    },
+    {
+        "id": "faq-18",
+        "category": "Active Session",
+        "question": "What is the difference between a Superset and a Circuit Set in OptiLifts?",
+        "answer": "A Superset pairs two exercises performed back-to-back with minimal rest in between, while a Circuit Set connects 3 or more exercises performed sequentially before taking a rest period. In OptiLifts, adding a third exercise to a superset automatically converts it into a Circuit Set."
+    },
+    {
+        "id": "faq-19",
+        "category": "Active Session",
+        "question": "What happens if I accidentally refresh or close my browser during a live workout?",
+        "answer": "OptiLifts automatically persists active session state to local browser storage. Re-opening the app will restore your active session right where you left off without losing logged sets."
+    },
+    {
+        "id": "faq-20",
+        "category": "Profile",
+        "question": "How are Workout Streaks calculated?",
+        "answer": "Streaks track consecutive weeks or days of working out. Consistently completing sessions maintains and increments your active streak."
+    },
+    {
+        "id": "faq-21",
+        "category": "Profile",
+        "question": "How do I earn Badges and Achievements?",
+        "answer": "Badges are awarded automatically as you reach key milestones in OptiLifts, such as logging your first workout, achieving volume thresholds, maintaining workout streaks, or exploring different exercise variations. Unlocked badges display on your Profile."
+    },
+    {
+        "id": "faq-22",
+        "category": "User Settings",
+        "question": "How do I switch weight units between Kilograms (kg) and Pounds (lbs)?",
+        "answer": "Go to User Settings under your profile menu and toggle your preferred weight unit. All weight inputs, history logs, and volume analytics will automatically convert to your selected unit."
+    },
+    {
+        "id": "faq-23",
+        "category": "User Settings",
+        "question": "How do I change my password or update my profile details?",
+        "answer": "Navigate to User Settings > Account Security to update your name, email address, password, or security preferences."
+    }
+]

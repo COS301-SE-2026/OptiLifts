@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, ImagePlus, Loader2, X } from "lucide-react";
+import { Eye, EyeOff, ImagePlus, Loader2, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { metricCheck, outputWeight, inputWeight } from "@/lib/weight-utils";
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 
 type UserSettingsPopupProps = Readonly<{
     isOpen: boolean;
@@ -46,6 +47,7 @@ type PreferencesParams = Readonly<{
 }>;
 
 type SecurityParams = Readonly<{
+    hasPassword: boolean;
     security: {
         currentPassword: string;
         newPassword: string;
@@ -54,6 +56,13 @@ type SecurityParams = Readonly<{
     updateSecurity: (field: string, value: string) => void;
     error?: string | null;
 }>;
+
+interface UserRepRangeDto {
+    id: string;
+    exerciseType: string;
+    lowerLimit: number | "";
+    upperLimit: number | "";
+}
 
 interface UserSettingsDto {
     profile: {
@@ -71,12 +80,19 @@ interface UserSettingsDto {
         units: string;
     };
 
+    repRanges: UserRepRangeDto[];
+
+    security?: {
+        hasPassword: boolean;
+    };
 }
 
-
+const getErrorMessage = (err: unknown, fallbackMessage: string): string => {
+    return (err instanceof Error)? err.message : fallbackMessage;
+};
 
 function useSettingsLogic(isOpen: boolean, onClose: () => void) {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
 
     const initialPreferencesRef = useRef<{ theme: string; units: string } | null>(null);
 
@@ -85,11 +101,15 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const [profileChanged, setProfileChanged] = useState(false);
     const [preferenceChanged, setPreferenceChanged] = useState(false);
     const [securityChanged, setSecurityChanged] = useState(false);
+    const [repRanges, setRepRanges] = useState<UserRepRangeDto[]>([]);
+    const [repRangesChanged, setRepRangesChanged] = useState(false);
+    const [hasPassword, setHasPassword] = useState<boolean>(true);
 
     const [profileError, setProfileError] = useState<string | null>(null);
     const [preferencesError, setPreferencesError] = useState<string | null>(null);
     const [securityError, setSecurityError] = useState<string | null>(null);
     const [generalError, setGeneralError] = useState<string | null>(null);
+    const [repRangesError, setRepRangesError] = useState<string | null>(null);
 
     //states 
     const [profile, setProfile] = useState({
@@ -102,8 +122,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     });
 
     const [preferences, setPreferences] = useState({
-        theme: "dark",
-        units: "metric"
+        theme: (typeof window !== "undefined")? (localStorage.getItem("theme") || "dark") : "dark",
+        units: (typeof window !== "undefined")? (localStorage.getItem("units") || "metric") : "metric"
     });
 
     const [security, setSecurity] = useState({
@@ -145,6 +165,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
+    const updateRepRange = (id: string, field: "lowerLimit" | "upperLimit", value: number | "") => {
+        setRepRanges(prev => prev.map(r => (r.id === id)? { ...r, [field]: value } : r));
+        setRepRangesChanged(true);
+    };
+
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -178,13 +203,14 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
                 }
 
                 const data: UserSettingsDto = await response.json();
+                setRepRanges(data.repRanges || []);
 
                 let formattedHeight= 0;
                 if (data.profile.height) {
                     if (metricCheck()) {
                         formattedHeight = data.profile.height;
                     }else{
-                        formattedHeight = Math.round(data.profile.height * 0.393701 * 100) / 100
+                        formattedHeight = Math.round(data.profile.height / 2.54 * 100) / 100
                     }
                 }
 
@@ -199,6 +225,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
                 setSelectedImgUrl(data.profile.profilePictureUrl);
                 setInitialProfilePicUrl(data.profile.profilePictureUrl);
+                setHasPassword(data.security?.hasPassword ?? true);
 
                 const loadedPreferences = {
                     theme: data.preferences.theme || "dark",
@@ -249,6 +276,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         if (!res.ok) {
             throw new Error("Could not update profile information.");
         }
+        if (profile.sex) {
+            updateUser({
+                sex:profile.sex
+            });
+        }
     };
 
     const savePreferences = async () => {
@@ -274,16 +306,16 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     const savePassword = async () => {
 
-        if (security.newPassword === "" || security.currentPassword === "" || security.confirmPassword === "") {
-            throw new Error("All password fields are required.");
+        if (security.newPassword === "" || security.confirmPassword === "") {
+            throw new Error("New password and confirmation are required.");
+        }
+
+        if (hasPassword && security.currentPassword === "") {
+            throw new Error("Enter current password");
         }
 
         if (security.newPassword !== security.confirmPassword) {
             throw new Error("New passwords do not match.");
-        }
-
-        if (security.currentPassword === "") {
-            throw new Error("Enter current password");
         }
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -291,18 +323,23 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             throw new Error("New password does not meet complexity requirements.");
         }
 
-        const res = await customFetch("/api/users/me/updatePassword", {
+        const endpoint = hasPassword ? "/api/users/me/updatePassword" : "/api/users/me/setPassword";
+        const body = hasPassword
+            ? { currentPassword: security.currentPassword, newPassword: security.newPassword }
+            : { newPassword: security.newPassword };
+
+        const res = await customFetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                currentPassword: security.currentPassword,
-                newPassword: security.newPassword
-            })
+            body: JSON.stringify(body)
         });
 
         if (!res.ok) {
-            throw new Error("Could not change password, please check your current password.");
+            const errorPayload = await res.json().catch(() => null);
+            throw new Error(errorPayload?.error || "Could not update password, please check your inputs.");
         }
+
+        setHasPassword(true);
     };
 
     const saveProfilePic = async () => {
@@ -330,6 +367,37 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
+    const saveRepRanges = async () => {
+        for (const range of repRanges){
+
+            if (range.lowerLimit === "" || range.upperLimit === "") {
+                throw new Error(`Please fill in all rep range fields for ${range.exerciseType}`);
+            }
+
+            if (Number(range.lowerLimit) >= Number(range.upperLimit)) {
+                throw new Error(`Lower limit must be less than the upper limit for ${range.exerciseType}`);
+            }
+            
+            if (Number(range.lowerLimit) < 4) {
+                throw new Error(`Lower limit cannot be less than 4 for ${range.exerciseType}`);
+            }
+
+            const res = await customFetch(`/api/users/me/rep-ranges/${range.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    exerciseType: range.exerciseType,
+                    lowerLimit: range.lowerLimit,
+                    upperLimit: range.upperLimit
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to update rep range for ${range.exerciseType}`);
+            }
+        }
+    };
+
     const handleSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         setProfileError(null);
@@ -346,8 +414,17 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             await saveProfilePic();
         }
         catch (err) {
-            const typedError = (err instanceof Error) ? err : new Error("Failed to save profile details");
-            setProfileError(typedError.message);
+            setProfileError(getErrorMessage(err, "Failed to save profile details"));
+            errors = true;
+        }
+
+        try {
+            if (repRangesChanged) {
+                await saveRepRanges();
+            }
+        }
+        catch (err) {
+            setRepRangesError(getErrorMessage(err, "Failed to save rep ranges"));
             errors = true;
         }
 
@@ -357,8 +434,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             }
         }
         catch (err) {
-            const typedError = (err instanceof Error) ? err : new Error("Failed to save preferences");
-            setPreferencesError(typedError.message);
+        setPreferencesError(getErrorMessage(err, "Failed to save preferences"));
             errors = true;
         }
 
@@ -368,12 +444,11 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             }
         }
         catch (err) {
-            const typedError = (err instanceof Error) ? err : new Error("Failed to change password");
-            setSecurityError(typedError.message);
+        setSecurityError(getErrorMessage(err, "Failed to change password"));
             errors = true;
         }
 
-        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilePicDeleted)) {
+        if (!errors && (profileChanged || preferenceChanged || initialProfilePicUrl !== selectedImgUrl || profilePicDeleted || repRangesChanged)) {
             window.location.reload();
         }
         setIsSaving(false);
@@ -397,11 +472,13 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         profile, updateProfile,
         preferences, updatePreferences,
         security, updateSecurity,
+        hasPassword,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
         isLoading, isSaving,
         profileError, preferencesError, securityError, generalError,
         handleSave,
-        revertTheme
+        revertTheme,
+        repRanges, updateRepRange, repRangesError
 
     };
 }
@@ -509,7 +586,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Sex</span>
                     <DropdownMenu>
@@ -534,7 +611,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Weight ({metricCheck()? 'KG' : 'LB'})</span>
                     <Input type="number" step="0.1" value={profile.weight} onChange={(e) => updateProfile("weight", e.target.value)} />
@@ -555,11 +632,64 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
     );
 }
 
+function RepRangesSection({ repRanges, updateRepRange, error }: Readonly<{ 
+    repRanges: UserRepRangeDto[];
+    updateRepRange: (id: string, field: "lowerLimit" | "upperLimit", value: number | "") => void;
+    error?: string | null;
+}>) {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-border pb-1">
+                <h3 className="font-bold text-foreground uppercase tracking-wider text-base">Rep Ranges</h3>
+                <div 
+                    className="text-muted-foreground hover:text-foreground cursor-help"
+                    title="These are your ideal rep ranges for OptiLifts to help you effectivley progressivley overload! They are not strictly enforced but act as a guide."
+                >
+                    <Info size={16} />
+                </div>
+            </div>
+            <div className="space-y-2">
+                {repRanges.map(range => (
+                    <div key={range.id} className="grid grid-cols-3 gap-4 items-center">
+                        <span className="text-sm">{range.exerciseType}</span>
+                        
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Lower</span>
+                            <Input 
+                                type="number" 
+                                value={range.lowerLimit} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateRepRange(range.id, "lowerLimit", (val === "")? "" : Number.parseInt(val));
+                                }}/>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Upper</span>
+                            <Input 
+                                type="number" 
+                                value={range.upperLimit} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    updateRepRange(range.id, "upperLimit", (val === "")? "" : Number.parseInt(val));
+                                }}/>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs p-2.5 rounded-lg mt-2">
+                    {error}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function PreferencesSection({ preferences, updatePreferences, error }: PreferencesParams) {
     return (
         <div className="space-y-4">
             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">App Preferences</h3>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                 <span className="text-sm">Theme</span>
                 <DropdownMenu>
                     <DropdownMenuTrigger
@@ -574,7 +704,7 @@ function PreferencesSection({ preferences, updatePreferences, error }: Preferenc
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                 <span className="text-sm">Units</span>
                 <DropdownMenu>
                     <DropdownMenuTrigger
@@ -600,40 +730,46 @@ function PreferencesSection({ preferences, updatePreferences, error }: Preferenc
     );
 }
 
-function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
+function SecuritySection({ hasPassword, security, updateSecurity, error }: SecurityParams) {
     const [showCurrent, setShowCurrent] = useState<boolean>(false);
     const [showNew, setShowNew] = useState<boolean>(false);
     const [showConfirm, setShowConfirm] = useState<boolean>(false);
 
     return (
         <div className="space-y-4">
-            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Change Password</h3>
+            <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">
+                {hasPassword ? "Change Password" : "Set Password"}
+            </h3>
 
-             <p className="text-xs text-muted-foreground -mt-2">
-                Passwords need 8 or more characters containing uppercase, lowercase, numbers, and special characters
+            <p className="text-xs text-muted-foreground -mt-2">
+                {hasPassword
+                    ? "Passwords need 8 or more characters containing uppercase, lowercase, numbers, and special characters"
+                    : "Create a password to enable logging in with your email address in addition to Google."}
             </p>
 
-            <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground">Current Password</span>
-                <div className="relative w-full">
-                    <Input
-                        type={showCurrent ? "text" : "password"}
-                        value={security.currentPassword}
-                        onChange={(e) => updateSecurity("currentPassword", e.target.value)}
-                        className="pr-11"
-                    />
-                    <Button
-                        type="button" variant="password" size="icon"
-                        onClick={() => setShowCurrent(!showCurrent)}
-                        className="absolute right-1 top-1/2 -translate-y-1/2"
-                    >
-                        {showCurrent ? <Eye size={16} /> : <EyeOff size={16} />}
-                    </Button>
+            {hasPassword && (
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs font-bold text-muted-foreground">Current Password</span>
+                    <div className="relative w-full">
+                        <Input
+                            type={showCurrent ? "text" : "password"}
+                            value={security.currentPassword}
+                            onChange={(e) => updateSecurity("currentPassword", e.target.value)}
+                            className="pr-11"
+                        />
+                        <Button
+                            type="button" variant="password" size="icon"
+                            onClick={() => setShowCurrent(!showCurrent)}
+                            className="absolute right-1 top-1/2 -translate-y-1/2"
+                        >
+                            {showCurrent ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground">New Password</span>
+                <span className="text-xs font-bold text-muted-foreground">{hasPassword ? "New Password" : "Password"}</span>
                 <div className="relative w-full">
                     <Input
                         type={showNew ? "text" : "password"}
@@ -652,7 +788,7 @@ function SecuritySection({ security, updateSecurity, error }: SecurityParams) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-muted-foreground">Confirm New Password</span>
+                <span className="text-xs font-bold text-muted-foreground">{hasPassword ? "Confirm New Password" : "Confirm Password"}</span>
                 <div className="relative w-full">
                     <Input
                         type={showConfirm ? "text" : "password"}
@@ -684,6 +820,28 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     const { logout } = useAuth();
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const isOnline = useOnlineStatus()
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            const res = await customFetch("/api/users/me", {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                logout();
+            }
+        } catch (error) {
+            console.error("Error deleting account:", error);
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteConfirmOpen(false);
+        }
+    }
+
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
@@ -700,11 +858,13 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         profile, updateProfile,
         preferences, updatePreferences,
         security, updateSecurity,
+        hasPassword,
         selectedImgUrl, setSelectedImg, setSelectedImgUrl,
         isLoading, isSaving,
         profileError, preferencesError, securityError, generalError,
         handleSave,
-        revertTheme
+        revertTheme, 
+        repRanges, updateRepRange, repRangesError
     } = useSettingsLogic(isOpen, onClose);
 
     if (!isOpen) {
@@ -726,16 +886,16 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
     };
 
     return (
-        <div className="fixed top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4 sm:p-6">
             <button
                 type="button"
-                className="absolute inset-0 block w-full cursor-default outline-none bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 block w-full cursor-default outline-none bg-transparent"
                 aria-label="Close settings"
                 onClick={handleClosePopup}
                 tabIndex={-1}
             />
 
-            <div className="relative z-10 w-full max-w-lg bg-surface border border-border rounded-xl shadow-lg flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-lg bg-surface border border-border rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <h2 className="text-xl font-bold font-display uppercase tracking-wider text-foreground">Settings</h2>
@@ -766,35 +926,55 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                             error={profileError}
                         />
 
+                        <RepRangesSection 
+                            repRanges={repRanges} 
+                            updateRepRange={updateRepRange} 
+                            error={repRangesError} 
+                        />
+
                         <PreferencesSection
                             preferences={preferences} updatePreferences={updatePreferences}
                             error={preferencesError}
                         />
 
                         <SecuritySection
+                            hasPassword={hasPassword}
                             security={security} updateSecurity={updateSecurity}
                             error={securityError}
                         />
 
-                        {/* logout */}
+                        {/* Account Management */}
                         <div className="space-y-4 pt-2">
                             <h3 className="font-bold border-b border-border pb-1 text-foreground uppercase tracking-wider text-base">Account Management</h3>
-                            <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <span className="text-sm text-muted-foreground focus-visible:outline-brand">Log out of your current session on this device.</span>
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="w-48 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
+                                    className="w-full sm:w-48 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
                                     onClick={() => setIsLogoutConfirmOpen(true)}
                                 >
                                     Log Out
+                                </Button>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                                <span className="text-sm text-muted-foreground focus-visible:outline-brand">Permanently delete your account and all associated data. This action cannot be undone.</span>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="w-full sm:w-48 shrink-0 font-bold"
+                                    onClick={() => setIsDeleteConfirmOpen(true)}
+                                >
+                                    Delete Account
                                 </Button>
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-border">
                             <Button type="button" variant="secondary" onClick={handleClosePopup} disabled={isSaving}>Cancel</Button>
-                            <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
+                            <OfflineTooltip isOnline={isOnline}>
+                                <Button type="submit" disabled={isSaving || !isOnline}>{isSaving ? "Saving..." : "Save Changes"}</Button>
+                            </OfflineTooltip>
                         </div>
                     </form>
                 )}
@@ -811,6 +991,19 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                 title="Log Out"
                 description="Are you sure you want to log out of your account?"
                 confirmText="Log Out"
+                cancelText="Cancel"
+                variant="danger"
+            />
+
+            <ConfirmDialog
+                isOpen={isDeleteConfirmOpen}
+                onClose={() => !isDeleting && setIsDeleteConfirmOpen(false)}
+                onConfirm={
+                    handleDeleteAccount
+                }
+                title="Delete Account"
+                description="Are you sure you want to delete your account? This action cannot be undone and you will lose all of your data forever."
+                confirmText={(isDeleting) ? "Deleting..." : "Delete Account"}
                 cancelText="Cancel"
                 variant="danger"
             />

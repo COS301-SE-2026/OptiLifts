@@ -1,18 +1,25 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Training;
+
 
 namespace OptiLifts.Infrastructure.Workouts;
 
 public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCom, CreateWorkoutLogRes?>
 {
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPlateauDetectionService _plateauDetectionService;
+    private readonly ISender? _sender;
 
-    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext)
+    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _plateauDetectionService = plateauDetectionService;
+        _sender = sender;
     }
 
     public async Task<CreateWorkoutLogRes?> Handle(CreateWorkoutLogCom request, CancellationToken cancellationToken)
@@ -48,16 +55,33 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
         else
         {
-            var entry = new ScheduledEntry
-            {
-                WorkoutId = request.WorkoutId,
-                UserId = request.UserId,
-                Scheduled = request.StartedAt,
-                Status = ScheduleStatus.Completed
-            };
+            var startedDay = DateTime.SpecifyKind(request.StartedAt.Date, DateTimeKind.Utc);
 
-            _dbContext.ScheduledEntries.Add(entry);
-            entryId = entry.Id;
+            var plannedEnt = await _dbContext.ScheduledEntries
+                .Where(e => e.UserId == request.UserId
+                    && e.WorkoutId == request.WorkoutId && e.Status != ScheduleStatus.Completed
+                    && e.Scheduled >= startedDay && e.Scheduled < startedDay.AddDays(1))
+                .OrderBy(e => e.Scheduled)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (plannedEnt is not null)
+            {
+                plannedEnt.Status = ScheduleStatus.Completed;
+                entryId = plannedEnt.Id;
+            }
+            else
+            {
+                var entry = new ScheduledEntry
+                {
+                    WorkoutId = request.WorkoutId,
+                    UserId = request.UserId,
+                    Scheduled = request.StartedAt,
+                    Status = ScheduleStatus.Completed
+                };
+
+                _dbContext.ScheduledEntries.Add(entry);
+                entryId = entry.Id;
+            }
         }
 
         var log = new WorkoutLog
@@ -121,7 +145,27 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var exerciseId in orderedExercises.Select(e => e.ExerciseId).Distinct())
+        {
+            await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
+        }
+        await GenerateOverloadAsync(request.UserId, log.CompletedAt.HasValue, orderedExercises.Select(exercise => exercise.ExerciseId), cancellationToken);
+
         return new CreateWorkoutLogRes(log.Id, entryId, AlreadyExisted: false);
+    }
+
+    private async Task GenerateOverloadAsync(Guid userId, bool isCompleted, IEnumerable<Guid> exerciseIds, CancellationToken cancellationToken)
+    {
+        if (!isCompleted || _sender is null)
+        {
+            return;
+        }
+
+        foreach (var exerciseId in exerciseIds.Distinct())
+        {
+            await _sender.Send(new GenerateOverloadCommand(userId, exerciseId), cancellationToken);
+        }
     }
 
     private async Task<Dictionary<(Guid ExerciseId, ExercisePrType PrType), float>> LoadCurrentBestValuesAsync(

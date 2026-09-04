@@ -9,10 +9,11 @@ type BackendUserDto = Readonly<{
   email: string
   metric: boolean
   lightTheme: boolean
+  sex?: string
 }>
 
 type SubmitAuthRequestArgs = Readonly<{
-  endpoint: '/api/auth/login' | '/api/auth/register'
+  endpoint: '/api/auth/login' | '/api/auth/register' | '/api/auth/google'
   body: unknown
   login: (session: AuthSession) => void
   navigate: NavigateFunction
@@ -35,7 +36,7 @@ export function mapBackendUserToAuthUser(user: BackendUserDto): AuthUser {
 
   localStorage.setItem('units', user.metric ? 'metric' : 'imperial')
 
-  return { id: user.id, name: user.displayName, email: user.email, metric: user.metric, lightTheme: user.lightTheme }
+  return { id: user.id, name: user.displayName, email: user.email, metric: user.metric, lightTheme: user.lightTheme, sex: user.sex, }
 }
 
 export async function submitAuthRequest({
@@ -65,6 +66,9 @@ export async function submitAuthRequest({
         setErrorMessage(unauthorizedErrorMessage)
       } else if (res.status === 409 && conflictErrorMessage) {
         setErrorMessage(conflictErrorMessage)
+      } else if (res.status === 429) {
+        const payload = await res.json().catch(() => null)
+        setErrorMessage(payload?.detail ?? payload?.title ?? 'Too many attempts. Please wait a moment before trying again.')
       } else {
         const payload = await res.json().catch(() => null)
         setErrorMessage(payload?.title ?? fallbackErrorMessage)
@@ -85,4 +89,34 @@ export async function submitAuthRequest({
   } finally {
     setIsSubmitting(false)
   }
+}
+
+export type SubmitGoogleAuthArgs = Readonly<{
+  idToken: string
+  login: (session: AuthSession) => void
+  navigate: NavigateFunction
+  fromPath: string
+  setErrorMessage: Dispatch<SetStateAction<string | null>>
+  setIsSubmitting: Dispatch<SetStateAction<boolean>>
+}>
+
+export async function submitGoogleAuthRequest({
+  idToken,
+  login,
+  navigate,
+  fromPath,
+  setErrorMessage,
+  setIsSubmitting,
+}: SubmitGoogleAuthArgs) {
+  return submitAuthRequest({
+    endpoint: '/api/auth/google',
+    body: { idToken },
+    login,
+    navigate,
+    fromPath,
+    setErrorMessage,
+    setIsSubmitting,
+    fallbackErrorMessage: 'Unable to sign in with Google. Please try again.',
+    unauthorizedErrorMessage: 'Google authentication failed. Please try again.',
+  })
 }

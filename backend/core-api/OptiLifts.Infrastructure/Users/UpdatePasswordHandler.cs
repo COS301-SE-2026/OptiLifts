@@ -37,7 +37,7 @@ public sealed class ChangePasswordHandler : IRequestHandler<UpdatePasswordComman
             throw new KeyNotFoundException("User not found.");
         }
 
-        if (!_passwordHasher.Verify(user.PasswordHash, request.CurrentPassword))
+        if (string.IsNullOrWhiteSpace(user.PasswordHash) || !_passwordHasher.Verify(user.PasswordHash, request.CurrentPassword))
         {
             throw new UnauthorizedAccessException("Provided current password is incorrect.");
         }

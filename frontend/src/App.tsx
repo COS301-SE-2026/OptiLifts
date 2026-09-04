@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { Navbar } from '@/components/ui/navbar'
-import { PageTitle } from '@/components/ui/page-title'
 import { useAuth } from '@/context/auth-context'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -10,6 +9,8 @@ import ActiveSessionPage from '@/pages/active-session'
 import { Loader2 } from 'lucide-react'
 import { Toaster } from '@/components/ui/alert'
 import { initOfflineWorkoutLogSync } from '@/lib/offline/workout-logs'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { warmOfflineCache } from '@/lib/offline/workouts-cache'
 
 const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
 const WorkoutsPage = lazy(() => import('@/pages/workouts'))
@@ -22,6 +23,7 @@ const SchedulePage = lazy(() => import('@/pages/schedule'))
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const LandingPage = lazy(() => import('@/pages/landing'))
 const HelpPage= lazy(() => import('@/pages/help'))
+const ProgressionPage = lazy(() => import('@/pages/progression'))
 
 function AppLayout() {
   return (
@@ -29,18 +31,20 @@ function AppLayout() {
       <Navbar />
       <Toaster />
       <main>
-        <Suspense fallback={
-          <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-brand" />
-              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
-                Loading...
-              </p>
-            </div>
-          </section>
-        }>
-          <Outlet />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={
+            <section className="mx-auto flex min-h-[calc(100dvh-4rem)] items-center justify-center py-16">
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
+                  Loading...
+                </p>
+              </div>
+            </section>
+          }>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   )
@@ -49,6 +53,12 @@ function AppLayout() {
 function RequireAuth() {
   const { isAuthenticated, isHydrated } = useAuth()
   const location = useLocation()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void warmOfflineCache()
+    }
+  }, [isAuthenticated])
 
   if (!isHydrated) {
     return (
@@ -83,22 +93,6 @@ function RequireGuest({ children }: Readonly<{ children: React.ReactNode }>) {
   return children
 }
 
-
-type PlaceholderPageProps = Readonly<{
-  title: string
-  description: string
-}>
-
-function PlaceholderPage({ title, description }: PlaceholderPageProps) {
-  return (
-    <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-5xl flex-col justify-center px-6 py-16">
-      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-brand">Route ready</p>
-      <PageTitle title={title} />
-      <p className="mt-4 max-w-2xl text-lg text-muted-foreground">{description}</p>
-    </section>
-  )
-}
-
 function App() {
   useEffect(() => initOfflineWorkoutLogSync(), [])
   return (
@@ -111,11 +105,12 @@ function App() {
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="workouts/:workoutId" element={<WorkoutDetailPage />} />
           <Route path="workouts/:workoutId/logs/:logId" element={<WorkoutLogDetailPage />} />
+          <Route path="workouts/:workoutId/logs/:logId/edit" element={<ActiveSessionPage mode="edit" />} />
           <Route path="workouts/create" element={<CreateWorkoutPage />} />
           <Route path="workouts/edit/:id" element={<CreateWorkoutPage />} />
           <Route path="active-session" element={<ActiveSessionPage />} />
           <Route path="schedule" element={<SchedulePage />} />
-          <Route path="progress" element={<PlaceholderPage title="Progress" description="Progress shell." />} />
+          <Route path="progression" element={<ProgressionPage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />

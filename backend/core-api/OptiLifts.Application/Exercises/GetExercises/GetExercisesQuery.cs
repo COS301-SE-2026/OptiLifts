@@ -6,4 +6,6 @@ public record GetExercisesQuery(
     Guid UserId,
     string? Search = null,
     string? Muscle = null,
-    string? Equipment = null) : IRequest<List<ExerciseDto>>;
+    string? Equipment = null,
+    bool CustomOnly = false
+    ) : IRequest<List<ExerciseDto>>;

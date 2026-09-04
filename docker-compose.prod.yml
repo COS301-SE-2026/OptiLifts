@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test}
+      POSTGRES_DB: ${POSTGRES_DB:-optilifts_integration_tests_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-optilifts_integration_tests_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -42,7 +42,7 @@ services:
       
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING:-Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}}
+      - POSTGRES_CONNECTION_STRING=${POSTGRES_CONNECTION_STRING:-Host=db;Port=5432;Database=${POSTGRES_DB:-optilifts_integration_tests_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-test}}
       - JWT_SECRET=${JWT_SECRET:-test_secret_key_for_integration_tests_only}
       - JWT_EXP_MINUTES=${JWT_EXP_MINUTES:-60}
       - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-+8bGaoOpx4CEfxnMcX1RG2qrcJaT+RZO/0IIpSePZQA=}
@@ -52,11 +52,14 @@ services:
     
       - CONNECTIONSTRINGS__AZURESTORAGE=${CONNECTIONSTRINGS__AZURESTORAGE:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;}
     
-      - AiApiBaseUrl=http://ai-api:8000
+      - AI_API_URL=http://ai-api:8000
       
       - RUN_MIGRATIONS=true
       - DEV_SEEDING=${DEV_SEEDING:-true}
       - E2E_TESTING=${E2E_TESTING:-false}
+      - RateLimiting__Enabled=${RATE_LIMITING_ENABLED:-true}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
 
     depends_on:
       db:
@@ -83,8 +86,13 @@ services:
       network: host
       args:
         - VITE_API_BASE=/api
+        - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     environment:
       - NGINX_BACKEND_URL=http://core-api:8080
+      - NGINX_AUTH_RATE_LIMIT=${NGINX_AUTH_RATE_LIMIT:-5r/s}
+      - NGINX_GENERAL_RATE_LIMIT=${NGINX_GENERAL_RATE_LIMIT:-30r/s}
+      - NGINX_AUTH_BURST=${NGINX_AUTH_BURST:-10}
+      - NGINX_GENERAL_BURST=${NGINX_GENERAL_BURST:-50}
     # so application is on 5173 externally 
     ports:
       - "${FRONTEND_PORT:-5173}:8080"

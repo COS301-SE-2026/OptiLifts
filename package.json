@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "setup": "pnpm install && cd backend/core-api && dotnet restore && dotnet tool update --global dotnet-ef && cd ../ai-api && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
-    "dev": "concurrently \"pnpm db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev": "concurrently \"pnpm db\" \"pnpm dev:backend\" \"pnpm dev:frontend\" \"pnpm dev:ai\"",
     
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
@@ -33,8 +33,8 @@
     "test:e2e:ui": "bash -lc 'set -euo pipefail; started_services=0; cleanup() { status=$?; if [ \"$started_services\" = \"1\" ]; then pnpm e2e:services:down; fi; exit \"$status\"; }; trap cleanup EXIT; if [ \"${E2E_USE_EXISTING_SERVICES:-0}\" = \"1\" ]; then pnpm exec playwright test --config=e2e/playwright.config.ts --ui; else started_services=1; AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} pnpm e2e:services:up:detached; pnpm exec playwright test --config=e2e/playwright.config.ts --ui; fi'",
     "e2e:services:build": "docker compose -f docker-compose.prod.yml build",
     "e2e:services:up": "docker compose -f docker-compose.prod.yml up",
-    "e2e:services:webserver": "bash -lc 'export AUTH_COOKIE_SECURE=\"${AUTH_COOKIE_SECURE:-false}\"; trap \"docker compose -f docker-compose.prod.yml down -v --remove-orphans\" EXIT; docker compose -f docker-compose.prod.yml up'",
-    "e2e:services:up:detached": "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} docker compose -f docker-compose.prod.yml up -d",
+    "e2e:services:webserver": "bash -lc 'export AUTH_COOKIE_SECURE=\"${AUTH_COOKIE_SECURE:-false}\"; export E2E_TESTING=\"true\"; export RATE_LIMITING_ENABLED=\"false\"; export NGINX_AUTH_RATE_LIMIT=\"1000r/s\"; export NGINX_GENERAL_RATE_LIMIT=\"1000r/s\"; export NGINX_AUTH_BURST=\"500\"; export NGINX_GENERAL_BURST=\"1000\"; trap \"docker compose -f docker-compose.prod.yml down -v --remove-orphans\" EXIT; docker compose -f docker-compose.prod.yml up'",
+    "e2e:services:up:detached": "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} E2E_TESTING=true RATE_LIMITING_ENABLED=false NGINX_AUTH_RATE_LIMIT=1000r/s NGINX_GENERAL_RATE_LIMIT=1000r/s NGINX_AUTH_BURST=500 NGINX_GENERAL_BURST=1000 docker compose -f docker-compose.prod.yml up -d",
     "e2e:services:down": "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false} docker compose -f docker-compose.prod.yml down -v --remove-orphans",
     "e2e:services:rebuild": "pnpm e2e:services:build && pnpm e2e:services:up:detached",
     "e2e:ci": "bash ./scripts/e2e-ci.sh ci",
@@ -63,7 +63,9 @@
     "test:coverage": "concurrently \"pnpm test:coverage:frontend\" \"pnpm test:coverage:backend\" \"pnpm test:coverage:ai\"",
     "test:coverage:frontend": "pnpm --filter frontend cov",
     "test:coverage:backend": "cd backend/core-api && dotnet test --collect:\"XPlat Code Coverage\"",
-    "test:coverage:ai": "cd backend/ai-api && ./venv/bin/pytest --cov --cov-report=xml"
+    "test:coverage:ai": "cd backend/ai-api && ./venv/bin/pytest --cov --cov-report=xml",
+
+    "rollback": "gh workflow run rollback.yml"
   },
   "keywords": [],
   "author": "",

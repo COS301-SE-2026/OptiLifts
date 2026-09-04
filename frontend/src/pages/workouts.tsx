@@ -8,14 +8,22 @@ import {
   DropdownMenuEllipsisContent,
   DropdownMenuItem,
   DropdownMenuEllipsisTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import { useAuth } from '@/context/auth-context'
-import type { Workout, WorkoutSummary } from '@/types/workout'
+import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
+import type { Workout, WorkoutSummary, MuscleName } from '@/types/workout'
+import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Plus } from 'lucide-react'
 import { customFetch } from '@/lib/custom-fetch'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { cacheWorkoutList, getCachedWorkoutDetail, getCachedWorkoutList, precacheWorkoutDetails } from '@/lib/offline/workouts-cache'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 export default function WorkoutsPage() {
   const { isAuthenticated, isHydrated } = useAuth()
@@ -26,11 +34,12 @@ export default function WorkoutsPage() {
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
-
+  const [selectedWorkoutDetails, setSelectedWorkoutDetails] = useState<WorkoutDetailResponse | null>(null)
+  const [isOfflineData, setIsOfflineData] = useState(false)
   const authError = isHydrated && !isAuthenticated ? 'Please log in to view your workouts.' : null
+  const isOnline = useOnlineStatus()
 
   const loadWorkouts = useCallback(async (selectIdAfterLoad?: string) => {
-    
     await Promise.resolve()
     setIsFetching(true)
     setError(null)
@@ -47,10 +56,14 @@ export default function WorkoutsPage() {
 
       const data = (await response.json()) as Workout[]
       setWorkouts(data)
+      setIsOfflineData(false)
+      void cacheWorkoutList(data)
+      void precacheWorkoutDetails(data.map((w) => w.id))
 
       if (selectIdAfterLoad) {
         setSelectedId(selectIdAfterLoad)
-      } else {
+      } 
+      else {
         setSelectedId((currentId) => {
           if (data.some((w) => w.id === currentId)) {
             return currentId
@@ -58,9 +71,20 @@ export default function WorkoutsPage() {
           return data[0]?.id ?? null
         })
       }
-    } catch (loadError) {
+    } 
+    catch (loadError) {
+      const cached = await getCachedWorkoutList()
+
+      if (cached && cached.length > 0) {
+        setWorkouts(cached)
+        setIsOfflineData(true)
+        setSelectedId((currentId) => (cached.some((w) => w.id === currentId) ? currentId : cached[0]?.id ?? null))
+        return
+      }
+
       setError(loadError instanceof Error ? loadError.message : 'Failed to load workouts.')
-    } finally {
+    } 
+    finally {
       setIsFetching(false)
     }
   }, [])
@@ -74,6 +98,45 @@ export default function WorkoutsPage() {
     }
     void triggerInitial()
   }, [isHydrated, isAuthenticated, loadWorkouts])
+
+  useEffect(() => {
+    if (!selectedId || !isAuthenticated || !isHydrated) {
+      return
+    }
+
+    let isActive = true
+
+    const loadSelectedWorkoutDetails = async () => {
+      try {
+        const response = await customFetch(`/api/workouts/${selectedId}`, {
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to load workout details (${response.status})`)
+        }
+
+        const data = (await response.json()) as WorkoutDetailResponse
+        if (isActive) {
+          setSelectedWorkoutDetails(data)
+        }
+      } catch {
+        const cached = await getCachedWorkoutDetail(selectedId)
+
+        if (isActive) {
+          setSelectedWorkoutDetails(cached)
+        }
+      }
+    }
+
+    void loadSelectedWorkoutDetails()
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedId, isAuthenticated, isHydrated])
 
   //duplication
   const handleDuplicate = async (workoutId: string) => {
@@ -139,6 +202,13 @@ export default function WorkoutsPage() {
   }, [visibleWorkouts, workouts, query])
 
   const selectedWorkout = visibleWorkouts.find((w) => w.id === selectedId) ?? null
+  const selectedWorkoutSecondaryMuscles = useMemo(
+    () =>
+      selectedWorkout && selectedWorkoutDetails?.id === selectedWorkout.id
+        ? (selectedWorkoutDetails.exercises.flatMap((exercise) => exercise.secondaryMuscles ?? []) ?? []) as MuscleName[]
+        : [],
+    [selectedWorkout, selectedWorkoutDetails]
+  )
 
   const summary: WorkoutSummary | null = selectedWorkout
     ? {
@@ -155,14 +225,16 @@ export default function WorkoutsPage() {
       </div>
 
       <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-7">
+        <div className="col-span-12 lg:col-span-7">
           <div className="mb-4 flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search workouts" />
             </div>
-            <Button variant="icon" size="icon" aria-label="Add" onClick={() => navigate('/workouts/create')}>
-              <Plus size={20} />
-            </Button>
+            <OfflineTooltip isOnline={isOnline}>
+              <Button variant="icon" size="icon" aria-label="Add" disabled={!isOnline} onClick={() => navigate('/workouts/create')}>
+                <Plus size={20} />
+              </Button>
+            </OfflineTooltip>
           </div>
 
           {isLoading && (
@@ -171,10 +243,14 @@ export default function WorkoutsPage() {
             </div>
           )}
           {displayError && (
-            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-red-500">
+            <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-destructive">
               {displayError}
             </div>
           )}
+          {isOfflineData && (
+            <OfflineBanner message="You're offline - your workouts will sync when you're back online." />
+          )}
+
           {!isLoading && !error && filtered.length === 0 && (
             <div className="mb-4 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
               No workouts found
@@ -212,9 +288,20 @@ export default function WorkoutsPage() {
                     <DropdownMenu>
                       <DropdownMenuEllipsisTrigger aria-label="Options" />
                       <DropdownMenuEllipsisContent>
-                        <DropdownMenuItem onSelect={() => navigate(`/workouts/edit/${w.id}`)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setDeleteTargetId(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger disabled={!isOnline}>Quick Workout</DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 15 } })}>15 Minutes</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 30 } })}>30 Minutes</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 45 } })}>45 Minutes</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout: w, isTimeConstrained: true, timeBudgetMinutes: 60 } })}>60 Minutes</DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
+                        <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${w.id}`)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem disabled={!isOnline} onSelect={() => handleDuplicate(w.id)}>Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(w.id)} data-variant="destructive">Delete</DropdownMenuItem>
                       </DropdownMenuEllipsisContent>
                     </DropdownMenu>
                   </CardAction>
@@ -236,8 +323,12 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        <aside className="col-span-5">
-          <MuscleDiagram highlightedMuscles={selectedWorkout?.primaryMuscleGroups ?? []} variant="both" />
+        <aside className="col-span-12 lg:col-span-5">
+          <MuscleDiagram
+            highlightedMuscles={selectedWorkout?.primaryMuscleGroups ?? []}
+            secondaryMuscles={selectedWorkoutSecondaryMuscles}
+            variant="both"
+          />
 
           <Card className="mt-6">
             <CardHeader>

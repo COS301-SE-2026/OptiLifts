@@ -8,11 +8,14 @@ using OptiLifts.Application.Workouts.AddExerciseToWorkout;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Application.Workouts.CreateWorkout;
 using OptiLifts.Application.Workouts.DeleteWorkout;
+using OptiLifts.Application.Workouts.DeleteWorkoutLog;
 using OptiLifts.Application.Workouts.DuplicateWorkout;
 using OptiLifts.Application.Workouts.GetWorkoutDetail;
 using OptiLifts.Application.Workouts.GetWorkoutLogDetail;
 using OptiLifts.Application.Workouts.GetWorkouts;
+using OptiLifts.Application.Workouts.ReplaceWorkoutExercise;
 using OptiLifts.Application.Workouts.UpdateWorkout;
+using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 
 namespace OptiLifts.API.Controllers;
 
@@ -47,6 +50,8 @@ public sealed class WorkoutsController : ControllerBase
     [HttpGet("{workoutId:guid}")]
     public async Task<ActionResult<WorkoutDetailDto>> GetWorkoutDetail(
         [FromRoute] Guid workoutId,
+        [FromQuery] bool isTimeConstrained,
+        [FromQuery] int? timeBudgetMinutes,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
@@ -54,7 +59,7 @@ public sealed class WorkoutsController : ControllerBase
             return Unauthorized();
         }
 
-        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId), cancellationToken);
+        var result = await _sender.Send(new GetWorkoutDetailQuery(workoutId, userId, isTimeConstrained, timeBudgetMinutes), cancellationToken);
 
         if (result is null)
         {
@@ -179,6 +184,27 @@ public sealed class WorkoutsController : ControllerBase
         return added ? NoContent() : NotFound();
     }
 
+    public sealed record ReplaceWorkoutExerciseRequest(Guid NewExerciseId);
+
+    [HttpPut("{workoutId:guid}/exercises/{exerciseId:guid}")]
+    public async Task<IActionResult> ReplaceWorkoutExercise(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid exerciseId,
+        [FromBody] ReplaceWorkoutExerciseRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var replaced = await _sender.Send(
+            new ReplaceWorkoutExerciseCommand(userId, workoutId, exerciseId, request.NewExerciseId),
+            cancellationToken);
+
+        return replaced ? NoContent() : NotFound();
+    }
+
     private bool TryGetUserId(out Guid userId)
     {
         var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
@@ -210,6 +236,32 @@ public sealed class WorkoutsController : ControllerBase
         }
         return Ok(new { message = "Workout deleted successfully." });
 
+    }
+
+    [HttpDelete("{workoutId:guid}/logs/{logId:guid}")]
+    public async Task<IActionResult> DeleteWorkoutLog(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid logId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var deleted = await _sender.Send(new DeleteWorkoutLogCommand(workoutId, logId, userId), cancellationToken);
+
+        if (!deleted)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout log was not found for this user."
+            });
+        }
+
+        return Ok(new { message = "Workout log deleted successfully." });
     }
 
     [HttpPost("{workoutId:guid}/duplicate")]
@@ -267,4 +319,47 @@ public sealed class WorkoutsController : ControllerBase
         return Ok(new { message = "Workout updated successfully." });
     }
 
+    [HttpPut("{workoutId:guid}/logs/{logId:guid}")]
+    public async Task<IActionResult> UpdateWorkoutLog(
+        [FromRoute] Guid workoutId,
+        [FromRoute] Guid logId,
+        [FromBody] UpdateWorkoutLogReq request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var command = new UpdateWorkoutLogCommand(
+            userId,
+            workoutId,
+            logId,
+            request.Notes,
+            request.StartedAt,
+            request.CompletedAt,
+            request.Exercises.Select(e => new UpdateWorkoutLogExerciseDto(
+                e.ExerciseId,
+                e.WorkoutExerciseId,
+                e.OrderIndex,
+                e.GroupNumber,
+                e.Sets.Select(s => new UpdateWorkoutLogSetDto(
+                    s.SetId, s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.RestTime, s.Rpe, s.OrderIndex, s.GroupNumber
+                )).ToList()
+            )).ToList()
+        );
+
+        var updated = await _sender.Send(command, cancellationToken);
+        if (!updated)
+        {
+            return NotFound(new
+            {
+                status = 404,
+                title = NotFoundTitle,
+                message = "Workout log was not found or could not be updated."
+            });
+        }
+
+        return Ok(new { message = "Workout log updated successfully." });
+    }
 }

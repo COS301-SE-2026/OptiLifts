@@ -309,7 +309,7 @@ function TypographySection(){
                         <Card className="typography-item">
                             <CardContent>
                                 <div className="type-label">LABEL / META</div>
-                                <div className="type-meta">Barlow · 11-12px (0.6875rem) · 600–700 · Uppercase · Form labels, tags</div>
+                                <div className="type-meta">Barlow · 11-12px (0.6875rem) · 600-700 · Uppercase · Form labels, tags</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -797,6 +797,9 @@ function GraphSection(){
     const spiderGraphData ={
         Chest: 12, Core: 8, Shoulders: 14, Arms: 10, Legs: 18, Back: 15
     }
+    const spiderGraphSecondaryData ={
+        Chest: 4, Core: 3, Shoulders: 5, Arms: 4, Legs: 6, Back: 4
+    }
     const volumeChartData=[
         {
             label: "Mon",
@@ -844,8 +847,8 @@ function GraphSection(){
                     <Card className="goal-card">
                         <CardContent className="p-4">
                             <h3 className="goal-title mb-2">Muscle Diagram</h3>
-                            <p className="goal-copy mb-2">Highlights primary and secondary targeted muscles</p>
-                            <MuscleDiagram highlightedMuscles={["Chest","Quadriceps","Lats"]} variant="both"/>
+                            <p className="goal-copy mb-2">Highlights primary muscles strongly and secondary muscles with a lighter emphasis</p>
+                            <MuscleDiagram highlightedMuscles={["Chest","Quadriceps","Lats"]} secondaryMuscles={["Triceps","Hamstrings","Middle Back"]} variant="both"/>
                         </CardContent>
                     </Card>
                     <Card className="goal-card">
@@ -866,7 +869,7 @@ function GraphSection(){
                                 justifyContent: 'center',
                                 marginBottom: '20px'
                             }}>
-                                <SpiderGraph data={spiderGraphData}/>
+                                <SpiderGraph data={spiderGraphData} secondaryData={spiderGraphSecondaryData} secondaryMultiplier={0.4}/>
                             </div>
                         </CardContent>
                     </Card>                    
@@ -983,8 +986,8 @@ function AccessibilitySection(){
                                     <h4 className="font-bold text-sm text-foreground">{item.page}</h4>
                                     <span className="text-[11px] text-muted-foreground">{item.theme}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-600 font-extrabold text-xs">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/15 border border-success/30 text-success font-extrabold text-xs">
+                                    <span className="w-2 h-2 rounded-full bg-success animate-pulse"/>
                                     <span>{item.score}</span>
                                 </div>
                             </div>

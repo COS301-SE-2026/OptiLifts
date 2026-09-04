@@ -1,8 +1,11 @@
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.API;
+using OptiLifts.API.RateLimiting;
 using OptiLifts.Application;
+using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
+using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Infrastructure.Gamification;
@@ -98,6 +101,9 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
 builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+//platandfat
+builder.Services.AddScoped<OptiLifts.Infrastructure.Training.ISeriesBuilder, OptiLifts.Infrastructure.Training.SeriesBuilder>();
+builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionService, OptiLifts.Infrastructure.Training.PlateauDetectionService>();
 
 //badges
 builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();
@@ -105,6 +111,21 @@ builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 
 //register auth implementations
 builder.Services.AuthProgramHelper(builder.Configuration);
+
+builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
+
+builder.Services.AddRateLimitingServices(builder.Configuration);
+var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
+if (!aiApiUrl.EndsWith("/"))
+{
+    aiApiUrl += "/";
+}
+builder.Services.AddHttpClient("AiApi", client =>
+{
+    client.BaseAddress = new Uri(aiApiUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 var app = builder.Build();
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
@@ -124,22 +145,26 @@ if (runMigrations)
     }
 }
 
-// Swagger UI available at http://localhost:<port>/swagger
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "OptiLifts Core API v1");
-    options.RoutePrefix = "swagger";
-});
+    // Swagger UI available at http://localhost:<port>/swagger
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "OptiLifts Core API v1");
+        options.RoutePrefix = "swagger";
+    });
+}
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication(); //authentication middleware 
 app.UseAuthorization(); //authorization middleware
+app.UseRateLimiter(); //rate limiting middleware
 app.MapControllers();
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq
-app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
+app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow })).DisableRateLimiting();
 await app.RunAsync();
 
 public partial class Program

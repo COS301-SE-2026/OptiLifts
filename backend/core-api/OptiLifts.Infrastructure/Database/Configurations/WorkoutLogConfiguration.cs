@@ -24,6 +24,6 @@ public class WorkoutLogConfiguration : IEntityTypeConfiguration<WorkoutLog>
         builder.HasOne<ScheduledEntry>()
                .WithMany()
                .HasForeignKey(w => w.EntryId)
-               .OnDelete(DeleteBehavior.SetNull);
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -4,23 +4,30 @@ import { UpcomingWorkoutsCard } from '@/components/ui/upcoming-workouts'
 import { VolumeChart } from '@/components/ui/volume-chart'
 import { SpiderGraph } from '@/components/ui/spider-graph'
 import { CircularProfileImage } from '@/components/ui/circular-image'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 import streakFlame from '@/assets/streak_flame.png'
-import badgeIcon from '@/assets/badge.png'
 import { customFetch } from '@/lib/custom-fetch'
 import { WORKOUT_LOG_SYNC_EVENT } from '@/lib/offline/workout-logs'
 import { useAuth } from '@/context/auth-context'
 import type { ProfilePageResponse } from '@/types/profile'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import type { VolumeChartPeriod } from '@/components/ui/volume-chart'
-import { Dumbbell } from 'lucide-react'
+import { Dumbbell, AlertTriangle } from 'lucide-react'
+import { PageTitle } from '@/components/ui/page-title'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 type ScheduleAnalyticsResponse = Readonly<{
     totalWorkouts: number
     totalVolume: number
     totalSets: number
     muscleDistribution: readonly {
+        muscleGroup: string
+        setCount: number
+        percentage: number
+    }[]
+    secondaryMuscleDistribution?: readonly {
         muscleGroup: string
         setCount: number
         percentage: number
@@ -208,6 +215,8 @@ export default function DashboardPage() {
     const [isFetching, setIsFetching] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [refreshToken, setRefreshToken] = useState(0)
+    const [isOfflineData, setIsOfflineData] = useState(false)
+    const [plateauCount, setPlateauCount] = useState(0)
 
     useEffect(() => {
         if (!isHydrated || !isAuthenticated){
@@ -216,9 +225,32 @@ export default function DashboardPage() {
 
         let isActive = true
 
+        const assertAllOk = (responses: readonly [Response, Response, Response, Response]) => {
+            const [profile, schedule, completed, analytics] = responses
+
+            if (!profile.ok) throw new Error(`Failed to load profile (${profile.status})`)
+            if (!schedule.ok) throw new Error(`Failed to load schedule (${schedule.status})`)
+            if (!completed.ok) throw new Error(`Failed to load completed workouts (${completed.status})`)
+            if (!analytics.ok) throw new Error(`Failed to load schedule analytics (${analytics.status})`)
+        }
+
+        const handleLoadErr = (loadError: unknown) => {
+            if (!isActive) {
+                return
+            }
+
+            if (loadError instanceof TypeError && !navigator.onLine) {
+                setIsOfflineData(true)
+                return
+            }
+
+            setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
+        }
+
         async function loadDashboard() {
             setIsFetching(true)
             setError(null)
+            setIsOfflineData(false)
 
             try {
                 const today = startOfDay(new Date())
@@ -237,18 +269,7 @@ export default function DashboardPage() {
                     customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                 ])
 
-                if (!profileResponse.ok){
-                    throw new Error(`Failed to load profile (${profileResponse.status})`)
-                }
-                if (!scheduleResponse.ok){
-                    throw new Error(`Failed to load schedule (${scheduleResponse.status})`)
-                }
-                if (!completedResponse.ok){
-                    throw new Error(`Failed to load completed workouts (${completedResponse.status})`)
-                }
-                if (!analyticsResponse.ok){
-                    throw new Error(`Failed to load schedule analytics (${analyticsResponse.status})`)
-                }
+                assertAllOk([profileResponse, scheduleResponse, completedResponse, analyticsResponse])
 
                 const profileJson = (await profileResponse.json()) as ProfilePageResponse
                 const upcomingJson = (await scheduleResponse.json()) as ScheduledEntry[]
@@ -277,9 +298,7 @@ export default function DashboardPage() {
                 setCompletedWorkoutDetails(workoutDetailResponses.filter((detail): detail is WorkoutDetailResponse => detail !== null))
                 setAnalytics(analyticsJson)
             } catch (loadError){
-                if (isActive){
-                    setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data.')
-                }
+                handleLoadErr(loadError)
             } finally{
                 if (isActive){
                     setIsFetching(false)
@@ -385,6 +404,19 @@ export default function DashboardPage() {
         return { name, count: stats.count, imageUrl: stats.imageUrl }
     }, [completedWorkoutDetails, completedEntries])
 
+    useEffect(() => {
+        if (!isHydrated || !isAuthenticated) return
+        let isActive = true
+
+        customFetch('/api/training/plateau-page')
+            .then((resp) => (resp.ok ? resp.json() : []))
+            .then((data: { status: string }[]) => {
+                if (isActive) setPlateauCount(data.filter((e) => e.status === 'Plateau' || e.status === 'Regressing').length)
+            })
+            .catch(() => {})
+        return () => { isActive = false }
+    }, [isAuthenticated, isHydrated, refreshToken])
+
     const muscleValues = useMemo(() => {
         const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
             Chest: 0,
@@ -414,6 +446,26 @@ export default function DashboardPage() {
         return values
     }, [analytics])
 
+    const secondaryMuscleValues = useMemo(() => {
+        const values: Record<(typeof MUSCLE_KEYS)[number], number> = {
+            Chest: 0,
+            Core: 0,
+            Shoulders: 0,
+            Arms: 0,
+            Legs: 0,
+            Back: 0,
+        }
+
+        analytics?.secondaryMuscleDistribution?.forEach((item) => {
+            const mapped = MUSCLE_CATEGORY_MAP[item.muscleGroup]
+            if (mapped) {
+                values[mapped] += item.setCount
+            }
+        })
+
+        return values
+    }, [analytics])
+
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
             {isFetching && !profileData && (
@@ -428,49 +480,74 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div className="border-l-[5px] border-brand pl-5 py-1 mb-8">
-                <h1 className="text-4xl font-extrabold uppercase tracking-tight text-foreground">
-                    Good Day, {displayProfile?.name ?? 'Guest'}
-                </h1>
-                
-                <p className="mt-2 text-lg text-muted-foreground">
-                    Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
-                </p>
+            {isOfflineData && (
+                <OfflineBanner message="You're offline - dashboard stats need a connection. Your workouts are still available." />
+            )}
 
-                <div className="mt-5 flex flex-wrap gap-3">
-                    <Button
-                        disabled={!upcomingWorkouts[0]}
-                        onClick={() => {
-                            if (upcomingWorkouts[0]){
-                                navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
-                            }
-                        }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
-                    >
-                        View Workout
-                    </Button>
-                    <Button
-                        disabled={!upcomingWorkouts[0]}
-                        onClick={() => {
-                            if (upcomingWorkouts[0]){
-                                navigate('/active-session', {
-                                    state: {
-                                        workout: {
-                                            id: upcomingWorkouts[0].workoutId,
-                                            name: upcomingWorkouts[0].name,
-                                            primaryMuscleGroups: [],
-                                        },
-                                    },
-                                })
-                            }
-                        }}
-                        className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
-                    >
-                        Start Session
-                    </Button>
+            <div className="mb-8">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
+                        <p className="mt-2 text-lg text-muted-foreground">
+                            Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
+                        </p>
+
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            <Button
+                                disabled={!upcomingWorkouts[0]}
+                                onClick={() => {
+                                    if (upcomingWorkouts[0]){
+                                        navigate(`/workouts/${upcomingWorkouts[0].workoutId}`)
+                                    }
+                                }}
+                                className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
+                            >
+                                View Workout
+                            </Button>
+                            <Button
+                                disabled={!upcomingWorkouts[0]}
+                                onClick={() => {
+                                    if (upcomingWorkouts[0]){
+                                        navigate('/active-session', {
+                                            state: {
+                                                workout: {
+                                                    id: upcomingWorkouts[0].workoutId,
+                                                    name: upcomingWorkouts[0].name,
+                                                    primaryMuscleGroups: [],
+                                                },
+                                            },
+                                        })
+                                    }
+                                }}
+                                className="h-7 px-5 py-0 text-xs font-bold uppercase tracking-wider"
+                            >
+                                Start Session
+                            </Button>
+                        </div>
+                    </div>
+
+                    {plateauCount > 0 && (
+                        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-red-950/30">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                                <span className="text-sm font-bold uppercase tracking-wide text-red-700 dark:text-red-400">
+                                    Plateau Detected
+                                </span>
+                            </div>
+                            <p className="mt-1 text-sm text-red-900/80 dark:text-red-200/80">
+                                We've noticed a plateau in one or more of your exercises
+                            </p>
+                            <Button
+                                onClick={() => navigate('/progression')}
+                                className="mt-3 h-7 w-full border-red-500 bg-red-500 px-5 py-0 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-600"
+                            >
+                                View
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">        
                 {/*Volume chart*/}
                 <div className="md:col-span-2 h-full">
@@ -498,7 +575,7 @@ export default function DashboardPage() {
                 {/*Favorite exercise*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Favorite exercise</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Favorite exercise</CardTitle>
                         <span className="mt-1 text-s font-medium text-muted-foreground text-center">
                             {favoriteExercise.count > 0 ? `${favoriteExercise.count} completed sessions` : 'No completed workouts yet'}
                         </span>
@@ -521,7 +598,7 @@ export default function DashboardPage() {
                 {/*Exercise streak*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Days exercised this week</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Days exercised this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
                                 <img
@@ -533,7 +610,7 @@ export default function DashboardPage() {
 
                                 <span
                                     aria-hidden="true"
-                                    className="hidden h-12 w-12 bg-white/90 dark:block"
+                                    className="hidden h-12 w-12 bg-foreground dark:block"
                                     style={{
                                         WebkitMaskImage: `url(${streakFlame})`,
                                         WebkitMaskRepeat: 'no-repeat',
@@ -555,29 +632,13 @@ export default function DashboardPage() {
                 {/*num PRs*/}
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full w-full flex-col px-0">
-                        <h3 className="text-[30px] font-medium text-foreground text-center">Personal records hit this week</h3>
+                        <CardTitle className="text-center text-[16px] font-semibold text-foreground">Personal records hit this week</CardTitle>
                         <div className="flex-1 flex items-center justify-center mt-2">
                             <div className="flex items-center justify-center gap-1">
-                                <img
-                                    src={badgeIcon}
+                                <PrBadgeIcon
                                     alt="Personal records badge"
-                                    className="h-10 w-10 select-none object-contain opacity-85 dark:hidden"
-                                    draggable={false}
-                                />
-
-                                <span
-                                    aria-hidden="true"
-                                    className="hidden h-10 w-10 bg-white/90 dark:block"
-                                    style={{
-                                        WebkitMaskImage: `url(${badgeIcon})`,
-                                        WebkitMaskRepeat: 'no-repeat',
-                                        WebkitMaskPosition: 'center',
-                                        WebkitMaskSize: 'contain',
-                                        maskImage: `url(${badgeIcon})`,
-                                        maskRepeat: 'no-repeat',
-                                        maskPosition: 'center',
-                                        maskSize: 'contain',
-                                    }}
+                                    sizeClassName="h-10 w-10"
+                                    lightClassName="opacity-85"
                                 />
 
                                 <span className="text-4xl font-bold text-foreground">{prsThisWeek}</span>
@@ -590,7 +651,7 @@ export default function DashboardPage() {
                 <Card className="flex min-h-[120px] flex-col p-4">
                     <CardContent className="flex h-full flex-col px-0">
                         <h3 className="mb-2 w-full text-center text-[20px] font-medium text-foreground">Muscle Balance</h3>
-                        <SpiderGraph data={muscleValues} className="h-[170px]"/>
+                        <SpiderGraph data={muscleValues} secondaryData={secondaryMuscleValues} className="h-[170px]"/>
                     </CardContent>
                 </Card>
             </div>

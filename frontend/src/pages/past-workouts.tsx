@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react'
-import badgeIcon from '@/assets/badge.png'
 import { PageTitle } from '@/components/ui/page-title'
 import { Card } from '@/components/ui/card'
 import { DatePagination, getWeekStart } from '@/components/ui/date-pagination'
 import { CircularProfileImage } from '@/components/ui/circular-image'
+import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
+import {
+    DropdownMenu,
+    DropdownMenuEllipsisContent,
+    DropdownMenuEllipsisTrigger,
+    DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { customFetch } from '@/lib/custom-fetch'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
+import { useOnlineStatus } from '@/lib/use-online-status'
+import { OfflineBanner } from '@/components/ui/offline-banner'
 
 
 type ScheduledEntryDto = {
@@ -73,6 +82,9 @@ export default function PastWorkoutsPage() {
     const [workouts, setWorkouts] = useState<ScheduledEntryDto[]>([])
     const [exerciseImages, setExerciseImages] = useState<{ [key: string]: string }>({})
     const [loading, setLoading] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<{ workoutId: string; logId: string } | null>(null)
+    const [isOfflineData, setIsOfflineData] = useState(false)
+    const isOnline = useOnlineStatus()
 
     useEffect(() => {
         const fetchWorkouts = async () => {
@@ -86,6 +98,7 @@ export default function PastWorkoutsPage() {
                 if (response.ok) {
                     const out = await response.json()
                     setWorkouts(out)
+                    setIsOfflineData(false)
 
                     const exercises = Array.from(new Set(
                         out.flatMap((workout: ScheduledEntryDto) => workout.exercisePreviewIds || [])
@@ -106,6 +119,7 @@ export default function PastWorkoutsPage() {
                 }
             } catch (error) {
                 console.error('Error fetching workouts:', error)
+                setIsOfflineData(true)
             } finally {
                 setLoading(false)
             }
@@ -115,6 +129,28 @@ export default function PastWorkoutsPage() {
     }, [selectedWeek])
 
     let out;
+
+    const handleDelete = async (workoutId: string, logId: string) => {
+        setLoading(true)
+        try {
+            const response = await customFetch(`/api/workouts/${workoutId}/logs/${logId}`, {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete workout log (${response.status})`)
+            }
+
+            setWorkouts((current) => current.filter((workout) => workout.logId !== logId))
+        } catch (error) {
+            console.error('Error deleting workout log:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     if (loading) {
         out = (
@@ -156,15 +192,67 @@ export default function PastWorkoutsPage() {
                             key={workout.id}
                             role="button"
                             tabIndex={0}
-                            onClick={openLogDetail}
+                            onClick={(e) => {
+                                const target = e.target as HTMLElement
+                                if (
+                                    target.closest('[data-card-menu="true"]') ||
+                                    target.closest('[data-slot^="dropdown-menu"]') ||
+                                    target.closest('[role="menuitem"]') ||
+                                    target.closest('[role="menu"]')
+                                ) {
+                                    return
+                                }
+                                openLogDetail()
+                            }}
                             onKeyDown={(e) => {
+                                const target = e.target as HTMLElement
+                                if (
+                                    target.closest('[data-card-menu="true"]') ||
+                                    target.closest('[data-slot^="dropdown-menu"]') ||
+                                    target.closest('[role="menuitem"]') ||
+                                    target.closest('[role="menu"]')
+                                ) {
+                                    return
+                                }
                                 if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
                                     openLogDetail();
                                 }
                             }}
-                            className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between border-border cursor-pointer transition-shadow hover:ring-2 hover:ring-brand focus-visible:ring-2 focus-visible:ring-brand"
+                            className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between border-border cursor-pointer transition-shadow hover:ring-2 hover:ring-brand focus-visible:ring-2 focus-visible:ring-brand"
                         >
+                            <div className="absolute right-4 top-4 z-10" data-card-menu="true">
+                                <DropdownMenu>
+                                    <DropdownMenuEllipsisTrigger aria-label={`Options for ${workout.workoutName}`} />
+                                    <DropdownMenuEllipsisContent align="end">
+                                        <DropdownMenuItem
+                                            onSelect={(event) => {
+                                                event.preventDefault()
+                                                if (!workout.logId) {
+                                                    return
+                                                }
+                                                navigate(`/workouts/${workout.workoutId}/logs/${workout.logId}/edit`)
+                                            }}
+                                            disabled={!workout.logId || !isOnline}
+                                        >
+                                            Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onSelect={(event) => {
+                                                event.preventDefault()
+                                                if (!workout.logId) {
+                                                    return
+                                                }
+                                                setDeleteTarget({ workoutId: workout.workoutId, logId: workout.logId })
+                                            }}
+                                            data-variant="destructive"
+                                            disabled={!workout.logId || !isOnline}
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuEllipsisContent>
+                                </DropdownMenu>
+                            </div>
                             {/*left side */}
                             <div className="flex flex-col gap-4">
                                 <div>
@@ -197,7 +285,7 @@ export default function PastWorkoutsPage() {
                                 </div>
                             </div>
                             {/*right side */}
-                            <div className="grid grid-cols-4 gap-6 sm:gap-8 pt-3 sm:pt-0 shrink-0 sm:w-96 md:w-[24rem]">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 pt-5 sm:pt-0 shrink-0 sm:w-[26rem] md:w-[30rem] lg:w-[30rem]">
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">Duration</span>
                                     <span className="text-lg font-bold text-foreground">
@@ -206,7 +294,7 @@ export default function PastWorkoutsPage() {
                                 </div>
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">Volume</span>
-                                    <span className="text-lg font-bold text-foreground">
+                                    <span className="text-lg font-bold text-foreground whitespace-nowrap">
                                         {outputWeight(workout.totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} {(metricCheck())? 'KG' : 'LB'}
                                     </span>
                                 </div>
@@ -217,27 +305,11 @@ export default function PastWorkoutsPage() {
                                 <div className="flex flex-col items-center gap-1.5">
                                     <span className="text-sm text-muted-foreground">PRs</span>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="relative h-[24px] w-[24px]">
-                                            <img
-                                                src={badgeIcon}
-                                                alt="Record Badge"
-                                                className="h-full w-full object-contain opacity-75 dark:hidden"
-                                            />
-                                            <span
-                                                aria-hidden="true"
-                                                className="hidden h-full w-full bg-white/90 dark:block"
-                                                style={{
-                                                    WebkitMaskImage: `url(${badgeIcon})`,
-                                                    WebkitMaskRepeat: 'no-repeat',
-                                                    WebkitMaskPosition: 'center',
-                                                    WebkitMaskSize: 'contain',
-                                                    maskImage: `url(${badgeIcon})`,
-                                                    maskRepeat: 'no-repeat',
-                                                    maskPosition: 'center',
-                                                    maskSize: 'contain',
-                                                }}
-                                            />
-                                        </div>
+                                        <PrBadgeIcon
+                                            alt="Record Badge"
+                                            sizeClassName="h-[24px] w-[24px]"
+                                            lightClassName="opacity-75"
+                                        />
                                         <span className="text-lg font-bold text-foreground">{workout.recordCount ?? workout.prCount ?? 0}</span>
                                     </div>
                                 </div>
@@ -256,13 +328,35 @@ export default function PastWorkoutsPage() {
                 <PageTitle title="COMPLETED WORKOUTS" />
                 <DatePagination
                     currentDate={selectedWeek}
-                    onChange={setSelectedWeek}
+                    onChange={isOnline ? setSelectedWeek : () => {}}
                     type="week"
                 />
             </div>
 
+            {isOfflineData && (
+                <OfflineBanner message="You're offline - viewing past workouts is unavailable until you reconnect." />
+            )}
+
             {/* block above is for out */}
             {out}
+
+            <ConfirmDialog
+                isOpen={deleteTarget !== null}
+                onClose={() => setDeleteTarget(null)}
+                isLoading={loading}
+                variant="danger"
+                title="Delete Workout Log"
+                description="Are you certain you want to permanently delete this workout log?"
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={async () => {
+                    if (deleteTarget) {
+                        const target = deleteTarget
+                        setDeleteTarget(null)
+                        await handleDelete(target.workoutId, target.logId)
+                    }
+                }}
+            />
         </section>
     )
 }

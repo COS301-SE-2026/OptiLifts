@@ -1,7 +1,11 @@
 using System.Security.Claims;
+using Google.Apis.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OptiLifts.API.RateLimiting;
+using OptiLifts.Application.Auth.Google;
 using OptiLifts.Application.Auth.Login;
 using OptiLifts.Application.Auth.Logout;
 using OptiLifts.Application.Auth.Me;
@@ -13,6 +17,7 @@ namespace OptiLifts.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Auth)]
 public sealed class AuthController : ControllerBase
 {
     private readonly ISender _sender;
@@ -64,6 +69,36 @@ public sealed class AuthController : ControllerBase
 
     public sealed record RegisterRequest(string DisplayName, string Email, string Password);
     public sealed record LoginRequest(string Email, string Password);
+    public sealed record GoogleAuthRequest(string? IdToken, string? Credential)
+    {
+        public string? Token => !string.IsNullOrWhiteSpace(IdToken) ? IdToken : Credential;
+    }
+
+    [AllowAnonymous]
+    [HttpPost("google")]
+    public async Task<ActionResult<AuthUserDto>> GoogleAuth(GoogleAuthRequest request, CancellationToken cancellationToken)
+    {
+        var token = request.Token;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return BadRequest(new { title = "ID Token is required", status = 400 });
+        }
+
+        try
+        {
+            var result = await _sender.Send(new GoogleAuthCommand(token), cancellationToken);
+            SetTokenCookies(result.AccessToken, result.RefreshToken);
+            return Ok(result.User);
+        }
+        catch (InvalidJwtException ex)
+        {
+            return Unauthorized(new { title = "Invalid Google token", detail = ex.Message, status = 401 });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { title = ex.Message, status = 400 });
+        }
+    }
 
     [AllowAnonymous]
     [HttpPost("register")]

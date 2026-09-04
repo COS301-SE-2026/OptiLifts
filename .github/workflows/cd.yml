@@ -33,10 +33,11 @@ jobs:
           env:
             SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
             VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           run: |
-            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=$VITE_SENTRY_DSN --build-arg SENTRY_RELEASE=$GITHUB_SHA --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA -f frontend/Dockerfile .
+            docker build --build-arg VITE_API_BASE=/api --build-arg VITE_SENTRY_DSN=$VITE_SENTRY_DSN --build-arg SENTRY_RELEASE=$GITHUB_SHA --build-arg GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN -t ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA -f frontend/Dockerfile .
             docker push ${{env.ACR_NAME}}.azurecr.io/optilifts-frontend:$GITHUB_SHA
-
+            
         - name: Build and push core-api image
           run: |
             docker build -t ${{env.ACR_NAME}}.azurecr.io/optilifts-core-api:${{github.sha}} -f backend/core-api/Dockerfile backend/core-api

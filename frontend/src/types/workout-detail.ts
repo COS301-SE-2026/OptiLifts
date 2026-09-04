@@ -7,6 +7,8 @@ export type WorkoutDetailSet = Readonly<{
   distance: number | null
   orderIndex: number
   restTime: number
+  previousWeight?: number | null
+  previousReps?: number | null
 }>
 
 export type WorkoutDetailExercise = Readonly<{
@@ -23,6 +25,7 @@ export type WorkoutDetailExercise = Readonly<{
   groupType?: string | null
   groupRestTime?: number | null
   imageUrl?: string | null
+  secondaryMuscles?: string[]
 }>
 
 export type WorkoutDetailResponse = Readonly<{

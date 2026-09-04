@@ -2331,11 +2331,11 @@ GET /api/profile/calendar?year=2026&month=7 HTTP/1.1
 
 ### Development Environment
 
-![Development Environment](../images/deployment/DevelopmentEnviro.png)
+![Development Environment](../images/deployment/DevDeploymentDiagram.png)
 
 ### Production Environment
 
-![Production Environment](../images/deployment/ProductionEnviro.png)
+![Production Environment](../images/deployment/prodDeploymentDiagram.png)
 
 ## CI/CD Pipeline Diagrams
 

@@ -217,12 +217,13 @@ public class GetProfileOverviewHandlerTests
             CreatedAt = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc)
         };
 
+        var sessiondate = DateTime.UtcNow.Date.AddHours(8);
         var entry = new ScheduledEntry
         {
             Id = Guid.NewGuid(),
             WorkoutId = workout.Id,
             UserId = user.Id,
-            Scheduled = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc),
+            Scheduled = sessiondate,
             Status = ScheduleStatus.Completed
         };
 
@@ -230,8 +231,8 @@ public class GetProfileOverviewHandlerTests
         {
             Id = Guid.NewGuid(),
             EntryId = entry.Id,
-            StartedAt = new DateTime(2026, 6, 18, 8, 0, 0, DateTimeKind.Utc),
-            CompletedAt = new DateTime(2026, 6, 18, 8, 0, 30, DateTimeKind.Utc),
+            StartedAt = sessiondate,
+            CompletedAt = sessiondate.AddSeconds(30),
             AiModified = false,
             Notes = "quick run"
         };

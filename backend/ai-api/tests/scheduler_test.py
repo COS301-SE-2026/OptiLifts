@@ -99,25 +99,27 @@ def test_tier1_missedworkout_musclehoursconflict():
 
 def test_tier1_recent_history_blocks_day():
     payload = get_base_payload()
-    payload["planning_window_start"] = "2026-08-31T00:00:00Z" # Monday
-    payload["planning_window_end"] = "2026-09-02T23:59:59Z" # Wednesday
-    
+    payload["planning_window_start"] = "2026-08-31T00:00:00Z"  # Monday
+    payload["planning_window_end"] = "2026-09-02T23:59:59Z"  # Wednesday
+
     payload["preferences"]["min_muscle_rest_hours"] = 48
     payload["preferences"]["max_workouts_per_day"] = 1
-    
+
     # pull on sunday
     payload["recent_history"] = [
-        create_entry("H1", "Completed", "2026-08-30T17:00:00Z", ["Pull"]) 
+        create_entry("H1", "Completed", "2026-08-30T17:00:00Z", ["Pull"])
     ]
-    
-    payload["entries"].append(create_entry("M1", "Missed", "2026-08-20T08:00:00Z", ["Pull"]))
-    
+
+    payload["entries"].append(
+        create_entry("M1", "Missed", "2026-08-20T08:00:00Z", ["Pull"])
+    )
+
     response = client.post("/ai-api/reschedule", json=payload)
     assert response.status_code == 200
     data = response.json()
-    
+
     assert data["execution_tier"] == "Tier1_FastPath"
-    
+
     assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-01T08:00:00Z"
 
 
@@ -325,27 +327,33 @@ def test_tier2_distance_penalty_workoutremoval():
 
 def test_tier2_recent_history_forces_drops():
     payload = get_base_payload()
-    payload["planning_window_start"] = "2026-08-31T00:00:00Z" # Monday
-    payload["planning_window_end"] = "2026-09-01T23:59:59Z"   # Tuesday - 2 Days
-    
+    payload["planning_window_start"] = "2026-08-31T00:00:00Z"  # Monday
+    payload["planning_window_end"] = "2026-09-01T23:59:59Z"  # Tuesday - 2 Days
+
     payload["preferences"]["min_muscle_rest_hours"] = 48
     payload["preferences"]["max_workouts_per_day"] = 2
-    
+
     # push on sunday
     payload["recent_history"] = [
-        create_entry("H1", "Completed", "2026-08-30T17:00:00Z", ["Push"]) 
+        create_entry("H1", "Completed", "2026-08-30T17:00:00Z", ["Push"])
     ]
-    
-    payload["entries"].append(create_entry("1", "Missed", "2026-08-20T08:00:00Z", ["Push"]))
-    payload["entries"].append(create_entry("2", "Missed", "2026-08-20T09:00:00Z", ["Push"]))
-    payload["entries"].append(create_entry("3", "Missed", "2026-08-20T10:00:00Z", ["Push"]))
+
+    payload["entries"].append(
+        create_entry("1", "Missed", "2026-08-20T08:00:00Z", ["Push"])
+    )
+    payload["entries"].append(
+        create_entry("2", "Missed", "2026-08-20T09:00:00Z", ["Push"])
+    )
+    payload["entries"].append(
+        create_entry("3", "Missed", "2026-08-20T10:00:00Z", ["Push"])
+    )
 
     response = client.post("/ai-api/reschedule", json=payload)
     assert response.status_code == 200
     data = response.json()
-    
+
     assert data["execution_tier"] == "Tier2_CPSAT"
-    
+
     assert len(data["rescheduled_entries"]) == 1
     assert len(data["dropped_entries"]) == 2
     assert data["rescheduled_entries"][0]["new_scheduled_at"] == "2026-09-01T08:00:00Z"

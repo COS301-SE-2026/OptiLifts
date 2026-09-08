@@ -55,7 +55,7 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
         && e.Status == ScheduleStatus.Completed && e.Scheduled >= historyStart && e.Scheduled < effectiveStart).ToListAsync(cancellationToken);
 
         //fetch workouots and their primary muscles
-        var workoutIds = targetentries.Select(e => e.WorkoutId).Concat(completedEntries.Select(e=> e.WorkoutId)).Distinct().ToList();
+        var workoutIds = targetentries.Select(e => e.WorkoutId).Concat(completedEntries.Select(e => e.WorkoutId)).Distinct().ToList();
         var workoutNames = await _dbContext.Workouts.AsNoTracking()
         .Where(w => workoutIds.Contains(w.Id))
         .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);

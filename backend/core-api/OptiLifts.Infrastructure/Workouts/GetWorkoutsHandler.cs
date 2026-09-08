@@ -85,7 +85,6 @@ public sealed class GetWorkoutsHandler : IRequestHandler<GetWorkoutsQuery, IRead
             var primaryMuscleGroups = entries
                     .Select(entry => entry.PrimaryMuscleId)
                     .Distinct()
-                    .Take(3)
                     .Select(id => muscleMap.TryGetValue(id, out var name) ? name : "")
                     .Where(name => !string.IsNullOrEmpty(name))
                     .ToArray();

@@ -24,7 +24,7 @@ def _has_muscle_conflict(
     first_muscles = set(missed_workout.primary_muscles)
     for entry in scheduled_workouts:
         if first_muscles.intersection(entry.primary_muscles):
-            diff_days = abs((curr_date - entry.scheduled_at.date()).days)
+            diff_days = abs((curr_date.date() - entry.scheduled_at.date()).days)
             if diff_days < min_days:
                 return True
     return False
@@ -63,9 +63,8 @@ def attempt_tier_one(
             continue
 
         # muscle conflict
-        if _has_muscle_conflict(
-            curr_date, missed_workout, scheduled_workouts, min_days
-        ):
+        all_obstacles = scheduled_workouts + request.recent_history
+        if _has_muscle_conflict(curr_day, missed_workout, all_obstacles, min_days):
             curr_day += timedelta(days=1)
             continue
 

@@ -929,10 +929,18 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   }, [isEditMode, workoutId, exercises.length])
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
-  const restRem = restTimer ? Math.round((restTimer.endsAt - nowMs) / 1000) : null
-  const restOT = restRem !== null && restRem < 0
-  const restProg = restTimer && restRem !== null
-    ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
+  const restRem = restTimer ? Math.max(0, Math.round((restTimer.endsAt - nowMs) / 1000)) : null
+  const restDone = restTimer !== null && restRem === 0
+  const restProg = restTimer && restRem !== null ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
+
+  useEffect(() => {
+    if (!restDone) {
+      return
+    }
+
+    const timeoutId = setTimeout(() => setRestTimer(null), 5000)
+    return () => clearTimeout(timeoutId)
+  }, [restDone])
 
   const durationDisplay = useMemo(() => {
     if (!isEditMode) {
@@ -1654,22 +1662,22 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         </div>
       )}
       {restTimer && restRem !== null && (
-        <div className="fixed inset-x-0 bottom-0 z-[80] border-t-2 border-brand bg-background/95 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-background/95 backdrop-blur">
           <div className="h-1 w-full bg-surface-2">
             <div
-              className={`h-full transition-[width] duration-1000 ease-linear ${restOT ? 'bg-warning' : 'bg-brand'}`}
+              className={`h-full transition-[width] duration-1000 ease-linear ${restDone ? 'bg-warning' : 'bg-brand'}`}
               style={{ width: `${restProg}%` }}
             />
           </div>
 
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restOT ? 'text-warning' : 'text-brand'}`}>
-              {restOT ? '+' : ''}{formatClock(restRem)}
+            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restDone ? 'text-warning' : 'text-brand'}`}>
+              {formatClock(restRem)}
             </span>
 
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground">
-                {restOT ? 'Rest over' : 'Resting'}
+                {restDone ? 'Rest over' : 'Resting'}
               </p>
               <p className="truncate text-sm font-semibold text-foreground">{restTimer.exerciseName}</p>
             </div>

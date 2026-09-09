@@ -22,6 +22,10 @@ public sealed class RateLimitingOptionsTests
         options.AuthWindowSeconds.Should().Be(60);
         options.AiPermitLimit.Should().Be(20);
         options.AiWindowSeconds.Should().Be(60);
+        options.CalendarPermitLimit.Should().Be(300);
+        options.CalendarWindowSeconds.Should().Be(60);
+        options.SchedulePermitLimit.Should().Be(300);
+        options.ScheduleWindowSeconds.Should().Be(60);
         options.QueueLimit.Should().Be(0);
     }
 
@@ -38,6 +42,10 @@ public sealed class RateLimitingOptionsTests
             ["RateLimiting:AuthWindowSeconds"] = "30",
             ["RateLimiting:AiPermitLimit"] = "10",
             ["RateLimiting:AiWindowSeconds"] = "45",
+            ["RateLimiting:CalendarPermitLimit"] = "500",
+            ["RateLimiting:CalendarWindowSeconds"] = "120",
+            ["RateLimiting:SchedulePermitLimit"] = "600",
+            ["RateLimiting:ScheduleWindowSeconds"] = "180",
             ["RateLimiting:QueueLimit"] = "2"
         };
 
@@ -58,6 +66,10 @@ public sealed class RateLimitingOptionsTests
         options.AuthWindowSeconds.Should().Be(30);
         options.AiPermitLimit.Should().Be(10);
         options.AiWindowSeconds.Should().Be(45);
+        options.CalendarPermitLimit.Should().Be(500);
+        options.CalendarWindowSeconds.Should().Be(120);
+        options.SchedulePermitLimit.Should().Be(600);
+        options.ScheduleWindowSeconds.Should().Be(180);
         options.QueueLimit.Should().Be(2);
     }
 

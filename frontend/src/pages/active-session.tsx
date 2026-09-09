@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle } from 'lucide-react'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle, Timer } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -139,6 +139,7 @@ type SessionDraft = {
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
 const MAX_REST_OVERTIME_MS = 10 * 60 * 1000
+const REST_PRESETS = [30, 45, 60, 90, 120, 150, 180, 240, 300] as const
 
 const createRestTimer = (seconds: number, exerciseName: string): RestTimer => ({
   endsAt: Date.now() + seconds * 1000,
@@ -180,10 +181,24 @@ type SetRowProps = Readonly<{
   onFieldEdit: (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => void
 }>
 
+const MIN_ONE_FIELDS: ReadonlySet<string> = new Set(['reps', 'duration', 'distance'])
+
+const clampSetField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', value: number | ''): number | '' => {
+  if (value === '') {
+    return ''
+  }
+
+  if (key === 'rpe') {
+    return Math.min(10, Math.max(1, value))
+  }
+
+  return MIN_ONE_FIELDS.has(key) ? Math.max(1, value) : value
+}
+
 function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
     const numeric = raw === '' ? '' : Number(raw)
-    const clamped = key === 'rpe' && numeric !== '' ? Math.min(10, Math.max(1, numeric)) : numeric
+    const clamped = clampSetField(key, numeric)
     onUpdate((current) => ({ ...current, [key]: clamped }))
     onFieldEdit(key, clamped === '' ? '' : String(clamped))
   }
@@ -1042,6 +1057,29 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     setRestTimer(createRestTimer(sec, exercise.name))
   }
 
+  const setExerciseRest = (exerciseId: string, seconds: number) => {
+    setExercises((current) => {
+      const target = current.find((exercise) => exercise.id === exerciseId)
+
+      if (!target) {
+        return current
+      }
+
+      const isMember = (exercise: ExerciseData) =>
+        target.groupId ? exercise.groupId === target.groupId : exercise.id === target.id
+
+      return current.map((exercise) => (
+        isMember(exercise)
+          ? {
+              ...exercise,
+              groupRestTime: exercise.groupId ? seconds : exercise.groupRestTime,
+              sets: exercise.sets.map((set) => ({ ...set, restTime: seconds })),
+            }
+          : exercise
+      ))
+    })
+  }
+
   const updateSet = (
     exerciseId: string,
     setId: string,
@@ -1349,6 +1387,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     const gridTempMobile = `2.75rem ${cols.map(() => 'minmax(0, 1fr)').join(' ')} 4.5rem`
     const gridTemp = `3.5rem minmax(0, 1.5fr) ${cols.map(() => 'minmax(0, 1fr)').join(' ')} minmax(0, 0.8fr) 4rem`
     const setLabels = buildLabels(exercise.sets)
+    const exerciseRest = (exercise.groupId ? exercise.groupRestTime : null) ?? exercise.sets[0]?.restTime ?? 0
 
     return (
       <div key={exercise.id}>
@@ -1378,7 +1417,28 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                   </TapHint>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{exercise.muscleGroup}</span>
+                <span aria-hidden>·</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    variant="plain"
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    disabled={isEditMode}
+                  >
+                    <Timer className="h-3.5 w-3.5" />
+                    {exerciseRest > 0 ? formatClock(exerciseRest) : 'No rest'}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-auto min-w-[7rem]">
+                    <DropdownMenuItem onSelect={() => setExerciseRest(exercise.id, 0)}>No rest</DropdownMenuItem>
+                    {REST_PRESETS.map((seconds) => (
+                      <DropdownMenuItem key={seconds} onSelect={() => setExerciseRest(exercise.id, seconds)}>
+                        {formatClock(seconds)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
           <CardAction>

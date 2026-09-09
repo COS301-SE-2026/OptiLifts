@@ -2,8 +2,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Exercises.GetExerciseById;
 using OptiLifts.Application.Exercises.GetExercises;
-using OptiLifts.Infrastructure.Database;
 using OptiLifts.Domain.Workouts;
+using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Exercises.GetExerciseById;
 

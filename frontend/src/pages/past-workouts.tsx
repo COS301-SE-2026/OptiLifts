@@ -38,7 +38,7 @@ type ScheduledEntryDto = {
 }
 
 const formatDuration = (start: string, end: string) => {
-    const dif = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 600000);
+    const dif = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 60000);
     if (dif < 1) {
         return '<1m'
     } else if (dif < 60) {

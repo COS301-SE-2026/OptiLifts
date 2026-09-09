@@ -10,5 +10,7 @@ public record ExerciseDto(
     List<string> SecondaryMuscles,
     bool IsCustom,
     string? ImageUrl,
-    bool IsDeleted = false
+    bool IsDeleted = false,
+    float? PrMaxWeight = null,
+    float? PrMaxSetVolume = null
 );

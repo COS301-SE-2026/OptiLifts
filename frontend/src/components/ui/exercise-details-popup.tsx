@@ -23,6 +23,8 @@ type ExerciseDetsResponse = {
   isCustom: boolean
   imageUrl?: string | null
   isDeleted?: boolean
+  prMaxWeight?: number | null
+  prMaxSetVolume?: number | null
 }
 
 type ExerciseDetailsPopupProps = Readonly<{
@@ -50,7 +52,10 @@ const toDetails = (dto: ExerciseDetsResponse): ExerciseDetails => ({
   isCustom: dto.isCustom,
   imageUrl: dto.imageUrl ?? null,
   isDeleted: dto.isDeleted ?? false,
+  prMaxWeight: dto.prMaxWeight ?? null,
+  prMaxSetVolume: dto.prMaxSetVolume ?? null,
 })
+
 
 const getExerciseSourceLabel = (details: ExerciseDetails): string => {
   if (details.isDeleted) {
@@ -407,6 +412,23 @@ export function ExerciseDetailsPopup({ exerciseId, onClose, onChanged }: Exercis
                       </div>
                     )}
                   </div>
+
+                  {(details.prMaxWeight != null || details.prMaxSetVolume != null) && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {details.prMaxWeight != null && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Heaviest Weight</p>
+                          <p className="text-foreground">{details.prMaxWeight}kg</p>
+                        </div>
+                      )}
+                      {details.prMaxSetVolume != null && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Best Set Volume</p>
+                          <p className="text-foreground">{details.prMaxSetVolume.toLocaleString()}kg</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {details.secondaryMuscles.length > 0 && (
                     <div>

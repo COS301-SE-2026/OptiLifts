@@ -12,18 +12,37 @@ import { initOfflineWorkoutLogSync } from '@/lib/offline/workout-logs'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
 import { warmOfflineCache } from '@/lib/offline/workouts-cache'
 
-const CreateWorkoutPage = lazy(() => import('@/pages/create-workout'))
-const WorkoutsPage = lazy(() => import('@/pages/workouts'))
-const WorkoutDetailPage = lazy(() => import('@/pages/workout-detail'))
-const BrandStylePage = lazy(() => import('@/pages/brand-style/brand-style'))
-const WorkoutLogDetailPage = lazy(() => import('@/pages/workout-log-detail'))
-const ProfilePage = lazy(() => import('@/pages/profile'))
-const PastWorkoutsPage = lazy(() => import('@/pages/past-workouts'))
-const SchedulePage = lazy(() => import('@/pages/schedule'))
-const DashboardPage = lazy(() => import('@/pages/dashboard'))
-const LandingPage = lazy(() => import('@/pages/landing'))
-const HelpPage= lazy(() => import('@/pages/help'))
-const ProgressionPage = lazy(() => import('@/pages/progression'))
+function lazyWithReload<T extends { default: React.ComponentType<unknown> }>(factory: () => Promise<T>) {
+  return lazy(async () => {
+    try {
+      return await factory()
+    } catch (error) {
+      const key = 'ol-chunk-reload-attempted'
+
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1')
+        window.location.reload()
+        return new Promise<T>(() => {})
+      }
+
+      sessionStorage.removeItem(key)
+      throw error
+    }
+  })
+}
+
+const CreateWorkoutPage = lazyWithReload(() => import('@/pages/create-workout'))
+const WorkoutsPage = lazyWithReload(() => import('@/pages/workouts'))
+const WorkoutDetailPage = lazyWithReload(() => import('@/pages/workout-detail'))
+const BrandStylePage = lazyWithReload(() => import('@/pages/brand-style/brand-style'))
+const WorkoutLogDetailPage = lazyWithReload(() => import('@/pages/workout-log-detail'))
+const ProfilePage = lazyWithReload(() => import('@/pages/profile'))
+const PastWorkoutsPage = lazyWithReload(() => import('@/pages/past-workouts'))
+const SchedulePage = lazyWithReload(() => import('@/pages/schedule'))
+const DashboardPage = lazyWithReload(() => import('@/pages/dashboard'))
+const LandingPage = lazyWithReload(() => import('@/pages/landing'))
+const HelpPage = lazyWithReload(() => import('@/pages/help'))
+const ProgressionPage = lazyWithReload(() => import('@/pages/progression'))
 
 function AppLayout() {
   return (

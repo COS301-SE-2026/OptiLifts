@@ -59,7 +59,8 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
             EmailHash = emailHash,
             PasswordHash = hash,
             DisplayName = request.DisplayName?.Trim() ?? string.Empty,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Metric = true
         };
 
         _dbContext.Users.Add(user);

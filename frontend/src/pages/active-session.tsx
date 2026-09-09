@@ -517,8 +517,22 @@ const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): Workout
   return sets
 }
 
+const ZERO_INVALID_FIELDS: ReadonlySet<string> = new Set(['reps', 'time', 'distance'])
+
 function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
-  return set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
+  if (!set.completed) {
+    return false
+  }
+
+  return cols.some((col) => {
+    const val = set[FIELD_TO_SET_KEY[col.field]]
+
+    if (val === '') {
+      return true
+    }
+
+    return ZERO_INVALID_FIELDS.has(col.field) && Number(val) <= 0
+  })
 }
 
 function exerciseGotBlanks(exercise: ExerciseData): boolean {

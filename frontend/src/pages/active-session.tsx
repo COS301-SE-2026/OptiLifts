@@ -1005,6 +1005,10 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     toast.success(body, `${exercise.name} - New PR${kinds.length > 1 ? 's' : ''}`)
   }
 
+  const clearPrForSet = (setId: string) => {
+    setPrSetIds((current) => current.filter((id) => id !== setId))
+  }
+
   const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean, override: Partial<SetData> = {}) => {
     if (isEditMode || set.type !== 'Normal') {
       return
@@ -1508,13 +1512,13 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 onToggle={(willComplete) => {
                   checkAcuteFatigue(exercise, set, willComplete)
                   if (!willComplete) {
-                    setPrSetIds((current) => current.filter((id) => id !== set.id))
+                    clearPrForSet(set.id)
                   }
                 }}
                 onFieldEdit={(key, raw) => {
                   if (set.completed) {
                     checkAcuteFatigue(exercise, set, true, { [key]: raw === '' ? '' : Number(raw) })
-                    setPrSetIds((current) => current.filter((id) => id !== set.id))
+                    clearPrForSet(set.id)
                   }
                 }}
               />

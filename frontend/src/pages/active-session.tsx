@@ -200,10 +200,9 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
     const numeric = raw === '' ? '' : Number(raw)
     const clamped = clampSetField(key, numeric)
-    onUpdate((current) => ({ ...current, [key]: clamped }))
+    onUpdate((current) => ({ ...current, [key]: clamped, completed: false }))
     onFieldEdit(key, clamped === '' ? '' : String(clamped))
   }
-
 
   return (
     <div
@@ -1506,10 +1505,16 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 onRemove={() => removeSet(exercise.id, set.id)}
                 isPR={prSetIds.includes(set.id)}
                 onRestStart={() => handleSetCompleted(exercise, set)}
-                onToggle={(willComplete) => checkAcuteFatigue(exercise, set, willComplete)}
+                onToggle={(willComplete) => {
+                  checkAcuteFatigue(exercise, set, willComplete)
+                  if (!willComplete) {
+                    setPrSetIds((current) => current.filter((id) => id !== set.id))
+                  }
+                }}
                 onFieldEdit={(key, raw) => {
                   if (set.completed) {
                     checkAcuteFatigue(exercise, set, true, { [key]: raw === '' ? '' : Number(raw) })
+                    setPrSetIds((current) => current.filter((id) => id !== set.id))
                   }
                 }}
               />

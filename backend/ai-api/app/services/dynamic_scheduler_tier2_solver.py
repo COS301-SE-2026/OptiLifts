@@ -148,6 +148,17 @@ def _extract_results(
     return rescheduled_entries, dropped_entries
 
 
+def _ban_days_for_history(
+    model, schedule_vars, w1, hist_entry, available_days, num_days, min_days
+):
+    for day in range(num_days):
+        diff_days = abs(
+            (available_days[day].date() - hist_entry.scheduled_at.date()).days
+        )
+        if diff_days < min_days:
+            model.Add(schedule_vars[(w1, day)] == 0)
+
+
 def _apply_past_muscle_rest(
     model,
     schedule_vars,
@@ -167,15 +178,15 @@ def _apply_past_muscle_rest(
 
         for hist_entry in recent_history:
             if first_muscles.intersection(set(hist_entry.primary_muscles)):
-                for day in range(num_days):
-                    diff_days = abs(
-                        (
-                            available_days[day].date() - hist_entry.scheduled_at.date()
-                        ).days
-                    )
-
-                    if diff_days < min_days:
-                        model.Add(schedule_vars[(w1, day)] == 0)
+                _ban_days_for_history(
+                    model,
+                    schedule_vars,
+                    w1,
+                    hist_entry,
+                    available_days,
+                    num_days,
+                    min_days,
+                )
 
 
 def attempt_tier_two(

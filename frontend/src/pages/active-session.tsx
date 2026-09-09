@@ -28,6 +28,7 @@ import confetti from 'canvas-confetti'
 import { TapHint } from '@/components/ui/tap-hint'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 
+
 type WorkoutLocationState = Readonly<{
   isTimeConstrained?: boolean
   timeBudgetMinutes?: number
@@ -430,6 +431,12 @@ const setAtHighRpe = (set: SetData): boolean => {
 
 type PrHit = { exerciseName: string; kind: 'weight' | 'volume'; value: number }
 type PrKind = 'weight' | 'volume'
+
+const PR_KIND_LABEL: Record<PrKind, string> = {
+  weight: 'Heaviest weight',
+  volume: 'Best set volume',
+}
+const formatPrValue = (kind: PrKind, value: number) => `${kind === 'weight' ? value : value.toLocaleString()}kg`
 
 const getSetPrKinds = (exercise: ExerciseData, set: SetData): PrKind[] => {
   if (set.type !== 'Normal') {
@@ -977,12 +984,26 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const handleSetCompleted = (exercise: ExerciseData, set: SetData) => {
     startRest(exercise, set)
 
-    if (isEditMode || getSetPrKinds(exercise, set).length === 0) {
+    if (isEditMode) {
+      return
+    }
+
+    const kinds = getSetPrKinds(exercise, set)
+
+    if (kinds.length === 0) {
       return
     }
 
     setPrSetIds((current) => (current.includes(set.id) ? current : [...current, set.id]))
     void confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, disableForReducedMotion: true })
+
+    const weight = toNumericValue(set.kg)
+    const reps = toNumericValue(set.reps)
+    const body = kinds
+      .map((kind) => `${PR_KIND_LABEL[kind]} ${formatPrValue(kind, kind === 'weight' ? weight : weight * reps)}`)
+      .join(' · ')
+
+    toast.success(body, `${exercise.name} - New PR${kinds.length > 1 ? 's' : ''}`)
   }
 
   const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean, override: Partial<SetData> = {}) => {
@@ -1275,12 +1296,11 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     if (prs.length === 1) {
       const [pr] = prs
-      toast.success(
-        pr.kind === 'weight' ? `${pr.exerciseName} - ${pr.value}kg` : `${pr.exerciseName} - ${pr.value.toLocaleString()}kg set volume`, 'New PR'
-      )
+      toast.success(`${PR_KIND_LABEL[pr.kind]} ${formatPrValue(pr.kind, pr.value)}`, `${pr.exerciseName} - New PR`)
     }
     else if (prs.length > 1) {
-      toast.success(`${prs.length} new personal records this session.`, 'New PRs')
+      const types = [...new Set(prs.map((pr) => PR_KIND_LABEL[pr.kind]))].join(' & ')
+      toast.success(types, `${prs.length} new personal records this session`)
     }
 
     if (navigator.onLine) {

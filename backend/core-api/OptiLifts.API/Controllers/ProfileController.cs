@@ -3,6 +3,8 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OptiLifts.API.RateLimiting;
 using OptiLifts.Application.Profile;
 
 namespace OptiLifts.API.Controllers;
@@ -39,6 +41,7 @@ public sealed class ProfileController : ControllerBase
     }
 
     [HttpGet("calendar")]
+    [EnableRateLimiting(RateLimitPolicies.Calendar)]
     public async Task<ActionResult<ProfileCalendarDto>> GetCalendar(
         [FromQuery] int? year,
         [FromQuery] int? month,

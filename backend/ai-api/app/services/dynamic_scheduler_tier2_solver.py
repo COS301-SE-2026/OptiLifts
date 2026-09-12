@@ -148,6 +148,47 @@ def _extract_results(
     return rescheduled_entries, dropped_entries
 
 
+def _ban_days_for_history(
+    model, schedule_vars, w1, hist_entry, available_days, num_days, min_days
+):
+    for day in range(num_days):
+        diff_days = abs(
+            (available_days[day].date() - hist_entry.scheduled_at.date()).days
+        )
+        if diff_days < min_days:
+            model.Add(schedule_vars[(w1, day)] == 0)
+
+
+def _apply_past_muscle_rest(
+    model,
+    schedule_vars,
+    all_entries,
+    num_entries,
+    num_days,
+    available_days,
+    recent_history,
+    min_rest_hours,
+):
+    min_days = int(min_rest_hours / 24)
+    if min_days <= 0 or not recent_history:
+        return
+
+    for w1 in range(num_entries):
+        first_muscles = set(all_entries[w1].primary_muscles)
+
+        for hist_entry in recent_history:
+            if first_muscles.intersection(set(hist_entry.primary_muscles)):
+                _ban_days_for_history(
+                    model,
+                    schedule_vars,
+                    w1,
+                    hist_entry,
+                    available_days,
+                    num_days,
+                    min_days,
+                )
+
+
 def attempt_tier_two(
     request: RescheduleRequest, start_time: float
 ) -> Optional[RescheduleResponse]:
@@ -181,6 +222,18 @@ def attempt_tier_two(
         num_days,
         request.preferences.min_muscle_rest_hours,
     )
+
+    _apply_past_muscle_rest(
+        model,
+        schedule_vars,
+        all_entries,
+        num_entries,
+        num_days,
+        available_days,
+        request.recent_history,
+        request.preferences.min_muscle_rest_hours,
+    )
+
     _set_penalties(
         model, schedule_vars, all_entries, num_entries, num_days, available_days
     )

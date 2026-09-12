@@ -353,6 +353,9 @@ export default function SchedulePage() {
             await fetchScheduleAndAnalytics()
         }
         void trigger()
+    }, [fetchScheduleAndAnalytics])
+
+    useEffect(() => {
         const fetchWorkouts = async () =>{
             await Promise.resolve()
             setIsFetchingWorkouts(true)
@@ -373,7 +376,7 @@ export default function SchedulePage() {
             }
         }
         void fetchWorkouts()
-    }, [fetchScheduleAndAnalytics])
+    }, [])
 
     const handleDeletingSession = async (sessionId: string) => {
         if (isDeleting) return

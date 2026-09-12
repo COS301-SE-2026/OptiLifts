@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle } from 'lucide-react'
+import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle, Timer } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -27,6 +27,7 @@ import { buildLabels } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
 import { TapHint } from '@/components/ui/tap-hint'
 import { OfflineBanner } from '@/components/ui/offline-banner'
+
 
 type WorkoutLocationState = Readonly<{
   isTimeConstrained?: boolean
@@ -139,6 +140,7 @@ type SessionDraft = {
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
 const MAX_REST_OVERTIME_MS = 10 * 60 * 1000
+const REST_PRESETS = [30, 45, 60, 90, 120, 150, 180, 240, 300] as const
 
 const createRestTimer = (seconds: number, exerciseName: string): RestTimer => ({
   endsAt: Date.now() + seconds * 1000,
@@ -180,14 +182,27 @@ type SetRowProps = Readonly<{
   onFieldEdit: (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => void
 }>
 
+const MIN_ONE_FIELDS: ReadonlySet<string> = new Set(['reps', 'duration', 'distance'])
+
+const clampSetField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', value: number | ''): number | '' => {
+  if (value === '') {
+    return ''
+  }
+
+  if (key === 'rpe') {
+    return Math.min(10, Math.max(1, value))
+  }
+
+  return MIN_ONE_FIELDS.has(key) ? Math.max(1, value) : value
+}
+
 function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
     const numeric = raw === '' ? '' : Number(raw)
-    const clamped = key === 'rpe' && numeric !== '' ? Math.min(10, Math.max(1, numeric)) : numeric
-    onUpdate((current) => ({ ...current, [key]: clamped }))
+    const clamped = clampSetField(key, numeric)
+    onUpdate((current) => ({ ...current, [key]: clamped, completed: false }))
     onFieldEdit(key, clamped === '' ? '' : String(clamped))
   }
-
 
   return (
     <div
@@ -416,6 +431,12 @@ const setAtHighRpe = (set: SetData): boolean => {
 type PrHit = { exerciseName: string; kind: 'weight' | 'volume'; value: number }
 type PrKind = 'weight' | 'volume'
 
+const PR_KIND_LABEL: Record<PrKind, string> = {
+  weight: 'Heaviest weight',
+  volume: 'Best set volume',
+}
+const formatPrValue = (kind: PrKind, value: number) => `${kind === 'weight' ? value : value.toLocaleString()}kg`
+
 const getSetPrKinds = (exercise: ExerciseData, set: SetData): PrKind[] => {
   if (set.type !== 'Normal') {
     return []
@@ -517,8 +538,22 @@ const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): Workout
   return sets
 }
 
+const ZERO_INVALID_FIELDS: ReadonlySet<string> = new Set(['reps', 'time', 'distance'])
+
 function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
-  return set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
+  if (!set.completed) {
+    return false
+  }
+
+  return cols.some((col) => {
+    const val = set[FIELD_TO_SET_KEY[col.field]]
+
+    if (val === '') {
+      return true
+    }
+
+    return ZERO_INVALID_FIELDS.has(col.field) && Number(val) <= 0
+  })
 }
 
 function exerciseGotBlanks(exercise: ExerciseData): boolean {
@@ -915,10 +950,18 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   }, [isEditMode, workoutId, exercises.length])
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
-  const restRem = restTimer ? Math.round((restTimer.endsAt - nowMs) / 1000) : null
-  const restOT = restRem !== null && restRem < 0
-  const restProg = restTimer && restRem !== null
-    ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
+  const restRem = restTimer ? Math.max(0, Math.round((restTimer.endsAt - nowMs) / 1000)) : null
+  const restDone = restTimer !== null && restRem === 0
+  const restProg = restTimer && restRem !== null ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
+
+  useEffect(() => {
+    if (!restDone) {
+      return
+    }
+
+    const timeoutId = setTimeout(() => setRestTimer(null), 5000)
+    return () => clearTimeout(timeoutId)
+  }, [restDone])
 
   const durationDisplay = useMemo(() => {
     if (!isEditMode) {
@@ -940,12 +983,30 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const handleSetCompleted = (exercise: ExerciseData, set: SetData) => {
     startRest(exercise, set)
 
-    if (isEditMode || getSetPrKinds(exercise, set).length === 0) {
+    if (isEditMode) {
+      return
+    }
+
+    const kinds = getSetPrKinds(exercise, set)
+
+    if (kinds.length === 0) {
       return
     }
 
     setPrSetIds((current) => (current.includes(set.id) ? current : [...current, set.id]))
     void confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, disableForReducedMotion: true })
+
+    const weight = toNumericValue(set.kg)
+    const reps = toNumericValue(set.reps)
+    const body = kinds
+      .map((kind) => `${PR_KIND_LABEL[kind]} ${formatPrValue(kind, kind === 'weight' ? weight : weight * reps)}`)
+      .join(' · ')
+
+    toast.success(body, `${exercise.name} - New PR${kinds.length > 1 ? 's' : ''}`)
+  }
+
+  const clearPrForSet = (setId: string) => {
+    setPrSetIds((current) => current.filter((id) => id !== setId))
   }
 
   const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean, override: Partial<SetData> = {}) => {
@@ -1018,6 +1079,29 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     }
 
     setRestTimer(createRestTimer(sec, exercise.name))
+  }
+
+  const setExerciseRest = (exerciseId: string, seconds: number) => {
+    setExercises((current) => {
+      const target = current.find((exercise) => exercise.id === exerciseId)
+
+      if (!target) {
+        return current
+      }
+
+      const isMember = (exercise: ExerciseData) =>
+        target.groupId ? exercise.groupId === target.groupId : exercise.id === target.id
+
+      return current.map((exercise) => (
+        isMember(exercise)
+          ? {
+              ...exercise,
+              groupRestTime: exercise.groupId ? seconds : exercise.groupRestTime,
+              sets: exercise.sets.map((set) => ({ ...set, restTime: seconds })),
+            }
+          : exercise
+      ))
+    })
   }
 
   const updateSet = (
@@ -1215,12 +1299,11 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
     if (prs.length === 1) {
       const [pr] = prs
-      toast.success(
-        pr.kind === 'weight' ? `${pr.exerciseName} - ${pr.value}kg` : `${pr.exerciseName} - ${pr.value.toLocaleString()}kg set volume`, 'New PR'
-      )
+      toast.success(`${PR_KIND_LABEL[pr.kind]} ${formatPrValue(pr.kind, pr.value)}`, `${pr.exerciseName} - New PR`)
     }
     else if (prs.length > 1) {
-      toast.success(`${prs.length} new personal records this session.`, 'New PRs')
+      const types = [...new Set(prs.map((pr) => PR_KIND_LABEL[pr.kind]))].join(' & ')
+      toast.success(types, `${prs.length} new personal records this session`)
     }
 
     if (navigator.onLine) {
@@ -1327,6 +1410,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     const gridTempMobile = `2.75rem ${cols.map(() => 'minmax(0, 1fr)').join(' ')} 4.5rem`
     const gridTemp = `3.5rem minmax(0, 1.5fr) ${cols.map(() => 'minmax(0, 1fr)').join(' ')} minmax(0, 0.8fr) 4rem`
     const setLabels = buildLabels(exercise.sets)
+    const exerciseRest = (exercise.groupId ? exercise.groupRestTime : null) ?? exercise.sets[0]?.restTime ?? 0
 
     return (
       <div key={exercise.id}>
@@ -1356,7 +1440,28 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                   </TapHint>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{exercise.muscleGroup}</span>
+                <span aria-hidden>·</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    variant="plain"
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    disabled={isEditMode}
+                  >
+                    <Timer className="h-3.5 w-3.5" />
+                    {exerciseRest > 0 ? formatClock(exerciseRest) : 'No rest'}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-auto min-w-[7rem]">
+                    <DropdownMenuItem onSelect={() => setExerciseRest(exercise.id, 0)}>No rest</DropdownMenuItem>
+                    {REST_PRESETS.map((seconds) => (
+                      <DropdownMenuItem key={seconds} onSelect={() => setExerciseRest(exercise.id, seconds)}>
+                        {formatClock(seconds)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
           <CardAction>
@@ -1404,10 +1509,16 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 onRemove={() => removeSet(exercise.id, set.id)}
                 isPR={prSetIds.includes(set.id)}
                 onRestStart={() => handleSetCompleted(exercise, set)}
-                onToggle={(willComplete) => checkAcuteFatigue(exercise, set, willComplete)}
+                onToggle={(willComplete) => {
+                  checkAcuteFatigue(exercise, set, willComplete)
+                  if (!willComplete) {
+                    clearPrForSet(set.id)
+                  }
+                }}
                 onFieldEdit={(key, raw) => {
                   if (set.completed) {
                     checkAcuteFatigue(exercise, set, true, { [key]: raw === '' ? '' : Number(raw) })
+                    clearPrForSet(set.id)
                   }
                 }}
               />
@@ -1640,22 +1751,22 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         </div>
       )}
       {restTimer && restRem !== null && (
-        <div className="fixed inset-x-0 bottom-0 z-[80] border-t-2 border-brand bg-background/95 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-background/95 backdrop-blur">
           <div className="h-1 w-full bg-surface-2">
             <div
-              className={`h-full transition-[width] duration-1000 ease-linear ${restOT ? 'bg-warning' : 'bg-brand'}`}
+              className={`h-full transition-[width] duration-1000 ease-linear ${restDone ? 'bg-warning' : 'bg-brand'}`}
               style={{ width: `${restProg}%` }}
             />
           </div>
 
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restOT ? 'text-warning' : 'text-brand'}`}>
-              {restOT ? '+' : ''}{formatClock(restRem)}
+            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restDone ? 'text-warning' : 'text-brand'}`}>
+              {formatClock(restRem)}
             </span>
 
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground">
-                {restOT ? 'Rest over' : 'Resting'}
+                {restDone ? 'Rest over' : 'Resting'}
               </p>
               <p className="truncate text-sm font-semibold text-foreground">{restTimer.exerciseName}</p>
             </div>

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Exercises.GetExerciseById;
 using OptiLifts.Application.Exercises.GetExercises;
+using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Exercises.GetExerciseById;
@@ -33,6 +34,17 @@ public sealed class GetExerciseByIdHandler : IRequestHandler<GetExerciseByIdQuer
                                where secondary.ExerciseId == ex.Id
                                select muscle.Name).Distinct().ToListAsync(cancellationToken);
 
+        var prs = await _dbContext.ExercisePrs
+            .AsNoTracking()
+            .Where(pr => pr.UserId == request.UserId && pr.ExerciseId == ex.Id)
+            .GroupBy(pr => pr.PrType)
+            .Select(group => new { PrType = group.Key, Best = group.Max(pr => pr.PrValue) })
+            .ToListAsync(cancellationToken);
+
+        float? BestOf(ExercisePrType type) =>
+            prs.Where(pr => pr.PrType == type).Select(pr => (float?)pr.Best).FirstOrDefault();
+
+
         return new ExerciseDto(
             ex.Id,
             ex.Name,
@@ -43,7 +55,9 @@ public sealed class GetExerciseByIdHandler : IRequestHandler<GetExerciseByIdQuer
             secMuscle,
             ex.UserId != null,
             ex.ImageUrl,
-            ex.IsDeleted
+            ex.IsDeleted,
+            BestOf(ExercisePrType.MaxWeight),
+            BestOf(ExercisePrType.MaxSetVolume)
         );
     }
 }

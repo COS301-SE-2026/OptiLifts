@@ -13,8 +13,16 @@ import type { MuscleName } from '@/types/workout'
 import { ExerciseDetailsPopup } from '@/components/ui/exercise-details-popup'
 import type { WorkoutDetailExercise, WorkoutDetailResponse } from '@/types/workout-detail'
 import { metricCheck, outputWeight } from '@/lib/weight-utils'
-import { MoreVertical } from 'lucide-react'
-import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu'
+import { ChevronDown, MoreVertical } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuEllipsisContent,
+  DropdownMenuItem,
+  DropdownMenuEllipsisTrigger,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { buildLabels } from '@/lib/exercise-format'
 import { getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -226,35 +234,81 @@ export default function WorkoutDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              id="start-workout-btn"
-              size="sm"
-              disabled={!workout || isLoading}
-              onClick={() => {
-                if (workout) {
-                  navigate('/active-session', { state: { workout } })
-                }
-              }}
-            >
-              Start Workout
-            </Button>
+            <div className="inline-flex items-center">
+              <Button
+                id="start-workout-btn"
+                size="sm"
+                disabled={!workout || isLoading}
+                className="rounded-r-none border-r border-r-primary-foreground/20 focus-visible:z-10"
+                onClick={() => {
+                  if (workout) {
+                    navigate('/active-session', { state: { workout } })
+                  }
+                }}
+              >
+                Start Workout
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  variant="plain"
+                  id="quick-workout-dropdown-btn"
+                  disabled={!workout || isLoading || !isOnline}
+                  aria-label="Quick workout options"
+                  className="inline-flex h-10 w-9 items-center justify-center rounded-r-[0.5rem] rounded-l-none border border-l-0 border-brand bg-brand text-primary-foreground transition-all duration-200 hover:bg-brand-2 hover:border-brand-2 focus-visible:z-10 focus-visible:bg-brand-2 focus-visible:border-brand-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+                >
+                  <ChevronDown className="size-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
+                  <DropdownMenuLabel>Quick Workout</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    disabled={!isOnline}
+                    onSelect={() => {
+                      if (workout) {
+                        navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 15 } })
+                      }
+                    }}
+                  >
+                    15 Minutes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!isOnline}
+                    onSelect={() => {
+                      if (workout) {
+                        navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 30 } })
+                      }
+                    }}
+                  >
+                    30 Minutes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!isOnline}
+                    onSelect={() => {
+                      if (workout) {
+                        navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 45 } })
+                      }
+                    }}
+                  >
+                    45 Minutes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!isOnline}
+                    onSelect={() => {
+                      if (workout) {
+                        navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 60 } })
+                      }
+                    }}
+                  >
+                    60 Minutes
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             {workout && (
               <DropdownMenu>
                 <DropdownMenuEllipsisTrigger aria-label="Options">
                   <MoreVertical />
                 </DropdownMenuEllipsisTrigger>
                 <DropdownMenuEllipsisContent align="end">
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger disabled={!isOnline}>Quick Workout</DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 15 } })}>15 Minutes</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 30 } })}>30 Minutes</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 45 } })}>45 Minutes</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => navigate('/active-session', { state: { workout, isTimeConstrained: true, timeBudgetMinutes: 60 } })}>60 Minutes</DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
                   <DropdownMenuItem disabled={!isOnline} onSelect={() => navigate(`/workouts/edit/${workout.id}`)}>Edit</DropdownMenuItem>
                   <DropdownMenuItem disabled={!isOnline} onSelect={() => setDeleteTargetId(workout.id)} data-variant="destructive">
                     Delete

@@ -627,6 +627,46 @@ const createClientExerciseId = () => {
   return `exercise-${Date.now()}-${secureRandomHex()}`
 }
 
+const resolveDefaultSetField = (
+  ...candidates: Array<number | string | null | undefined>
+): number | string => {
+  for (const candidate of candidates) {
+    if (candidate !== '' && candidate != null) {
+      return candidate
+    }
+  }
+  return ''
+}
+
+const createNextSet = (exercise: ExerciseData): SetData => {
+  const prevSet = exercise.sets.at(-1)
+  const defaultKg = resolveDefaultSetField(prevSet?.kg, prevSet?.defaultKg, prevSet?.targetKg)
+  const defaultReps = resolveDefaultSetField(prevSet?.reps, prevSet?.defaultReps, prevSet?.targetReps)
+  const defaultDuration = resolveDefaultSetField(prevSet?.duration, prevSet?.defaultDuration)
+  const defaultDistance = resolveDefaultSetField(prevSet?.distance, prevSet?.defaultDistance)
+
+  return {
+    id: createClientSetId(),
+    sourceSetId: null,
+    type: 'Normal',
+    previous: '-',
+    kg: '',
+    reps: '',
+    rpe: '',
+    targetKg: '',
+    targetReps: '',
+    defaultKg,
+    defaultReps,
+    defaultDuration,
+    defaultDistance,
+    duration: '',
+    distance: '',
+    restTime: prevSet?.restTime ?? exercise.sets[0]?.restTime ?? 0,
+    completed: false,
+  }
+}
+
+
 const formattedTime = (totalSecs: number) => {
   const h = Math.floor(totalSecs / 3600)
   const m = Math.floor((totalSecs % 3600) / 60)
@@ -1155,40 +1195,14 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
           return exercise
         }
 
-        const prevSet = exercise.sets.length > 0 ? exercise.sets[exercise.sets.length - 1] : undefined
-        const defaultKg = prevSet ? (prevSet.kg !== '' && prevSet.kg != null ? prevSet.kg : (prevSet.defaultKg !== undefined && prevSet.defaultKg !== '' && prevSet.defaultKg != null ? prevSet.defaultKg : (prevSet.targetKg !== '' && prevSet.targetKg != null ? prevSet.targetKg : ''))) : ''
-        const defaultReps = prevSet ? (prevSet.reps !== '' && prevSet.reps != null ? prevSet.reps : (prevSet.defaultReps !== undefined && prevSet.defaultReps !== '' && prevSet.defaultReps != null ? prevSet.defaultReps : (prevSet.targetReps !== '' && prevSet.targetReps != null ? prevSet.targetReps : ''))) : ''
-        const defaultDuration = prevSet ? (prevSet.duration !== '' && prevSet.duration != null ? prevSet.duration : (prevSet.defaultDuration !== undefined && prevSet.defaultDuration !== '' && prevSet.defaultDuration != null ? prevSet.defaultDuration : '')) : ''
-        const defaultDistance = prevSet ? (prevSet.distance !== '' && prevSet.distance != null ? prevSet.distance : (prevSet.defaultDistance !== undefined && prevSet.defaultDistance !== '' && prevSet.defaultDistance != null ? prevSet.defaultDistance : '')) : ''
-
         return {
           ...exercise,
-          sets: [
-            ...exercise.sets,
-            {
-              id: createClientSetId(),
-              sourceSetId: null,
-              type: 'Normal',
-              previous: '-',
-              kg: '',
-              reps: '',
-              rpe: '',
-              targetKg: '',
-              targetReps: '',
-              defaultKg,
-              defaultReps,
-              defaultDuration,
-              defaultDistance,
-              duration: '',
-              distance: '',
-              restTime: prevSet?.restTime ?? exercise.sets[0]?.restTime ?? 0,
-              completed: false,
-            },
-          ],
+          sets: [...exercise.sets, createNextSet(exercise)],
         }
       })
     )
   }
+
 
   const removeSet = (exerciseId: string, setId: string) => {
     setExercises((currentExercises) =>

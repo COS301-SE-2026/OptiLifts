@@ -25,8 +25,8 @@ test.describe('Create Workouts Page', () => {
         await page.getByRole('textbox').nth(2).fill('100');
         await page.getByRole('textbox').nth(2).press('Tab');
         await page.getByRole('textbox').nth(3).fill('8');
-        await page.getByRole('spinbutton', { name: 'Rest (seconds)' }).click();
-        await page.getByRole('spinbutton', { name: 'Rest (seconds)' }).fill('60');
+        await page.getByRole('button', { name: 'No rest' }).click();
+        await page.getByRole('menuitem', { name: '1:00' }).click();
         await page.getByRole('textbox', { name: 'Workout Name' }).click();
         await page.getByRole('textbox', { name: 'Workout Name' }).fill(uniqueWorkoutName);
 

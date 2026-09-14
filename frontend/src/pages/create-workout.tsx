@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, Dumbbell, Link2, ArrowLeft, AlertCircle} from 'lucide-react'
+import { Plus, Dumbbell, Link2, ArrowLeft, AlertCircle, Timer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExerciseCard } from '@/components/ui/exercise-card'
@@ -26,6 +26,7 @@ import type { WorkoutExercise, SetType, ExerciseSet } from '@/types/create-worko
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
+import { formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -690,21 +691,29 @@ export default function CreateWorkoutPage() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <label htmlFor={`group-rest-${seg.anchorId}`} className="flex items-center gap-2">
-                          <span>Rest (seconds)</span>
-                          <Input
-                            id={`group-rest-${seg.anchorId}`}
-                            type="number"
-                            min={0}
-                            value={settings.restTime}
-                            onChange={(e) => {
-                              const nextValue = e.target.value === '' ? DEFAULT_REST : Number(e.target.value)
-                              setGroupSetting(seg.anchorId, 'restTime', Number.isFinite(nextValue) && nextValue >= 0 ? nextValue : DEFAULT_REST)
-                            }}
-                            className="h-7 w-16 text-center"
-                          />
-                        </label>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            variant="plain"
+                            className="inline-flex items-center gap-1 hover:text-foreground"
+                          >
+                            <Timer className="h-3.5 w-3.5" />
+                            {settings.restTime > 0 ? formatClock(settings.restTime) : 'No rest'}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-auto min-w-[7rem]">
+                            <DropdownMenuItem onSelect={() => setGroupSetting(seg.anchorId, 'restTime', 0)}>
+                              No rest
+                            </DropdownMenuItem>
+                            {REST_PRESETS.map((seconds) => (
+                              <DropdownMenuItem
+                                key={seconds}
+                                onSelect={() => setGroupSetting(seg.anchorId, 'restTime', seconds)}
+                              >
+                                {formatClock(seconds)}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                     <MemListOfGroups

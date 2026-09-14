@@ -217,6 +217,7 @@ export default function ProgressionPage() {
                                     placeholder="Search exercises"
                                     aria-label="Search exercises"
                                     className="h-8 w-full"
+                                    containerClassName="w-full max-w-none"
                                 />
 
                                 <DropdownMenu>

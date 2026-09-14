@@ -11,9 +11,18 @@ export const mockConfirmDialog = () => ({
 
 export const mockDropdownMenu = () => ({
     DropdownMenu: ({ children }: Readonly<{ children: ReactNode }>) => <div data-testid="dropdown">{children}</div>,
+    DropdownMenuTrigger: ({ children, ...props }: Readonly<{ children?: ReactNode }>) => (
+        <button data-testid="dropdown-trigger" {...props}>{children}</button>
+    ),
+    DropdownMenuContent: ({ children }: Readonly<{ children: ReactNode }>) => (
+        <div data-testid="dropdown-content">{children}</div>
+    ),
     DropdownMenuEllipsisTrigger: () => <button data-testid="dropdown-trigger">...</button>,
     DropdownMenuEllipsisContent: ({ children }: Readonly<{ children: ReactNode }>) => (
         <div data-testid="dropdown-content">{children}</div>
+    ),
+    DropdownMenuLabel: ({ children }: Readonly<{ children: ReactNode }>) => (
+        <div data-testid="dropdown-label">{children}</div>
     ),
     DropdownMenuItem: ({ children, onSelect }: Readonly<{ children: ReactNode; onSelect: () => void }>) => (
         <button onClick={onSelect} data-testid={`dropdown-item-${children}`}>

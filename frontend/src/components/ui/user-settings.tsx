@@ -91,6 +91,8 @@ const getErrorMessage = (err: unknown, fallbackMessage: string): string => {
     return (err instanceof Error)? err.message : fallbackMessage;
 };
 
+const DISPLAY_NAME_MAX = 30;
+
 function useSettingsLogic(isOpen: boolean, onClose: () => void) {
     const { user, updateUser } = useAuth();
 
@@ -257,10 +259,24 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
 
     const saveProfileDetails = async () => {
 
+        if (profile.displayName.trim().length === 0 || profile.displayName.trim().length > DISPLAY_NAME_MAX) {
+            throw new Error(`Display name must be 1-${DISPLAY_NAME_MAX} characters.`);
+        }
+
         let unitHeight = null;
         if (profile.height !== "") {
             const parsedHeight = Number.parseFloat(profile.height);
+            if (Number.isNaN(parsedHeight) || parsedHeight <= 0) {
+                throw new Error("Height must be a positive number.");
+            }
             unitHeight = (metricCheck())? parsedHeight : Math.round(parsedHeight * 2.54);
+        }
+
+        if (profile.weight !== "") {
+            const parsedWeight = Number.parseFloat(profile.weight);
+            if (Number.isNaN(parsedWeight) || parsedWeight <= 0) {
+                throw new Error("Weight must be a positive number.");
+            }
         }
 
         const res = await customFetch("/api/users/me/profileDetails", {
@@ -380,6 +396,10 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             
             if (Number(range.lowerLimit) < 4) {
                 throw new Error(`Lower limit cannot be less than 4 for ${range.exerciseType}`);
+            }
+            
+            if (Number(range.upperLimit) > 30) {
+                throw new Error(`Upper limit cannot be more than 30 for ${range.exerciseType}`);
             }
 
             const res = await customFetch(`/api/users/me/rep-ranges/${range.id}`, {
@@ -573,7 +593,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
 
             <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-muted-foreground">Display Name</span>
-                <Input value={profile.displayName} onChange={(e) => updateProfile("displayName", e.target.value)} required />
+                <Input value={profile.displayName} onChange={(e) => updateProfile("displayName", e.target.value)} maxLength={DISPLAY_NAME_MAX} required />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -583,6 +603,7 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                     onChange={(e) => updateProfile("bio", e.target.value)}
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     rows={2}
+                    maxLength={500}
                 />
             </div>
 
@@ -607,18 +628,18 @@ function ProfileSection({ profile, updateProfile, selectedImgUrl, setSelectedImg
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Date of Birth</span>
-                    <Input type="date" value={profile.dateOfBirth} onChange={(e) => updateProfile("dateOfBirth", e.target.value)} />
+                    <Input type="date" value={profile.dateOfBirth} onChange={(e) => updateProfile("dateOfBirth", e.target.value)} max={new Date().toISOString().split('T')[0]} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Weight ({metricCheck()? 'KG' : 'LB'})</span>
-                    <Input type="number" step="0.1" value={profile.weight} onChange={(e) => updateProfile("weight", e.target.value)} />
+                    <Input type="number" step="0.1" min="0.1" value={profile.weight} onChange={(e) => updateProfile("weight", e.target.value)} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-muted-foreground">Height ({metricCheck()? 'CM' : 'IN'})</span>
-                    <Input type="number" step="0.1" value={profile.height} onChange={(e) => updateProfile("height", e.target.value)} />
+                    <Input type="number" step="0.1" min="0.1" value={profile.height} onChange={(e) => updateProfile("height", e.target.value)} />
                 </div>
             </div>
 
@@ -660,7 +681,8 @@ function RepRangesSection({ repRanges, updateRepRange, error }: Readonly<{
                                 value={range.lowerLimit} 
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    updateRepRange(range.id, "lowerLimit", (val === "")? "" : Number.parseInt(val));
+                                    const parsed = val === "" ? "" : Number.parseInt(val);
+                                    updateRepRange(range.id, "lowerLimit", Number.isNaN(parsed) ? "" : parsed);
                                 }}/>
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -670,7 +692,8 @@ function RepRangesSection({ repRanges, updateRepRange, error }: Readonly<{
                                 value={range.upperLimit} 
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    updateRepRange(range.id, "upperLimit", (val === "")? "" : Number.parseInt(val));
+                                    const parsed = val === "" ? "" : Number.parseInt(val);
+                                    updateRepRange(range.id, "upperLimit", Number.isNaN(parsed) ? "" : parsed);
                                 }}/>
                         </div>
                     </div>

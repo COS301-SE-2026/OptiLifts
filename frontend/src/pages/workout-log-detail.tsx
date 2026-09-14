@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, MoreVertical, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageTitle } from '@/components/ui/page-title'
 import MusclesSummary from '@/components/ui/muscles-summary'
 import MuscleDiagram from '@/components/ui/muscle-diagram'
 import WorkoutDetailShell from '@/components/ui/workout-detail-shell'
 import WorkoutLogExercisePlan from '@/components/ui/workout-log-exercise-plan'
-import { DropdownMenu, DropdownMenuEllipsisContent, DropdownMenuItem, DropdownMenuEllipsisTrigger } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 import type { MuscleName } from '@/types/workout'
@@ -192,17 +191,17 @@ export default function WorkoutLogDetailPage() {
 
             {workoutId && logId && (
               <div className="ml-0.5 sm:ml-2">
-                <DropdownMenu>
-                  <DropdownMenuEllipsisTrigger aria-label="Options">
-                    <MoreVertical />
-                  </DropdownMenuEllipsisTrigger>
-                  <DropdownMenuEllipsisContent align="end">
-                    <DropdownMenuItem onSelect={() => navigate(`/workouts/${workoutId}/logs/${logId}/edit`)}>
-                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                      Edit Log
-                    </DropdownMenuItem>
-                  </DropdownMenuEllipsisContent>
-                </DropdownMenu>
+                <Button
+                  variant="icon"
+                  size="icon"
+                  aria-label="Edit log"
+                  title="Edit log"
+                  disabled={!workout || isLoading}
+                  className="border-0 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-2 cursor-pointer shrink-0"
+                  onClick={() => navigate(`/workouts/${workoutId}/logs/${logId}/edit`)}
+                >
+                  <Pencil className="h-5 w-5" />
+                </Button>
               </div>
             )}
           </div>

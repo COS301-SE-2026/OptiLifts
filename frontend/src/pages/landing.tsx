@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, LayoutDashboard, Calendar, UserRound, TrendingUp } from 'lucide-react'
+import { Activity, LayoutDashboard, Calendar, UserRound, TrendingUp, LineChart } from 'lucide-react'
 import { Navbar } from '@/components/ui/navbar'
 import { Button } from '@/components/ui/button'
 import background from '@/assets/gym.png'
@@ -8,6 +8,7 @@ import dashboardPageImage from '@/assets/Dashboard_Page.png'
 import profilePageImage from '@/assets/Profile_Page.png'
 import schedulePageImage from '@/assets/Schedule_Page.png'
 import sessionPageImage from '@/assets/Session_Page.png'
+import progressionPageImage from '@/assets/Progression_Page.png'
 import type { LucideIcon } from 'lucide-react'
 
 type Rect = { left: number; top: number; height: number }
@@ -33,19 +34,21 @@ function toDocRect(el: HTMLElement): Rect {
 //linear interpolation for anims
 const linear = (a: number, b: number, t: number) => a + (b - a) * t
 
-const FEATS = [
-    { Icon: LayoutDashboard, label: 'Dashboard', tabIndex: 0, page: 'card' as const },
-    { Icon: UserRound, label: 'Profile', tabIndex: 1, page: 'card' as const },
-    { Icon: Calendar, label: 'Scheduling', tabIndex: 2, page: 'card' as const },
-    { Icon: Activity, label: 'Sessions', tabIndex: 3, page: 'card' as const },
-    { Icon: TrendingUp, label: 'Progressive Overload', page: 'progressive' as const },
-]
-
 const CARD_TABS = [
     { Icon: LayoutDashboard, label: 'Dashboard', blurb: 'View your training overview with your volume history, upcoming workouts and more.', image: dashboardPageImage, imageAlt: 'Dashboard page preview' },
     { Icon: UserRound, label: 'Profile', blurb: 'Manage your profile, preferences, and see your achievements, badges and more.', image: profilePageImage, imageAlt: 'Profile page preview' },
     { Icon: Calendar, label: 'Scheduling', blurb: 'Plan upcoming sessions with structure that fits your week.', image: schedulePageImage, imageAlt: 'Scheduling page preview' },
     { Icon: Activity, label: 'Active Sessions', blurb: 'Track your live workout execution and completed sets in one flow.', image: sessionPageImage, imageAlt: 'Sessions page preview' },
+    { Icon: LineChart, label: 'Progression', blurb: 'Automatically tracks every exercise for plateaus, progress, and regression, so you know exactly when to change something.', image: progressionPageImage, imageAlt: 'Progression page preview' },
+]
+
+const FEATS = [
+    { Icon: LayoutDashboard, label: 'Dashboard', tabIndex: 0, page: 'card' as const },
+    { Icon: UserRound, label: 'Profile', tabIndex: 1, page: 'card' as const },
+    { Icon: Calendar, label: 'Scheduling', tabIndex: 2, page: 'card' as const },
+    { Icon: Activity, label: 'Sessions', tabIndex: 3, page: 'card' as const },
+    { Icon: LineChart, label: 'Progression', tabIndex: 4, page: 'card' as const },
+    { Icon: TrendingUp, label: 'Progressive Overload', page: 'progressive' as const },
 ]
 
 type FlyIconAnim = {

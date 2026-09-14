@@ -3,6 +3,13 @@ import type { NavigateFunction } from 'react-router-dom'
 import type { AuthSession, AuthUser } from '@/context/auth-context'
 import { customFetch } from '@/lib/custom-fetch'
 
+export function getCurrentLightTheme(): boolean {
+  if (typeof document === 'undefined') {
+    return true
+  }
+  return !document.documentElement.classList.contains('dark')
+}
+
 type BackendUserDto = Readonly<{
   id: string
   displayName: string
@@ -110,7 +117,7 @@ export async function submitGoogleAuthRequest({
 }: SubmitGoogleAuthArgs) {
   return submitAuthRequest({
     endpoint: '/api/auth/google',
-    body: { idToken },
+    body: { idToken, lightTheme: getCurrentLightTheme() },
     login,
     navigate,
     fromPath,

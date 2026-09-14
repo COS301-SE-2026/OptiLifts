@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/auth-context'
-import { submitAuthRequest } from './auth-request'
+import { submitAuthRequest, getCurrentLightTheme } from './auth-request'
 import { PasswordRow } from './PasswordRow'
 import { SocialAuthSection } from './SocialAuthSection'
 
@@ -57,7 +57,7 @@ export function RegisterPage() {
 
     await submitAuthRequest({
       endpoint: '/api/auth/register',
-      body: { displayName: displayName.trim(), email: email.trim(), password },
+      body: { displayName: displayName.trim(), email: email.trim(), password, lightTheme: getCurrentLightTheme() },
       login,
       navigate,
       fromPath,

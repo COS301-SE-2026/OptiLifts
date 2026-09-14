@@ -66,7 +66,7 @@ describe('submitGoogleAuthRequest and auth-request utilities', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: 'valid-google-id-token' }),
+        body: JSON.stringify({ idToken: 'valid-google-id-token', lightTheme: true }),
       })
     )
 

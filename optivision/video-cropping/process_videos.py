@@ -38,9 +38,8 @@ def process_dataset():
         h_rise = int(row.get('hips_early_rise', 0))
         b_drift = int(row.get('bar_drifting', 0))
         k_fwd = int(row.get('knees_forward', 0))
-        l_hyper = int(row.get('lockout_hyperextension', 0))
         
-        final_filename = f"{PREFIX}_{index}_{l_flex}_{h_rise}_{b_drift}_{k_fwd}_{l_hyper}.mp4"
+        final_filename = f"{PREFIX}_{index}_{l_flex}_{h_rise}_{b_drift}_{k_fwd}.mp4"
         input_path = os.path.join(RAW_DIR, raw_file)
         output_path = os.path.join(OUT_DIR, final_filename)
         

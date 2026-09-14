@@ -1,20 +1,21 @@
 import os
 import pandas as pd
 
-RAW_DIR = "/mnt/c/Users/jn390/Downloads/squatvideos/"
-OUT_DIR = "/mnt/c/Users/jn390/Downloads/processed_squats/"
-PREFIX = "js"
+RAW_DIR = "/mnt/c/Users/jn390/Downloads/deadliftvideos/"
+OUT_DIR = "/mnt/c/Users/jn390/Downloads/processed_deadlifts/"
+PREFIX = "jd"
 
 def process_dataset():
     os.makedirs(OUT_DIR, exist_ok=True)
     csv_path = os.path.join(RAW_DIR, "dataset_tracker.csv")
     
     if not os.path.exists(csv_path):
-        print(f"error: Could not find {csv_path}")
+        print(f"Error: Could not find {csv_path}")
         return
 
-    print(f"loading data from {csv_path}")
+    print(f"Loading tracking data from {csv_path}...")
     
+    # Read CSV using semicolon
     try:
         df = pd.read_csv(csv_path, sep=';')
     except Exception as e:
@@ -33,18 +34,18 @@ def process_dataset():
         end = row['end_time']
         
         # pulling using the exact column names in CSV
-        d_err = int(row.get('shallow_depth', 0))
-        l_err = int(row.get('excessive_forward_lean', 0))
-        h_err = int(row.get('heels_raised', 0))
-        r_err = int(row.get('rounded_back', 0))  
-
-        # adjust depending on how many errors there are
-        final_filename = f"{PREFIX}_{index}_{d_err}_{l_err}_{h_err}_{r_err}.mp4"
+        l_flex = int(row.get('lumbar_flexion', 0))
+        h_rise = int(row.get('hips_early_rise', 0))
+        b_drift = int(row.get('bar_drifting', 0))
+        k_fwd = int(row.get('knees_forward', 0))
+        l_hyper = int(row.get('lockout_hyperextension', 0))
+        
+        final_filename = f"{PREFIX}_{index}_{l_flex}_{h_rise}_{b_drift}_{k_fwd}_{l_hyper}.mp4"
         input_path = os.path.join(RAW_DIR, raw_file)
         output_path = os.path.join(OUT_DIR, final_filename)
         
         if not os.path.exists(input_path):
-            print(f"Warning: {raw_file} not found in {RAW_DIR}")
+            print(f"Warning: {raw_file} not found in {RAW_DIR}. Skipping...")
             continue
             
         ffmpeg_cmd = (
@@ -57,7 +58,7 @@ def process_dataset():
         print(f"Processing {raw_file} -> {final_filename}...")
         os.system(ffmpeg_cmd)
 
-    print("\n all videos processed successfully")
+    print("\n All videos processed successfully!")
 
 if __name__ == "__main__":
     process_dataset()

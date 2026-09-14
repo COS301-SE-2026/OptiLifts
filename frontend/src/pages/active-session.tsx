@@ -1296,7 +1296,8 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     await enqueue(load)
 
     const prs = detectPrs(exercises)
-    const prSumm = prs.length > 0 ? `${prs.length} new PR${prs.length > 1 ? 's' : ''}` : null
+    const prPlural = prs.length > 1 ? 's' : ''
+    const prSumm = prs.length > 0 ? `${prs.length} new PR${prPlural}` : null
 
     if (navigator.onLine) {
       await flushOutBox()

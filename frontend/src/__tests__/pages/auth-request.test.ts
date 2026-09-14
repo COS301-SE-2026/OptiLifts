@@ -16,6 +16,7 @@ describe('submitGoogleAuthRequest and auth-request utilities', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    document.documentElement.classList.remove('dark')
   })
 
   it('maps backend user dto properly and sets local storage', () => {

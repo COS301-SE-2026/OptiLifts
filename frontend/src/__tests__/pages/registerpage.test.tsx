@@ -31,8 +31,10 @@ vi.mock('@/context/auth-context', () =>({
 
 //mock submit auth utility
 vi.mock('@/pages/auth/auth-request', () => ({
-    submitAuthRequest: vi.fn()
+    submitAuthRequest: vi.fn(),
+    getCurrentLightTheme: vi.fn(() => true)
 }));
+
 
 //'describe' defines suite of related tests
 describe('RegisterPage', () => {
@@ -157,7 +159,8 @@ describe('RegisterPage', () => {
             body: {
                 displayName: 'validusername',
                 email: 'yuser@test.com',
-                password: 'ValidPass123!'
+                password: 'ValidPass123!',
+                lightTheme: true
             },
         }));
     });    

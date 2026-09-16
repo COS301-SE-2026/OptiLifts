@@ -5,38 +5,57 @@ using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using OptiLifts.Application.Storage;
 
 namespace OptiLifts.Infrastructure.Storage;
 
 public class AzureBlobStorageService : IBlobStorageService
 {
-    private readonly string _connectionString;
+    private readonly BlobServiceClient _blobServiceClient;
+
+    [ActivatorUtilitiesConstructor]
+    public AzureBlobStorageService(BlobServiceClient blobServiceClient)
+    {
+        _blobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
+    }
 
     public AzureBlobStorageService(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("AzureStorage")!;
+        var connectionString = configuration.GetConnectionString("AzureStorage");
 
-        if (string.IsNullOrWhiteSpace(_connectionString))
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
             // Support alternative env var names that users may set in .env
-            _connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
-                                ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING")
-                                ?? string.Empty;
+            connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
+                                ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
         }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = "UseDevelopmentStorage=true;";
+        }
+
+        _blobServiceClient = new BlobServiceClient(connectionString);
+    }
+
+    public AzureBlobStorageService(string connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = "UseDevelopmentStorage=true;";
+        }
+
+        _blobServiceClient = new BlobServiceClient(connectionString);
     }
 
     public async Task<string> UploadFileAsync(Stream stream, string fileName, string contentType, string containerName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(_connectionString))
-            throw new InvalidOperationException("Azure Storage connection string is missing.");
-
         var id = Guid.NewGuid();
         var extension = Path.GetExtension(fileName);
         var blobName = $"{id}{extension}";
 
-        var blobServiceClient = new BlobServiceClient(_connectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+        var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
         // Ensure container exists and allows public access to blobs
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
@@ -62,7 +81,7 @@ public class AzureBlobStorageService : IBlobStorageService
 
     public async Task DeleteFileAsync(string fileUrl, string containerName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(fileUrl) || string.IsNullOrEmpty(_connectionString))
+        if (string.IsNullOrWhiteSpace(fileUrl))
             return;
 
         if (!Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri))
@@ -72,10 +91,14 @@ public class AzureBlobStorageService : IBlobStorageService
         if (string.IsNullOrWhiteSpace(blobName))
             return;
 
-        var blobServiceClient = new BlobServiceClient(_connectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+        var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
         var blobClient = containerClient.GetBlobClient(blobName);
 
         await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+    }
+
+    public Task<string> SaveVisionAnalysisFramesAsync(string jobId, string jsonPayload, CancellationToken cancellationToken = default)
+    {
+        return _blobServiceClient.SaveVisionAnalysisFramesAsync(jobId, jsonPayload, cancellationToken);
     }
 }

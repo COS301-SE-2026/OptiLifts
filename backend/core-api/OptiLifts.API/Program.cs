@@ -1,3 +1,5 @@
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.API;
@@ -5,11 +7,13 @@ using OptiLifts.API.RateLimiting;
 using OptiLifts.Application;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
+using OptiLifts.Application.Storage;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Infrastructure.Gamification;
 using OptiLifts.Infrastructure.Gamification.Rules;
+using OptiLifts.Infrastructure.Storage;
 
 
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
@@ -100,7 +104,20 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 //register MediatR handlers from Application and Infrastructure assemblies
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
-builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+var azureStorageConnection = builder.Configuration.GetConnectionString("AzureStorage");
+if (string.IsNullOrWhiteSpace(azureStorageConnection))
+{
+    azureStorageConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
+        ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
+}
+if (string.IsNullOrWhiteSpace(azureStorageConnection))
+{
+    azureStorageConnection = "UseDevelopmentStorage=true;";
+}
+
+builder.Services.AddSingleton(new BlobServiceClient(azureStorageConnection));
+builder.Services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
+builder.Services.AddScoped<IOptiVisionStorageService, OptiVisionStorageService>();
 //platandfat
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.ISeriesBuilder, OptiLifts.Infrastructure.Training.SeriesBuilder>();
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionService, OptiLifts.Infrastructure.Training.PlateauDetectionService>();
@@ -127,6 +144,20 @@ builder.Services.AddHttpClient("AiApi", client =>
 });
 
 var app = builder.Build();
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    try
+    {
+        var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
+        var exercisesContainer = blobServiceClient.GetBlobContainerClient("exercises");
+        await exercisesContainer.CreateIfNotExistsAsync(PublicAccessType.Blob);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Failed to initialize Azure Blob Storage 'exercises' container on startup.");
+    }
+}
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
 if (runMigrations)

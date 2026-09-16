@@ -18,6 +18,7 @@
     <PackageReference Include="Sentry.AspNetCore" Version="6.7.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.28.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -31,8 +31,10 @@ vi.mock('@/context/auth-context', () =>({
 
 //mock submit auth utility
 vi.mock('@/pages/auth/auth-request', () => ({
-    submitAuthRequest: vi.fn()
+    submitAuthRequest: vi.fn(),
+    getCurrentLightTheme: vi.fn(() => true)
 }));
+
 
 //'describe' defines suite of related tests
 describe('RegisterPage', () => {
@@ -71,7 +73,7 @@ describe('RegisterPage', () => {
 
         render(<RegisterPage />)
 
-        const userIn = screen.getByPlaceholderText('your username');
+        const userIn = screen.getByPlaceholderText('your display name');
         const emailIn = screen.getByPlaceholderText('you@example.com');
         const passIn = screen.getByPlaceholderText('Enter password');
         const confirmIn = screen.getByPlaceholderText('Confirm password');
@@ -81,7 +83,7 @@ describe('RegisterPage', () => {
                 value: 'a'.repeat(31) //beyond char limit ie invalid
             }
         });
-        expect(screen.getByText(/Username must be 1-30 characters/i)).toBeDefined();
+        expect(screen.getByText(/Display name must be 1-30 characters/i)).toBeDefined();
 
         fireEvent.change(emailIn, {
             target: {
@@ -120,7 +122,7 @@ describe('RegisterPage', () => {
 
         render(<RegisterPage />)
 
-        const userIn = screen.getByPlaceholderText('your username');
+        const userIn = screen.getByPlaceholderText('your display name');
         const emailIn = screen.getByPlaceholderText('you@example.com');
         const passIn = screen.getByPlaceholderText('Enter password');
         const confirmIn = screen.getByPlaceholderText('Confirm password');
@@ -157,7 +159,8 @@ describe('RegisterPage', () => {
             body: {
                 displayName: 'validusername',
                 email: 'yuser@test.com',
-                password: 'ValidPass123!'
+                password: 'ValidPass123!',
+                lightTheme: true
             },
         }));
     });    

@@ -60,8 +60,10 @@ public sealed class RegisterUserHandler : IRequestHandler<RegisterUserCommand, A
             PasswordHash = hash,
             DisplayName = request.DisplayName?.Trim() ?? string.Empty,
             CreatedAt = DateTime.UtcNow,
-            Metric = true
+            Metric = true,
+            LightTheme = request.LightTheme
         };
+
 
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);

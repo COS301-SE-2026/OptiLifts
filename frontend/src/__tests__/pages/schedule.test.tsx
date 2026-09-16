@@ -130,7 +130,7 @@ describe('SchedulePage', () => {
             expect(screen.getByText('Weekly Summary')).toBeDefined();
         });
 
-        const addButton = screen.getAllByRole('button', {
+        const addButton = await screen.findAllByRole('button', {
             name: /Add Workout for/i
         });
         expect(addButton.length).toBeGreaterThan(0);

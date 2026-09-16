@@ -1353,25 +1353,21 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     await enqueue(load)
 
     const prs = detectPrs(exercises)
-
-    if (prs.length === 1) {
-      const [pr] = prs
-      toast.success(`${PR_KIND_LABEL[pr.kind]} ${formatPrValue(pr.kind, pr.value)}`, `${pr.exerciseName} - New PR`)
-    }
-    else if (prs.length > 1) {
-      const types = [...new Set(prs.map((pr) => PR_KIND_LABEL[pr.kind]))].join(' & ')
-      toast.success(types, `${prs.length} new personal records this session`)
-    }
+    const prPlural = prs.length > 1 ? 's' : ''
+    const prSumm = prs.length > 0 ? `${prs.length} new PR${prPlural}` : null
 
     if (navigator.onLine) {
       await flushOutBox()
     }
 
     if (navigator.onLine) {
-      toast.success('Workout saved.', 'Saved')
-    } 
+      toast.success(prSumm ?? 'Workout saved.', 'Workout saved')
+    }
     else {
-      toast.warning("Workout saved but will sync when you're back online.", 'Saved offline')
+      toast.warning(
+        prSumm ? `${prSumm} - will sync when you're back online.` : "Workout saved but will sync when you're back online.",
+        'Workout saved offline'
+      )
     }
 
     if (workoutId) {

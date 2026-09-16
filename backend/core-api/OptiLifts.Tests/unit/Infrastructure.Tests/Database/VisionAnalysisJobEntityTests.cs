@@ -13,10 +13,10 @@ public class VisionAnalysisJobEntityTests
     [Fact]
     public void VisionAnalysisJob_DefaultValues_AreInitializedCorrectly()
     {
-        // Act
+        //act
         var job = new VisionAnalysisJob();
 
-        // Assert
+        //assert
         job.JobId.Should().NotBeNullOrWhiteSpace();
         job.Status.Should().Be(VisionJobStatus.Pending);
         job.DetectedAnomalies.Should().NotBeNull();
@@ -29,7 +29,7 @@ public class VisionAnalysisJobEntityTests
     [Fact]
     public void DbContext_ModelConfiguration_ConfiguresVisionAnalysisJobCorrectly()
     {
-        // Arrange
+        //arrange
         var options = new DbContextOptionsBuilder<OptiLiftsDbContext>()
             .UseNpgsql("Host=localhost;Database=dummy;Username=dummy;Password=dummy")
             .Options;
@@ -37,7 +37,7 @@ public class VisionAnalysisJobEntityTests
         using var context = new OptiLiftsDbContext(options);
         var entityType = context.Model.FindEntityType(typeof(VisionAnalysisJob));
 
-        // Assert
+        //assert
         entityType.Should().NotBeNull();
         entityType!.GetTableName().Should().Be("vision_analysis_jobs");
 

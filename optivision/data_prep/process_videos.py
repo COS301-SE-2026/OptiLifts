@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 
-RAW_DIR = "/mnt/c/Users/jn390/Downloads/deadliftvideos/"
-OUT_DIR = "/mnt/c/Users/jn390/Downloads/processed_deadlifts/"
-PREFIX = "jd"
+RAW_DIR = "/mnt/c/Users/jn390/Downloads/recorded_dataset/"
+OUT_DIR = "/mnt/c/Users/jn390/Downloads/processed_recorded_deadlifts/"
+PREFIX = "od"
 
 def process_dataset():
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -13,7 +13,7 @@ def process_dataset():
         print(f"Error: Could not find {csv_path}")
         return
 
-    print(f"Loading tracking data from {csv_path}...")
+    print(f"Loading tracking data from {csv_path}")
     
     # Read CSV using semicolon
     try:
@@ -38,23 +38,24 @@ def process_dataset():
         h_rise = int(row.get('hips_early_rise', 0))
         b_drift = int(row.get('bar_drifting', 0))
         k_fwd = int(row.get('knees_forward', 0))
+        s_depth = int(row.get('shallow_depth', 0))
         
-        final_filename = f"{PREFIX}_{index}_{l_flex}_{h_rise}_{b_drift}_{k_fwd}.mp4"
+        final_filename = f"{PREFIX}_{index}_{l_flex}_{h_rise}_{b_drift}_{k_fwd}_{s_depth}.mp4"
         input_path = os.path.join(RAW_DIR, raw_file)
         output_path = os.path.join(OUT_DIR, final_filename)
         
         if not os.path.exists(input_path):
-            print(f"Warning: {raw_file} not found in {RAW_DIR}. Skipping...")
+            print(f"Warning: {raw_file} not found in {RAW_DIR}")
             continue
             
         ffmpeg_cmd = (
             f'ffmpeg -y -hide_banner -loglevel error -i "{input_path}" '
             f'-ss {start} -to {end} '
-            f'-vf "crop=iw/2:ih:iw/2:0" '
+            f'-c:v libx264 -pix_fmt yuv420p '  
             f'"{output_path}"'
         )
         
-        print(f"Processing {raw_file} -> {final_filename}...")
+        print(f"Processing {raw_file} -> {final_filename}")
         os.system(ffmpeg_cmd)
 
     print("\n All videos processed successfully!")

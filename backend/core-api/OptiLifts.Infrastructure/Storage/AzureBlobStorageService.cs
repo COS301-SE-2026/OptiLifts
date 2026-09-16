@@ -14,39 +14,9 @@ public class AzureBlobStorageService : IBlobStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
 
-    [ActivatorUtilitiesConstructor]
     public AzureBlobStorageService(BlobServiceClient blobServiceClient)
     {
         _blobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
-    }
-
-    public AzureBlobStorageService(IConfiguration configuration)
-    {
-        var connectionString = configuration.GetConnectionString("AzureStorage");
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            // Support alternative env var names that users may set in .env
-            connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
-                                ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
-        }
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            connectionString = "UseDevelopmentStorage=true;";
-        }
-
-        _blobServiceClient = new BlobServiceClient(connectionString);
-    }
-
-    public AzureBlobStorageService(string connectionString)
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            connectionString = "UseDevelopmentStorage=true;";
-        }
-
-        _blobServiceClient = new BlobServiceClient(connectionString);
     }
 
     public async Task<string> UploadFileAsync(Stream stream, string fileName, string contentType, string containerName, CancellationToken cancellationToken = default)

@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 
-RAW_DIR = "/mnt/c/Users/jn390/Downloads/recorded_dataset/"
-OUT_DIR = "/mnt/c/Users/jn390/Downloads/processed_recorded_deadlifts/"
+RAW_DIR = "/mnt/directory/"
+OUT_DIR = "/mnt/directory/output/"
 PREFIX = "od"
 
 def process_dataset():

@@ -1,22 +1,23 @@
-import os
-import cv2
-import numpy as np
-import mediapipe as mp
 from pathlib import Path
+
+import cv2
+import mediapipe as mp
+import numpy as np
 from tqdm import tqdm
 
-RAW_VIDEOS_DIR = Path('..data/raw_videos')
-PROCESSED_TENSOR_DIR = Path('..data/processed_tensors')
+RAW_VIDEOS_DIR = Path("..data/raw_videos")
+PROCESSED_TENSOR_DIR = Path("..data/processed_tensors")
 
 mp_pose = mp.solutions.pose
 
-def process_vid(vid_path, output_dir): 
+
+def process_vid(vid_path, output_dir):
 
     pose = mp_pose.Pose(
         static_image_mode=False,
         model_complexity=2,
         min_detection_confidence=0.5,
-        min_tracking_confidence=0.5
+        min_tracking_confidence=0.5,
     )
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +30,7 @@ def process_vid(vid_path, output_dir):
         if not ret:
             break
 
-        #BGR to RGB
+        # BGR to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         results = pose.process(frame_rgb)
@@ -40,7 +41,7 @@ def process_vid(vid_path, output_dir):
             for lm in results.pose_landmarks.landmark:
                 frame_landmarks.append([lm.x, lm.y, lm.z])
 
-            # add frame coords to to list for whole video 
+            # add frame coords to to list for whole video
             vid_landmarks.append(frame_landmarks)
         else:
             # no body found so add empty frame so tensor shape is consistent
@@ -56,7 +57,7 @@ def process_vid(vid_path, output_dir):
 
 
 def main():
-    vid_files = list(RAW_VIDEOS_DIR.rglob('*.mp4'))
+    vid_files = list(RAW_VIDEOS_DIR.rglob("*.mp4"))
 
     if not vid_files:
         print("No videos found in the raw_videos directory")
@@ -66,7 +67,7 @@ def main():
 
     for vid_file in tqdm(vid_files, desc="Processing videos"):
         path = vid_file.relative_to(RAW_VIDEOS_DIR)
-        output_file = path.with_suffix('.npy')
+        output_file = path.with_suffix(".npy")
         output_path = PROCESSED_TENSOR_DIR / output_file
 
         if output_path.exists():
@@ -75,6 +76,7 @@ def main():
         process_vid(vid_file, output_path)
 
     print("Videos have been processed into tensors")
+
 
 # only runs if script executed directly
 if __name__ == "__main__":

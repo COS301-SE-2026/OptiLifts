@@ -53,3 +53,29 @@ def process_vid(vid_path, output_dir):
     # minimal accuracy loss but helps a lot with memory usage and speed
     tensor = np.array(vid_landmarks, dtype=np.float32)
     np.save(str(output_dir), tensor)
+
+
+def main():
+    vid_files = list(RAW_VIDEOS_DIR.rglob('*.mp4'))
+
+    if not vid_files:
+        print("No videos found in the raw_videos directory")
+        return
+
+    print(f"Processing {len(vid_files)} videos")
+
+    for vid_file in tqdm(vid_files, desc="Processing videos"):
+        path = vid_file.relative_to(RAW_VIDEOS_DIR)
+        output_file = path.with_suffix('.npy')
+        output_path = PROCESSED_TENSOR_DIR / output_file
+
+        if output_path.exists():
+            continue
+
+        process_vid(vid_file, output_path)
+
+    print("Videos have been processed into tensors")
+
+# only runs if script executed directly
+if __name__ == "__main__":
+    main()

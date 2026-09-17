@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle, Timer } from 'lucide-react'
+import { Check, Plus, ChevronDown, Trash2, ArrowLeft, X, Trophy, AlertTriangle, Timer } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -23,7 +23,7 @@ import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
-import { buildLabels } from '@/lib/exercise-format'
+import { buildLabels, formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
 import { TapHint } from '@/components/ui/tap-hint'
 import { OfflineBanner } from '@/components/ui/offline-banner'
@@ -55,6 +55,10 @@ type SetData = {
   sourceSetId: string | null
   targetKg: number | ''
   targetReps: number | ''
+  defaultKg?: number | string
+  defaultReps?: number | string
+  defaultDuration?: number | string
+  defaultDistance?: number | string
 }
 
 type ExerciseData = Readonly<{
@@ -140,7 +144,6 @@ type SessionDraft = {
 const SET_TYPE_OPTIONS: readonly SetType[] = ['Warmup', 'Normal', 'DropSet']
 const FIELD_TO_SET_KEY = { kg: 'kg', reps: 'reps', time: 'duration', distance: 'distance' } as const
 const MAX_REST_OVERTIME_MS = 10 * 60 * 1000
-const REST_PRESETS = [30, 45, 60, 90, 120, 150, 180, 240, 300] as const
 
 const createRestTimer = (seconds: number, exerciseName: string): RestTimer => ({
   endsAt: Date.now() + seconds * 1000,
@@ -177,8 +180,8 @@ type SetRowProps = Readonly<{
   isPR: boolean,
   onUpdate: (updater: (current: SetData) => SetData) => void
   onRemove: () => void
-  onRestStart: () => void
-  onToggle: (willComplete: boolean) => void
+  onRestStart: (completedSet?: SetData) => void
+  onToggle: (willComplete: boolean, completedSet?: SetData) => void
   onFieldEdit: (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => void
 }>
 
@@ -194,6 +197,39 @@ const clampSetField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', val
   }
 
   return MIN_ONE_FIELDS.has(key) ? Math.max(1, value) : value
+}
+
+const commitSetDefaults = (current: SetData): SetData => {
+  const next = { ...current }
+  if (next.kg === '' && next.defaultKg !== undefined && next.defaultKg !== '') {
+    next.kg = next.defaultKg
+  }
+  if (next.reps === '' && next.defaultReps !== undefined && next.defaultReps !== '') {
+    next.reps = next.defaultReps
+  }
+  if (next.duration === '' && next.defaultDuration !== undefined && next.defaultDuration !== '') {
+    next.duration = next.defaultDuration
+  }
+  if (next.distance === '' && next.defaultDistance !== undefined && next.defaultDistance !== '') {
+    next.distance = next.defaultDistance
+  }
+  return next
+}
+
+const getSetPlaceholder = (set: SetData, key: 'kg' | 'reps' | 'duration' | 'distance'): string | undefined => {
+  if (key === 'kg' && set.defaultKg !== undefined && set.defaultKg !== '') {
+    return String(set.defaultKg)
+  }
+  if (key === 'reps' && set.defaultReps !== undefined && set.defaultReps !== '') {
+    return String(set.defaultReps)
+  }
+  if (key === 'duration' && set.defaultDuration !== undefined && set.defaultDuration !== '') {
+    return String(set.defaultDuration)
+  }
+  if (key === 'distance' && set.defaultDistance !== undefined && set.defaultDistance !== '') {
+    return String(set.defaultDistance)
+  }
+  return undefined
 }
 
 function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
@@ -233,6 +269,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
           <NumericalUnderscoreInput
             key={col.field}
             value={set[key]}
+            placeholder={getSetPlaceholder(set, key)}
             onChange={(event) => setField(key, event.target.value)}
             className="text-xl text-center mx-auto"
           />
@@ -256,11 +293,12 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
             className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
             onClick={() => {
               const willComplete = !set.completed
-              onUpdate((current) => ({ ...current, completed: !current.completed }))
+              const nextSet = willComplete ? commitSetDefaults({ ...set, completed: true }) : { ...set, completed: false }
+              onUpdate(() => nextSet)
               if (willComplete) {
-                onRestStart()
+                onRestStart(nextSet)
               }
-              onToggle(willComplete)
+              onToggle(willComplete, nextSet)
             }}
           >
             {isPR ? <Trophy className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
@@ -278,11 +316,6 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
       </div>
     </div>
   )
-}
-
-const formatClock = (totalSeconds: number) => {
-  const abs = Math.abs(totalSeconds)
-  return `${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
 }
 
 const buildPreviousText = (kg: number | null, reps: number | null) => {
@@ -593,6 +626,46 @@ const createClientExerciseId = () => {
 
   return `exercise-${Date.now()}-${secureRandomHex()}`
 }
+
+const resolveDefaultSetField = (
+  ...candidates: Array<number | string | null | undefined>
+): number | string => {
+  for (const candidate of candidates) {
+    if (candidate !== '' && candidate != null) {
+      return candidate
+    }
+  }
+  return ''
+}
+
+const createNextSet = (exercise: ExerciseData): SetData => {
+  const prevSet = exercise.sets.at(-1)
+  const defaultKg = resolveDefaultSetField(prevSet?.kg, prevSet?.defaultKg, prevSet?.targetKg)
+  const defaultReps = resolveDefaultSetField(prevSet?.reps, prevSet?.defaultReps, prevSet?.targetReps)
+  const defaultDuration = resolveDefaultSetField(prevSet?.duration, prevSet?.defaultDuration)
+  const defaultDistance = resolveDefaultSetField(prevSet?.distance, prevSet?.defaultDistance)
+
+  return {
+    id: createClientSetId(),
+    sourceSetId: null,
+    type: 'Normal',
+    previous: '-',
+    kg: '',
+    reps: '',
+    rpe: '',
+    targetKg: '',
+    targetReps: '',
+    defaultKg,
+    defaultReps,
+    defaultDuration,
+    defaultDistance,
+    duration: '',
+    distance: '',
+    restTime: prevSet?.restTime ?? exercise.sets[0]?.restTime ?? 0,
+    completed: false,
+  }
+}
+
 
 const formattedTime = (totalSecs: number) => {
   const h = Math.floor(totalSecs / 3600)
@@ -1014,7 +1087,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
 
-    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, ...override, completed: willComplete } : s))
+    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, ...set, ...override, completed: willComplete } : s))
     const completedNormSets = effectiveSets.filter((s) => s.type === 'Normal' && s.completed)
 
     const missedWithoutRPE = completedNormSets.length >= 2 && completedNormSets.some((s) => setMissedTarget(s) && s.rpe === '')
@@ -1124,28 +1197,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
         return {
           ...exercise,
-          sets: [
-            ...exercise.sets,
-            {
-              id: createClientSetId(),
-              sourceSetId: null,
-              type: 'Normal',
-              previous: '-',
-              kg: '',
-              reps: '',
-              rpe: '',
-              targetKg: '',
-              targetReps: '',
-              duration: '',
-              distance: '',
-              restTime: 0,
-              completed: false,
-            },
-          ],
+          sets: [...exercise.sets, createNextSet(exercise)],
         }
       })
     )
   }
+
 
   const removeSet = (exerciseId: string, setId: string) => {
     setExercises((currentExercises) =>
@@ -1296,25 +1353,21 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     await enqueue(load)
 
     const prs = detectPrs(exercises)
-
-    if (prs.length === 1) {
-      const [pr] = prs
-      toast.success(`${PR_KIND_LABEL[pr.kind]} ${formatPrValue(pr.kind, pr.value)}`, `${pr.exerciseName} - New PR`)
-    }
-    else if (prs.length > 1) {
-      const types = [...new Set(prs.map((pr) => PR_KIND_LABEL[pr.kind]))].join(' & ')
-      toast.success(types, `${prs.length} new personal records this session`)
-    }
+    const prPlural = prs.length > 1 ? 's' : ''
+    const prSumm = prs.length > 0 ? `${prs.length} new PR${prPlural}` : null
 
     if (navigator.onLine) {
       await flushOutBox()
     }
 
     if (navigator.onLine) {
-      toast.success('Workout saved.', 'Saved')
-    } 
+      toast.success(prSumm ?? 'Workout saved.', 'Workout saved')
+    }
     else {
-      toast.warning("Workout saved but will sync when you're back online.", 'Saved offline')
+      toast.warning(
+        prSumm ? `${prSumm} - will sync when you're back online.` : "Workout saved but will sync when you're back online.",
+        'Workout saved offline'
+      )
     }
 
     if (workoutId) {
@@ -1465,16 +1518,15 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
             </div>
           </div>
           <CardAction>
-            <DropdownMenu>
-              <DropdownMenuTrigger variant="plain" className="p-1 text-muted-foreground hover:text-foreground">
-                <MoreHorizontal className="h-5 w-5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
-                <DropdownMenuItem variant="destructive" onSelect={() => removeExercise(exercise.id)}>
-                  Remove exercise
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="icon"
+              size="icon"
+              aria-label="Remove exercise"
+              className="border-0 bg-transparent text-muted-foreground hover:text-destructive hover:bg-surface-2 cursor-pointer shrink-0"
+              onClick={() => removeExercise(exercise.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </CardAction>
         </CardHeader>
 
@@ -1508,11 +1560,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
                 onRemove={() => removeSet(exercise.id, set.id)}
                 isPR={prSetIds.includes(set.id)}
-                onRestStart={() => handleSetCompleted(exercise, set)}
-                onToggle={(willComplete) => {
-                  checkAcuteFatigue(exercise, set, willComplete)
+                onRestStart={(completedSet) => handleSetCompleted(exercise, completedSet ?? set)}
+                onToggle={(willComplete, completedSet) => {
+                  const targetSet = completedSet ?? set
+                  checkAcuteFatigue(exercise, targetSet, willComplete)
                   if (!willComplete) {
-                    clearPrForSet(set.id)
+                    clearPrForSet(targetSet.id)
                   }
                 }}
                 onFieldEdit={(key, raw) => {

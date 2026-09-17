@@ -16,6 +16,7 @@ describe('submitGoogleAuthRequest and auth-request utilities', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    document.documentElement.classList.remove('dark')
   })
 
   it('maps backend user dto properly and sets local storage', () => {
@@ -66,7 +67,7 @@ describe('submitGoogleAuthRequest and auth-request utilities', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: 'valid-google-id-token' }),
+        body: JSON.stringify({ idToken: 'valid-google-id-token', lightTheme: true }),
       })
     )
 

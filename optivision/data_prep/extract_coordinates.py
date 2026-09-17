@@ -41,10 +41,7 @@ def process_vid(vid_path, output_dir):
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
 
             # provide exact timestamp for video tracking mode
-            timestamp_ms = int(vid_cap.get(cv2.CAP_PROP_POS_MSEC))
-
-            if len(vid_landmarks) > 0 and timestamp_ms <= 0:
-                timestamp_ms = len(vid_landmarks) * 33
+            timestamp_ms = int(len(vid_landmarks) * 33)
 
             detection_result = landmarker.detect_for_video(mp_image, timestamp_ms)
 

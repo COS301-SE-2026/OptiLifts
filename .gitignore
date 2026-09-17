@@ -46,3 +46,4 @@ e2e/playwright/.auth/
 *.task
 dataset_tracker.csv
 optivision/venv/
+optivision/data/

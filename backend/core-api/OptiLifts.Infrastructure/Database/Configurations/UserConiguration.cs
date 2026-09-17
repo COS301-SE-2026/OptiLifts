@@ -35,11 +35,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.GoogleCalendarRefreshToken).HasColumnName("google_calendar_refresh_token").HasColumnName("google_calendar_refresh_token").IsRequired(false);
         builder.Property(u => u.GoogleCalendarId).HasColumnName("google_calendar_id").IsRequired(false);
 
+        //f1 - friendship feature
+        builder.Property(u => u.FriendCode).HasColumnName("friend_code").HasMaxLength(8).IsRequired();
+        builder.Property(u => u.DuelInvitePrivacy).HasColumnName("duel_invite_privacy").HasMaxLength(20).HasDefaultValue("Friends").IsRequired();
+        builder.Property(u => u.GlobalLeaderboardOptIn).HasColumnName("global_leaderboard_opt_in").HasDefaultValue(false).IsRequired();
 
         //creates a unique index on the email hash as it's deterministic
         builder.HasIndex(u => u.EmailHash).IsUnique();
         builder.HasIndex(u => u.GoogleId).IsUnique();
 
         builder.HasIndex(u => u.RefreshTokenHash);
+        
+        builder.HasIndex(u=> u.FriendCode).IsUnique();
     }
 }

@@ -36,4 +36,9 @@ public class User
     [Encrypted]
     public string? GoogleCalendarRefreshToken { get; set; }
     public string? GoogleCalendarId { get; set; }
+
+    //f1 - friendship feature
+    public string FriendCode {get; set; } = string.Empty;
+    public string DuelInvitePrivacy {get; set; } = "Friends";
+    public bool GlobalLeaderboardOptIn {get; set;} = false;
 }

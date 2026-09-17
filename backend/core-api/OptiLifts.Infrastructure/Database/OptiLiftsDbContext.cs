@@ -54,7 +54,7 @@ public class OptiLiftsDbContext : DbContext
 
     public DbSet<UserScheduleConfig> UserScheduleConfigs { get; set; }
 
-    public DbSet<Friendship> FriendShips {get; set;}
+    public DbSet<Friendship> Friendships {get; set;}
     public DbSet<FriendRequest> FriendRequests {get; set;}
 
 

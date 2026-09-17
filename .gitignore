@@ -38,10 +38,11 @@ e2e/blob-report/
 e2e/playwright/.cache/
 e2e/playwright/.auth/
 
-# ML Datasets & Optivision
+# ML Datasets and Optivision
 *.mp4
 *.avi
 *.mov
 *.mkv
+*.task
 dataset_tracker.csv
 optivision/venv/

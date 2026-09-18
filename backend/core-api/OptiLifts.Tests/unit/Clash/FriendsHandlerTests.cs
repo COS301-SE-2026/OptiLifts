@@ -2,14 +2,14 @@ using System.Text;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using OptiLifts.Application.Storage;
-using OptiLifts.Domain.Users;
-using OptiLifts.Domain.Clash;
-using OptiLifts.Infrastructure.Database;
 using OptiLifts.Application.Clash.Friends;
 using OptiLifts.Application.Clash.Friends.Commands;
 using OptiLifts.Application.Clash.Friends.Queries;
+using OptiLifts.Application.Storage;
+using OptiLifts.Domain.Clash;
+using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Clash.Friends;
+using OptiLifts.Infrastructure.Database;
 using Xunit;
 
 namespace OptiLifts.Tests.Unit.Clash;
@@ -63,7 +63,7 @@ public sealed class FriendsHandlerTests : IDisposable
     public async Task SendFriendRequest_ShouldFail_WhenCodeEmpty(string code)
     {
         var user = await SeedUserAsync("Alice", code1);
-        var handler = new SendFriendRequestHandler(_db);        
+        var handler = new SendFriendRequestHandler(_db);
         var result = await handler.Handle(new SendFriendRequestCommand(user.Id, code), CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -89,7 +89,7 @@ public sealed class FriendsHandlerTests : IDisposable
         _db.Friendships.Add(new Friendship
         {
             UserId1 = u1,
-            UserId2= u2,
+            UserId2 = u2,
             CreatedAt = DateTime.UtcNow
         });
         await _db.SaveChangesAsync();
@@ -134,9 +134,9 @@ public sealed class FriendsHandlerTests : IDisposable
         result.Success.Should().BeTrue();
         result.RequestID.Should().NotBeNull();
 
-        var saved = await _db.FriendRequests.FirstOrDefaultAsync( r=> r.Id == result.RequestID);
+        var saved = await _db.FriendRequests.FirstOrDefaultAsync(r => r.Id == result.RequestID);
         saved.Should().NotBeNull();
-        saved!.SenderId.Should().Be(user.Id);
+        saved.SenderId.Should().Be(user.Id);
         saved.ReceiverId.Should().Be(user2.Id);
         saved.Status.Should().Be(FriendshipHelpers.statusPending);
     }
@@ -270,7 +270,7 @@ public sealed class FriendsHandlerTests : IDisposable
         _db.Friendships.Add(new Friendship
         {
             UserId1 = u1,
-            UserId2= u2,
+            UserId2 = u2,
             CreatedAt = DateTime.UtcNow
         });
         await _db.SaveChangesAsync();
@@ -303,7 +303,7 @@ public sealed class FriendsHandlerTests : IDisposable
         _db.Friendships.Add(new Friendship
         {
             UserId1 = u1,
-            UserId2= u2,
+            UserId2 = u2,
             CreatedAt = DateTime.UtcNow
         });
         await _db.SaveChangesAsync();

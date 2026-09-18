@@ -13,6 +13,7 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/workouts',  label: 'Workouts'  },
   { to: '/schedule',  label: 'Schedule'  },
+  { to: '/clash/friends', label: 'OptiClash' },
   { to: '/progression',   label: 'Progression'   },
   { to: '/help',  label: 'Help'  },
   { to: '/profile',   label: 'Profile'   },

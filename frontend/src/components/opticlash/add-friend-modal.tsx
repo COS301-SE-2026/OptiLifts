@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
+import { customFetch } from "@/lib/custom-fetch";
 
 interface AddFriendModalProps{
     isOpen: boolean;
@@ -19,11 +20,11 @@ export function AddFriendModal({
     const [status, setStatus] = useState<'idle' |'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
 
-    if(isOpen) {
+    if(!isOpen) {
         return null;
     }
 
-    const handleSubmit = (e: FormEvent) =>{
+    const handleSubmit = async (e: FormEvent) =>{
         e.preventDefault();
         const clean = friendCode.trim().toUpperCase();
         if(!clean || clean.length <5){
@@ -31,25 +32,48 @@ export function AddFriendModal({
             setErrorMessage('Please enter a valid 6-character friend code');
             return;
         }
-        //todo: what if its their own code?
 
-        setStatus('success');
-        if (onFriendAdded){
-            onFriendAdded(clean);
+        setStatus('loading');
+        try {
+            const res = await customFetch('/api/clash/friends/requests', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    friendCode: clean
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success){
+                setStatus('error');
+                setErrorMessage(data.message || 'Failed to send friend request');
+                return;
+            }
+
+            setStatus('success');
+            if (onFriendAdded){
+                onFriendAdded(clean);
+            }
+            setTimeout(() => {
+                setStatus('idle');
+                setFriendCode('');
+                onClose();
+            }, 1500);
+        } catch {
+            setStatus('error');
+            setErrorMessage('Network error. Please try again');
         }
-        setTimeout(() => {
-            setStatus('idle');
-            setFriendCode('');
-            onClose();
-        }, 1500);
+
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <Card className="bg-surface border-border max-w-md w-full overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-150 p-0">
-                <Button variant="ghost" size="icon" onClick={onClose}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm cursor-pointer"
+        onClick={onClose}>
+            <Card className="bg-surface border-border max-w-md w-full overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-150 p-0 cursor-default" onClick={(e) => e.stopPropagation()}>
+                <Button type="button" variant="ghost" size="icon" onClick={onClose}
                 className="absolute top-4 right-4 h-8 w-8 z-10" aria-label="Close">
-                    <X className="w-4 h-4 text-muted foreground hover:text-foreground"/>
+                    <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
                 </Button>
 
                 {/* modal header */}

@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
-import { CURRENT_USER_CODE, MOCK_FRIEND_REQUESTS, MOCK_FRIENDS } from "@/data/clash-mock-data";
-import { ArrowLeft, Check, CheckCircle, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle } from "lucide-react";
-import { useState } from "react";
+import { customFetch } from "@/lib/custom-fetch";
+import { ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function FriendsManagementPage(){
@@ -18,10 +18,30 @@ export default function FriendsManagementPage(){
     const [requestSearchQuery, setRequestSearchQuery] = useState('');
     const [copiedCode, setCopiedCode] = useState(false);
 
+    interface FriendItem{
+        id: string;
+        name: string;
+        initials: string;
+        avatarUrl?: string;
+        code: string;
+        dotsScore: number;
+        tier: string;
+    }
+    interface FriendRequestItem{
+        id: string;
+        fromAthleteId: string;
+        fromName: string;
+        fromInitials: string;
+        fromAvatarUrl?: string;
+        fromCode: string;
+        sentAt: string;
+    }
+
     //f1 - friends state
     //todo: replace mock data w/ integration
-    const [friendsList] = useState(MOCK_FRIENDS);
-    const [requestsLists, setRequestsLists] = useState(MOCK_FRIEND_REQUESTS);
+    const [friendsList, setFriendsList] = useState<FriendItem[]>([]);
+    const [requestsLists, setRequestsLists] = useState<FriendRequestItem[]>([]);
+    const [userCode, setUserCode] = useState<string>('');
     const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
 
     //f2 - profile inspector drawer
@@ -29,29 +49,104 @@ export default function FriendsManagementPage(){
     //f4 - duel invites
 
     //handlers
+    const fetchFriendsData = async () => {
+        await Promise.resolve();
+        try {
+            const [friendsRes, requestsRes, codeRes] = await Promise.all([
+                customFetch('/api/clash/friends'), customFetch('/api/clash/friends/requests'), customFetch('/api/clash/friends/code'),
+            ]);
+            if (friendsRes.ok){
+                const data = await friendsRes.json();
+                setFriendsList(data);
+            }
+            if (requestsRes.ok){
+                const data = await requestsRes.json();
+                setRequestsLists(data.incoming ?? []);
+            }
+            if (codeRes.ok){
+                const data = await codeRes.json();
+                setUserCode(data.code ?? '');
+            }
+        } catch {
+            toast.error('Failed to load friends');
+        }
+    };
+
+    useEffect(() => {
+        void fetchFriendsData();
+    }, []);
 
     //copying ur own code to clip
     const handleCopyCode = () =>{
-        navigator.clipboard.writeText(CURRENT_USER_CODE);//todo: replace mock
+        if (!userCode) return;
+        navigator.clipboard.writeText(userCode);
         setCopiedCode(true);
-        toast.success('Your friend code is copied to clipboard', CURRENT_USER_CODE);
+        toast.success('Your friend code is copied to clipboard', userCode);
         setTimeout(() => setCopiedCode(false), 2000);
     };
 
     //api call post /respond - accept true
-    const handleAcceptRequest = (requestId: string, name:string)=> {
-        setRequestsLists((prev) => prev.filter((r) => r.id !== requestId));
-        toast.success(`You are now friends with ${name}.`, 'Request Accepted');
-    }
+    const handleAcceptRequest = async (requestId: string, name:string)=> {
+        try {
+            const res = await customFetch(`/api/clash/friends/requests/${requestId}/respond`,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accept: true
+                }),
+            });
+            if (res.ok){
+                setRequestsLists((prev) => prev.filter((r) => r.id !== requestId));
+                toast.success(`You are now friends with ${name}.`, 'Request Accepted');
+                fetchFriendsData();
+            } else {
+                toast.error('Failed to accept friend request');
+            }
+        } catch {
+            toast.error('Failed to accept friend request');
+        }        
+    };
     //api call post /respond - accept false
-    const handleRejectRequest = (requestId: string)=> {
-        setRequestsLists((prev) => prev.filter((r) => r.id !== requestId));
-        toast.success('Friend request declined');
+    const handleRejectRequest = async (requestId: string)=> {
+        try {
+            const res = await customFetch(`/api/clash/friends/requests/${requestId}/respond`,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accept: false
+                }),
+            });
+            if (res.ok){
+                setRequestsLists((prev) => prev.filter((r) => r.id !== requestId));
+                toast.success('Friend request declined');
+                fetchFriendsData();
+            } else {
+                toast.error('Failed to decline friend request');
+            }
+        } catch {
+            toast.error('Failed to decline friend request');
+        }
     }
     //post reject/reject-all
-    const handleRejectAllRequests= () =>{
-        setRequestsLists([]);
-        toast.info('All pending friend requests have been rejected.')
+    const handleRejectAllRequests= async () =>{
+        try {
+            const res = await customFetch('/api/clash/friends/requests/reject-all',{
+                method: 'POST',
+            });
+            if (res.ok){
+                setRequestsLists([]);
+                toast.info('All pending friend requests have been rejected.')
+            } else {
+                toast.error('Failed to reject requests');
+            }
+        } catch {
+            toast.error('Failed to reject requests');
+        }
+        
     };
 
     //f4 - handle accept duel + handle reject duel 
@@ -81,7 +176,7 @@ export default function FriendsManagementPage(){
                                 Your Private Friend Code
                             </span>
                             <span className="font-mono text-xl md:text-2xl font-bold text-brand tracking-wider block">
-                                {CURRENT_USER_CODE}
+                                {userCode || '------'}
                             </span>
                         </div>
                         <Button variant="secondary" size="sm" onClick={handleCopyCode} className="h-8 px-3 text-xs">
@@ -220,7 +315,7 @@ export default function FriendsManagementPage(){
                 {/* f3 + f4 - tab 3 arena + duel invites */}
             </div>
 
-            <AddFriendModal isOpen={isAddFriendOpen} onClose={() => setIsAddFriendOpen(false)} />
+            <AddFriendModal isOpen={isAddFriendOpen} onClose={() => setIsAddFriendOpen(false)} onFriendAdded={() => fetchFriendsData()} />
         </div>
     );
 }

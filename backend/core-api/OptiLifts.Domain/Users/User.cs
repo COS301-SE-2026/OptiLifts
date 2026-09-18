@@ -38,11 +38,12 @@ public class User
     public string? GoogleCalendarId { get; set; }
 
     //f1 - friendship feature
-    public string FriendCode {get; set; } = GenerateFriendCode();
-    public string DuelInvitePrivacy {get; set; } = "Friends";
-    public bool GlobalLeaderboardOptIn {get; set;} = false;
+    public string FriendCode { get; set; } = GenerateFriendCode();
+    public string DuelInvitePrivacy { get; set; } = "Friends";
+    public bool GlobalLeaderboardOptIn { get; set; } = false;
 
-    public static string GenerateFriendCode(){
+    public static string GenerateFriendCode()
+    {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         return new string(Random.Shared.GetItems(chars.AsSpan(), 6));
     }

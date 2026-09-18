@@ -6,4 +6,4 @@ public sealed record RespondToFriendRequestCommand(
     Guid UserId,
     Guid RequestId,
     bool Accept
-): IRequest<bool>;
+) : IRequest<bool>;

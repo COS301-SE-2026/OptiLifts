@@ -16,7 +16,7 @@ interface ClashTabsProps<T extends string>{
 
 export function ClashTabs<T extends string>({
     tabs, activeTab, onChange, className='',
-}: ClashTabsProps<T>){
+}: Readonly<ClashTabsProps<T>>){
     return (
         <div className={`flex bg-surface-2 border border-border rounded-xl p-1 overflow-x-auto ${className}`}
         role="tablist">
@@ -24,7 +24,7 @@ export function ClashTabs<T extends string>({
                 const isActive = activeTab === tab.id;
                 return (
                     <button key={tab.id} type="button" role="tab" aria-selected={isActive} onClick={()=> onChange(tab.id)}
-                    className={`flex-1py-2 px-3.5 text-xs font-bold uppercase tracking-[1px] rounded-lg transition font-sans flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0
+                    className={`flex-1 py-2 px-3.5 text-xs font-bold uppercase tracking-[1px] rounded-lg transition font-sans flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0
                     ${isActive ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
                         {tab.icon}
                         <span className="whitespace-nowrap">

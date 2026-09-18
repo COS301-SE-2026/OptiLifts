@@ -1,5 +1,5 @@
 import { AlertCircle, Check, KeyRound, UserPlus, X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
@@ -15,16 +15,29 @@ export function AddFriendModal({
     isOpen,
     onClose,
     onFriendAdded
-}: AddFriendModalProps){
+}: Readonly<AddFriendModalProps>){
     const [friendCode, setFriendCode] = useState('');
     const [status, setStatus] = useState<'idle' |'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
 
-    if(!isOpen) {
-        return null;
-    }
+    useEffect(() => {
+        if(!isOpen) {
+            return;
+        }
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape"){
+                onClose();
+            };
+        };
+            window.addEventListener("keydown", handleKeyDown);
+            return () => window.removeEventListener("keydown", handleKeyDown);
+        }, [isOpen, onClose]);
 
-    const handleSubmit = async (e: FormEvent) =>{
+        if (!isOpen){
+            return null;
+        }
+
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) =>{
         e.preventDefault();
         const clean = friendCode.trim().toUpperCase();
         if(!clean || clean.length <5){
@@ -68,9 +81,9 @@ export function AddFriendModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm cursor-pointer"
-        onClick={onClose}>
-            <Card className="bg-surface border-border max-w-md w-full overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-150 p-0 cursor-default" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={onClose} className="fixes inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
+            <Card className="bg-surface border-border max-w-md w-full overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-150 p-0 cursor-default">
                 <Button type="button" variant="ghost" size="icon" onClick={onClose}
                 className="absolute top-4 right-4 h-8 w-8 z-10" aria-label="Close">
                     <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
@@ -113,12 +126,12 @@ export function AddFriendModal({
                             )}
 
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
+                                <label htmlFor="friend-code-input" className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
                                 Friend&apos;s Unique Code
                                 </label>
                                 <div className="relative">
                                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-                                    <Input type="text" value={friendCode} 
+                                    <Input id="friend-code-input" type="text" value={friendCode} 
                                     onChange={(e) => {
                                         setFriendCode(e.target.value.toUpperCase());
                                         setStatus('idle');

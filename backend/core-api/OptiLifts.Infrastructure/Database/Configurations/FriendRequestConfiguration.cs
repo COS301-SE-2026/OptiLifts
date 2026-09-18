@@ -5,8 +5,10 @@ using OptiLifts.Domain.Users;
 
 namespace OptiLifts.Infrastructure.Database.Configurations;
 
-public class FriendRequestConfiguration : IEntityTypeConfiguration<FriendRequest>{
-    public void Configure(EntityTypeBuilder<FriendRequest> builder){
+public class FriendRequestConfiguration : IEntityTypeConfiguration<FriendRequest>
+{
+    public void Configure(EntityTypeBuilder<FriendRequest> builder)
+    {
         builder.ToTable("friend_requests");
 
         builder.HasKey(fr => fr.Id);
@@ -20,11 +22,13 @@ public class FriendRequestConfiguration : IEntityTypeConfiguration<FriendRequest
         builder.HasOne<User>().WithMany().HasForeignKey(fr => fr.SenderId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<User>().WithMany().HasForeignKey(fr => fr.ReceiverId).OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(fr => new {
+        builder.HasIndex(fr => new
+        {
             fr.ReceiverId,
             fr.Status
-        }); 
-        builder.HasIndex(fr => new {
+        });
+        builder.HasIndex(fr => new
+        {
             fr.SenderId,
             fr.ReceiverId
         }).IsUnique().HasFilter("status = 'Pending'");

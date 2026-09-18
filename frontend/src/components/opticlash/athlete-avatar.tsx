@@ -12,7 +12,7 @@ interface AthleteAvatarProps{
 export function AthleteAvatar({
     initials, name, avatarUrl, isCurrentUser = false,
     size = 'md', className= '',
-}: AthleteAvatarProps){
+}: Readonly<AthleteAvatarProps>){
     const [imageError, setImageError] = useState(false);
     const sizeMap = {
         sm: 'w-8 h-8 rounded-lg text-xs',

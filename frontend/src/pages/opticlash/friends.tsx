@@ -38,7 +38,6 @@ export default function FriendsManagementPage(){
     }
 
     //f1 - friends state
-    //todo: replace mock data w/ integration
     const [friendsList, setFriendsList] = useState<FriendItem[]>([]);
     const [requestsLists, setRequestsLists] = useState<FriendRequestItem[]>([]);
     const [userCode, setUserCode] = useState<string>('');
@@ -73,6 +72,7 @@ export default function FriendsManagementPage(){
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
         void fetchFriendsData();
     }, []);
 

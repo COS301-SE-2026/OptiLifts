@@ -5,8 +5,10 @@ using OptiLifts.Domain.Users;
 
 namespace OptiLifts.Infrastructure.Database.Configurations;
 
-public class FriendshipConfiguration : IEntityTypeConfiguration<Friendship>{
-    public void Configure(EntityTypeBuilder<Friendship> builder){
+public class FriendshipConfiguration : IEntityTypeConfiguration<Friendship>
+{
+    public void Configure(EntityTypeBuilder<Friendship> builder)
+    {
         builder.ToTable("friendships", t => t.HasCheckConstraint("CK_friendships_user_order", "user_id1 < user_id2"));
 
         builder.HasKey(f => f.Id);
@@ -18,7 +20,8 @@ public class FriendshipConfiguration : IEntityTypeConfiguration<Friendship>{
         builder.HasOne<User>().WithMany().HasForeignKey(f => f.UserId1).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<User>().WithMany().HasForeignKey(f => f.UserId2).OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(f => new {
+        builder.HasIndex(f => new
+        {
             f.UserId1,
             f.UserId2
         }).IsUnique(); //no dupe friendships

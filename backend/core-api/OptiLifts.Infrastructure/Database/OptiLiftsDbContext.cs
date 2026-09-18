@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
+using OptiLifts.Domain.Clash;
 using OptiLifts.Domain.Common;
 using OptiLifts.Domain.Gamification;
 using OptiLifts.Domain.Messaging;
@@ -9,7 +10,6 @@ using OptiLifts.Domain.Training;
 using OptiLifts.Domain.Users;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
-using OptiLifts.Domain.Clash;
 
 namespace OptiLifts.Infrastructure.Database;
 
@@ -54,8 +54,8 @@ public class OptiLiftsDbContext : DbContext
 
     public DbSet<UserScheduleConfig> UserScheduleConfigs { get; set; }
 
-    public DbSet<Friendship> Friendships {get; set;}
-    public DbSet<FriendRequest> FriendRequests {get; set;}
+    public DbSet<Friendship> Friendships { get; set; }
+    public DbSet<FriendRequest> FriendRequests { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

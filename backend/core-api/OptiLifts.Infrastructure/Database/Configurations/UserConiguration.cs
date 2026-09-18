@@ -45,7 +45,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.GoogleId).IsUnique();
 
         builder.HasIndex(u => u.RefreshTokenHash);
-        
-        builder.HasIndex(u=> u.FriendCode).IsUnique();
+
+        builder.HasIndex(u => u.FriendCode).IsUnique();
     }
 }

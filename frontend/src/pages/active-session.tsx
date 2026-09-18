@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { customFetch } from '@/lib/custom-fetch'
 import { getColumns } from '@/components/ui/exercise-card'
 import { enqueue, flushOutBox, type WorkoutLogPayload, type WorkoutLogSetPayload, type WorkoutLogExercisePayload } from '@/lib/offline/workout-logs'
-import { Check, Plus, ChevronDown, MoreHorizontal, ArrowLeft, X, Trophy, AlertTriangle } from 'lucide-react'
+import { Check, Plus, ChevronDown, Trash2, ArrowLeft, X, Trophy, AlertTriangle, Timer } from 'lucide-react'
 import { ExercisePickerDialog, type CatalogExercise } from '@/components/ui/exercise-picker-dialog'
 import { saveDraft, getDraft, clearDraft, getDraftFromStorage } from '@/lib/session-drafts'
 import { cacheWorkoutDetail, getCachedWorkoutDetail } from '@/lib/offline/workouts-cache'
@@ -23,10 +23,11 @@ import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { adaptImgUrl } from '@/lib/utils'
-import { buildLabels } from '@/lib/exercise-format'
+import { buildLabels, formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
 import { TapHint } from '@/components/ui/tap-hint'
 import { OfflineBanner } from '@/components/ui/offline-banner'
+
 
 type WorkoutLocationState = Readonly<{
   isTimeConstrained?: boolean
@@ -54,6 +55,10 @@ type SetData = {
   sourceSetId: string | null
   targetKg: number | ''
   targetReps: number | ''
+  defaultKg?: number | string
+  defaultReps?: number | string
+  defaultDuration?: number | string
+  defaultDistance?: number | string
 }
 
 type ExerciseData = Readonly<{
@@ -175,19 +180,65 @@ type SetRowProps = Readonly<{
   isPR: boolean,
   onUpdate: (updater: (current: SetData) => SetData) => void
   onRemove: () => void
-  onRestStart: () => void
-  onToggle: (willComplete: boolean) => void
+  onRestStart: (completedSet?: SetData) => void
+  onToggle: (willComplete: boolean, completedSet?: SetData) => void
   onFieldEdit: (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => void
 }>
+
+const MIN_ONE_FIELDS: ReadonlySet<string> = new Set(['reps', 'duration', 'distance'])
+
+const clampSetField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', value: number | ''): number | '' => {
+  if (value === '') {
+    return ''
+  }
+
+  if (key === 'rpe') {
+    return Math.min(10, Math.max(1, value))
+  }
+
+  return MIN_ONE_FIELDS.has(key) ? Math.max(1, value) : value
+}
+
+const commitSetDefaults = (current: SetData): SetData => {
+  const next = { ...current }
+  if (next.kg === '' && next.defaultKg !== undefined && next.defaultKg !== '') {
+    next.kg = next.defaultKg
+  }
+  if (next.reps === '' && next.defaultReps !== undefined && next.defaultReps !== '') {
+    next.reps = next.defaultReps
+  }
+  if (next.duration === '' && next.defaultDuration !== undefined && next.defaultDuration !== '') {
+    next.duration = next.defaultDuration
+  }
+  if (next.distance === '' && next.defaultDistance !== undefined && next.defaultDistance !== '') {
+    next.distance = next.defaultDistance
+  }
+  return next
+}
+
+const getSetPlaceholder = (set: SetData, key: 'kg' | 'reps' | 'duration' | 'distance'): string | undefined => {
+  if (key === 'kg' && set.defaultKg !== undefined && set.defaultKg !== '') {
+    return String(set.defaultKg)
+  }
+  if (key === 'reps' && set.defaultReps !== undefined && set.defaultReps !== '') {
+    return String(set.defaultReps)
+  }
+  if (key === 'duration' && set.defaultDuration !== undefined && set.defaultDuration !== '') {
+    return String(set.defaultDuration)
+  }
+  if (key === 'distance' && set.defaultDistance !== undefined && set.defaultDistance !== '') {
+    return String(set.defaultDistance)
+  }
+  return undefined
+}
 
 function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
     const numeric = raw === '' ? '' : Number(raw)
-    const clamped = key === 'rpe' && numeric !== '' ? Math.min(10, Math.max(1, numeric)) : numeric
-    onUpdate((current) => ({ ...current, [key]: clamped }))
+    const clamped = clampSetField(key, numeric)
+    onUpdate((current) => ({ ...current, [key]: clamped, completed: false }))
     onFieldEdit(key, clamped === '' ? '' : String(clamped))
   }
-
 
   return (
     <div
@@ -218,6 +269,7 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
           <NumericalUnderscoreInput
             key={col.field}
             value={set[key]}
+            placeholder={getSetPlaceholder(set, key)}
             onChange={(event) => setField(key, event.target.value)}
             className="text-xl text-center mx-auto"
           />
@@ -241,11 +293,12 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
             className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
             onClick={() => {
               const willComplete = !set.completed
-              onUpdate((current) => ({ ...current, completed: !current.completed }))
+              const nextSet = willComplete ? commitSetDefaults({ ...set, completed: true }) : { ...set, completed: false }
+              onUpdate(() => nextSet)
               if (willComplete) {
-                onRestStart()
+                onRestStart(nextSet)
               }
-              onToggle(willComplete)
+              onToggle(willComplete, nextSet)
             }}
           >
             {isPR ? <Trophy className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
@@ -263,11 +316,6 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
       </div>
     </div>
   )
-}
-
-const formatClock = (totalSeconds: number) => {
-  const abs = Math.abs(totalSeconds)
-  return `${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
 }
 
 const buildPreviousText = (kg: number | null, reps: number | null) => {
@@ -416,6 +464,12 @@ const setAtHighRpe = (set: SetData): boolean => {
 type PrHit = { exerciseName: string; kind: 'weight' | 'volume'; value: number }
 type PrKind = 'weight' | 'volume'
 
+const PR_KIND_LABEL: Record<PrKind, string> = {
+  weight: 'Heaviest weight',
+  volume: 'Best set volume',
+}
+const formatPrValue = (kind: PrKind, value: number) => `${kind === 'weight' ? value : value.toLocaleString()}kg`
+
 const getSetPrKinds = (exercise: ExerciseData, set: SetData): PrKind[] => {
   if (set.type !== 'Normal') {
     return []
@@ -517,8 +571,22 @@ const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): Workout
   return sets
 }
 
+const ZERO_INVALID_FIELDS: ReadonlySet<string> = new Set(['reps', 'time', 'distance'])
+
 function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
-  return set.completed && cols.some((col) => set[FIELD_TO_SET_KEY[col.field]] === '')
+  if (!set.completed) {
+    return false
+  }
+
+  return cols.some((col) => {
+    const val = set[FIELD_TO_SET_KEY[col.field]]
+
+    if (val === '') {
+      return true
+    }
+
+    return ZERO_INVALID_FIELDS.has(col.field) && Number(val) <= 0
+  })
 }
 
 function exerciseGotBlanks(exercise: ExerciseData): boolean {
@@ -558,6 +626,46 @@ const createClientExerciseId = () => {
 
   return `exercise-${Date.now()}-${secureRandomHex()}`
 }
+
+const resolveDefaultSetField = (
+  ...candidates: Array<number | string | null | undefined>
+): number | string => {
+  for (const candidate of candidates) {
+    if (candidate !== '' && candidate != null) {
+      return candidate
+    }
+  }
+  return ''
+}
+
+const createNextSet = (exercise: ExerciseData): SetData => {
+  const prevSet = exercise.sets.at(-1)
+  const defaultKg = resolveDefaultSetField(prevSet?.kg, prevSet?.defaultKg, prevSet?.targetKg)
+  const defaultReps = resolveDefaultSetField(prevSet?.reps, prevSet?.defaultReps, prevSet?.targetReps)
+  const defaultDuration = resolveDefaultSetField(prevSet?.duration, prevSet?.defaultDuration)
+  const defaultDistance = resolveDefaultSetField(prevSet?.distance, prevSet?.defaultDistance)
+
+  return {
+    id: createClientSetId(),
+    sourceSetId: null,
+    type: 'Normal',
+    previous: '-',
+    kg: '',
+    reps: '',
+    rpe: '',
+    targetKg: '',
+    targetReps: '',
+    defaultKg,
+    defaultReps,
+    defaultDuration,
+    defaultDistance,
+    duration: '',
+    distance: '',
+    restTime: prevSet?.restTime ?? exercise.sets[0]?.restTime ?? 0,
+    completed: false,
+  }
+}
+
 
 const formattedTime = (totalSecs: number) => {
   const h = Math.floor(totalSecs / 3600)
@@ -915,10 +1023,18 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   }, [isEditMode, workoutId, exercises.length])
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
-  const restRem = restTimer ? Math.round((restTimer.endsAt - nowMs) / 1000) : null
-  const restOT = restRem !== null && restRem < 0
-  const restProg = restTimer && restRem !== null
-    ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
+  const restRem = restTimer ? Math.max(0, Math.round((restTimer.endsAt - nowMs) / 1000)) : null
+  const restDone = restTimer !== null && restRem === 0
+  const restProg = restTimer && restRem !== null ? Math.min(100, Math.max(0, ((restTimer.totalSeconds - restRem) / restTimer.totalSeconds) * 100)) : 0
+
+  useEffect(() => {
+    if (!restDone) {
+      return
+    }
+
+    const timeoutId = setTimeout(() => setRestTimer(null), 5000)
+    return () => clearTimeout(timeoutId)
+  }, [restDone])
 
   const durationDisplay = useMemo(() => {
     if (!isEditMode) {
@@ -940,12 +1056,30 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
   const handleSetCompleted = (exercise: ExerciseData, set: SetData) => {
     startRest(exercise, set)
 
-    if (isEditMode || getSetPrKinds(exercise, set).length === 0) {
+    if (isEditMode) {
+      return
+    }
+
+    const kinds = getSetPrKinds(exercise, set)
+
+    if (kinds.length === 0) {
       return
     }
 
     setPrSetIds((current) => (current.includes(set.id) ? current : [...current, set.id]))
     void confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, disableForReducedMotion: true })
+
+    const weight = toNumericValue(set.kg)
+    const reps = toNumericValue(set.reps)
+    const body = kinds
+      .map((kind) => `${PR_KIND_LABEL[kind]} ${formatPrValue(kind, kind === 'weight' ? weight : weight * reps)}`)
+      .join(' · ')
+
+    toast.success(body, `${exercise.name} - New PR${kinds.length > 1 ? 's' : ''}`)
+  }
+
+  const clearPrForSet = (setId: string) => {
+    setPrSetIds((current) => current.filter((id) => id !== setId))
   }
 
   const checkAcuteFatigue = (exercise: ExerciseData, set: SetData, willComplete: boolean, override: Partial<SetData> = {}) => {
@@ -953,7 +1087,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
       return
     }
 
-    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, ...override, completed: willComplete } : s))
+    const effectiveSets = exercise.sets.map((s) => (s.id === set.id ? { ...s, ...set, ...override, completed: willComplete } : s))
     const completedNormSets = effectiveSets.filter((s) => s.type === 'Normal' && s.completed)
 
     const missedWithoutRPE = completedNormSets.length >= 2 && completedNormSets.some((s) => setMissedTarget(s) && s.rpe === '')
@@ -1020,6 +1154,29 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     setRestTimer(createRestTimer(sec, exercise.name))
   }
 
+  const setExerciseRest = (exerciseId: string, seconds: number) => {
+    setExercises((current) => {
+      const target = current.find((exercise) => exercise.id === exerciseId)
+
+      if (!target) {
+        return current
+      }
+
+      const isMember = (exercise: ExerciseData) =>
+        target.groupId ? exercise.groupId === target.groupId : exercise.id === target.id
+
+      return current.map((exercise) => (
+        isMember(exercise)
+          ? {
+              ...exercise,
+              groupRestTime: exercise.groupId ? seconds : exercise.groupRestTime,
+              sets: exercise.sets.map((set) => ({ ...set, restTime: seconds })),
+            }
+          : exercise
+      ))
+    })
+  }
+
   const updateSet = (
     exerciseId: string,
     setId: string,
@@ -1040,28 +1197,12 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
         return {
           ...exercise,
-          sets: [
-            ...exercise.sets,
-            {
-              id: createClientSetId(),
-              sourceSetId: null,
-              type: 'Normal',
-              previous: '-',
-              kg: '',
-              reps: '',
-              rpe: '',
-              targetKg: '',
-              targetReps: '',
-              duration: '',
-              distance: '',
-              restTime: 0,
-              completed: false,
-            },
-          ],
+          sets: [...exercise.sets, createNextSet(exercise)],
         }
       })
     )
   }
+
 
   const removeSet = (exerciseId: string, setId: string) => {
     setExercises((currentExercises) =>
@@ -1212,26 +1353,21 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     await enqueue(load)
 
     const prs = detectPrs(exercises)
-
-    if (prs.length === 1) {
-      const [pr] = prs
-      toast.success(
-        pr.kind === 'weight' ? `${pr.exerciseName} - ${pr.value}kg` : `${pr.exerciseName} - ${pr.value.toLocaleString()}kg set volume`, 'New PR'
-      )
-    }
-    else if (prs.length > 1) {
-      toast.success(`${prs.length} new personal records this session.`, 'New PRs')
-    }
+    const prPlural = prs.length > 1 ? 's' : ''
+    const prSumm = prs.length > 0 ? `${prs.length} new PR${prPlural}` : null
 
     if (navigator.onLine) {
       await flushOutBox()
     }
 
     if (navigator.onLine) {
-      toast.success('Workout saved.', 'Saved')
-    } 
+      toast.success(prSumm ?? 'Workout saved.', 'Workout saved')
+    }
     else {
-      toast.warning("Workout saved but will sync when you're back online.", 'Saved offline')
+      toast.warning(
+        prSumm ? `${prSumm} - will sync when you're back online.` : "Workout saved but will sync when you're back online.",
+        'Workout saved offline'
+      )
     }
 
     if (workoutId) {
@@ -1327,6 +1463,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
     const gridTempMobile = `2.75rem ${cols.map(() => 'minmax(0, 1fr)').join(' ')} 4.5rem`
     const gridTemp = `3.5rem minmax(0, 1.5fr) ${cols.map(() => 'minmax(0, 1fr)').join(' ')} minmax(0, 0.8fr) 4rem`
     const setLabels = buildLabels(exercise.sets)
+    const exerciseRest = (exercise.groupId ? exercise.groupRestTime : null) ?? exercise.sets[0]?.restTime ?? 0
 
     return (
       <div key={exercise.id}>
@@ -1356,20 +1493,40 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                   </TapHint>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{exercise.muscleGroup}</span>
+                <span aria-hidden>·</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    variant="plain"
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    disabled={isEditMode}
+                  >
+                    <Timer className="h-3.5 w-3.5" />
+                    {exerciseRest > 0 ? formatClock(exerciseRest) : 'No rest'}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-auto min-w-[7rem]">
+                    <DropdownMenuItem onSelect={() => setExerciseRest(exercise.id, 0)}>No rest</DropdownMenuItem>
+                    {REST_PRESETS.map((seconds) => (
+                      <DropdownMenuItem key={seconds} onSelect={() => setExerciseRest(exercise.id, seconds)}>
+                        {formatClock(seconds)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
           <CardAction>
-            <DropdownMenu>
-              <DropdownMenuTrigger variant="plain" className="p-1 text-muted-foreground hover:text-foreground">
-                <MoreHorizontal className="h-5 w-5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
-                <DropdownMenuItem variant="destructive" onSelect={() => removeExercise(exercise.id)}>
-                  Remove exercise
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="icon"
+              size="icon"
+              aria-label="Remove exercise"
+              className="border-0 bg-transparent text-muted-foreground hover:text-destructive hover:bg-surface-2 cursor-pointer shrink-0"
+              onClick={() => removeExercise(exercise.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </CardAction>
         </CardHeader>
 
@@ -1403,11 +1560,18 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 onUpdate={(updater) => updateSet(exercise.id, set.id, updater)}
                 onRemove={() => removeSet(exercise.id, set.id)}
                 isPR={prSetIds.includes(set.id)}
-                onRestStart={() => handleSetCompleted(exercise, set)}
-                onToggle={(willComplete) => checkAcuteFatigue(exercise, set, willComplete)}
+                onRestStart={(completedSet) => handleSetCompleted(exercise, completedSet ?? set)}
+                onToggle={(willComplete, completedSet) => {
+                  const targetSet = completedSet ?? set
+                  checkAcuteFatigue(exercise, targetSet, willComplete)
+                  if (!willComplete) {
+                    clearPrForSet(targetSet.id)
+                  }
+                }}
                 onFieldEdit={(key, raw) => {
                   if (set.completed) {
                     checkAcuteFatigue(exercise, set, true, { [key]: raw === '' ? '' : Number(raw) })
+                    clearPrForSet(set.id)
                   }
                 }}
               />
@@ -1640,22 +1804,22 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
         </div>
       )}
       {restTimer && restRem !== null && (
-        <div className="fixed inset-x-0 bottom-0 z-[80] border-t-2 border-brand bg-background/95 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-background/95 backdrop-blur">
           <div className="h-1 w-full bg-surface-2">
             <div
-              className={`h-full transition-[width] duration-1000 ease-linear ${restOT ? 'bg-warning' : 'bg-brand'}`}
+              className={`h-full transition-[width] duration-1000 ease-linear ${restDone ? 'bg-warning' : 'bg-brand'}`}
               style={{ width: `${restProg}%` }}
             />
           </div>
 
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restOT ? 'text-warning' : 'text-brand'}`}>
-              {restOT ? '+' : ''}{formatClock(restRem)}
+            <span className={`font-display text-[32px] leading-none tracking-[1px] tabular-nums ${restDone ? 'text-warning' : 'text-brand'}`}>
+              {formatClock(restRem)}
             </span>
 
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground">
-                {restOT ? 'Rest over' : 'Resting'}
+                {restDone ? 'Rest over' : 'Resting'}
               </p>
               <p className="truncate text-sm font-semibold text-foreground">{restTimer.exerciseName}</p>
             </div>

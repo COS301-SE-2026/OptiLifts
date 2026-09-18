@@ -332,7 +332,8 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
 
         return bestVal
             .Where(item => item.PrType == ExercisePrType.MaxWeight)
-            .ToDictionary(item => item.ExerciseId, item => item.Best);
+            .GroupBy(item => item.ExerciseId)
+            .ToDictionary(group => group.Key, group => group.Max(item => item.Best));
     }
 
     private async Task<Dictionary<Guid, float>> GetBestVolumesAsync(
@@ -349,7 +350,8 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
 
         return bestVal
             .Where(item => item.PrType == ExercisePrType.MaxSetVolume)
-            .ToDictionary(item => item.ExerciseId, item => item.Best);
+            .GroupBy(item => item.ExerciseId)
+            .ToDictionary(group => group.Key, group => group.Max(item => item.Best));
     }
 
     private async Task<Dictionary<Guid, ExerciseEstimation>> GetEstimationsAsync(

@@ -48,7 +48,10 @@ export type ExerciseDetails = Readonly<{
   isCustom: boolean
   imageUrl: string | null
   isDeleted?: boolean
+  prMaxWeight: number | null
+  prMaxSetVolume: number | null
 }>
+
 
 export type CreateExerciseBackdropProps = Readonly<{
   zIndexClassName: string

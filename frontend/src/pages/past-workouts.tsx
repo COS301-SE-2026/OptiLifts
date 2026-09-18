@@ -38,7 +38,7 @@ type ScheduledEntryDto = {
 }
 
 const formatDuration = (start: string, end: string) => {
-    const dif = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 600000);
+    const dif = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 60000);
     if (dif < 1) {
         return '<1m'
     } else if (dif < 60) {
@@ -226,8 +226,7 @@ export default function PastWorkoutsPage() {
                                     <DropdownMenuEllipsisTrigger aria-label={`Options for ${workout.workoutName}`} />
                                     <DropdownMenuEllipsisContent align="end">
                                         <DropdownMenuItem
-                                            onSelect={(event) => {
-                                                event.preventDefault()
+                                            onSelect={() => {
                                                 if (!workout.logId) {
                                                     return
                                                 }
@@ -238,8 +237,7 @@ export default function PastWorkoutsPage() {
                                             Edit
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onSelect={(event) => {
-                                                event.preventDefault()
+                                            onSelect={() => {
                                                 if (!workout.logId) {
                                                     return
                                                 }

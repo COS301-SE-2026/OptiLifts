@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, MoreHorizontal, User, X } from 'lucide-react'
+import { ChevronDown, MoreHorizontal, User, X, Timer } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { NumericalUnderscoreInput, Input } from '@/components/ui/input'
@@ -12,7 +12,7 @@ import {
 import type { WorkoutExercise, ExerciseSet, SetType } from '@/types/create-workout'
 import { metricCheck } from '@/lib/weight-utils'
 import { adaptImgUrl } from '@/lib/utils'
-import { buildLabels } from '@/lib/exercise-format'
+import { buildLabels, formatClock, REST_PRESETS } from '@/lib/exercise-format'
 
 type ExerciseCardProps = Readonly<{
   exercise: WorkoutExercise
@@ -197,35 +197,46 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
           >
             {exercise.name}
           </button>
-          <span className="font-sans text-xs text-muted-foreground">
-            {exercise.muscle}
-          </span>
+          <div className="flex items-center gap-2 font-sans text-xs text-muted-foreground">
+            <span>{exercise.muscle}</span>
+            {onRestTimeChange && (
+              <>
+                <span aria-hidden>·</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    variant="plain"
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    disabled={readOnly}
+                  >
+                    <Timer className="h-3.5 w-3.5" />
+                    {(restTime ?? 0) > 0 ? formatClock(restTime!) : 'No rest'}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-auto min-w-[7rem]">
+                    <DropdownMenuItem onSelect={() => onRestTimeChange(exercise.id, 0)}>No rest</DropdownMenuItem>
+                    {REST_PRESETS.map((seconds) => (
+                      <DropdownMenuItem key={seconds} onSelect={() => onRestTimeChange(exercise.id, seconds)}>
+                        {formatClock(seconds)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+          </div>
         </div>
 
-        {onRestTimeChange && (
-          <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
-            <span>Rest (seconds)</span>
-            <input 
-              type = "number"
-              min = {0}
-              value = {restTime || ''}
-              placeholder="0"
-              onChange = {e => onRestTimeChange(exercise.id, Number(e.target.value))}
-              className="w-16 rounded-md border border-border bg-surface-2 px-2 py-1 text-center text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </label>
+        {!readOnly && onRemove && (
+          <DropdownMenu>
+            <DropdownMenuTrigger variant="plain" className="p-1">
+              <MoreHorizontal className="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
+              <DropdownMenuItem variant="destructive" onClick={() => onRemove?.(exercise.id)}>
+                Remove exercise
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger variant="plain" className="p-1">
-            <MoreHorizontal className="w-4 h-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
-            <DropdownMenuItem variant="destructive" onClick={() => onRemove?.(exercise.id)}>
-              Remove exercise
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       <div className="border-t border-border" />

@@ -583,4 +583,161 @@ public class GetWorkoutDetailHandlerTests
         }
     }
 
+    [Fact]
+    public async Task Handle_WithMultiplePrsForSameExercise_DoesNotThrowAndPicksMax()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        await using var context = CreateContext(connection);
+
+        var userId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Email = "duplicateprs@example.com",
+            EmailHash = "hash",
+            PasswordHash = "passwordhash",
+            DisplayName = "PR User"
+        };
+
+        var chest = new Muscle { Id = Guid.NewGuid(), Name = "Chest" };
+        var bench = new Exercise
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bench Press",
+            Mechanic = "compound",
+            Equipment = "barbell",
+            PrimaryMuscleId = chest.Id,
+            ExerciseType = ExerciseType.WeightReps
+        };
+
+        var workout = new Workout
+        {
+            Id = Guid.NewGuid(),
+            Name = "Chest Day",
+            CreatedBy = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var workoutExercise = new WorkoutExercise
+        {
+            Id = Guid.NewGuid(),
+            WorkoutId = workout.Id,
+            ExerciseId = bench.Id,
+            OrderIndex = 0
+        };
+
+        context.Users.Add(user);
+        context.Muscles.Add(chest);
+        context.Exercises.Add(bench);
+        context.Workouts.Add(workout);
+        context.WorkoutExercises.Add(workoutExercise);
+        await context.SaveChangesAsync();
+
+        var entry = new ScheduledEntry
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            WorkoutId = workout.Id,
+            Scheduled = DateTime.UtcNow,
+            Status = ScheduleStatus.Completed
+        };
+        var log = new WorkoutLog
+        {
+            Id = Guid.NewGuid(),
+            EntryId = entry.Id,
+            StartedAt = DateTime.UtcNow.AddHours(-1),
+            CompletedAt = DateTime.UtcNow
+        };
+        var logSet1 = new WorkoutSetLog
+        {
+            Id = Guid.NewGuid(),
+            LogId = log.Id,
+            ExerciseId = bench.Id,
+            WorkoutExerciseId = workoutExercise.Id,
+            Type = SetType.Normal,
+            Reps = 8,
+            Weight = 80,
+            RestTime = 90,
+            GroupNumber = 0,
+            OrderIndex = 0,
+            LoggedAt = DateTime.UtcNow
+        };
+        var logSet2 = new WorkoutSetLog
+        {
+            Id = Guid.NewGuid(),
+            LogId = log.Id,
+            ExerciseId = bench.Id,
+            WorkoutExerciseId = workoutExercise.Id,
+            Type = SetType.Normal,
+            Reps = 8,
+            Weight = 100,
+            RestTime = 90,
+            GroupNumber = 0,
+            OrderIndex = 1,
+            LoggedAt = DateTime.UtcNow
+        };
+
+        context.ScheduledEntries.Add(entry);
+        context.WorkoutLogs.Add(log);
+        context.WorkoutLogSets.AddRange(logSet1, logSet2);
+        await context.SaveChangesAsync();
+
+        context.ExercisePrs.AddRange(
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ExerciseId = bench.Id,
+                WorkoutLogSetId = logSet1.Id,
+                PrType = ExercisePrType.MaxWeight,
+                PrValue = 80,
+                AchievedWeight = 80,
+                AchievedReps = 8
+            },
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ExerciseId = bench.Id,
+                WorkoutLogSetId = logSet2.Id,
+                PrType = ExercisePrType.MaxWeight,
+                PrValue = 100,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            },
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ExerciseId = bench.Id,
+                WorkoutLogSetId = logSet1.Id,
+                PrType = ExercisePrType.MaxSetVolume,
+                PrValue = 640,
+                AchievedWeight = 80,
+                AchievedReps = 8
+            },
+            new ExercisePr
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ExerciseId = bench.Id,
+                WorkoutLogSetId = logSet2.Id,
+                PrType = ExercisePrType.MaxSetVolume,
+                PrValue = 800,
+                AchievedWeight = 100,
+                AchievedReps = 8
+            }
+        );
+        await context.SaveChangesAsync();
+
+        var handler = new GetWorkoutDetailHandler(context);
+        var result = await handler.Handle(new GetWorkoutDetailQuery(workout.Id, userId), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Exercises.Should().HaveCount(1);
+        result.Exercises[0].BestWeight.Should().Be(100);
+        result.Exercises[0].BestSetVolume.Should().Be(800);
+    }
 }

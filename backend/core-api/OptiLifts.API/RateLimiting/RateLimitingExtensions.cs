@@ -56,6 +56,8 @@ public static class RateLimitingExtensions
             {
                 limiterOptions.AddPolicy(RateLimitPolicies.Auth, _ => RateLimitPartition.GetNoLimiter("disabled"));
                 limiterOptions.AddPolicy(RateLimitPolicies.Ai, _ => RateLimitPartition.GetNoLimiter("disabled"));
+                limiterOptions.AddPolicy(RateLimitPolicies.Calendar, _ => RateLimitPartition.GetNoLimiter("disabled"));
+                limiterOptions.AddPolicy(RateLimitPolicies.Schedule, _ => RateLimitPartition.GetNoLimiter("disabled"));
                 limiterOptions.AddPolicy(RateLimitPolicies.Default, _ => RateLimitPartition.GetNoLimiter("disabled"));
                 return;
             }
@@ -64,7 +66,10 @@ public static class RateLimitingExtensions
             {
                 var path = httpContext.Request.Path.Value ?? string.Empty;
                 if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-                    path.Equals("/api/healthCheck", StringComparison.OrdinalIgnoreCase))
+                    path.Equals("/api/healthCheck", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/profile/calendar", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/users/me/schedule", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/exercises/images", StringComparison.OrdinalIgnoreCase))
                 {
                     return RateLimitPartition.GetNoLimiter("bypass");
                 }
@@ -100,6 +105,32 @@ public static class RateLimitingExtensions
                 {
                     PermitLimit = options.AiPermitLimit,
                     Window = TimeSpan.FromSeconds(options.AiWindowSeconds),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = options.QueueLimit,
+                    AutoReplenishment = true
+                });
+            });
+
+            limiterOptions.AddPolicy(RateLimitPolicies.Calendar, httpContext =>
+            {
+                var key = ClientIpResolver.GetPartitionKey(httpContext);
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = options.CalendarPermitLimit,
+                    Window = TimeSpan.FromSeconds(options.CalendarWindowSeconds),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = options.QueueLimit,
+                    AutoReplenishment = true
+                });
+            });
+
+            limiterOptions.AddPolicy(RateLimitPolicies.Schedule, httpContext =>
+            {
+                var key = ClientIpResolver.GetPartitionKey(httpContext);
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = options.SchedulePermitLimit,
+                    Window = TimeSpan.FromSeconds(options.ScheduleWindowSeconds),
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                     QueueLimit = options.QueueLimit,
                     AutoReplenishment = true

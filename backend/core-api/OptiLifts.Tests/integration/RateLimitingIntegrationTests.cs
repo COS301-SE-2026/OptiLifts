@@ -152,4 +152,72 @@ public sealed class RateLimitingIntegrationTests : IntegrationTestBase
             res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
     }
+
+    [Fact]
+    public async Task CalendarEndpoint_WhenLimitExceeded_Returns429TooManyRequests()
+    {
+        using var customFactory = Fixture.Factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("RateLimiting:Enabled", "true");
+            builder.UseSetting("RateLimiting:CalendarPermitLimit", "2");
+            builder.UseSetting("RateLimiting:CalendarWindowSeconds", "60");
+            builder.UseSetting("RateLimiting:QueueLimit", "0");
+        });
+
+        using var client = customFactory.CreateClient();
+        var userId = await SeedUserAsync("calendar-ratelimit@optilifts.com");
+        client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
+
+        for (int i = 0; i < 2; i++)
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, "/api/profile/calendar?year=2026&month=7");
+            var res = await client.SendAsync(req);
+            res.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        using var req3 = new HttpRequestMessage(HttpMethod.Get, "/api/profile/calendar?year=2026&month=7");
+        var res3 = await client.SendAsync(req3);
+        res3.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        res3.Headers.Contains("Retry-After").Should().BeTrue();
+
+        var body = await res3.Content.ReadFromJsonAsync<RateLimitErrorResponse>();
+        body.Should().NotBeNull();
+        body!.Status.Should().Be(429);
+        body.Title.Should().Be("Too Many Requests");
+        body.Detail.Should().Contain("Rate limit exceeded");
+    }
+
+    [Fact]
+    public async Task ScheduleEndpoint_WhenLimitExceeded_Returns429TooManyRequests()
+    {
+        using var customFactory = Fixture.Factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("RateLimiting:Enabled", "true");
+            builder.UseSetting("RateLimiting:SchedulePermitLimit", "2");
+            builder.UseSetting("RateLimiting:ScheduleWindowSeconds", "60");
+            builder.UseSetting("RateLimiting:QueueLimit", "0");
+        });
+
+        using var client = customFactory.CreateClient();
+        var userId = await SeedUserAsync("schedule-ratelimit@optilifts.com");
+        client.DefaultRequestHeaders.Add("Cookie", $"access_token={GenerateToken(userId)}");
+
+        for (int i = 0; i < 2; i++)
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, "/api/users/me/schedule?startDate=2026-07-01&endDate=2026-07-07");
+            var res = await client.SendAsync(req);
+            res.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        using var req3 = new HttpRequestMessage(HttpMethod.Get, "/api/users/me/schedule?startDate=2026-07-01&endDate=2026-07-07");
+        var res3 = await client.SendAsync(req3);
+        res3.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        res3.Headers.Contains("Retry-After").Should().BeTrue();
+
+        var body = await res3.Content.ReadFromJsonAsync<RateLimitErrorResponse>();
+        body.Should().NotBeNull();
+        body!.Status.Should().Be(429);
+        body.Title.Should().Be("Too Many Requests");
+        body.Detail.Should().Contain("Rate limit exceeded");
+    }
 }

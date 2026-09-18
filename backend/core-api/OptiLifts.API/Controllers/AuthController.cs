@@ -67,12 +67,13 @@ public sealed class AuthController : ControllerBase
         Response.Cookies.Append("refresh_token", "", cookieOptions);
     }
 
-    public sealed record RegisterRequest(string DisplayName, string Email, string Password);
+    public sealed record RegisterRequest(string DisplayName, string Email, string Password, bool LightTheme = true);
     public sealed record LoginRequest(string Email, string Password);
-    public sealed record GoogleAuthRequest(string? IdToken, string? Credential)
+    public sealed record GoogleAuthRequest(string? IdToken, string? Credential, bool LightTheme = true)
     {
         public string? Token => !string.IsNullOrWhiteSpace(IdToken) ? IdToken : Credential;
     }
+
 
     [AllowAnonymous]
     [HttpPost("google")]
@@ -86,7 +87,7 @@ public sealed class AuthController : ControllerBase
 
         try
         {
-            var result = await _sender.Send(new GoogleAuthCommand(token), cancellationToken);
+            var result = await _sender.Send(new GoogleAuthCommand(token, request.LightTheme), cancellationToken);
             SetTokenCookies(result.AccessToken, result.RefreshToken);
             return Ok(result.User);
         }
@@ -111,7 +112,7 @@ public sealed class AuthController : ControllerBase
 
         try
         {
-            var result = await _sender.Send(new RegisterUserCommand(request.DisplayName, request.Email, request.Password), cancellationToken);
+            var result = await _sender.Send(new RegisterUserCommand(request.DisplayName, request.Email, request.Password, request.LightTheme), cancellationToken);
             SetTokenCookies(result.AccessToken, result.RefreshToken);
             return Ok(result.User);
         }

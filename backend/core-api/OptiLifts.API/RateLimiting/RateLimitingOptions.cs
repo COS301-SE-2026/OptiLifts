@@ -18,5 +18,13 @@ public sealed class RateLimitingOptions
 
     public int AiWindowSeconds { get; set; } = 60;
 
+    public int CalendarPermitLimit { get; set; } = 300;
+
+    public int CalendarWindowSeconds { get; set; } = 60;
+
+    public int SchedulePermitLimit { get; set; } = 300;
+
+    public int ScheduleWindowSeconds { get; set; } = 60;
+
     public int QueueLimit { get; set; } = 0;
 }

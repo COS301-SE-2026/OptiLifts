@@ -168,3 +168,10 @@ export function formatLoggedExerciseSetText(exerciseType: string, set: LoggedExe
       return `${weight} x ${reps} reps @ ${rpe} RPE`
   }
 }
+
+export const REST_PRESETS = [30, 45, 60, 90, 120, 150, 180, 240, 300] as const
+
+export const formatClock = (totalSeconds: number) => {
+  const abs = Math.abs(totalSeconds)
+  return `${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
+}

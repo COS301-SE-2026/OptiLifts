@@ -226,8 +226,7 @@ export default function PastWorkoutsPage() {
                                     <DropdownMenuEllipsisTrigger aria-label={`Options for ${workout.workoutName}`} />
                                     <DropdownMenuEllipsisContent align="end">
                                         <DropdownMenuItem
-                                            onSelect={(event) => {
-                                                event.preventDefault()
+                                            onSelect={() => {
                                                 if (!workout.logId) {
                                                     return
                                                 }
@@ -238,8 +237,7 @@ export default function PastWorkoutsPage() {
                                             Edit
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onSelect={(event) => {
-                                                event.preventDefault()
+                                            onSelect={() => {
                                                 if (!workout.logId) {
                                                     return
                                                 }

@@ -7,6 +7,10 @@ from torch.utils.data import DataLoader, random_split
 from datasets.exercise_dataset import ExerciseDataset
 from architecture.cnn_1d import ExerciseCNN1D
 
+import random
+from torch.utils.data import Subset
+from collections import defaultdict
+
 def pad_batch(batch):
     max_frames = max([item[0].shape[1] for item in batch])
         
@@ -42,10 +46,36 @@ def main():
 
     # load dataset
 
-    full_dataset = ExerciseDataset(TENSOR_DIR, "squat", num_classes=NUM_CLASSES) 
-    train_size = int(0.8 * len(full_dataset))
-    val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    full_dataset = ExerciseDataset(TENSOR_DIR, "squat", num_classes=NUM_CLASSES)
+
+    # get core names so can keep video and augmented versions in same split
+    core_to_indices = defaultdict(list)
+    for i, path in enumerate(full_dataset.file_paths):
+        core_name = path.name.replace("noisy_", "").replace("scaled_", "").replace("mirrored_", "")
+        core_to_indices[core_name].append(i)
+        
+    # shuffle core vids
+    unique_cores = list(core_to_indices.keys())
+    random.shuffle(unique_cores) #NOSONAR
+    
+    train_core_count = int(0.8 * len(unique_cores))
+    train_cores = unique_cores[:train_core_count]
+    val_cores = unique_cores[train_core_count:]
+    
+    train_indices = []
+    for core in train_cores:
+        train_indices.extend(core_to_indices[core])
+        
+    val_indices = []
+    for core in val_cores:
+        val_indices.extend(core_to_indices[core])
+        
+    # create datasets
+    train_dataset = Subset(full_dataset, train_indices)
+    val_dataset = Subset(full_dataset, val_indices)
+
+    train_size = len(train_dataset)
+    val_size = len(val_dataset)
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, collate_fn=pad_batch)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, collate_fn=pad_batch)
@@ -91,8 +121,7 @@ def main():
 
         avg_val_loss = val_loss / len(val_loader)
 
-        if (epoch + 1) % 10 == 0 or epoch == 0:
-                print(f"Epoch [{epoch+1}/{EPOCHS}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
+        print(f"Epoch [{epoch+1}/{EPOCHS}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
 
         # save best model

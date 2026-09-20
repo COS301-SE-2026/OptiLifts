@@ -42,6 +42,24 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Vision uploads carry per-frame landmark JSON (hundreds of KB), above nginx's 1MB default
+    location /api/vision/ {
+        client_max_body_size 10m;
+        limit_req zone=general_limit burst=${NGINX_GENERAL_BURST} nodelay;
+
+        proxy_pass ${NGINX_BACKEND_URL};
+        proxy_ssl_server_name on;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # General rate limit for all API endpoints
     location /api/ {
         limit_req zone=general_limit burst=${NGINX_GENERAL_BURST} nodelay;

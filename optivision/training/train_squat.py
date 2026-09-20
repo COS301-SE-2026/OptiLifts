@@ -2,10 +2,11 @@ from pathlib import Path
 
 import torch.nn.functional as F
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 
 from datasets.exercise_dataset import ExerciseDataset
 from architecture.cnn_1d import ExerciseCNN1D
+from torchmetrics.classification import MultilabelF1Score
 
 import random
 from torch.utils.data import Subset
@@ -88,6 +89,8 @@ def main():
     criterion = torch.nn.BCELoss()
     #  wow 314 stuff
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor = 0.1, patience = 3)
+    f1_metric = MultilabelF1Score(num_labels=NUM_CLASSES, average='macro').to(device)
 
     # training loop
     for epoch in range(EPOCHS):
@@ -109,6 +112,7 @@ def main():
 
         model.eval()
         val_loss = 0.0
+        f1_metric.reset()
 
         with torch.no_grad():
             for tensors, labels in val_loader:
@@ -118,10 +122,12 @@ def main():
                 loss = criterion(outputs, labels)
 
                 val_loss += loss.item()
+                f1_metric.update(outputs, labels.long())
 
         avg_val_loss = val_loss / len(val_loader)
+        val_f1 = f1_metric.compute()
 
-        print(f"Epoch [{epoch+1}/{EPOCHS}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
+        print(f"Epoch [{epoch+1}/{EPOCHS}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1*100:.1f}%")
 
 
         # save best model
@@ -132,6 +138,8 @@ def main():
             scripted_model = torch.jit.script(model)
             scripted_model.save(WEIGHTS_DIR / "squat_side.pt")
             model = model.to(device) 
+
+        scheduler.step(avg_val_loss)
 
 if __name__ == "__main__":
     main()

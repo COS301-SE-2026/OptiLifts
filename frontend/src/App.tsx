@@ -43,6 +43,7 @@ const DashboardPage = lazyWithReload(() => import('@/pages/dashboard'))
 const LandingPage = lazyWithReload(() => import('@/pages/landing'))
 const HelpPage = lazyWithReload(() => import('@/pages/help'))
 const ProgressionPage = lazyWithReload(() => import('@/pages/progression'))
+const FormCheckPage = lazyWithReload(() => import('@/pages/form-check'))
 
 function AppLayout() {
   return (
@@ -133,6 +134,7 @@ function App() {
           <Route path="help" element={<HelpPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />
+          <Route path="form-check" element={<FormCheckPage />} />
         </Route>
       </Route>
 

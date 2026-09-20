@@ -1,0 +1,42 @@
+export type VisionExercise = 'squat' | 'bench' | 'deadlift'
+
+export type VisionLandmark = Readonly<{
+  x: number
+  y: number
+  z: number
+}>
+
+export type VisionFrame = Readonly<{
+  timestamp: number
+  landmarks: readonly VisionLandmark[]
+}>
+
+//payload for POST /api/vision/analyze
+export type AnalyzeRequest = Readonly<{
+  userId: string
+  exercise: VisionExercise
+  view: 'side'
+  frames: readonly VisionFrame[]
+}>
+
+//respone to payload (not in the plan yet - agree with Person 3)
+export type AnalyzeResponse = Readonly<{
+  jobId: string
+}>
+
+export type VisionJobStatus = 'pending' | 'processing' | 'completed' | 'failed'
+
+//payload GET /api/vision/result/{jobId}
+export type ResultResponse = Readonly<{
+  status: VisionJobStatus
+  coach_summary?: string
+}>
+
+export type VisionJobState =
+  | Readonly<{ phase: 'idle' }>
+  | Readonly<{ phase: 'extracting'; progress: number }>
+  | Readonly<{ phase: 'submitting' }>
+  | Readonly<{ phase: 'polling' }>
+  | Readonly<{ phase: 'completed'; coachSummary: string }>
+  | Readonly<{ phase: 'failed'; message: string }>
+

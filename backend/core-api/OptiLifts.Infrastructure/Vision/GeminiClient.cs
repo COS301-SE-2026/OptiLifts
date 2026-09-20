@@ -39,7 +39,6 @@ public class GeminiClient : IGeminiClient
             .Select(a => a.Trim())
             .ToList() ?? new List<string>();
 
-        // Phase 5 fallback: if detected_anomalies is empty, generate positive reinforcement
         if (anomaliesList.Count == 0)
         {
             return "Clean reps! Your form looks solid, keep it up.";

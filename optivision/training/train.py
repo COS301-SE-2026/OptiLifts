@@ -129,7 +129,8 @@ def main():
 
     # missing flaw is penalized more
     pos_weight = torch.tensor([2.0] * NUM_CLASSES).to(device)
-    criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion_train = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion_eval = torch.nn.BCEWithLogitsLoss()
     #  wow 314 stuff
     optimizer = torch.optim.Adam(
         model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4
@@ -149,7 +150,7 @@ def main():
 
             optimizer.zero_grad()
             outputs = model(tensors)
-            loss = criterion(outputs, labels)
+            loss = criterion_train(outputs, labels)
             loss.backward()
             optimizer.step()
 
@@ -166,7 +167,7 @@ def main():
                 tensors, labels = tensors.to(device), labels.to(device)
 
                 outputs = model(tensors)
-                loss = criterion(outputs, labels)
+                loss = criterion_eval(outputs, labels)
 
                 val_loss += loss.item()
 

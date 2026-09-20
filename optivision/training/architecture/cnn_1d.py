@@ -31,7 +31,6 @@ class ExerciseCNN1D(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(256, num_classes),
-            nn.Sigmoid(),
         )
 
     def forward(self, x):

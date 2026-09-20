@@ -31,9 +31,13 @@ def pad_batch(batch):
     return batch_tensors, batch_labels
 
 def main(): 
+    # fix variance with seed
+    random.seed(81)
+    torch.manual_seed(81)
+
     # params
     TENSOR_DIR = Path("data/processed_tensors")
-    WEIGHTS_DIR = Path("weights")
+    WEIGHTS_DIR = Path("training/weights")
     WEIGHTS_DIR.mkdir(exist_ok=True)
 
     EPOCHS = 50
@@ -86,7 +90,10 @@ def main():
     # model and optimizer
 
     model = ExerciseCNN1D(num_classes=NUM_CLASSES).to(device)
-    criterion = torch.nn.BCELoss()
+    
+    # Positive weights: missing a flaw is penalized 2x more!
+    pos_weight = torch.tensor([2.0] * NUM_CLASSES).to(device)
+    criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     #  wow 314 stuff
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor = 0.1, patience = 3)
@@ -122,7 +129,8 @@ def main():
                 loss = criterion(outputs, labels)
 
                 val_loss += loss.item()
-                f1_metric.update(outputs, labels.long())
+                # Apply sigmoid because outputs are raw logits now
+                f1_metric.update(torch.sigmoid(outputs), labels.long())
 
         avg_val_loss = val_loss / len(val_loader)
         val_f1 = f1_metric.compute()

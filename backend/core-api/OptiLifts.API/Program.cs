@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using DotNetEnv;
@@ -8,12 +9,14 @@ using OptiLifts.Application;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
 using OptiLifts.Application.Storage;
+using OptiLifts.Application.Vision;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Infrastructure.Gamification;
 using OptiLifts.Infrastructure.Gamification.Rules;
 using OptiLifts.Infrastructure.Storage;
+using OptiLifts.Infrastructure.Vision;
 
 
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
@@ -118,6 +121,26 @@ if (string.IsNullOrWhiteSpace(azureStorageConnection))
 builder.Services.AddSingleton(new BlobServiceClient(azureStorageConnection));
 builder.Services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
 builder.Services.AddScoped<IOptiVisionStorageService, OptiVisionStorageService>();
+
+var serviceBusConnection = builder.Configuration.GetConnectionString("ServiceBus");
+if (string.IsNullOrWhiteSpace(serviceBusConnection))
+{
+    serviceBusConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__SERVICEBUS")
+        ?? Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING")
+        ?? Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION_STRING");
+}
+if (string.IsNullOrWhiteSpace(serviceBusConnection))
+{
+    serviceBusConnection = "Endpoint=sb://optilifts.servicebus.windows.net/;SharedAccessKeyName=SendAccess;SharedAccessKey=dummykey=;";
+}
+
+var serviceBusQueueName = builder.Configuration["SERVICE_BUS_QUEUE_NAME"]
+    ?? Environment.GetEnvironmentVariable("SERVICE_BUS_QUEUE_NAME")
+    ?? "exercise-analysis-jobs";
+
+builder.Services.AddSingleton(new ServiceBusClient(serviceBusConnection));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<ServiceBusClient>().CreateSender(serviceBusQueueName));
+
 //platandfat
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.ISeriesBuilder, OptiLifts.Infrastructure.Training.SeriesBuilder>();
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionService, OptiLifts.Infrastructure.Training.PlateauDetectionService>();
@@ -130,6 +153,20 @@ builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 builder.Services.AuthProgramHelper(builder.Configuration);
 
 builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
+
+var geminiBaseUrl = builder.Configuration["GEMINI_BASE_URL"]
+    ?? Environment.GetEnvironmentVariable("GEMINI_BASE_URL")
+    ?? "https://generativelanguage.googleapis.com/";
+if (!geminiBaseUrl.EndsWith("/"))
+{
+    geminiBaseUrl += "/";
+}
+
+builder.Services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
+{
+    client.BaseAddress = new Uri(geminiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 builder.Services.AddRateLimitingServices(builder.Configuration);
 var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";

@@ -136,7 +136,7 @@ if (string.IsNullOrWhiteSpace(serviceBusConnection))
 
 var serviceBusQueueName = builder.Configuration["SERVICE_BUS_QUEUE_NAME"]
     ?? Environment.GetEnvironmentVariable("SERVICE_BUS_QUEUE_NAME")
-    ?? "exercise-analysis-jobs";
+    ?? "cv-jobs-queue";
 
 builder.Services.AddSingleton(new ServiceBusClient(serviceBusConnection));
 builder.Services.AddSingleton(sp => sp.GetRequiredService<ServiceBusClient>().CreateSender(serviceBusQueueName));
@@ -188,12 +188,16 @@ if (!app.Environment.IsEnvironment("Testing"))
     try
     {
         var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
-        var exercisesContainer = blobServiceClient.GetBlobContainerClient("exercises");
-        await exercisesContainer.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        var containers = new[] { "jobs", "exercises", "optivision-payloads" };
+        foreach (var container in containers)
+        {
+            var containerClient = blobServiceClient.GetBlobContainerClient(container);
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        }
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning(ex, "Failed to initialize Azure Blob Storage 'exercises' container on startup.");
+        app.Logger.LogWarning(ex, "Failed to initialize Azure Blob Storage containers on startup.");
     }
 }
 

@@ -35,17 +35,28 @@ public class GeminiClient : IGeminiClient
             ?? string.Empty).Trim('"', '\'', ' ');
     }
 
-    public async Task<string> GenerateCoachingTipAsync(
+    public Task<string> GenerateCoachingTipAsync(
         string exercise,
         IEnumerable<string> detectedAnomalies,
         CancellationToken cancellationToken = default)
     {
-        var anomaliesList = detectedAnomalies?
+        var list = detectedAnomalies?
             .Where(a => !string.IsNullOrWhiteSpace(a))
-            .Select(a => a.Trim())
-            .ToList() ?? new List<string>();
+            .Select(a => new VisionAnomaly(a.Trim(), 1.0));
 
-        // Handle fallbacks: If detected_anomalies is empty, generate positive reinforcement immediately
+        return GenerateCoachingTipAsync(exercise, list ?? Enumerable.Empty<VisionAnomaly>(), cancellationToken);
+    }
+
+    public async Task<string> GenerateCoachingTipAsync(
+        string exercise,
+        IEnumerable<VisionAnomaly> anomalies,
+        CancellationToken cancellationToken = default)
+    {
+        var anomaliesList = anomalies?
+            .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Error))
+            .OrderByDescending(a => a.Severity)
+            .ToList() ?? new List<VisionAnomaly>();
+
         if (anomaliesList.Count == 0)
         {
             return _promptBuilder.GetPositiveReinforcement();

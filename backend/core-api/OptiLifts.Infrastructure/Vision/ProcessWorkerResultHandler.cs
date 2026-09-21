@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -44,11 +45,13 @@ public class ProcessWorkerResultHandler : IRequestHandler<ProcessWorkerResultCom
 
         if (result.Success)
         {
-            job.DetectedAnomalies = result.DetectedAnomalies ?? new List<string>();
+            job.DetectedAnomalies = result.DetectedAnomalies?
+                .Select(a => a.ToString())
+                .ToList() ?? new List<string>();
 
             var coachingTip = await _geminiClient.GenerateCoachingTipAsync(
                 job.Exercise,
-                job.DetectedAnomalies,
+                result.DetectedAnomalies ?? Enumerable.Empty<VisionAnomaly>(),
                 cancellationToken);
 
             job.CoachSummary = coachingTip;

@@ -86,7 +86,7 @@ public class VisionHandlersTests : IDisposable
 
         var mockGemini = new Mock<IGeminiClient>();
         mockGemini
-            .Setup(g => g.GenerateCoachingTipAsync("deadlift", It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(g => g.GenerateCoachingTipAsync("deadlift", It.IsAny<IEnumerable<VisionAnomaly>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("Keep your spine neutral and drive through your heels.");
 
         var handler = new ProcessWorkerResultHandler(_dbContext, mockGemini.Object);
@@ -95,17 +95,19 @@ public class VisionHandlersTests : IDisposable
         {
             JobId = "job_worker_test",
             Success = true,
-            DetectedAnomalies = new List<string> { "rounded lower back" }
+            DetectedAnomalies = new List<VisionAnomaly> { new("rounded lower back", 0.95) }
         };
 
+        // act
         var handled = await handler.Handle(new ProcessWorkerResultCommand(workerResult), CancellationToken.None);
 
+        // assert
         handled.Should().BeTrue();
         var updatedJob = await _dbContext.VisionAnalysisJobs.FirstOrDefaultAsync(j => j.JobId == "job_worker_test");
         updatedJob.Should().NotBeNull();
         updatedJob!.Status.Should().Be(VisionJobStatus.Completed);
         updatedJob.CoachSummary.Should().Be("Keep your spine neutral and drive through your heels.");
-        updatedJob.DetectedAnomalies.Should().Contain("rounded lower back");
+        updatedJob.DetectedAnomalies.Should().Contain(a => a.Contains("rounded lower back"));
     }
 
     [Fact]

@@ -12,6 +12,7 @@ namespace OptiLifts.Infrastructure.Storage;
 public static class OptiVisionBlobExtensions
 {
     public const string ExercisesContainerName = "exercises";
+    public static string DefaultContainerName => Environment.GetEnvironmentVariable("AZURE_STORAGE_CONTAINER_NAME") ?? "jobs";
 
     public static async Task<string> SaveVisionAnalysisFramesAsync(
         this BlobServiceClient blobServiceClient,
@@ -26,7 +27,7 @@ public static class OptiVisionBlobExtensions
         if (jsonPayload == null)
             throw new ArgumentNullException(nameof(jsonPayload));
 
-        var containerClient = blobServiceClient.GetBlobContainerClient(ExercisesContainerName);
+        var containerClient = blobServiceClient.GetBlobContainerClient(DefaultContainerName);
         return await containerClient.SaveVisionAnalysisFramesAsync(jobId, jsonPayload, cancellationToken);
     }
 
@@ -131,9 +132,13 @@ public static class OptiVisionBlobExtensions
     private static string FormatBlobName(string jobId)
     {
         var cleaned = jobId.Trim();
-        if (cleaned.StartsWith($"{ExercisesContainerName}/", StringComparison.OrdinalIgnoreCase))
+        foreach (var prefix in new[] { $"{DefaultContainerName}/", $"{ExercisesContainerName}/", "jobs/", "exercises/", "optivision-payloads/" })
         {
-            cleaned = cleaned.Substring($"{ExercisesContainerName}/".Length);
+            if (cleaned.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                cleaned = cleaned.Substring(prefix.Length);
+                break;
+            }
         }
 
         return cleaned.EndsWith(".json", StringComparison.OrdinalIgnoreCase)

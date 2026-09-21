@@ -62,6 +62,9 @@ public class VisionAnalysisJobConfiguration : IEntityTypeConfiguration<VisionAna
             .HasColumnType("timestamp with time zone")
             .IsRequired();
 
+        builder.Ignore(j => j.Id);
+        builder.Ignore(j => j.ExerciseType);
+
         builder.HasIndex(j => j.UserId);
         builder.HasIndex(j => new { j.UserId, j.CreatedAt });
         builder.HasIndex(j => j.Status);

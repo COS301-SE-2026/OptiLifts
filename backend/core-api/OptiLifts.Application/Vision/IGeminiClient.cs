@@ -8,6 +8,11 @@ public interface IGeminiClient
 {
     Task<string> GenerateCoachingTipAsync(
         string exercise,
+        IEnumerable<VisionAnomaly> anomalies,
+        CancellationToken cancellationToken = default);
+
+    Task<string> GenerateCoachingTipAsync(
+        string exercise,
         IEnumerable<string> detectedAnomalies,
         CancellationToken cancellationToken = default);
 }

@@ -97,7 +97,7 @@ public class VisionControllerTests
         {
             JobId = "job_123",
             Success = true,
-            DetectedAnomalies = new List<string> { "knees inward" }
+            DetectedAnomalies = new List<VisionAnomaly> { new("knees inward", 0.9) }
         };
 
         _senderMock

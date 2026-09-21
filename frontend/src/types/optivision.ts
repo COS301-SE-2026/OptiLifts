@@ -12,7 +12,7 @@ export type VisionFrame = Readonly<{
 }>
 
 //payload for POST /api/vision/analyze
-export type AnalyzeRequest = Readonly<{
+export type AnalyseReq = Readonly<{
   userId: string
   exercise: VisionExercise
   view: 'side'
@@ -20,14 +20,14 @@ export type AnalyzeRequest = Readonly<{
 }>
 
 //respone to payload (not in the plan yet - agree with Person 3)
-export type AnalyzeResponse = Readonly<{
+export type AnalyseRes = Readonly<{
   jobId: string
 }>
 
 export type VisionJobStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
 //payload GET /api/vision/result/{jobId}
-export type ResultResponse = Readonly<{
+export type ResultRes = Readonly<{
   status: VisionJobStatus
   coach_summary?: string
 }>
@@ -40,3 +40,14 @@ export type VisionJobState =
   | Readonly<{ phase: 'completed'; coachSummary: string }>
   | Readonly<{ phase: 'failed'; message: string }>
 
+export type ExerCheck = Readonly<{
+  label: string
+  tip: string
+}>
+
+export type ExerGuideData = Readonly<{
+  name: string
+  note: string
+  gifUrl: string
+  checks: readonly ExerCheck[]
+}>

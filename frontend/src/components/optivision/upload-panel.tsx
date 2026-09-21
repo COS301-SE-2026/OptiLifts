@@ -1,20 +1,17 @@
 import { useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, VISION_EXERCISES } from '@/constants/optivision'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS } from '@/constants/optivision'
 import { validateVideoFile } from '@/lib/optivision/validate-video'
-import { cn } from '@/lib/utils'
-import type { VisionExercise } from '@/types/optivision'
 
 const LABEL_CLASS = 'text-xs sm:text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground'
 
 type UploadPanelProps = Readonly<{
   disabled: boolean
-  onAnalyse: (file: File, exercise: VisionExercise) => void
+  onAnalyse: (file: File) => void
 }>
 
 export function UploadPanel({ disabled, onAnalyse }: UploadPanelProps) {
-  const [exercise, setExercise] = useState<VisionExercise>('squat')
   const [file, setFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -29,7 +26,7 @@ export function UploadPanel({ disabled, onAnalyse }: UploadPanelProps) {
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
     if (file) {
-      onAnalyse(file, exercise)
+      onAnalyse(file)
     }
   }
 
@@ -37,38 +34,17 @@ export function UploadPanel({ disabled, onAnalyse }: UploadPanelProps) {
     <Card className="border-border bg-card">
       <CardHeader className="px-5">
         <CardTitle className="text-base font-bold text-foreground">Analyse a set</CardTitle>
+        <CardDescription>Upload a side-on video of your set and get coaching on your technique.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-1.5">
-            <span className={LABEL_CLASS}>Exercise</span>
-            <div className="flex gap-2">
-              {VISION_EXERCISES.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={exercise === value}
-                  onClick={() => setExercise(value)}
-                  className={cn(
-                    'min-h-11 flex-1 cursor-pointer rounded-lg px-2 text-xs font-semibold uppercase tracking-[0.05em] outline-none transition-all focus-visible:ring-2 focus-visible:ring-brand',
-                    exercise === value
-                      ? 'bg-brand text-white shadow-xs'
-                      : 'border border-border bg-surface text-muted-foreground hover:bg-surface-2',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
             <span className={LABEL_CLASS}>For best results</span>
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              <li>Film from the side, so the camera sees your profile.</li>
-              <li>Keep your whole body in frame, from head to feet.</li>
-              <li>Hold the camera still, ideally on a tripod at hip height.</li>
-              <li>One lifter in shot, with good lighting.</li>
+              <li>Film from a side-view, so we see your profile.</li>
+              <li>Ensure that your entire body is in frame.</li>
+              <li>Keep camera steady and preferably at hip height.</li>
+              <li>Only one lifter in view, with good lighting.</li>
               <li>
                 Film one set, between {MIN_VIDEO_SECONDS} and {MAX_VIDEO_SECONDS} seconds.
               </li>
@@ -102,10 +78,6 @@ export function UploadPanel({ disabled, onAnalyse }: UploadPanelProps) {
               </p>
             )}
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Your video stays on your device. Only body-point coordinates are sent for analysis.
-          </p>
 
           <Button type="submit" disabled={!file || disabled}>
             Analyse my form

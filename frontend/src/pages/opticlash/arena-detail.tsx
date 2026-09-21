@@ -8,13 +8,12 @@ import { CURRENT_USER_ID, getWeightClassBracket, MOCK_ARENAS, MOCK_ATHLETES, WEI
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const PAGE_SIZE = 10;
 
 export default function ArenaLeaderboardPage() {
     const {arenaId} = useParams<{arenaId: string}>();
-    const navigate = useNavigate();
     // todo: replace mock data
     const arena = MOCK_ARENAS.find((a) => a.id === arenaId) || MOCK_ARENAS[0];
     const currentUser = MOCK_ATHLETES.find((a) => a.id === CURRENT_USER_ID)!;

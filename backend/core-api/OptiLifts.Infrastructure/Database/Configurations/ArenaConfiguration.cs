@@ -10,7 +10,7 @@ public class ArenaConfiguration : IEntityTypeConfiguration<Arena>
     public void Configure(EntityTypeBuilder<Arena> builder)
     {
         builder.ToTable("arenas");
-        
+
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id).HasColumnName("arena_id").HasMaxLength(50);
         builder.Property(a => a.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
@@ -23,7 +23,7 @@ public class ArenaConfiguration : IEntityTypeConfiguration<Arena>
         builder.Property(a => a.CreatedAt).HasColumnName("created_at").IsRequired();
 
         builder.HasOne<User>().WithMany().HasForeignKey(a => a.CreatedById).OnDelete(DeleteBehavior.SetNull);
-        
+
         builder.HasIndex(a => a.Code).IsUnique().HasFilter("code IS NOT NULL");
 
         builder.HasIndex(a => a.Type);

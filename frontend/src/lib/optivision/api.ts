@@ -1,10 +1,10 @@
 import { customFetch } from '@/lib/custom-fetch'
 import { mockFetchResult, mockSubmitAnalysis } from '@/lib/optivision/mock-api'
-import type { AnalyzeRequest, AnalyzeResponse, ResultResponse } from '@/types/optivision'
+import type { AnalyseReq, AnalyseRes, ResultRes } from '@/types/optivision'
 
 const ENV_MOCK = import.meta.env.VITE_OPTIVISION_MOCK === 'true'
 
-export async function submitAnalysis(request: AnalyzeRequest, signal?: AbortSignal): Promise<AnalyzeResponse> {
+export async function submitAnalysis(request: AnalyseReq, signal?: AbortSignal): Promise<AnalyseRes> {
   if (ENV_MOCK) {
     return mockSubmitAnalysis()
   }
@@ -20,10 +20,10 @@ export async function submitAnalysis(request: AnalyzeRequest, signal?: AbortSign
     throw new Error(`Failed to submit your analysis (${response.status})`)
   }
 
-  return (await response.json()) as AnalyzeResponse
+  return (await response.json()) as AnalyseRes
 }
 
-export async function fetchResult(jobId: string, signal?: AbortSignal): Promise<ResultResponse> {
+export async function fetchResult(jobId: string, signal?: AbortSignal): Promise<ResultRes> {
   if (ENV_MOCK) {
     return mockFetchResult(jobId)
   }
@@ -37,5 +37,5 @@ export async function fetchResult(jobId: string, signal?: AbortSignal): Promise<
     throw new Error(`Failed to fetch your results (${response.status})`)
   }
 
-  return (await response.json()) as ResultResponse
+  return (await response.json()) as ResultRes
 }

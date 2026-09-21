@@ -1,15 +1,15 @@
-import type { AnalyzeResponse, ResultResponse } from '@/types/optivision'
+import type { AnalyseRes, ResultRes } from '@/types/optivision'
 
 const MOCK_PROCESSING_MS = 8000
 const submitAt = new Map<string, number>()
 
-export async function mockSubmitAnalysis(): Promise<AnalyzeResponse> {
+export async function mockSubmitAnalysis(): Promise<AnalyseRes> {
   const jobId = crypto.randomUUID()
   submitAt.set(jobId, Date.now())
   return { jobId }
 }
 
-export async function mockFetchResult(jobId: string): Promise<ResultResponse> {
+export async function mockFetchResult(jobId: string): Promise<ResultRes> {
   const start = submitAt.get(jobId)
   if (start === undefined) {
     return { status: 'failed' }

@@ -1,14 +1,18 @@
-import { OfflineBanner } from '@/components/ui/offline-banner'
-import { PageTitle } from '@/components/ui/page-title'
+import { useState } from 'react'
+import { ExerGuide } from '@/components/optivision/exercise-guide'
 import { ProgressPanel } from '@/components/optivision/progress-panel'
 import { ResultPanel } from '@/components/optivision/result-panel'
 import { UploadPanel } from '@/components/optivision/upload-panel'
-import { useOptivisionJob } from '@/lib/optivision/use-optivision-job'
+import { OfflineBanner } from '@/components/ui/offline-banner'
+import { PageTitle } from '@/components/ui/page-title'
+import { useOptiVisJob } from '@/lib/optivision/use-optivision-job'
 import { useOnlineStatus } from '@/lib/use-online-status'
+import type { VisionExercise } from '@/types/optivision'
 
 export default function FormCheckPage() {
-  const { state, start, reset } = useOptivisionJob()
+  const { state, start, reset } = useOptiVisJob()
   const isOnline = useOnlineStatus()
+  const [exercise, setExercise] = useState<VisionExercise>('squat')
 
   function renderPanel() {
     switch (state.phase) {
@@ -16,7 +20,7 @@ export default function FormCheckPage() {
         return (
           <UploadPanel
             disabled={!isOnline}
-            onAnalyse={(file, exercise) => {
+            onAnalyse={(file) => {
               void start(file, exercise)
             }}
           />
@@ -31,17 +35,19 @@ export default function FormCheckPage() {
   }
 
   return (
-    <section className="mx-auto max-w-2xl px-6 pt-12 pb-12">
-      <div className="mb-4">
+    <section className="mx-auto max-w-6xl px-6 py-12">
+      <div className="mb-6">
         <PageTitle title="FORM CHECK" />
       </div>
-      <p className="mb-6 text-sm text-muted-foreground">
-        Upload a side-on video of your set and get coaching on your technique.
-      </p>
 
       {!isOnline && <OfflineBanner message="You're offline - reconnect to analyse a video." />}
 
-      {renderPanel()}
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 min-w-0 lg:col-span-5">
+          <ExerGuide exercise={exercise} onExerciseChange={setExercise} disabled={state.phase !== 'idle'} />
+        </div>
+        <div className="col-span-12 min-w-0 lg:col-span-7">{renderPanel()}</div>
+      </div>
     </section>
   )
 }

@@ -72,5 +72,6 @@ public class VisionResultResponse
     public string Status { get; set; } = string.Empty;
 
     [JsonPropertyName("coach_summary")]
-    public string CoachSummary { get; set; } = string.Empty;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CoachSummary { get; set; }
 }

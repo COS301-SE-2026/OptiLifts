@@ -16,12 +16,18 @@ public class GeminiClient : IGeminiClient
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
+    private readonly IVisionPromptBuilder _promptBuilder;
     private readonly ILogger<GeminiClient>? _logger;
     private const string TargetModel = "gemini-1.5-flash";
 
-    public GeminiClient(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiClient>? logger = null)
+    public GeminiClient(
+        HttpClient httpClient,
+        IConfiguration configuration,
+        IVisionPromptBuilder? promptBuilder = null,
+        ILogger<GeminiClient>? logger = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _promptBuilder = promptBuilder ?? new VisionPromptBuilder();
         _logger = logger;
         _apiKey = (Environment.GetEnvironmentVariable("GEMINI_API_KEY")
             ?? configuration["GEMINI_API_KEY"]
@@ -39,18 +45,18 @@ public class GeminiClient : IGeminiClient
             .Select(a => a.Trim())
             .ToList() ?? new List<string>();
 
+        // Handle fallbacks: If detected_anomalies is empty, generate positive reinforcement immediately
         if (anomaliesList.Count == 0)
         {
-            return "Clean reps! Your form looks solid, keep it up.";
+            return _promptBuilder.GetPositiveReinforcement();
         }
 
-        var commaSeparated = string.Join(", ", anomaliesList);
-        var prompt = $"User {exercise} errors: {commaSeparated}. Write a concise, actionable 2-sentence coaching tip encouraging the user and instructing proper form.";
+        var prompt = _promptBuilder.BuildPrompt(exercise, anomaliesList);
 
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
             _logger?.LogWarning("GEMINI_API_KEY is not configured. Falling back to default coaching tip.");
-            return $"Great effort on your {exercise}! Focus on correcting {commaSeparated} to maintain proper form.";
+            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
         }
 
         try
@@ -76,7 +82,7 @@ public class GeminiClient : IGeminiClient
             {
                 var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 _logger?.LogWarning("Gemini API call returned status {StatusCode}: {Error}", response.StatusCode, errorBody);
-                return $"Great effort on your {exercise}! Keep working on your form and focus on controlled reps.";
+                return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
             }
 
             var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
@@ -95,12 +101,12 @@ public class GeminiClient : IGeminiClient
                 }
             }
 
-            return $"Great effort on your {exercise}! Focus on fixing {commaSeparated} to ensure safe and effective movement.";
+            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
         }
-        catch (Exception ex) when (ex is OperationCanceledException or HttpRequestException or JsonException)
+        catch (Exception ex) when (ex is OperationCanceledException or TimeoutException or HttpRequestException or JsonException)
         {
-            _logger?.LogWarning(ex, "Gemini API call encountered an error. Applying fallback coaching tip.");
-            return $"Great effort on your {exercise}! Stay mindful of {commaSeparated} and keep your reps controlled.";
+            _logger?.LogWarning(ex, "Gemini API call timed out or encountered an error. Applying fallback coaching tip.");
+            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
         }
     }
 }

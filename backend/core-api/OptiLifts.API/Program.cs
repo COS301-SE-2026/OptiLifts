@@ -162,6 +162,7 @@ if (!geminiBaseUrl.EndsWith("/"))
     geminiBaseUrl += "/";
 }
 
+builder.Services.AddSingleton<IVisionPromptBuilder, VisionPromptBuilder>();
 builder.Services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
 {
     client.BaseAddress = new Uri(geminiBaseUrl);

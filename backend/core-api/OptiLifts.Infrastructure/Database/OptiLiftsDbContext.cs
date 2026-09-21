@@ -7,6 +7,7 @@ using OptiLifts.Domain.Gamification;
 using OptiLifts.Domain.Messaging;
 using OptiLifts.Domain.Training;
 using OptiLifts.Domain.Users;
+using OptiLifts.Domain.Vision;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Security;
 
@@ -52,7 +53,7 @@ public class OptiLiftsDbContext : DbContext
 
 
     public DbSet<UserScheduleConfig> UserScheduleConfigs { get; set; }
-
+    public DbSet<VisionAnalysisJob> VisionAnalysisJobs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

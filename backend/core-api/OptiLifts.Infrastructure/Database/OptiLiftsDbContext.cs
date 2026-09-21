@@ -57,6 +57,10 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<Friendship> Friendships { get; set; }
     public DbSet<FriendRequest> FriendRequests { get; set; }
 
+    public DbSet<Arena> Arenas {get; set;}
+    public DbSet<AthleteSeasonSnapshot> AthleteSeasonSnapshots {get; set;}
+    public DbSet<AthleteProfileKudos> AthleteProfileKudos {get; set;}
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

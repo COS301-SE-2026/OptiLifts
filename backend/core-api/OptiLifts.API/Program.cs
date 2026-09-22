@@ -156,8 +156,8 @@ builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 
 var geminiBaseUrl = builder.Configuration["GEMINI_BASE_URL"]
     ?? Environment.GetEnvironmentVariable("GEMINI_BASE_URL")
-    ?? "https://generativelanguage.googleapis.com/";
-if (!geminiBaseUrl.EndsWith("/"))
+    ?? "https://generativelanguage.googleapis.com/"; 
+if (!geminiBaseUrl.EndsWith('/'))
 {
     geminiBaseUrl += "/";
 }
@@ -171,7 +171,7 @@ builder.Services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
 
 builder.Services.AddRateLimitingServices(builder.Configuration);
 var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
-if (!aiApiUrl.EndsWith("/"))
+if (!aiApiUrl.EndsWith('/'))
 {
     aiApiUrl += "/";
 }
@@ -183,12 +183,18 @@ builder.Services.AddHttpClient("AiApi", client =>
 
 var app = builder.Build();
 
-if (!app.Environment.IsEnvironment("Testing"))
+ var storageConnectionString = builder.Configuration.GetConnectionString("AzureStorage") ?? builder.Configuration["ConnectionStrings:AzureStorage"];
+bool isLocalEmulator = storageConnectionString != null && 
+        (storageConnectionString.Contains("UseDevelopmentStorage=true") || 
+         storageConnectionString.Contains("azurite:10000") ||
+         storageConnectionString.Contains("127.0.0.1:10000"));
+
+if (isLocalEmulator && !app.Environment.IsEnvironment("Testing"))
 {
     try
     {
         var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
-        var containers = new[] { "jobs", "exercises", "optivision-payloads" };
+        var containers = new[] { "jobs", "exercises", "optivision-payloads", "profile-pictures" };
         foreach (var container in containers)
         {
             var containerClient = blobServiceClient.GetBlobContainerClient(container);

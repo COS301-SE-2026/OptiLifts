@@ -63,10 +63,10 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<AthleteProfileKudos> AthleteProfileKudos { get; set; }
 
     //f3
-    public DbSet<ArenaMember> ArenaMembers {get; set;}
-    public DbSet<ArenaInvite> ArenaInvites {get; set;}
-    public DbSet<ClashActivity> ClashActivities {get; set;}
-    public DbSet<ClashActivityKudos> ClashActivityKudos {get; set;}
+    public DbSet<ArenaMember> ArenaMembers { get; set; }
+    public DbSet<ArenaInvite> ArenaInvites { get; set; }
+    public DbSet<ClashActivity> ClashActivities { get; set; }
+    public DbSet<ClashActivityKudos> ClashActivityKudos { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

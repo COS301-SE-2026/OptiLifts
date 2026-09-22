@@ -18,7 +18,7 @@ public class AthleteSeasonSnapshotConfiguration : IEntityTypeConfiguration<Athle
         builder.Property(s => s.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
         builder.Property(s => s.AvatarUrl).HasColumnName("avatar_url").HasMaxLength(500);
         builder.Property(s => s.Gender).HasColumnName("gender").HasMaxLength(10).IsRequired();
-        builder.Property(s => s.BodyweightKg).HasColumnName("bodyweight_kg").HasPrecision(5,2).IsRequired();
+        builder.Property(s => s.BodyweightKg).HasColumnName("bodyweight_kg").HasPrecision(5, 2).IsRequired();
         builder.Property(s => s.IsOptedIn).HasColumnName("is_opted_in").HasDefaultValue(false);
         builder.Property(s => s.Squat1RM).HasColumnName("squat_1rm").HasPrecision(6, 2).HasDefaultValue(0m);
         builder.Property(s => s.Bench1RM).HasColumnName("bench_1rm").HasPrecision(6, 2).HasDefaultValue(0m);

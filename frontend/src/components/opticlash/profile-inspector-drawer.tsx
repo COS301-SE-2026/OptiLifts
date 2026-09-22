@@ -72,7 +72,7 @@ export function ProfileInspectorDrawer({
                                 {athlete.name}
                             </h2>
                             <div className="text-xs text-muted-foreground mt-0.5 font-sans">
-                                Bodyweight: <strong className="text-foreground">{athlete.bodyweightKg}</strong>
+                                Bodyweight: <strong className="text-foreground">{athlete.bodyweightKg} kg</strong>
                             </div>
                             {/* tier + dots badges */}
                             <div className="flex items-center gap-2 mt-2 font-sans">
@@ -126,12 +126,12 @@ export function ProfileInspectorDrawer({
                 <div className="flex border-b border-border bg-surface px-4 overflow-x-auto">
                     <button type="button" onClick={() => setActiveTab('overview')}
                         className={`flex-1 py-3 font-sans text-xs font-bold uppercase tracking-[1px] border-b-2 transition whitespace-nowrap shrink-0 ${
-                            activeTab === 'overview' ? 'border-brand text-brand' : 'border-transparet text-mutes-foreground hover:text-foreground'
+                            activeTab === 'overview' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'
                         }`}>
                         Overview
                     </button>
                     <button type="button" onClick={() => setActiveTab('workouts')}
-                        className={`flex-1 py-3 font-sans text-xs font-bold uppercase tracking-[1px] border-b-2 transition whitespace-nowap shrink-0 ${
+                        className={`flex-1 py-3 font-sans text-xs font-bold uppercase tracking-[1px] border-b-2 transition whitespace-nowrap shrink-0 ${
                             activeTab === 'workouts' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'
                         }`}>
                         Recent Workouts ({athlete.recentWorkouts.length})
@@ -156,11 +156,11 @@ export function ProfileInspectorDrawer({
                                         </div>
                                         <div className="p-2.5 bg-surface-2 rounded-lg border border-border text-center">
                                             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block font-sans">Bench</span>
-                                            <span className="font-display text-xl font-bold text-foreground">{athlete.bench1RM}</span>
+                                            <span className="font-display text-xl font-bold text-foreground">{athlete.bench1RM} kg</span>
                                         </div>
                                         <div className="p-2.5 bg-surface-2 rounded-lg border border-border text-center">
                                             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block font-sans">Deadlift</span>
-                                            <span className="font-display text-xl font-bold text-foreground">{athlete.deadlift1RM}</span>
+                                            <span className="font-display text-xl font-bold text-foreground">{athlete.deadlift1RM} kg</span>
                                         </div>
                                     </div>
 
@@ -203,7 +203,7 @@ export function ProfileInspectorDrawer({
                                                     <h4 className="font-sans text-sm font-bold text-foreground">
                                                         {w.title}
                                                     </h4>
-                                                    <p className="xt-xs text-muted-foreground flex items-center gap-2 mt-0.5 font-sans">
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 font-sans">
                                                         {w.date} - {w.durationMins} mins
                                                     </p>
                                                 </div>
@@ -211,7 +211,7 @@ export function ProfileInspectorDrawer({
                                                     <span className="text-xs font-bold text-brand bg-brand-fill px-2 py-0.5 rounded border border-brand/20">
                                                         {w.volumeKg.toLocaleString()} kg
                                                     </span>
-                                                    {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground"/> : <ChevronDown className="text-xs font-bold text-brand bg-brand-fill px-2 py-0.5 rounded border border-brand/20"/>}
+                                                    {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground"/> : <ChevronDown className="w-4 h-4 text-muted-foreground"/>}
                                                 </div>
                                             </button>
 

@@ -69,6 +69,31 @@ def get_core_mappings(full_dataset, num_classes):
     return core_to_indices, core_to_labels
 
 
+def calculate_split_counts(unique_cores, train_c, core_to_labels, num_classes):
+    train_flaw_counts = [0] * num_classes
+    total_flaw_counts = [0] * num_classes
+    
+    for i in unique_cores:
+        labels = core_to_labels[i]
+        for j in range(num_classes):
+            if labels[j] > 0:
+                total_flaw_counts[j] += 1
+                if i in train_c:
+                    train_flaw_counts[j] += 1
+                    
+    return train_flaw_counts, total_flaw_counts
+
+
+def get_smallest_ratio(train_flaw_counts, total_flaw_counts, num_classes):
+    min_ratio = 1.0
+    for i in range(num_classes):
+        if total_flaw_counts[i] > 0:
+            ratio = train_flaw_counts[i] / total_flaw_counts[i]
+            if ratio < min_ratio:
+                min_ratio = ratio
+    return min_ratio
+
+
 def stratified_split(core_to_indices, core_to_labels, num_classes):
     unique_cores = list(core_to_indices.keys())
     train_core_count = int(0.8 * len(unique_cores))
@@ -84,30 +109,15 @@ def stratified_split(core_to_indices, core_to_labels, num_classes):
         random.shuffle(unique_cores) #NOSONAR
         train_c = unique_cores[:train_core_count]
         
-        train_flaw_counts = [0] * num_classes
-        total_flaw_counts = [0] * num_classes
+        train_flaw_counts, total_flaw_counts = calculate_split_counts(unique_cores, train_c, core_to_labels, num_classes)
+        min_ratio = get_smallest_ratio(train_flaw_counts, total_flaw_counts, num_classes)
         
-        for i in unique_cores:
-            labels = core_to_labels[i]
-            for j in range(num_classes):
-                if labels[j] > 0:
-                    total_flaw_counts[j] += 1
-                    if i in train_c:
-                        train_flaw_counts[j] += 1
-                        
-        min_ratio = 1.0
-        for i in range(num_classes):
-            if total_flaw_counts[i] > 0:
-                ratio = train_flaw_counts[i] / total_flaw_counts[i]
-                if ratio < min_ratio:
-                    min_ratio = ratio
-                    
         if min_ratio > best_min_ratio:
             best_min_ratio = min_ratio
             best_split = (train_c, unique_cores[train_core_count:])
             
         iteration += 1
-
+        
     print(f"Stratified Split: {best_min_ratio* 100}%")
     return best_split
 

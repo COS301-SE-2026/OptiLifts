@@ -36,9 +36,7 @@ def pad_batch(batch):
     return batch_tensors, batch_labels
 
 
-def main():
-    
-
+def parse_arguments():
     parser = argparse.ArgumentParser(description="OptiVision Model Trainer")
     parser.add_argument(
         "--exercise",
@@ -50,7 +48,150 @@ def main():
     parser.add_argument(
         "--classes", type=int, required=True, help="Number of labels for this exercise"
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def get_core_mappings(full_dataset, num_classes):
+    # get core names so can keep video and augmented versions in same split
+    core_to_indices = defaultdict(list)
+    core_to_labels = {}
+    for i, path in enumerate(full_dataset.file_paths):
+        core_name = re.sub(r'^(noisy|scaled)(_\d+)?_', '', path.name)
+        core_name = core_name.replace('mirrored_', '')
+
+        core_to_indices[core_name].append(i)
+        
+        name_no_ext = path.name.replace(".npy", "")
+        parts = name_no_ext.split("_")
+        labels = [float(x) for x in parts[-num_classes:]]
+        core_to_labels[core_name] = labels
+
+    return core_to_indices, core_to_labels
+
+
+def stratified_split(core_to_indices, core_to_labels, num_classes):
+    unique_cores = list(core_to_indices.keys())
+    train_core_count = int(0.8 * len(unique_cores))
+
+    # stratified split, atleast 75% of each class is in the training set
+    best_split = None
+    best_min_ratio = -1.0
+    
+    iteration = 0
+    max_iterations = 1000
+    
+    while best_min_ratio < 0.75 and iteration < max_iterations:
+        random.shuffle(unique_cores) #NOSONAR
+        train_c = unique_cores[:train_core_count]
+        
+        train_flaw_counts = [0] * num_classes
+        total_flaw_counts = [0] * num_classes
+        
+        for i in unique_cores:
+            labels = core_to_labels[i]
+            for j in range(num_classes):
+                if labels[j] > 0:
+                    total_flaw_counts[j] += 1
+                    if i in train_c:
+                        train_flaw_counts[j] += 1
+                        
+        min_ratio = 1.0
+        for i in range(num_classes):
+            if total_flaw_counts[i] > 0:
+                ratio = train_flaw_counts[i] / total_flaw_counts[i]
+                if ratio < min_ratio:
+                    min_ratio = ratio
+                    
+        if min_ratio > best_min_ratio:
+            best_min_ratio = min_ratio
+            best_split = (train_c, unique_cores[train_core_count:])
+            
+        iteration += 1
+
+    print(f"Stratified Split: {best_min_ratio* 100}%")
+    return best_split
+
+
+def calculate_dynamic_weights(train_indices, full_dataset, num_classes, device):
+    # adjusted weights w/ cost-sensitive learning
+    pos_counts = torch.zeros(num_classes)
+    for idx in train_indices:
+        _, labels = full_dataset[idx]
+        pos_counts += labels
+        
+    total_train = len(train_indices)
+    neg_counts = total_train - pos_counts
+    pos_counts = torch.clamp(pos_counts, min=1.0)
+    
+    # inverse ratio
+    dynamic_weights = (neg_counts / pos_counts).to(device)
+    dynamic_weights = torch.clamp(dynamic_weights, max=15.0)
+    print(f"Dynamic Class Penalties: {dynamic_weights.cpu().numpy()}")
+    
+    return dynamic_weights
+
+
+def train_model(model, train_loader, val_loader, criterion_train, criterion_eval, optimizer, scheduler, f1_metric, epochs, weights_dir, model_save_name, device):
+    best_val_loss = float("inf")
+    best_epoch = 1
+
+    # training loop
+    for epoch in range(epochs):
+        model.train()
+        train_loss = 0.0
+
+        for tensors, labels in train_loader:
+            tensors, labels = tensors.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(tensors)
+            loss = criterion_train(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss.item()
+
+        avg_train_loss = train_loss / len(train_loader)
+
+        model.eval()
+        val_loss = 0.0
+        f1_metric.reset()
+
+        with torch.no_grad():
+            for tensors, labels in val_loader:
+                tensors, labels = tensors.to(device), labels.to(device)
+
+                outputs = model(tensors)
+                loss = criterion_eval(outputs, labels)
+
+                val_loss += loss.item()
+
+                f1_metric.update(torch.sigmoid(outputs), labels.long())
+
+        avg_val_loss = val_loss / len(val_loader)
+        val_f1 = f1_metric.compute()
+
+        print(
+            f"Epoch [{epoch+1}/{epochs}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1*100:.1f}%"
+        )
+
+        # save best model
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            best_epoch = epoch + 1
+
+            model = model.to("cpu")
+            scripted_model = torch.jit.script(model)
+            scripted_model.save(weights_dir / model_save_name)
+            model = model.to(device)
+
+        scheduler.step(avg_val_loss)
+        
+    print(f"\nTraining complete: Epoch {best_epoch} with Val Loss {best_val_loss:.4f})")
+
+
+def main():
+    args = parse_arguments()
 
     # fix variance with seed
     random.seed(81)
@@ -69,74 +210,14 @@ def main():
     EXERCISE_NAME = args.exercise
     MODEL_SAVE_NAME = f"{EXERCISE_NAME}_side.pt"
 
-    best_val_loss = float("inf")
-    best_epoch = 1
-
     device = torch.device("cuda")
 
     # load dataset
-
     full_dataset = ExerciseDataset(TENSOR_DIR, EXERCISE_NAME, num_classes=NUM_CLASSES)
 
-    # get core names so can keep video and augmented versions in same split
-    core_to_indices = defaultdict(list)
-    core_to_labels = {}
-    for i, path in enumerate(full_dataset.file_paths):
-        core_name = re.sub(r'^(noisy|scaled)(_\d+)?_', '', path.name)
-        core_name = core_name.replace('mirrored_', '')
+    core_to_indices, core_to_labels = get_core_mappings(full_dataset, NUM_CLASSES)
 
-        core_to_indices[core_name].append(i)
-        
-        name_no_ext = path.name.replace(".npy", "")
-        parts = name_no_ext.split("_")
-        labels = [float(x) for x in parts[-NUM_CLASSES:]]
-        core_to_labels[core_name] = labels
-
-    unique_cores = list(core_to_indices.keys())
-    train_core_count = int(0.8 * len(unique_cores))
-
-    # stratified split, atleast 75% of each class is in the training set
-    best_split = None
-    best_min_ratio = -1.0
-    
-    iteration = 0
-    max_iterations = 1000
-    
-    while best_min_ratio < 0.75: # the one time in my life a do while loop would be useful python doesn't support them lol
-
-        random.shuffle(unique_cores) #NOSONAR
-        train_c = unique_cores[:train_core_count]
-        
-        train_flaw_counts = [0] * NUM_CLASSES
-        total_flaw_counts = [0] * NUM_CLASSES
-        
-        for i in unique_cores:
-            labels = core_to_labels[i]
-            for j in range(NUM_CLASSES):
-                if labels[j] > 0:
-                    total_flaw_counts[j] += 1
-                    if i in train_c:
-                        train_flaw_counts[j] += 1
-                        
-        min_ratio = 1.0
-        for i in range(NUM_CLASSES):
-            if total_flaw_counts[i] > 0:
-                ratio = train_flaw_counts[i] / total_flaw_counts[i]
-                if ratio < min_ratio:
-                    min_ratio = ratio
-                    
-        if min_ratio > best_min_ratio:
-            best_min_ratio = min_ratio
-            best_split = (train_c, unique_cores[train_core_count:])
-            
-        iteration += 1
-        
-        if iteration >= max_iterations: 
-            break
-            
-    print(f"Stratified Split: {best_min_ratio* 100}%")
-
-    train_cores, val_cores = best_split
+    train_cores, val_cores = stratified_split(core_to_indices, core_to_labels, NUM_CLASSES)
 
     train_indices = []
     for core in train_cores:
@@ -173,23 +254,11 @@ def main():
     # model and optimizer
     model = ExerciseCNN1D(num_classes=NUM_CLASSES).to(device)
 
-    # adjusted weights w/ cost-sensitive learning
-    happens = torch.zeros(NUM_CLASSES)
-    for idx in train_indices:
-        _, labels = full_dataset[idx]
-        happens += labels
-        
-    total_train = len(train_indices)
-    not_happen = total_train - happens
-    happens = torch.clamp(happens, min=1.0)
-    
-    # inverse ratio
-    dynamic_weights = (not_happen / happens).to(device)
-    dynamic_weights = torch.clamp(dynamic_weights, max=15.0)
-    print(f"dynamic penalties: {dynamic_weights.cpu().numpy()}")
+    dynamic_weights = calculate_dynamic_weights(train_indices, full_dataset, NUM_CLASSES, device)
 
     criterion_train = torch.nn.BCEWithLogitsLoss(pos_weight=dynamic_weights)
     criterion_eval = torch.nn.BCEWithLogitsLoss()
+    
     #  wow 314 stuff
     optimizer = torch.optim.Adam(
         model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4
@@ -199,59 +268,20 @@ def main():
     )
     f1_metric = MultilabelF1Score(num_labels=NUM_CLASSES, threshold=0.5, average="macro").to(device)
 
-    # training loop
-    for epoch in range(EPOCHS):
-        model.train()
-        train_loss = 0.0
-
-        for tensors, labels in train_loader:
-            tensors, labels = tensors.to(device), labels.to(device)
-
-            optimizer.zero_grad()
-            outputs = model(tensors)
-            loss = criterion_train(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            train_loss += loss.item()
-
-        avg_train_loss = train_loss / len(train_loader)
-
-        model.eval()
-        val_loss = 0.0
-        f1_metric.reset()
-
-        with torch.no_grad():
-            for tensors, labels in val_loader:
-                tensors, labels = tensors.to(device), labels.to(device)
-
-                outputs = model(tensors)
-                loss = criterion_eval(outputs, labels)
-
-                val_loss += loss.item()
-
-                f1_metric.update(torch.sigmoid(outputs), labels.long())
-
-        avg_val_loss = val_loss / len(val_loader)
-        val_f1 = f1_metric.compute()
-
-        print(
-            f"Epoch [{epoch+1}/{EPOCHS}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1*100:.1f}%"
-        )
-
-        # save best model
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-            best_epoch = epoch + 1
-
-            model = model.to("cpu")
-            scripted_model = torch.jit.script(model)
-            scripted_model.save(WEIGHTS_DIR / MODEL_SAVE_NAME)
-            model = model.to(device)
-
-        scheduler.step(avg_val_loss)
-        
-    print(f"\nTraining complete: Epoch {best_epoch} with Val Loss {best_val_loss})")
+    train_model(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        criterion_train=criterion_train,
+        criterion_eval=criterion_eval,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        f1_metric=f1_metric,
+        epochs=EPOCHS,
+        weights_dir=WEIGHTS_DIR,
+        model_save_name=MODEL_SAVE_NAME,
+        device=device
+    )
 
 
 if __name__ == "__main__":

@@ -43,7 +43,7 @@ e2e/playwright/.auth/
 *.avi
 *.mov
 *.mkv
-*.task
+/optivision/data_prep/pose_landmarker.task
 dataset_tracker.csv
 optivision/venv/
 optivision/data/

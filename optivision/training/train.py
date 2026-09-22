@@ -12,6 +12,10 @@ import random
 from torch.utils.data import Subset
 from collections import defaultdict
 
+import argparse
+
+import re
+
 
 def pad_batch(batch):
     max_frames = max([item[0].shape[1] for item in batch])
@@ -33,7 +37,7 @@ def pad_batch(batch):
 
 
 def main():
-    import argparse
+    
 
     parser = argparse.ArgumentParser(description="OptiVision Model Trainer")
     parser.add_argument(
@@ -66,6 +70,7 @@ def main():
     MODEL_SAVE_NAME = f"{EXERCISE_NAME}_side.pt"
 
     best_val_loss = float("inf")
+    best_epoch = 1
 
     device = torch.device("cuda")
 
@@ -75,21 +80,63 @@ def main():
 
     # get core names so can keep video and augmented versions in same split
     core_to_indices = defaultdict(list)
+    core_to_labels = {}
     for i, path in enumerate(full_dataset.file_paths):
-        core_name = (
-            path.name.replace("noisy_", "")
-            .replace("scaled_", "")
-            .replace("mirrored_", "")
-        )
+        core_name = re.sub(r'^(noisy|scaled)(_\d+)?_', '', path.name)
+        core_name = core_name.replace('mirrored_', '')
+
         core_to_indices[core_name].append(i)
+        
+        name_no_ext = path.name.replace(".npy", "")
+        parts = name_no_ext.split("_")
+        labels = [float(x) for x in parts[-NUM_CLASSES:]]
+        core_to_labels[core_name] = labels
 
-    # shuffle core vids
     unique_cores = list(core_to_indices.keys())
-    random.shuffle(unique_cores)  # NOSONAR
-
     train_core_count = int(0.8 * len(unique_cores))
-    train_cores = unique_cores[:train_core_count]
-    val_cores = unique_cores[train_core_count:]
+
+    # stratified split, atleast 75% of each class is in the training set
+    best_split = None
+    best_min_ratio = -1.0
+    
+    iteration = 0
+    max_iterations = 1000
+    
+    while best_min_ratio < 0.75: # the one time in my life a do while loop would be useful python doesn't support them lol
+
+        random.shuffle(unique_cores) #NOSONAR
+        train_c = unique_cores[:train_core_count]
+        
+        train_flaw_counts = [0] * NUM_CLASSES
+        total_flaw_counts = [0] * NUM_CLASSES
+        
+        for i in unique_cores:
+            labels = core_to_labels[i]
+            for j in range(NUM_CLASSES):
+                if labels[j] > 0:
+                    total_flaw_counts[j] += 1
+                    if i in train_c:
+                        train_flaw_counts[j] += 1
+                        
+        min_ratio = 1.0
+        for i in range(NUM_CLASSES):
+            if total_flaw_counts[i] > 0:
+                ratio = train_flaw_counts[i] / total_flaw_counts[i]
+                if ratio < min_ratio:
+                    min_ratio = ratio
+                    
+        if min_ratio > best_min_ratio:
+            best_min_ratio = min_ratio
+            best_split = (train_c, unique_cores[train_core_count:])
+            
+        iteration += 1
+        
+        if iteration >= max_iterations: 
+            break
+            
+    print(f"Stratified Split: {best_min_ratio* 100}%")
+
+    train_cores, val_cores = best_split
 
     train_indices = []
     for core in train_cores:
@@ -124,12 +171,24 @@ def main():
     print(f"Training size: {train_size}, Validation size: {val_size}")
 
     # model and optimizer
-
     model = ExerciseCNN1D(num_classes=NUM_CLASSES).to(device)
 
-    # missing flaw is penalized more
-    pos_weight = torch.tensor([2.0] * NUM_CLASSES).to(device)
-    criterion_train = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    # adjusted weights w/ cost-sensitive learning
+    happens = torch.zeros(NUM_CLASSES)
+    for idx in train_indices:
+        _, labels = full_dataset[idx]
+        happens += labels
+        
+    total_train = len(train_indices)
+    not_happen = total_train - happens
+    happens = torch.clamp(happens, min=1.0)
+    
+    # inverse ratio
+    dynamic_weights = (not_happen / happens).to(device)
+    dynamic_weights = torch.clamp(dynamic_weights, max=15.0)
+    print(f"dynamic penalties: {dynamic_weights.cpu().numpy()}")
+
+    criterion_train = torch.nn.BCEWithLogitsLoss(pos_weight=dynamic_weights)
     criterion_eval = torch.nn.BCEWithLogitsLoss()
     #  wow 314 stuff
     optimizer = torch.optim.Adam(
@@ -138,7 +197,7 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.1, patience=3
     )
-    f1_metric = MultilabelF1Score(num_labels=NUM_CLASSES, average="macro").to(device)
+    f1_metric = MultilabelF1Score(num_labels=NUM_CLASSES, threshold=0.5, average="macro").to(device)
 
     # training loop
     for epoch in range(EPOCHS):
@@ -183,6 +242,7 @@ def main():
         # save best model
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
+            best_epoch = epoch + 1
 
             model = model.to("cpu")
             scripted_model = torch.jit.script(model)
@@ -190,6 +250,8 @@ def main():
             model = model.to(device)
 
         scheduler.step(avg_val_loss)
+        
+    print(f"\nTraining complete: Epoch {best_epoch} with Val Loss {best_val_loss})")
 
 
 if __name__ == "__main__":

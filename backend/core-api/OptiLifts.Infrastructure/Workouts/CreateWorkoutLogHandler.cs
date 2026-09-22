@@ -190,7 +190,9 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
             })
             .ToListAsync(cancellationToken);
 
-        return currentBestValues.ToDictionary(item => (item.ExerciseId, item.PrType), item => item.BestValue);
+        return currentBestValues
+            .GroupBy(item => (item.ExerciseId, item.PrType))
+            .ToDictionary(group => group.Key, group => group.Max(item => item.BestValue));
     }
 
     private void MaybeAddExercisePr(

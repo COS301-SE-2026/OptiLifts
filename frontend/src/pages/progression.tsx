@@ -188,7 +188,7 @@ export default function ProgressionPage() {
     }
 
     return (
-        <section className="mx-auto max-w-6xl px-6 py-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
+        <section className="mx-auto max-w-6xl px-6 pt-12 pb-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden">
             <div className="mb-6">
                 <PageTitle title="PROGRESSION" />
             </div>
@@ -217,6 +217,7 @@ export default function ProgressionPage() {
                                     placeholder="Search exercises"
                                     aria-label="Search exercises"
                                     className="h-8 w-full"
+                                    containerClassName="w-full max-w-none"
                                 />
 
                                 <DropdownMenu>

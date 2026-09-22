@@ -106,7 +106,7 @@ export function Navbar() {
           <button
             type="button"
             aria-label="Close menu"
-            className="fixed inset-0 z-[105] bg-foreground/50 lg:hidden"
+            className="fixed inset-0 z-[105] bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in lg:hidden"
             onClick={() => setMenuOpen(false)}
           />
           <nav

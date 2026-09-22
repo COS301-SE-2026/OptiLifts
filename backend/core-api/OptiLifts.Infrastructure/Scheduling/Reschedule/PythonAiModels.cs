@@ -5,7 +5,8 @@ internal record PythonRescheduleRequest(
     DateTime PlanningWindowStart,
     DateTime PlanningWindowEnd,
     PythonPreferences Preferences,
-    List<PythonEntry> Entries
+    List<PythonEntry> Entries,
+    List<PythonEntry> RecentHistory
 );
 internal record PythonPreferences(
     int MaxWorkoutsPerDay,

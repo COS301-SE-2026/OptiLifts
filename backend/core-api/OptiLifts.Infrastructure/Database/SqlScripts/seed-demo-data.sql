@@ -962,7 +962,7 @@ FROM (
         mw.user_id,
         mw.exercise_id,
         us.log_set_id,
-        0 AS pr_type,
+        'MaxWeight' AS pr_type,
         us.weight AS pr_value,
         us.weight AS achieved_weight,
         us.reps AS achieved_reps
@@ -975,7 +975,7 @@ FROM (
         mv.user_id,
         mv.exercise_id,
         us.log_set_id,
-        1 AS pr_type,
+        'MaxSetVolume' AS pr_type,
         us.volume AS pr_value,
         us.weight AS achieved_weight,
         us.reps AS achieved_reps

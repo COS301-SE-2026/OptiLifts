@@ -47,8 +47,15 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
             return new RescheduleResultDto(request.UserId, "None", 0, new List<RescheduledEntryDto>(), new List<RescheduledEntryDto>());
         }
 
+        var effectiveStart = start < today ? today : start;
+        var minrestHours = config?.MinMuscleRestHours ?? 48;
+        var historyStart = effectiveStart.AddHours(-minrestHours);
+
+        var completedEntries = await _dbContext.ScheduledEntries.AsNoTracking().Where(e => e.UserId == request.UserId
+        && e.Status == ScheduleStatus.Completed && e.Scheduled >= historyStart && e.Scheduled < effectiveStart).ToListAsync(cancellationToken);
+
         //fetch workouots and their primary muscles
-        var workoutIds = targetentries.Select(e => e.WorkoutId).Distinct().ToList();
+        var workoutIds = targetentries.Select(e => e.WorkoutId).Concat(completedEntries.Select(e => e.WorkoutId)).Distinct().ToList();
         var workoutNames = await _dbContext.Workouts.AsNoTracking()
         .Where(w => workoutIds.Contains(w.Id))
         .ToDictionaryAsync(w => w.Id, w => w.Name, cancellationToken);
@@ -78,7 +85,15 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
             e.Status.ToString(),
             musclesWorkout.GetValueOrDefault(e.WorkoutId, new List<string>())
         )).ToList();
-        var effectiveStart = start < today ? today : start;
+        var recentHistory = completedEntries.Select(e => new PythonEntry(
+            e.Id.ToString(),
+            e.WorkoutId.ToString(),
+            workoutNames.GetValueOrDefault(e.WorkoutId, "Workout"),
+            e.Scheduled,
+            e.Status.ToString(),
+            musclesWorkout.GetValueOrDefault(e.WorkoutId, new List<string>())
+        )).ToList();
+
         var payload = new PythonRescheduleRequest(
             request.UserId.ToString(),
             effectiveStart,
@@ -88,7 +103,8 @@ public class TriggerRescheduleHandler : IRequestHandler<TriggerRescheduleCommand
                 config?.MinMuscleRestHours ?? 48,
                 config?.RestDays ?? new List<string> { "Sunday" }
             ),
-            pythonEntries
+            pythonEntries,
+            recentHistory
         );
         var snakecase = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 

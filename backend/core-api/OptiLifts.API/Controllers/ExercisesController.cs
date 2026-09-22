@@ -3,6 +3,8 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OptiLifts.API.RateLimiting;
 using OptiLifts.Application.Exercises.CreateCustomExercise;
 using OptiLifts.Application.Exercises.DeleteCustomExercise;
 using OptiLifts.Application.Exercises.GetExerciseById;
@@ -176,6 +178,7 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpPost("images")]
+    [EnableRateLimiting(RateLimitPolicies.Schedule)]
     public async Task<ActionResult<Dictionary<string, string>>> GetExerciseImages([FromBody] GetExerciseImagesRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetExerciseImagesQuery(request.ExerciseIds), cancellationToken);

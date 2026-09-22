@@ -24,6 +24,7 @@ class RescheduleRequest(BaseModel):
     planning_window_end: datetime
     preferences: Preferences
     entries: List[Entry] = Field(default_factory=list)
+    recent_history: List[Entry] = []
 
 
 class RescheduledEntry(BaseModel):

@@ -3,6 +3,8 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OptiLifts.API.RateLimiting;
 using OptiLifts.Application.Scheduling.CreateScheduledSession;
 using OptiLifts.Application.Scheduling.DeleteScheduledSession;
 using OptiLifts.Application.Scheduling.GetSchedule;
@@ -17,6 +19,7 @@ namespace OptiLifts.API.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.Schedule)]
 public sealed class SchedulesController : ControllerBase
 {
     private readonly ISender _sender;

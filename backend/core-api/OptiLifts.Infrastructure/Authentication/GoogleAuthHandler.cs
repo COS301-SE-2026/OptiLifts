@@ -74,7 +74,7 @@ public sealed class GoogleAuthHandler : IRequestHandler<GoogleAuthCommand, AuthR
                 CreatedAt = DateTime.UtcNow,
                 Level = 1,
                 Metric = true,
-                LightTheme = false
+                LightTheme = request.LightTheme
             };
 
             _dbContext.Users.Add(user);

@@ -56,11 +56,11 @@ def get_core_mappings(full_dataset, num_classes):
     core_to_indices = defaultdict(list)
     core_to_labels = {}
     for i, path in enumerate(full_dataset.file_paths):
-        core_name = re.sub(r'^(noisy|scaled)(_\d+)?_', '', path.name)
-        core_name = core_name.replace('mirrored_', '')
+        core_name = re.sub(r"^(noisy|scaled)(_\d+)?_", "", path.name)
+        core_name = core_name.replace("mirrored_", "")
 
         core_to_indices[core_name].append(i)
-        
+
         name_no_ext = path.name.replace(".npy", "")
         parts = name_no_ext.split("_")
         labels = [float(x) for x in parts[-num_classes:]]
@@ -72,7 +72,7 @@ def get_core_mappings(full_dataset, num_classes):
 def calculate_split_counts(unique_cores, train_c, core_to_labels, num_classes):
     train_flaw_counts = [0] * num_classes
     total_flaw_counts = [0] * num_classes
-    
+
     for i in unique_cores:
         labels = core_to_labels[i]
         for j in range(num_classes):
@@ -80,7 +80,7 @@ def calculate_split_counts(unique_cores, train_c, core_to_labels, num_classes):
                 total_flaw_counts[j] += 1
                 if i in train_c:
                     train_flaw_counts[j] += 1
-                    
+
     return train_flaw_counts, total_flaw_counts
 
 
@@ -101,23 +101,27 @@ def stratified_split(core_to_indices, core_to_labels, num_classes):
     # stratified split, atleast 75% of each class is in the training set
     best_split = None
     best_min_ratio = -1.0
-    
+
     iteration = 0
     max_iterations = 1000
-    
+
     while best_min_ratio < 0.75 and iteration < max_iterations:
-        random.shuffle(unique_cores) #NOSONAR
+        random.shuffle(unique_cores)  # NOSONAR
         train_c = unique_cores[:train_core_count]
-        
-        train_flaw_counts, total_flaw_counts = calculate_split_counts(unique_cores, train_c, core_to_labels, num_classes)
-        min_ratio = get_smallest_ratio(train_flaw_counts, total_flaw_counts, num_classes)
-        
+
+        train_flaw_counts, total_flaw_counts = calculate_split_counts(
+            unique_cores, train_c, core_to_labels, num_classes
+        )
+        min_ratio = get_smallest_ratio(
+            train_flaw_counts, total_flaw_counts, num_classes
+        )
+
         if min_ratio > best_min_ratio:
             best_min_ratio = min_ratio
             best_split = (train_c, unique_cores[train_core_count:])
-            
+
         iteration += 1
-        
+
     print(f"Stratified Split: {best_min_ratio* 100}%")
     return best_split
 
@@ -128,20 +132,33 @@ def calculate_dynamic_weights(train_indices, full_dataset, num_classes, device):
     for idx in train_indices:
         _, labels = full_dataset[idx]
         pos_counts += labels
-        
+
     total_train = len(train_indices)
     neg_counts = total_train - pos_counts
     pos_counts = torch.clamp(pos_counts, min=1.0)
-    
+
     # inverse ratio
     dynamic_weights = (neg_counts / pos_counts).to(device)
     dynamic_weights = torch.clamp(dynamic_weights, max=15.0)
     print(f"Dynamic Class Penalties: {dynamic_weights.cpu().numpy()}")
-    
+
     return dynamic_weights
 
 
-def train_model(model, train_loader, val_loader, criterion_train, criterion_eval, optimizer, scheduler, f1_metric, epochs, weights_dir, model_save_name, device):
+def train_model(
+    model,
+    train_loader,
+    val_loader,
+    criterion_train,
+    criterion_eval,
+    optimizer,
+    scheduler,
+    f1_metric,
+    epochs,
+    weights_dir,
+    model_save_name,
+    device,
+):
     best_val_loss = float("inf")
     best_epoch = 1
 
@@ -196,7 +213,7 @@ def train_model(model, train_loader, val_loader, criterion_train, criterion_eval
             model = model.to(device)
 
         scheduler.step(avg_val_loss)
-        
+
     print(f"\nTraining complete: Epoch {best_epoch} with Val Loss {best_val_loss:.4f})")
 
 
@@ -227,7 +244,9 @@ def main():
 
     core_to_indices, core_to_labels = get_core_mappings(full_dataset, NUM_CLASSES)
 
-    train_cores, val_cores = stratified_split(core_to_indices, core_to_labels, NUM_CLASSES)
+    train_cores, val_cores = stratified_split(
+        core_to_indices, core_to_labels, NUM_CLASSES
+    )
 
     train_indices = []
     for core in train_cores:
@@ -264,11 +283,13 @@ def main():
     # model and optimizer
     model = ExerciseCNN1D(num_classes=NUM_CLASSES).to(device)
 
-    dynamic_weights = calculate_dynamic_weights(train_indices, full_dataset, NUM_CLASSES, device)
+    dynamic_weights = calculate_dynamic_weights(
+        train_indices, full_dataset, NUM_CLASSES, device
+    )
 
     criterion_train = torch.nn.BCEWithLogitsLoss(pos_weight=dynamic_weights)
     criterion_eval = torch.nn.BCEWithLogitsLoss()
-    
+
     #  wow 314 stuff
     optimizer = torch.optim.Adam(
         model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4
@@ -276,7 +297,9 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.1, patience=3
     )
-    f1_metric = MultilabelF1Score(num_labels=NUM_CLASSES, threshold=0.5, average="macro").to(device)
+    f1_metric = MultilabelF1Score(
+        num_labels=NUM_CLASSES, threshold=0.5, average="macro"
+    ).to(device)
 
     train_model(
         model=model,
@@ -290,7 +313,7 @@ def main():
         epochs=EPOCHS,
         weights_dir=WEIGHTS_DIR,
         model_save_name=MODEL_SAVE_NAME,
-        device=device
+        device=device,
     )
 
 

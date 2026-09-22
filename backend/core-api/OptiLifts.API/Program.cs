@@ -1,3 +1,6 @@
+using Azure.Messaging.ServiceBus;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.API;
@@ -5,11 +8,15 @@ using OptiLifts.API.RateLimiting;
 using OptiLifts.Application;
 using OptiLifts.Application.Auth.Abstractions;
 using OptiLifts.Application.Gamification.Abstraction;
+using OptiLifts.Application.Storage;
+using OptiLifts.Application.Vision;
 using OptiLifts.Infrastructure.Authentication;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Database.Seeders;
 using OptiLifts.Infrastructure.Gamification;
 using OptiLifts.Infrastructure.Gamification.Rules;
+using OptiLifts.Infrastructure.Storage;
+using OptiLifts.Infrastructure.Vision;
 
 
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Testing", StringComparison.OrdinalIgnoreCase))
@@ -100,7 +107,40 @@ builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
 //register MediatR handlers from Application and Infrastructure assemblies
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
-builder.Services.AddScoped<OptiLifts.Application.Storage.IBlobStorageService, OptiLifts.Infrastructure.Storage.AzureBlobStorageService>();
+var azureStorageConnection = builder.Configuration.GetConnectionString("AzureStorage");
+if (string.IsNullOrWhiteSpace(azureStorageConnection))
+{
+    azureStorageConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
+        ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
+}
+if (string.IsNullOrWhiteSpace(azureStorageConnection))
+{
+    azureStorageConnection = "UseDevelopmentStorage=true;";
+}
+
+builder.Services.AddSingleton(new BlobServiceClient(azureStorageConnection));
+builder.Services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
+builder.Services.AddScoped<IOptiVisionStorageService, OptiVisionStorageService>();
+
+var serviceBusConnection = builder.Configuration.GetConnectionString("ServiceBus");
+if (string.IsNullOrWhiteSpace(serviceBusConnection))
+{
+    serviceBusConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__SERVICEBUS")
+        ?? Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING")
+        ?? Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION_STRING");
+}
+if (string.IsNullOrWhiteSpace(serviceBusConnection))
+{
+    serviceBusConnection = "Endpoint=sb://optilifts.servicebus.windows.net/;SharedAccessKeyName=SendAccess;SharedAccessKey=dummykey=;";
+}
+
+var serviceBusQueueName = builder.Configuration["SERVICE_BUS_QUEUE_NAME"]
+    ?? Environment.GetEnvironmentVariable("SERVICE_BUS_QUEUE_NAME")
+    ?? "cv-jobs-queue";
+
+builder.Services.AddSingleton(new ServiceBusClient(serviceBusConnection));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<ServiceBusClient>().CreateSender(serviceBusQueueName));
+
 //platandfat
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.ISeriesBuilder, OptiLifts.Infrastructure.Training.SeriesBuilder>();
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionService, OptiLifts.Infrastructure.Training.PlateauDetectionService>();
@@ -113,6 +153,21 @@ builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 builder.Services.AuthProgramHelper(builder.Configuration);
 
 builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
+
+var geminiBaseUrl = builder.Configuration["GEMINI_BASE_URL"]
+    ?? Environment.GetEnvironmentVariable("GEMINI_BASE_URL")
+    ?? "https://generativelanguage.googleapis.com/";
+if (!geminiBaseUrl.EndsWith("/"))
+{
+    geminiBaseUrl += "/";
+}
+
+builder.Services.AddSingleton<IVisionPromptBuilder, VisionPromptBuilder>();
+builder.Services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
+{
+    client.BaseAddress = new Uri(geminiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 builder.Services.AddRateLimitingServices(builder.Configuration);
 var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
@@ -127,6 +182,24 @@ builder.Services.AddHttpClient("AiApi", client =>
 });
 
 var app = builder.Build();
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    try
+    {
+        var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
+        var containers = new[] { "jobs", "exercises", "optivision-payloads" };
+        foreach (var container in containers)
+        {
+            var containerClient = blobServiceClient.GetBlobContainerClient(container);
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Failed to initialize Azure Blob Storage containers on startup.");
+    }
+}
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
 if (runMigrations)

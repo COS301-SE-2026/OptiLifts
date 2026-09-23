@@ -43,12 +43,18 @@ public static class SecurityExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
                 };
 
-                // get token from http cookie
+                // get token from http cookie or SignalR query string
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
-                        if (context.Request.Cookies.TryGetValue("access_token", out var token))
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/clash-hub")))
+                        {
+                            context.Token = accessToken;
+                        }
+                        else if (context.Request.Cookies.TryGetValue("access_token", out var token))
                         {
                             context.Token = token;
                         }

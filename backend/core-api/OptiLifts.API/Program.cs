@@ -126,6 +126,9 @@ builder.Services.AddHttpClient("AiApi", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddSignalR();
+builder.Services.AddScoped<OptiLifts.Application.Clash.IClashNotifier, OptiLifts.API.Hubs.SignalRClashNotifier>();
+
 var app = builder.Build();
 
 var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
@@ -162,6 +165,8 @@ app.UseAuthentication(); //authentication middleware
 app.UseAuthorization(); //authorization middleware
 app.UseRateLimiter(); //rate limiting middleware
 app.MapControllers();
+app.MapHub<OptiLifts.API.Hubs.ClashHub>("/hubs/clash");
+app.MapHub<OptiLifts.API.Hubs.ClashHub>("/clash-hub");
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq
 app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow })).DisableRateLimiting();

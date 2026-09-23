@@ -104,12 +104,6 @@ const exercisesContainer = new storage.BlobContainer("bc-exercises", {
     containerName: "exercises",
     publicAccess: storage.PublicAccess.Blob, 
 });
-const jobsContainer = new storage.BlobContainer("bc-jobs", {
-    resourceGroupName: resourceGroup.name,
-    accountName: storageAcc.name,
-    containerName: "jobs",
-    publicAccess: storage.PublicAccess.Blob, 
-});
 const optivisionpayloadsContainer = new storage.BlobContainer("bc-optivision-payloads", {
     resourceGroupName: resourceGroup.name,
     accountName: storageAcc.name,

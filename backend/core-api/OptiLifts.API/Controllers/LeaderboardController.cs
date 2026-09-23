@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OptiLifts.Application.Clash.Leaderboard.Commands;
+using OptiLifts.Application.Clash.Leaderboard.Queries;
 
 namespace OptiLifts.API.Controllers;
 
@@ -41,8 +42,43 @@ public sealed class LeaderboardController : ControllerBase
 
     private bool TryGetUserId(out Guid userId)
     {
-        var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdVal = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        return Guid.TryParse(userIdValue, out userId);
+        return Guid.TryParse(userIdVal, out userId);
     }
+
+    [HttpGet("global")]
+    public async Task<ActionResult<LeaderboardPageResult>> GetGlobal(
+        [FromQuery] string metric = "DotsOverall",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var res = await _sender.Send(new GetGlobalLeaderboardQuery(userId, metric, page, pageSize), cancellationToken);
+        return Ok(res);
+    }
+
+    [HttpGet("divisional")]
+    public async Task<ActionResult<LeaderboardPageResult>> GetDivisional(
+        [FromQuery] string gender,
+        [FromQuery] string bracketId,
+        [FromQuery] string metric = "DotsOverall",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var res = await _sender.Send(new GetDivisionalLeaderboardQuery(userId, gender, bracketId, metric, page, pageSize), cancellationToken);
+        return Ok(res);
+    }
+
 }

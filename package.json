@@ -56,9 +56,12 @@
     
     "lint:ai": "cd backend/ai-api && ./venv/bin/ruff check .",
     "lint:ai:fix": "cd backend/ai-api && ./venv/bin/ruff format . && ./venv/bin/ruff check . --fix",
+
+    "lint:optivision": "cd optivision && ./venv/bin/ruff check .",
+    "lint:optivision:fix": "cd optivision && ./venv/bin/ruff format . && ./venv/bin/ruff check . --fix",
     
-    "lint": "pnpm lint:frontend && pnpm lint:backend && pnpm lint:ai",
-    "lint:fix": "pnpm lint:frontend:fix && pnpm lint:backend:fix && pnpm lint:ai:fix",
+    "lint": "pnpm lint:frontend && pnpm lint:backend && pnpm lint:ai && pnpm lint:optivision",
+    "lint:fix": "pnpm lint:frontend:fix && pnpm lint:backend:fix && pnpm lint:ai:fix && pnpm lint:optivision:fix",
 
     "test:coverage": "concurrently \"pnpm test:coverage:frontend\" \"pnpm test:coverage:backend\" \"pnpm test:coverage:ai\"",
     "test:coverage:frontend": "pnpm --filter frontend cov",

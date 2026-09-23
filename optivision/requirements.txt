@@ -1,0 +1,8 @@
+mediapipe==1.0.1
+opencv-python==4.10.0.84
+numpy==1.26.4
+tqdm==4.66.5
+pandas==2.2.2
+ruff==0.6.9
+torch==2.4.1
+torchmetrics==1.4.1

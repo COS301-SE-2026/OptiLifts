@@ -60,6 +60,8 @@ services:
       - RateLimiting__Enabled=${RATE_LIMITING_ENABLED:-true}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_BASE_URL=${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/}
 
     depends_on:
       db:

@@ -27,6 +27,8 @@ const pgPort = config.get("pgPort") ?? "5432";
 const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
 const googleClientId = config.getSecret("googleClientId");
 const googleClientSecret = config.getSecret("googleClientSecret");
+const geminiApiKey = config.getSecret("geminiApiKey");
+const geminiBaseUrl = config.get("geminiBaseUrl");
 
 const domainStage = config.get("domainStage") ?? "none";
 const rateLimitingEnabled = config.get("rateLimitingEnabled") ?? "true";
@@ -100,6 +102,18 @@ const exercisesContainer = new storage.BlobContainer("bc-exercises", {
     resourceGroupName: resourceGroup.name,
     accountName: storageAcc.name,
     containerName: "exercises",
+    publicAccess: storage.PublicAccess.Blob, 
+});
+const jobsContainer = new storage.BlobContainer("bc-jobs", {
+    resourceGroupName: resourceGroup.name,
+    accountName: storageAcc.name,
+    containerName: "jobs",
+    publicAccess: storage.PublicAccess.Blob, 
+});
+const optivisionpayloadsContainer = new storage.BlobContainer("bc-optivision-payloads", {
+    resourceGroupName: resourceGroup.name,
+    accountName: storageAcc.name,
+    containerName: "optivision-payloads",
     publicAccess: storage.PublicAccess.Blob, 
 });
 
@@ -283,7 +297,9 @@ const coreApiApp = new app.ContainerApp("core-api", {
             },
             { name: "core-api-sentry-dsn", value: coreApiSentryDsn },
             { name: "google-client-id", value: googleClientId },
-            { name: "google-client-secret", value: googleClientSecret }
+            { name: "google-client-secret", value: googleClientSecret }, 
+            { name: "gemini-api-key", value: geminiApiKey },
+            { name: "gemini-base-url", value: geminiBaseUrl },
         ],
 
         registries: [{
@@ -321,7 +337,9 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
                 { name: "GOOGLE_CLIENT_ID", secretRef: "google-client-id" },
                 { name: "GOOGLE_CLIENT_SECRET", secretRef: "google-client-secret" },
-                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
+                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }, 
+                { name: "GEMINI_API_KEY", secretRef: "gemini-api-key" },
+                { name: "GEMINI_BASE_URL", secretRef: "gemini-base-url" }
             ],
             probes: [{
                 type: "Startup",

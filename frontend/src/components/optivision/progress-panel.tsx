@@ -34,16 +34,12 @@ export function ProgressPanel({ state, onCancel }: ProgressPanelProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {percent !== null && (
-          <div
-            role="progressbar"
+          <progress
             aria-label="Reading video"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent}
-            className="h-2 overflow-hidden rounded-full bg-surface-2"
-          >
-            <div className="h-full rounded-full bg-brand transition-all duration-150" style={{ width: `${percent}%` }} />
-          </div>
+            value={percent}
+            max={100}
+            className="h-2 w-full appearance-none overflow-hidden rounded-full bg-surface-2 [&::-webkit-progress-bar]:bg-surface-2 [&::-webkit-progress-value]:bg-brand [&::-moz-progress-bar]:bg-brand [&::-webkit-progress-value]:transition-all [&::-webkit-progress-value]:duration-150"
+          />
         )}
 
         <p className="text-xs text-muted-foreground">

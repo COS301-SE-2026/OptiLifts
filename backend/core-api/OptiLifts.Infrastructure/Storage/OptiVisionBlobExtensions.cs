@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -11,8 +12,8 @@ namespace OptiLifts.Infrastructure.Storage;
 
 public static class OptiVisionBlobExtensions
 {
-    public const string ExercisesContainerName = "exercises";
-    public static string DefaultContainerName => Environment.GetEnvironmentVariable("AZURE_STORAGE_CONTAINER_NAME") ?? "jobs";
+    public const string OptiVisionPayloadsContainerName = "optivision-payloads";
+    public static string DefaultContainerName => Environment.GetEnvironmentVariable("AZURE_STORAGE_CONTAINER_NAME") ?? OptiVisionPayloadsContainerName;
 
     public static async Task<string> SaveVisionAnalysisFramesAsync(
         this BlobServiceClient blobServiceClient,
@@ -23,7 +24,7 @@ public static class OptiVisionBlobExtensions
         if (blobServiceClient == null)
             throw new ArgumentNullException(nameof(blobServiceClient));
         if (string.IsNullOrWhiteSpace(jobId))
-            throw new ArgumentException("Job ID cannot be null or empty.", nameof(jobId));
+            throw new ArgumentException("Job ID cannot be null or empty.", nameof(jobId)); 
         if (jsonPayload == null)
             throw new ArgumentNullException(nameof(jsonPayload));
 
@@ -70,7 +71,7 @@ public static class OptiVisionBlobExtensions
         if (blobServiceClient == null)
             throw new ArgumentNullException(nameof(blobServiceClient));
 
-        var containerClient = blobServiceClient.GetBlobContainerClient(ExercisesContainerName);
+        var containerClient = blobServiceClient.GetBlobContainerClient(OptiVisionPayloadsContainerName);
         return await containerClient.GetVisionAnalysisFramesAsync(jobId, cancellationToken);
     }
 
@@ -104,7 +105,7 @@ public static class OptiVisionBlobExtensions
         if (blobServiceClient == null)
             throw new ArgumentNullException(nameof(blobServiceClient));
 
-        var containerClient = blobServiceClient.GetBlobContainerClient(ExercisesContainerName);
+        var containerClient = blobServiceClient.GetBlobContainerClient(OptiVisionPayloadsContainerName);
         return await containerClient.OpenVisionAnalysisFramesReadStreamAsync(jobId, cancellationToken);
     }
 
@@ -132,13 +133,12 @@ public static class OptiVisionBlobExtensions
     private static string FormatBlobName(string jobId)
     {
         var cleaned = jobId.Trim();
-        foreach (var prefix in new[] { $"{DefaultContainerName}/", $"{ExercisesContainerName}/", "jobs/", "exercises/", "optivision-payloads/" })
+        var prefixes = new[] { $"{DefaultContainerName}/", $"{OptiVisionPayloadsContainerName}/" };
+        
+        var matchingPrefix = prefixes.FirstOrDefault(p => cleaned.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+        if (matchingPrefix != null)
         {
-            if (cleaned.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                cleaned = cleaned.Substring(prefix.Length);
-                break;
-            }
+            cleaned = cleaned.Substring(matchingPrefix.Length);
         }
 
         return cleaned.EndsWith(".json", StringComparison.OrdinalIgnoreCase)

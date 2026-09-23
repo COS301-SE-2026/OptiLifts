@@ -7,12 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OptiLifts.API.RateLimiting;
 using OptiLifts.Application.Vision;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OptiLifts.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[EnableRateLimiting(RateLimitPolicies.Ai)]
+[Authorize]
 public class VisionController : ControllerBase
 {
     private readonly ISender _sender;
@@ -23,6 +24,7 @@ public class VisionController : ControllerBase
     }
 
     [HttpPost("analyze")]
+    [EnableRateLimiting(RateLimitPolicies.Ai)]
     public async Task<IActionResult> Analyze(
         [FromBody] VisionAnalyzeRequest request,
         CancellationToken cancellationToken)
@@ -32,18 +34,12 @@ public class VisionController : ControllerBase
             return BadRequest(new { message = "Exercise and valid request payload are required." });
         }
 
-        if (string.IsNullOrWhiteSpace(request.UserId))
+        var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdClaim))
         {
-            var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!string.IsNullOrWhiteSpace(userIdClaim))
-            {
-                request.UserId = userIdClaim;
-            }
-            else
-            {
-                return BadRequest(new { message = "UserId is required." });
-            }
+            return Unauthorized(new { message = "Valid UserId claim is required." });
         }
+        request.UserId = userIdClaim;
 
         var jobId = await _sender.Send(new AnalyzeVisionCommand(request), cancellationToken);
         return Ok(new { jobId });

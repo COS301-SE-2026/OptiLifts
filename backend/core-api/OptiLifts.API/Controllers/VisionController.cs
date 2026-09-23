@@ -46,6 +46,7 @@ public class VisionController : ControllerBase
     }
 
     [HttpPost("worker-result")]
+    [AllowAnonymous]
     public async Task<IActionResult> WorkerResult(
         [FromBody] VisionWorkerResult request,
         CancellationToken cancellationToken)

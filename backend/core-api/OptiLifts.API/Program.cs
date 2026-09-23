@@ -87,59 +87,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-var connectionString = builder.Configuration["POSTGRES_CONNECTION_STRING"];
-
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    var dbHost = builder.Configuration["POSTGRES_HOST"];
-    var dbPort = builder.Configuration["POSTGRES_PORT"];
-    var dbName = builder.Configuration["POSTGRES_DB"];
-    var dbUser = builder.Configuration["POSTGRES_USER"];
-    var dbPass = builder.Configuration["POSTGRES_PASSWORD"];
-
-    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
-}
-
-builder.Services.AddDbContext<OptiLiftsDbContext>(options =>
-    options.UseNpgsql(connectionString));
+builder.Services.AddDatabaseInfrastructure(builder.Configuration);
 
 //register MediatR handlers from Application assembly
 //register MediatR handlers from Application and Infrastructure assemblies
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(IAssemblyMarker).Assembly, typeof(OptiLiftsDbContext).Assembly));
 
-var azureStorageConnection = builder.Configuration.GetConnectionString("AzureStorage");
-if (string.IsNullOrWhiteSpace(azureStorageConnection))
-{
-    azureStorageConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
-        ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
-}
-if (string.IsNullOrWhiteSpace(azureStorageConnection))
-{
-    azureStorageConnection = "UseDevelopmentStorage=true;";
-}
-
-builder.Services.AddSingleton(new BlobServiceClient(azureStorageConnection));
-builder.Services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
-builder.Services.AddScoped<IOptiVisionStorageService, OptiVisionStorageService>();
-
-var serviceBusConnection = builder.Configuration.GetConnectionString("ServiceBus");
-if (string.IsNullOrWhiteSpace(serviceBusConnection))
-{
-    serviceBusConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__SERVICEBUS")
-        ?? Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING")
-        ?? Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION_STRING");
-}
-if (string.IsNullOrWhiteSpace(serviceBusConnection))
-{
-    serviceBusConnection = "Endpoint=sb://optilifts.servicebus.windows.net/;SharedAccessKeyName=SendAccess;SharedAccessKey=dummykey=;";
-}
-
-var serviceBusQueueName = builder.Configuration["SERVICE_BUS_QUEUE_NAME"]
-    ?? Environment.GetEnvironmentVariable("SERVICE_BUS_QUEUE_NAME")
-    ?? "cv-jobs-queue";
-
-builder.Services.AddSingleton(new ServiceBusClient(serviceBusConnection));
-builder.Services.AddSingleton(sp => sp.GetRequiredService<ServiceBusClient>().CreateSender(serviceBusQueueName));
+builder.Services.AddAzureInfrastructure(builder.Configuration);
 
 //platandfat
 builder.Services.AddScoped<OptiLifts.Infrastructure.Training.ISeriesBuilder, OptiLifts.Infrastructure.Training.SeriesBuilder>();
@@ -154,69 +108,14 @@ builder.Services.AuthProgramHelper(builder.Configuration);
 
 builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 
-var geminiBaseUrl = builder.Configuration["GEMINI_BASE_URL"]
-    ?? Environment.GetEnvironmentVariable("GEMINI_BASE_URL")
-    ?? "https://generativelanguage.googleapis.com/";
-if (!geminiBaseUrl.EndsWith("/"))
-{
-    geminiBaseUrl += "/";
-}
-
-builder.Services.AddSingleton<IVisionPromptBuilder, VisionPromptBuilder>();
-builder.Services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
-{
-    client.BaseAddress = new Uri(geminiBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(15);
-});
-
+builder.Services.AddAiIntegrations(builder.Configuration);
 builder.Services.AddRateLimitingServices(builder.Configuration);
-var aiApiUrl = builder.Configuration["AI_API_URL"] ?? builder.Configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
-if (!aiApiUrl.EndsWith("/"))
-{
-    aiApiUrl += "/";
-}
-builder.Services.AddHttpClient("AiApi", client =>
-{
-    client.BaseAddress = new Uri(aiApiUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
 
 var app = builder.Build();
 
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    try
-    {
-        var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
-        var containers = new[] { "jobs", "exercises", "optivision-payloads" };
-        foreach (var container in containers)
-        {
-            var containerClient = blobServiceClient.GetBlobContainerClient(container);
-            await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
-        }
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Failed to initialize Azure Blob Storage containers on startup.");
-    }
-}
+await app.InitializeLocalEmulatorStorageAsync();
 
-var runMigrations = !string.Equals(builder.Configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
-if (runMigrations)
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-    await dbContext.Database.MigrateAsync();
-
-    var seed = string.Equals(builder.Configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
-    if (seed)
-    {
-        //if e2e testing don't add images in seeding func 
-        var isE2e = string.Equals(builder.Configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
-        var blobStorage = scope.ServiceProvider.GetRequiredService<OptiLifts.Application.Storage.IBlobStorageService>();
-        await DatabaseSeeder.SeedAsync(dbContext, blobStorage, isE2e);
-    }
-}
+await app.ApplyDatabaseMigrationsAndSeedingAsync(builder.Configuration);
 
 if (app.Environment.IsDevelopment())
 {

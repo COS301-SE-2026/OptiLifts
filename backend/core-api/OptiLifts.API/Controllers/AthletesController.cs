@@ -29,7 +29,7 @@ public sealed class AthletesController : ControllerBase
         }
 
         var res = await _sender.Send(new SendProfileKudosCommand(userId, id), cancellationToken);
-        
+
         if (!res.Success)
         {
             return BadRequest(res);

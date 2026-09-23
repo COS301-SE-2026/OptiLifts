@@ -25,7 +25,7 @@ public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeader
         }
 
         user.GlobalLeaderboardOptIn = request.OptIn;
-    
+
         var ssnKey = DateTime.UtcNow.ToString("yyyy-MM", CultureInfo.InvariantCulture);
         var snap = await _db.AthleteSeasonSnapshots.FirstOrDefaultAsync(s => s.UserId == request.UserId && s.SeasonKey == ssnKey, cancellationToken);
 

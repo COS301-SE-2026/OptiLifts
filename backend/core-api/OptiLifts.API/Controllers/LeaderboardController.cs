@@ -31,7 +31,7 @@ public sealed class LeaderboardController : ControllerBase
         }
 
         var res = await _sender.Send(new ToggleLeaderboardOptInCommand(userId, request.OptIn), cancellationToken);
-        
+
         if (!res.Success)
         {
             return BadRequest(res);

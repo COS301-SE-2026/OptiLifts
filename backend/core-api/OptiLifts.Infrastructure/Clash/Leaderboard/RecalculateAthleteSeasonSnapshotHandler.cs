@@ -51,7 +51,7 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
         var totalE1RM = sqt1RM + bch1RM + dlft1RM;
 
         var dotsScore = (decimal)DotsCalculationEngine.CalculateDots((float)totalE1RM, bodyweightKg, gender);
-        
+
         var (tier, tierLevel) = DetermineTier(dotsScore);
 
         var weeklyVolInKgs = await GetWeeklyVolAsync(request.UserId, now, cancellationToken);
@@ -189,4 +189,3 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
         return (band.Item1, tierLvl);
     }
 }
- 

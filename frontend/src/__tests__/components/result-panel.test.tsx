@@ -12,6 +12,7 @@ describe('ResultPanel', () => {
     render(<ResultPanel state={{ phase: 'completed', coachSummary: 'Go a bit deeper.', score: 85, issues: ['Shallow Depth'] }} onReset={onReset} />)
 
     expect(screen.getByText('Go a bit deeper.')).toBeTruthy()
+    expect(screen.getByText('85')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /analyse another set/i }))
     expect(onReset).toHaveBeenCalled()
   })

@@ -39,14 +39,14 @@ describe('useOptivisionJob', () => {
   it('runs the whole flow and completes with the coach summary', async () => {
     mockExtrct.mockResolvedValue(frames)
     mockSubmt.mockResolvedValue({ jobId: 'job-1' })
-    mockPoll.mockResolvedValue('Great depth')
+    mockPoll.mockResolvedValue({ coachSummary: 'Great depth', score: 100 })
     const { result } = renderHook(() => useOptiVisJob())
 
     await act(async () => {
       await result.current.start(file, 'squat')
     })
 
-    expect(result.current.state).toEqual({ phase: 'completed', coachSummary: 'Great depth' })
+    expect(result.current.state).toEqual({ phase: 'completed', coachSummary: 'Great depth', score: 100 })
     expect(mockSubmt).toHaveBeenCalledWith(
       { userId: 'user-1', exercise: 'squat', view: 'side', frames },
       expect.any(AbortSignal),

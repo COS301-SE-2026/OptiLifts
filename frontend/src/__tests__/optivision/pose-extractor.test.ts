@@ -16,11 +16,11 @@ class FakeVid extends EventTarget {
   source = ''
   private time = 0
 
-  get currTime() {
+  get currentTime() {
     return this.time
   }
 
-  set currTime(value: number) {
+  set currentTime(value: number) {
     this.time = value
     queueMicrotask(() => this.dispatchEvent(new Event('seeked')))
   }

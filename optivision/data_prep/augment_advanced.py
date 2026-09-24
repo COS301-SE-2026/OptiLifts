@@ -4,8 +4,8 @@ import shutil
 
 EXERCISES = {
     "squat": {
-        "classes": 3,
-        "lacking_indices": [2],  # heels_raised
+        "classes": 2,
+        "lacking_indices": [],  # Heels raised was dropped
     },
     "bench_press": {
         "classes": 5,

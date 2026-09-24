@@ -8,12 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
 import { customFetch } from "@/lib/custom-fetch";
-import { ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function FriendsManagementPage(){
-    const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
+    const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'invites'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
     const [requestSearchQuery, setRequestSearchQuery] = useState('');
     const [copiedCode, setCopiedCode] = useState(false);
@@ -37,6 +37,19 @@ export default function FriendsManagementPage(){
         sentAt: string;
     }
 
+    interface ArenaInviteItem {
+        id: string;
+        arenaId: string;
+        arenaName: string;
+        arenaCode?: string;
+        invitedBNyUserId: string;
+        invitedByName: string;
+        invitedByInitials: string;
+        invitedByAvatarUrl?: string;
+        status: string;
+        createdAt: string;
+    }
+
     //f1 - friends state
     const [friendsList, setFriendsList] = useState<FriendItem[]>([]);
     const [requestsLists, setRequestsLists] = useState<FriendRequestItem[]>([]);
@@ -45,14 +58,16 @@ export default function FriendsManagementPage(){
 
     //f2 - profile inspector drawer
     //f3 - arena invites
+    const [arenaInvites, setArenaInvites] = useState<ArenaInviteItem[]>([]);
     //f4 - duel invites
 
     //handlers
     const fetchFriendsData = async () => {
         await Promise.resolve();
         try {
-            const [friendsRes, requestsRes, codeRes] = await Promise.all([
+            const [friendsRes, requestsRes, codeRes, invitesRes] = await Promise.all([
                 customFetch('/api/clash/friends'), customFetch('/api/clash/friends/requests'), customFetch('/api/clash/friends/code'),
+                customFetch('/api/clash/arenas/invites'),
             ]);
             if (friendsRes.ok){
                 const data = await friendsRes.json();
@@ -65,6 +80,10 @@ export default function FriendsManagementPage(){
             if (codeRes.ok){
                 const data = await codeRes.json();
                 setUserCode(data.code ?? '');
+            }
+            if (invitesRes.ok) {
+                const data = await invitesRes.json();
+                setArenaInvites(Array.isArray(data) ? data : []);
             }
         } catch {
             toast.error('Failed to load friends');
@@ -149,8 +168,71 @@ export default function FriendsManagementPage(){
         
     };
 
+    const handleAcceptArenaInvite = async (inviteId: string, arenaName: string) => {
+        try {
+            const res = await customFetch(`/api/clash/arenas/invites/${inviteId}/respond`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accept: true
+                }),
+            });
+            if (res.ok) {
+                setArenaInvites((prev) => prev.filter((i) => i.id !== inviteId));
+                toast.success(`Joined ${arenaName}`, 'Arena Joined');
+                void fetchFriendsData();
+            } else {
+                toast.error('Failed to accept arena invite');
+            }
+        } catch {
+            toast.error('Network error accepting invite');
+        }
+    };
+    const handleDeclineArenaInvite = async (inviteId: string) => {
+        try {
+            const res = await customFetch(`/api/clash/arenas/invites/${inviteId}/respond`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accept: false
+                }),
+            });
+            if (res.ok) {
+                setArenaInvites((prev) => prev.filter((i) => i.id !== inviteId));
+                toast.info('Arena invitation declined');
+            } else {
+                toast.error('Failed to decline arena invite');
+            }
+        } catch {
+            toast.error('Network error declining invite');
+        }
+    };
+
     //f4 - handle accept duel + handle reject duel 
     //f3 + f4 - handle reject all arena + duel invites
+    const handleDeclineAllArenaInvites = async () => {
+        try {
+            await Promise.all(
+                arenaInvites.map((ainv) => customFetch(`/api/clash/arenas/invites/${ainv.id}/respond`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        accept: false
+                    }),
+                }))
+            );
+            setArenaInvites([]);
+            toast.info('All arena invites declined');
+        } catch {
+            toast.error('Failed to decline all invites');
+        }
+    };
 
     const filteredFriends = friendsList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()) 
     || f.code.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -192,7 +274,7 @@ export default function FriendsManagementPage(){
                         tabs={[
                             { id: 'friends', label: 'My Friends', count: friendsList.length, icon: <Users className="w-3.5 h-3.5"/>},
                             { id: 'requests', label: 'Requests', count: requestsLists.length, icon: <UserPlus className="w-3.5 h-3.5"/>},
-                            //f3 + f4 - invites tab
+                            { id: 'invites', label: 'Arena Invites', count: arenaInvites.length, icon: <Mail className="w-3.5 h-3.5"/>}
                             ]}/>
                 </div>
             </div>
@@ -313,7 +395,66 @@ export default function FriendsManagementPage(){
                 )}
 
                 {/* f3 + f4 - tab 3 arena + duel invites */}
-            </div>
+                {activeTab === 'invites' && (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-display text-xl tracking-wide text-foreground flex items-center gap-2">
+                                <Users className="w-5 h-5 text-brand"/> Arena Invites ({arenaInvites.length})
+                            </h3>
+                            {arenaInvites.length > 0 && (
+                                <Button variant="outline" size="sm" onClick={handleDeclineAllArenaInvites}
+                                className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 flex items-center gap-1.5">
+                                    <Trash2 className="w-3.5 h-3.5"/>
+                                    <span>Decline All Invites</span>
+                                </Button>
+                            )}
+                            </div>
+
+                            {arenaInvites.length === 0 ? (
+                                <Card className="bg-surface border-border p-6 text-center text-muted-foreground text-xs font-sans">
+                                    No pending arena invites.
+                                </Card>
+                            ) : (
+                                <div className="space-y-3">
+                                    {arenaInvites.map((ainv) => (
+                                        <Card key={ainv.id} className="bg-surface border-border p-4 shadow-sm">
+                                            <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <AthleteAvatar initials={ainv.invitedByInitials} name={ainv.invitedByName}
+                                                    avatarUrl={ainv.invitedByAvatarUrl} size="md"/>
+                                                    <div>
+                                                        <strong className="font-sans font-bold text-base text-foreground block">
+                                                            {ainv.arenaName}
+                                                        </strong>
+                                                        <p className="text-xs text-muted-foreground font-sans mt-0.5">
+                                                            Invited by <strong className="text-foreground">{ainv.invitedByName}</strong>
+                                                            {ainv.arenaCode && 
+                                                                <span> - Code: <strong className="font-mono text-brand">{ainv.arenaCode}</strong></span>}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 self-end sm:self-auto">
+                                                    <Button variant="secondary" size="sm" onClick={() => handleDeclineArenaInvite(ainv.id)}
+                                                        className="h-8 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                                                        <XCircle className="w-3.5 h-3.5"/>
+                                                        <span>Decline</span>
+                                                    </Button>
+                                                    <Button variant="default" size="sm" onClick={() => handleAcceptArenaInvite(ainv.id, ainv.arenaName)}
+                                                        className="h-8 flex items-center gap-1 text-xs">
+                                                        <CheckCircle2 className="w-3.5 h-3.5"/>
+                                                        <span>Join Arena</span>
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )
+                                    )}
+                            </div>
+                        )}
+                    </div>
+                )}
+                </div>
 
             <AddFriendModal isOpen={isAddFriendOpen} onClose={() => setIsAddFriendOpen(false)} onFriendAdded={() => fetchFriendsData()} />
         </div>

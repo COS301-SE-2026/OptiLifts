@@ -82,28 +82,25 @@ export function AddFriendModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={onClose} className="fixes inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
-            <Card className="bg-surface border-border max-w-md w-full overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-150 p-0 cursor-default">
-                <Button type="button" variant="ghost" size="icon" onClick={onClose}
-                className="absolute top-4 right-4 h-8 w-8 z-10" aria-label="Close">
-                    <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
-                </Button>
-
+            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
+            <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5 cursor-default">
                 {/* modal header */}
-                <div className="p-6 pb-4 border-b border-border bg-surface-2">
-                    <div className="w-12 h-12 rounded-xl bg-brand-fill border border-brand/30 text-brand flex items-center justify-center mb-3">
-                        <UserPlus className="w-6 h-6"/>
-                    </div>
-                    <h3 className="font-display text-2xl tracking-wide text-foreground">
-                        Add Friend by their Code
-                    </h3>
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                    <div>
+                        <h3 className="font-display text-2xl tracking-wide text-foreground flex items-center gap-2.5">
+                            <UserPlus className="w-6 h-6 text-brand"/>
+                            <span>Add Friend by their Code</span>
+                        </h3>
                     <p className="text-xs text-muted-foreground mt-0.5 font-sans">
                         Enter your friend's unique 6 character code to send them a friend request.
                     </p>
                 </div>
+                <Button type="button" variant="ghost" size="icon" onClick={onClose}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" aria-label="Close">
+                    <X className="w-4 h-4"/>
+                </Button>
+            </div>
 
-                {/* modal bod */}
-                <div className="p-6 bg-surface">
                     {status === 'success' ? (
                         <div className="py-6 text-center space-y-2">
                             <div className="w-12 h-12 rounded-full bg-success/10 text-success border border-success/30 flex items-center justify-center mx-auto">
@@ -143,7 +140,6 @@ export function AddFriendModal({
                             <Button type="submit" variant="default" className="w-full">Send Friend Request</Button>
                         </form>
                     )}
-                </div>
             </Card>
         </div>
     )

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OptiLifts.Application.Clash.Athletes.Queries;
 using OptiLifts.Application.Clash.Athletes.Commands;
 
 namespace OptiLifts.API.Controllers;
@@ -44,4 +45,23 @@ public sealed class AthletesController : ControllerBase
 
         return Guid.TryParse(userIdValue, out userId);
     }
+
+    [HttpGet("{id:guid}/profile")]
+    public async Task<ActionResult<AthleteProfileResult>> GetProfile([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var profile = await _sender.Send(new GetAthleteProfileQuery(id, userId), cancellationToken);
+        
+        if (profile is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(profile);
+    }
 }
+

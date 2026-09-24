@@ -9,7 +9,7 @@ afterEach(() => {
 describe('ResultPanel', () => {
   it('shows the coach summary and lets the user start again', () => {
     const onReset = vi.fn()
-    render(<ResultPanel state={{ phase: 'completed', coachSummary: 'Go a bit deeper.' }} onReset={onReset} />)
+    render(<ResultPanel state={{ phase: 'completed', coachSummary: 'Go a bit deeper.', score: 85, issues: ['Shallow Depth'] }} onReset={onReset} />)
 
     expect(screen.getByText('Go a bit deeper.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /analyse another set/i }))

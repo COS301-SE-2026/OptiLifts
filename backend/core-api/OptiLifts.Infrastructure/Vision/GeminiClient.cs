@@ -70,54 +70,67 @@ public class GeminiClient : IGeminiClient
             return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
         }
 
-        try
+        var requestBody = new
         {
-            var requestBody = new
+            contents = new[]
             {
-                contents = new[]
+                new { parts = new[] { new { text = prompt } } }
+            }
+        };
+
+        var endpoint = $"v1beta/models/{TargetModel}:generateContent?key={_apiKey}";
+
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                using var response = await _httpClient.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    new
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger?.LogWarning("Gemini API attempt {Attempt} returned status {StatusCode}: {Error}", attempt, response.StatusCode, errorBody);
+                    
+                    // google api currently unavailable, back off for a bit
+                    if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && attempt < maxRetries)
                     {
-                        parts = new[]
-                        {
-                            new { text = prompt }
-                        }
+                        await Task.Delay(1500 * attempt, cancellationToken);
+                        continue;
+                    }
+                    return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
+                }
+
+                var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
+                if (jsonDoc != null &&
+                    jsonDoc.RootElement.TryGetProperty("candidates", out var candidates) &&
+                    candidates.GetArrayLength() > 0 &&
+                    candidates[0].TryGetProperty("content", out var content) &&
+                    content.TryGetProperty("parts", out var parts) &&
+                    parts.GetArrayLength() > 0 &&
+                    parts[0].TryGetProperty("text", out var textProp))
+                {
+                    var tip = textProp.GetString()?.Trim();
+                    if (!string.IsNullOrWhiteSpace(tip))
+                    {
+                        return tip;
                     }
                 }
-            };
 
-            var endpoint = $"v1beta/models/{TargetModel}:generateContent?key={_apiKey}";
-            using var response = await _httpClient.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger?.LogWarning("Gemini API call returned status {StatusCode}: {Error}", response.StatusCode, errorBody);
                 return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
             }
-
-            var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
-            if (jsonDoc != null &&
-                jsonDoc.RootElement.TryGetProperty("candidates", out var candidates) &&
-                candidates.GetArrayLength() > 0 &&
-                candidates[0].TryGetProperty("content", out var content) &&
-                content.TryGetProperty("parts", out var parts) &&
-                parts.GetArrayLength() > 0 &&
-                parts[0].TryGetProperty("text", out var textProp))
+            catch (Exception ex) when (ex is OperationCanceledException or TimeoutException or HttpRequestException or JsonException)
             {
-                var tip = textProp.GetString()?.Trim();
-                if (!string.IsNullOrWhiteSpace(tip))
+                _logger?.LogWarning(ex, "Gemini API attempt {Attempt} encountered an error.", attempt);
+                if (attempt < maxRetries)
                 {
-                    return tip;
+                    await Task.Delay(1500 * attempt, cancellationToken);
+                    continue;
                 }
+                return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
             }
-
-            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
         }
-        catch (Exception ex) when (ex is OperationCanceledException or TimeoutException or HttpRequestException or JsonException)
-        {
-            _logger?.LogWarning(ex, "Gemini API call timed out or encountered an error. Applying fallback coaching tip.");
-            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
-        }
+        
+        return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
     }
 }

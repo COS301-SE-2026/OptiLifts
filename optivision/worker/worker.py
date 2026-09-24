@@ -34,3 +34,25 @@ CORE_API_URL = os.getenv("CORE_API_URL", "https://api.optilifts.app").rstrip("/"
 INTERNAL_SECRET = os.getenv("INTERNAL_WORKER_SECRET", "")
 HEARTBEAT_INTERVAL_SECONDS = int(os.getenv("HEARTBEAT_INTERVAL_SECONDS", "15"))
 APPLICATION_JSON = "application/json"
+
+#sliding window params
+WEIGHTS_DIR = Path(__file__).resolve().parent.parent / "training" / "weights"
+WINDOW_SIZE = 90
+STRIDE = 30
+THRESHOLD = 0.80
+
+LABELS = {
+    "squat": ["shallow_depth", "excessive_forward_lean", "heels_raised"],
+    "bench_press": ["glutes_raised", "excessive_elbow_flare", "no_chest_touch", "incorrect_bar_path", "bad_arch"],
+    "deadlift": ["lumbar_flexion", "hips_early_rise", "bar_drifting", "knees_forward", "shallow_depth"]
+}
+
+EXERCISE_ALIASES = {
+    "bench": "bench_press",
+    "benchpress": "bench_press",
+    "bench_press": "bench_press",
+    "squat": "squat",
+    "squats": "squat",
+    "deadlift": "deadlift",
+    "deadlifts": "deadlift",
+}

@@ -33,7 +33,7 @@ public class GetVisionResultHandler : IRequestHandler<GetVisionResultQuery, Visi
                     bad += val;
                 }
             }
-            else 
+            else
             {
                 bad += 1.0;
             }

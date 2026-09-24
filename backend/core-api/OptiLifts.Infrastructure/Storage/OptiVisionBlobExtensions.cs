@@ -24,7 +24,7 @@ public static class OptiVisionBlobExtensions
         if (blobServiceClient == null)
             throw new ArgumentNullException(nameof(blobServiceClient));
         if (string.IsNullOrWhiteSpace(jobId))
-            throw new ArgumentException("Job ID cannot be null or empty.", nameof(jobId)); 
+            throw new ArgumentException("Job ID cannot be null or empty.", nameof(jobId));
         if (jsonPayload == null)
             throw new ArgumentNullException(nameof(jsonPayload));
 
@@ -134,7 +134,7 @@ public static class OptiVisionBlobExtensions
     {
         var cleaned = jobId.Trim();
         var prefixes = new[] { $"{DefaultContainerName}/", $"{OptiVisionPayloadsContainerName}/" };
-        
+
         var matchingPrefix = prefixes.FirstOrDefault(p => cleaned.StartsWith(p, StringComparison.OrdinalIgnoreCase));
         if (matchingPrefix != null)
         {

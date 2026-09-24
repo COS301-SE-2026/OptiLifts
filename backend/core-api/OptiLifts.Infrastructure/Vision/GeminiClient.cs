@@ -91,7 +91,7 @@ public class GeminiClient : IGeminiClient
                 {
                     var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
                     _logger?.LogWarning("Gemini API attempt {Attempt} returned status {StatusCode}: {Error}", attempt, response.StatusCode, errorBody);
-                    
+
                     // google api currently unavailable, back off for a bit
                     if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && attempt < maxRetries)
                     {
@@ -130,7 +130,7 @@ public class GeminiClient : IGeminiClient
                 return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
             }
         }
-        
+
         return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
     }
 }

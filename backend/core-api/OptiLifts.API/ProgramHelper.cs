@@ -199,7 +199,7 @@ public static class OptiVisionExtensions
             try
             {
                 var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
-                var containers = new[] {"exercises", "optivision-payloads", "profile-pictures" };
+                var containers = new[] { "exercises", "optivision-payloads", "profile-pictures" };
                 foreach (var container in containers)
                 {
                     var containerClient = blobServiceClient.GetBlobContainerClient(container);

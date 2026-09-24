@@ -3,11 +3,11 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OptiLifts.API.RateLimiting;
 using OptiLifts.Application.Vision;
-using Microsoft.AspNetCore.Authorization;
 
 namespace OptiLifts.API.Controllers;
 

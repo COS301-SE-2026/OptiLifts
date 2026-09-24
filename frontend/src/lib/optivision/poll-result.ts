@@ -26,14 +26,18 @@ function resDelay(ms: number, signal: AbortSignal): Promise<void> {
   })
 }
 
-export async function pollForSumm(jobId: string, signal: AbortSignal): Promise<string> {
+export async function pollForSumm(jobId: string, signal: AbortSignal): Promise<{ coachSummary: string, score: number, issues: readonly string[] }> {
   const deadline = Date.now() + POLL_TIMEOUT_MS
 
   while (Date.now() < deadline) {
     const res = await fetchResult(jobId, signal)
 
     if (res.status === 'completed') {
-      return res.coach_summary ?? ''
+      return { 
+        coachSummary: res.coach_summary ?? '', 
+        score: res.score ?? 100,
+        issues: res.issues ?? []
+      }
     }
     if (res.status === 'failed') {
       throw new VisionJobErr("We couldn't analyse this video. Please try again.")

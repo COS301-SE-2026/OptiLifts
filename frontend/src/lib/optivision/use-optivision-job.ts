@@ -61,8 +61,8 @@ export function useOptiVisJob() {
         )
 
         setState({ phase: 'polling' })
-        const coachSumm = await pollForSumm(jobId, controller.signal)
-        setState({ phase: 'completed', coachSummary: coachSumm })
+        const { coachSummary, score, issues } = await pollForSumm(jobId, controller.signal)
+        setState({ phase: 'completed', coachSummary, score, issues })
       } 
       catch (error) {
         if (controller.signal.aborted) {

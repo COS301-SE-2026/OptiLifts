@@ -6,19 +6,51 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CURRENT_USER_ID, getWeightClassBracket, MOCK_ARENAS, MOCK_ATHLETES, WEIGHT_CLASS_BRACKETS, type ClashAthlete } from "@/data/clash-mock-data";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareArenaModal } from "@/components/opticlash/share-arena-modal";
+import { customFetch } from "@/lib/custom-fetch";
+import { _adapters } from "chart.js";
 
 const PAGE_SIZE = 10;
 
 export default function ArenaLeaderboardPage() {
     const {arenaId} = useParams<{arenaId: string}>();
-    // todo: replace mock data
-    const arena = MOCK_ARENAS.find((a) => a.id === arenaId) || MOCK_ARENAS[0];
+    const [liveArena, setLiveArena] = useState<typeof MOCK_ARENAS[0] | null>(null);
+    useEffect(() => {
+        if (!arenaId){
+            return;
+        }
+        let isMounted = true;
+
+        customFetch(`/api/clash/arenas/${arenaId}`).then(async (res) => {
+            if (res.ok) {
+                const data = await res.json();
+                if (isMounted && data?.arena) {
+                    setLiveArena(data.arena);
+                }
+            }
+        }).catch(() => {});
+        return () => {
+            isMounted = false;
+        };
+    }, [arenaId]);
+    const arena = liveArena || MOCK_ARENAS.find((a) => a.id === arenaId) || MOCK_ARENAS[0];
     const currentUser = MOCK_ATHLETES.find((a) => a.id === CURRENT_USER_ID)!;
     const isDivisional = arena.type === 'divisional' || arena.id === 'weight-class-league';
     const currentUserBracket = getWeightClassBracket(currentUser.bodyweightKg); //todo: getweightclassbracket function
+
+    const navigate = useNavigate();
+    const isPrivate = arena.type?.toLowerCase() === 'private';
+    const isCreator = (arena as {
+        userRole?: string
+    }).userRole === 'Owner' || arena.createdById === CURRENT_USER_ID;
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
 
     const [selectedMetric, setSelectedMetric] = useState<'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'>('dots');
     const [selectedTimeframe, setSelectedTimeframe] = useState<'monthly' | 'all-time'>('monthly');
@@ -30,6 +62,43 @@ export default function ArenaLeaderboardPage() {
     const [currentPage, setCurrentPage] = useState(1);
 
     const activeBracket = WEIGHT_CLASS_BRACKETS.find((b) => b.id === selectedBracketId) || WEIGHT_CLASS_BRACKETS[0];
+
+    const handleShareClick = () => {
+        if (isCreator) {
+            setIsShareModalOpen(true);
+        } else {
+            if (!arena.code) {
+                return;
+            }
+            navigator.clipboard.writeText(arena.code);
+            setCopied(true);
+            toast.success('Arena join code copied to clipboard', arena.code);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const handleLeaveArena = async () => {
+        setIsLeaving(true);
+        try {
+            const res = await customFetch(`/api/clash/arenas/${arena.id}/leave`, {
+                method: 'POST',
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok){
+                setIsLeaveConfirmOpen(false);
+                toast.success(`You have left ${arena.name}`, 'Left Arena');
+                navigate('/clash');
+            } else {
+                toast.error(data?.message ?? 'Failed to leave arena');
+                setIsLeaveConfirmOpen(false);
+            }
+        } catch {
+            toast.error('Network error leaving arena');
+            setIsLeaveConfirmOpen(false);
+        } finally {
+            setIsLeaving(false);
+        }
+    };
     
     const handleRefresh = () => {
         setIsRefreshing(true);
@@ -125,6 +194,11 @@ export default function ArenaLeaderboardPage() {
                             <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground flex items-center gap-2.5">
                                 <Trophy className="w-7 h-7 md:w-8 md:h-8 text-warning shrink-0"/>
                                 <span>{arena.name}</span>
+                                {isCreator && (
+                                    <span className="text-[11px] font-bold uppercase tracking-wider bg-brand-fill text-brand border border-brand/30 px-2.5 py-0.5 rounded-full font-sans">
+                                        Squad Creator
+                                    </span>
+                                )}
                             </h1>
                         </div>
                     </div>
@@ -138,6 +212,27 @@ export default function ArenaLeaderboardPage() {
                         </Button>
 
                         {/* f3: share arena + leave arena btns */}
+                        {isPrivate && (
+                            <>
+                            <Button variant={isCreator ? 'default' : 'secondary'} size="sm" onClick={handleShareClick} 
+                            className="h-8 text-xs flex items-center gap-2">
+                                {isCreator ? (
+                                    <>
+                                        <Share2 className="w-3.5 h-3.5"/>
+                                        <span>Share Arena and Invite</span>
+                                    </>
+                                    ) : (
+                                        <>
+                                        {copied ? <Check className="w-3.5 h-3.5 text-success"/> : <Copy className="w-3.5 h-3.5"/>}
+                                        <span>{copied ? 'Code Copied' : 'Copy Code'}</span></>
+                                    )}    
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setIsLeaveConfirmOpen(true)}
+                            className="h-8 text-xs flex items-center gap-1.5 border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors">
+                                <LogOut className="w-3.5 h-3.5"/>
+                                <span>Leave Arena</span>    
+                            </Button></>
+                        )}
                     </div>
                 </div>
             </div>
@@ -457,6 +552,10 @@ export default function ArenaLeaderboardPage() {
             <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
 
             {/* f3: share arena modal and leave arena confirmation dialog */}
+            <ShareArenaModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} arena={arena}/>
+            <ConfirmDialog isOpen={isLeaveConfirmOpen} onClose={() => setIsLeaveConfirmOpen(false)} onConfirm={handleLeaveArena} 
+            isLoading={isLeaving} title={`Leave ${arena.name}?`} description="You will be removed from this arena's leaderboard. You can rejoin at any time using the arena invite code" confirmText="Leave Arena"
+            cancelText="Cancel" variant="danger"/>
         </div>
     )
 }

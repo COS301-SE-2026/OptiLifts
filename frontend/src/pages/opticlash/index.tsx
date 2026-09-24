@@ -3,19 +3,54 @@ import { ProfileInspectorDrawer } from "@/components/opticlash/profile-inspector
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageTitle } from "@/components/ui/page-title";
 import { CURRENT_USER_ID, MOCK_ARENAS, MOCK_ATHLETES, type ClashAthlete } from "@/data/clash-mock-data";
-import { ArrowRight, Clock, Trophy, UserPlus, Users } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Clock, Trophy, UserPlus, Users, Flame, Heart, Plus } from "lucide-react";
+import { useState, useEffect, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { CreateJoinArenaModal } from "@/components/opticlash/create-join-arena-modal";
+import { ClashTabs } from "@/components/opticlash/clash-tabs";
+import { MOCK_ACTIVITY_FEED } from "@/data/clash-mock-data";
+import { customFetch } from "@/lib/custom-fetch";
+import confetti from "canvas-confetti";
 
 export default function ArenaHubPage() {
     const [selectedAthlete, setSelectedAthlete] = useState<ClashAthlete | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isLeaderboardOptedIn, setIsLeaderboardOptedIn] = useState(false);
     //f3-5 states go here
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [arenaMode, setArenaMode] = useState<'global' | 'private'>('global');
+    const [activityList, setActivityList] = useState(MOCK_ACTIVITY_FEED);
+    const [kudosGivenMap, setKudosGivenMap] = useState<Record<string, boolean>>({});
+    const [myArenas, setMyArenas] = useState<typeof MOCK_ARENAS>([]);
 
-    const navigate = useNavigate()
+    const fetchMyArenas = async () => {
+        try {
+            const res = await customFetch('/api/clash/arenas/my');
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    setMyArenas(data);
+                }
+            } 
+        } catch {
+            //keep def
+        }
+    };
+
+    useEffect(() => {
+        void fetchMyArenas();
+    }, []);
+
+    const allArenas = myArenas.length > 0 ? [
+        ...MOCK_ARENAS.filter((a) => a.type?.toLowerCase() !== 'private'),
+        ...myArenas
+    ] : MOCK_ARENAS;
+
+    const filtArenas = allArenas.filter((a) => arenaMode === 'global' ? (a.type?.toLowerCase() === 'global' || a.type?.toLowerCase() === 'divisional') : a.type?.toLowerCase() === 'private');
+
+
+    const navigate = useNavigate();
     const currentUser = MOCK_ATHLETES.find((a) => a.id === CURRENT_USER_ID)!; //todo: replace mock data
     const handleToggleOptIn = () => {
         const nextState = !isLeaderboardOptedIn;
@@ -35,8 +70,42 @@ export default function ArenaHubPage() {
     };
 
     //f3-5: handle feed kudos
+    const handleFeedKudos = async (e:MouseEvent<HTMLButtonElement>, activityId: string) => {
+        e.stopPropagation();
+        if (!kudosGivenMap[activityId]) {
+            setKudosGivenMap((prev) => ({
+                ...prev,
+                [activityId]: true
+            }));
+            setActivityList((prev) => prev.map((item) => item.id === activityId ? {
+                ...item,
+                kudosCount: item.kudosCount + 1
+            } : item));
 
-    const systemLeagues = MOCK_ARENAS.filter((a) => a.type === 'global' || a.type === 'divisional');
+            const targetItem = activityList.find((i) => i.id === activityId);
+            if (targetItem) {
+                toast.success(`You cheered on ${targetItem.athleteName}'s lift`, 'Hype Reaction Sent');
+            }
+
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = (rect.left + rect.width / 2) / window.innerWidth;
+            const y = (rect.top + rect.height / 2) / window.innerHeight;
+            confetti({
+                particleCount: 25,
+                spread: 50,
+                origin: {x,y},
+                colors: ['#CC0022', '#FF9800', '#FFFFFF'],
+            });
+
+            try {
+                await customFetch(`/api/clash/activities/${activityId}/kudos`, {
+                    method: 'POST',
+                });
+            } catch {
+                //nonblocking
+            }
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
@@ -44,7 +113,12 @@ export default function ArenaHubPage() {
             <div className="max-w-6xl mx-auto px-4 pt-8 pb-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <PageTitle title="OPTICLASH"/>
+                        <div className="inline-flex items-center gap-4">
+                            <span className="w-1 h-9 bg-brand rounded-full flex-shrink-0"/>
+                            <h1 className="font-display text-[42px] leading-none tracking-[2px] select-none">
+                                <span className="text-foreground">OPTI</span><span className="text-brand">CLASH</span>
+                            </h1>
+                        </div>
                     </div>
 
                     {/* quick actions */}
@@ -57,6 +131,10 @@ export default function ArenaHubPage() {
                         </Button>
 
                         {/* f3: create or join private squad arena btn goes here */}
+                        <Button variant="default" size="sm" onClick={() => setIsModalOpen(true)} className="h-9 text-xs flex items-center gap-2">
+                            <Plus className="w-4 h-4"/>
+                            <span>Create/Join Arena</span>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -149,11 +227,18 @@ export default function ArenaHubPage() {
                             </button>
 
                             {/* f3: private arena toggle  */}
+                            <div className="w-full sm:w-auto">
+                                <ClashTabs activeTab={arenaMode} onChange={(mode) => setArenaMode(mode as 'global' | 'private')}
+                                tabs={[
+                                    {id: 'global', label: 'Global Leagues'},
+                                    { id: 'private', label: 'Private Arenas', count: allArenas.filter((a) => a.type?.toLowerCase() === 'private').length,},
+                                ]}/>
+                            </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {systemLeagues.map((arena) => (                            
+                        {filtArenas.map((arena) => (                            
                         <Card key={arena.id} onClick={() => navigate(`/clash/${arena.id}`)}
                         className="bg-surface hover:bg-surface-2/40 border-border p-5 cursor-pointer transition shadow-sm flex flex-col justify-between group">
                             <CardContent className="p-0 flex flex-col justify-between h-full">
@@ -187,11 +272,54 @@ export default function ArenaHubPage() {
                 </div>
 
                 {/* f3: live private arena activity feeds go here */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <Flame className="w-5 h-5 text-brand"/>
+                            <h3 className="font-display text-xl tracking-wide text-foreground">Live Arena Feed</h3>
+                            <span className="text-xs text-muted-foreground font-sans">From your private arenas</span>
+                        </div>
+                    </div>
+
+                    <Card className="bg-surface border-border overflow-hidden shadow-sm divide-y divide-border p-0">
+                        {activityList.map((act) => (
+                            <div key={act.id} onClick={() => handleOpenAthlete(act.athleteId)}
+                            className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition cursor-pointer">
+                                <div className="flex items-center gap-3.5">
+                                    <AthleteAvatar initials={act.athleteInitials} name={act.athleteName} avatarUrl={act.athleteAvatarUrl} size="md"/>
+                                    <div>
+                                        <div className="flex items-center gap-2 font-sans">
+                                            <strong className="text-sm font-bold text-foreground hover:text-brand transition">
+                                                {act.athleteName}
+                                            </strong>
+                                            <span className="text-[11px] text-muted-foreground">{act.timeAgo}</span>
+                                            <span className="text-[10px] text-muted-foreground bg-surface-2 px-1.5 py-0.5 rounded border border-border">{act.arenaName}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-0.5 font-sans">
+                                            <span className="font-semibold text-brand">{act.eventText}</span> - {act.details}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <Button variant="secondary" size="sm" onClick={(e) => handleFeedKudos(e, act.id)}
+                                        className={`h-8 text-xs flex items-center gap-1.5 ${
+                                            kudosGivenMap[act.id] ? 'border border-brand text-brand' : ''
+                                        }`}>
+                                        <Heart className={`w-3.5 h-3.5 ${kudosGivenMap[act.id] ? 'fill-brand text-brand' : ''}`}/>
+                                        <span>{act.kudosCount}</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </Card>
+                </div>
             </div>
 
             <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
 
             {/* f3: create/join arena modal */}
+            <CreateJoinArenaModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => void fetchMyArenas()}/>
             {/* f4: create duel modal */}
         </div>
     )

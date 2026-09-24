@@ -25,7 +25,7 @@ describe('pollForSummary', () => {
     const promise = pollForSumm('job-1', new AbortController().signal)
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
 
-    await expect(promise).resolves.toBe('Great set')
+    await expect(promise).resolves.toEqual({ coachSummary: 'Great set', score: 100, issues: [] })
     expect(mockFetchRes).toHaveBeenCalledTimes(2)
   })
 

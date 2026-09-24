@@ -1,11 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Clash.Leaderboard.Commands;
 using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
 using OptiLifts.Infrastructure.Training;
-
 
 namespace OptiLifts.Infrastructure.Workouts;
 
@@ -151,6 +151,7 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
             await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
         }
         await GenerateOverloadAsync(request.UserId, log.CompletedAt.HasValue, orderedExercises.Select(exercise => exercise.ExerciseId), cancellationToken);
+        await NotifyWorkoutCompletedAsync(request.UserId, log.CompletedAt.HasValue, cancellationToken);
 
         return new CreateWorkoutLogRes(log.Id, entryId, AlreadyExisted: false);
     }
@@ -166,6 +167,16 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         {
             await _sender.Send(new GenerateOverloadCommand(userId, exerciseId), cancellationToken);
         }
+    }
+
+    private async Task NotifyWorkoutCompletedAsync(Guid userId, bool isCompleted, CancellationToken cancellationToken)
+    {
+        if (!isCompleted || _sender is null)
+        {
+            return;
+        }
+
+        await _sender.Send(new WorkoutCompletedCommand(userId), cancellationToken);
     }
 
     private async Task<Dictionary<(Guid ExerciseId, ExercisePrType PrType), float>> LoadCurrentBestValuesAsync(

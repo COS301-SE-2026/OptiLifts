@@ -1,6 +1,7 @@
 using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Clash.Leaderboard.Commands;
 using OptiLifts.Application.Users;
 using OptiLifts.Infrastructure.Database;
 
@@ -10,10 +11,12 @@ public sealed class UpdateProfileDetailsHandler : IRequestHandler<UpdateProfileD
 {
 
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly ISender? _sender;
 
-    public UpdateProfileDetailsHandler(OptiLiftsDbContext dbContext)
+    public UpdateProfileDetailsHandler(OptiLiftsDbContext dbContext, ISender? sender = null)
     {
         _dbContext = dbContext;
+        _sender = sender;
     }
 
     public async Task Handle(UpdateProfileDetailsCommand request, CancellationToken cancellationToken)
@@ -34,5 +37,10 @@ public sealed class UpdateProfileDetailsHandler : IRequestHandler<UpdateProfileD
         user.Height = request.Height?.ToString(CultureInfo.InvariantCulture);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (_sender is not null)
+        {
+            await _sender.Send(new UserProfileUpdatedCommand(request.UserId), cancellationToken);
+        }
     }
 }

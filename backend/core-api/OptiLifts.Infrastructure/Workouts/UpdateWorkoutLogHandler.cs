@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Clash.Leaderboard.Commands;
 using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Workouts;
@@ -149,8 +150,9 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
             {
                 await _sender.Send(new GenerateOverloadCommand(request.UserId, exerciseId), cancellationToken);
             }
-        }
 
+            await _sender.Send(new WorkoutCompletedCommand(request.UserId), cancellationToken);
+        }
 
         return true;
     }

@@ -186,3 +186,214 @@ def validate_config():
     if missing:
         logger.error("Missing required environment variables: %s", ", ".join(missing))
         sys.exit(1)
+
+
+def download_coordinates(blob_url_or_name: str) -> Dict[str, Any]:
+    logger.info("Downloading coordinate payload from: %s", blob_url_or_name)
+
+    if blob_url_or_name.startswith(("http://", "https://")):
+        parsed = urlparse(blob_url_or_name)
+        parts = parsed.path.lstrip("/").split("/", 1)
+        if len(parts) == 2:
+            container_name, blob_name = parts
+            blob_client = BlobClient.from_connection_string(
+                conn_str=STORAGE_CONN_STR,
+                container_name=container_name,
+                blob_name=blob_name,
+            )
+        else:
+            blob_client = BlobClient.from_blob_url(blob_url=blob_url_or_name)
+    else:
+        blob_client = BlobClient.from_connection_string(
+            conn_str=STORAGE_CONN_STR,
+            container_name="optivision-payloads",
+            blob_name=blob_url_or_name,
+        )
+
+    stream = blob_client.download_blob()
+    content = stream.readall()
+    return json.loads(content.decode("utf-8"))
+
+
+def parse_frames_to_tensor(coordinates_data: Dict[str, Any]) -> torch.Tensor:
+    frames = coordinates_data.get("frames", [])
+    if not frames:
+        raise ValueError("No frames found in coordinate payload.")
+
+    frame_matrix = []
+    for f in frames:
+        raw_lm = f.get("landmarks", [])
+        frame_lms = []
+        for lm in raw_lm:
+            if isinstance(lm, dict):
+                frame_lms.append([lm.get("x", 0.0), lm.get("y", 0.0), lm.get("z", 0.0)])
+            elif isinstance(lm, (list, tuple)) and len(lm) >= 3:
+                frame_lms.append([lm[0], lm[1], lm[2]])
+            else:
+                frame_lms.append([0.0, 0.0, 0.0])
+        while len(frame_lms) < 33:
+            frame_lms.append([0.0, 0.0, 0.0])
+        frame_matrix.append(frame_lms[:33])
+    tensor_np = np.array(frame_matrix, dtype=np.float32)
+    flattened = tensor_np.reshape(len(frames), -1)
+    transposed = flattened.T
+    batch_tensor = torch.from_numpy(transposed).unsqueeze(0).to(DEVICE)
+    return batch_tensor
+
+
+def run_sliding_window_inference(exercise: str, coordinates_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    normalised_exercise, model = get_model(exercise)
+    class_labels = LABELS.get(normalised_exercise, LABELS["squat"])
+
+    model_input = parse_frames_to_tensor(coordinates_data)
+    total_frames = model_input.shape[2]
+    logger.info("Analysing %d frames for '%s'...", total_frames, normalised_exercise)
+    if total_frames < WINDOW_SIZE:
+        pad_size = WINDOW_SIZE - total_frames
+        last_frame = model_input[:, :, -1:].repeat(1, 1, pad_size)
+        model_input = torch.cat([model_input, last_frame], dim=2)
+        total_frames = WINDOW_SIZE
+
+    peak_scores = dict.fromkeys(class_labels, 0.0)
+
+    with torch.no_grad():
+        for start_idx in range(0, total_frames - WINDOW_SIZE + 1, STRIDE):
+            end_idx = start_idx + WINDOW_SIZE
+            window_tensor = model_input[:, :, start_idx:end_idx]
+
+            outputs = model(window_tensor)
+            probs = torch.sigmoid(outputs)[0].cpu().numpy()
+
+            for i, prob in enumerate(probs):
+                if i < len(class_labels):
+                    flaw = class_labels[i]
+                    if float(prob) > peak_scores[flaw]:
+                        peak_scores[flaw] = float(prob)
+    detected_anomalies = []
+    for flaw, score in peak_scores.items():
+        if score >= THRESHOLD:
+            detected_anomalies.append({
+                "error": flaw,
+                "severity": round(score, 3)
+            })
+    detected_anomalies.sort(key=lambda x: x["severity"], reverse=True)
+    logger.info("Inference complete: %d anomalies detected over threshold (%s).",
+                len(detected_anomalies), detected_anomalies)
+
+    return detected_anomalies
+
+
+def report_results_to_backend(job_id: str, anomalies: List[Dict[str, Any]]):
+    webhook_url = f"{CORE_API_URL}/api/Vision/worker-result"
+    headers = {
+        "Content-Type": APPLICATION_JSON,
+    }
+    if INTERNAL_SECRET:
+        headers["X-Internal-Secret"] = INTERNAL_SECRET
+
+    payload = {
+        "jobId": job_id,
+        "success": True,
+        "detected_anomalies": anomalies,
+    }
+
+    logger.info("Reporting results to Core API webhook (%s) for job %s...", webhook_url, job_id)
+    response = requests.post(webhook_url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    logger.info("Results successfully accepted by Core API (HTTP %d).", response.status_code)
+
+
+def process_message(receiver: ServiceBusReceiver, message: ServiceBusReceivedMessage):
+    global CURRENT_STATE, CURRENT_JOB_ID
+    raw_body = str(message)
+    logger.info("⚡ [JOB RECEIVED] Message: %s", raw_body)
+
+    try:
+        data = json.loads(raw_body)
+        job_id = data.get("jobId") or data.get("job_id") or data.get("JobId")
+        exercise = data.get("exercise") or data.get("exerciseType") or data.get("Exercise", "squat")
+        blob_url = data.get("blobUrl") or data.get("blob_url") or data.get("BlobUrl")
+
+        if not job_id or not blob_url:
+            raise ValueError(f"Message missing required fields ('jobId', 'blobUrl'): {data}")
+
+        CURRENT_STATE = "busy"
+        CURRENT_JOB_ID = job_id
+        logger.info("Starting processing for Job ID: %s (Exercise: %s)", job_id, exercise)
+        coordinates = download_coordinates(blob_url)
+        anomalies = run_sliding_window_inference(exercise, coordinates)
+        report_results_to_backend(job_id, anomalies)
+        receiver.complete_message(message)
+        logger.info("Job %s completed successfully and acknowledged on Service Bus.", job_id)
+
+    except Exception as exc:
+        logger.exception("Failed to process message (Job error: %s). Abandoning for retr", exc)
+        try:
+            receiver.abandon_message(message)
+        except Exception as abandon_err:
+            logger.exception("Failed to abandon message on Service Bus: %s", abandon_err)
+    finally:
+        CURRENT_STATE = "idle"
+        CURRENT_JOB_ID = None
+
+
+def print_banner():
+    print("=" * 67)
+    print("OptiVision Distributed Node Initialising")
+    print("=" * 67)
+    print(f"Machine Name    : {NODE_INFO['hostname']}")
+    print(f"Node ID         : {NODE_INFO['node_id']}")
+    print(f"Compute Engine  : {NODE_INFO['compute_engine']}")
+    print(f"Weights Dir     : {WEIGHTS_DIR}")
+    print(f"Service Bus     : {QUEUE_NAME}")
+    print("=" * 67)
+
+
+def check_model_weights():
+    for ex in ("squat", "bench_press", "deadlift"):
+        weights_file = WEIGHTS_DIR / f"{ex}_side.pt"
+        status = "FOUND" if weights_file.exists() else "MISSING"
+        logger.info("Model weights [%s]: %s (%s)", ex, status, weights_file.name)
+
+
+def listen_for_jobs(receiver: ServiceBusReceiver):
+    while RUNNING:
+        messages = receiver.receive_messages(max_message_count=1, max_wait_time=10)
+        for msg in messages:
+            if not RUNNING:
+                receiver.abandon_message(msg)
+                return
+            process_message(receiver, msg)
+
+
+def main():
+    validate_config()
+    print_banner()
+    check_model_weights()
+    heartbeat_thread = threading.Thread(target=heartbeat_daemon, daemon=True)
+    heartbeat_thread.start()
+    while RUNNING:
+        try:
+            logger.info("Connecting to Azure Service Bus over AMQP 1.0")
+            with ServiceBusClient.from_connection_string(
+                conn_str=SERVICEBUS_CONN_STR,
+                logging_enable=False,
+            ) as sb_client:
+                with sb_client.get_queue_receiver(
+                    queue_name=QUEUE_NAME,
+                    prefetch_count=1,
+                    max_wait_time=10,
+                ) as receiver:
+                    logger.info("AMQP listener active. Worker Node ONLINE and waiting for jobs")
+                    listen_for_jobs(receiver)
+        except Exception as exc:
+            if not RUNNING:
+                break
+            logger.exception("AMQP connection dropped: %s. Reconnecting in 5 seconds", exc)
+            time.sleep(5)
+
+    logger.info("OptiVision AMQP Worker Daemon shut down.")
+
+
+if __name__ == "__main__":
+    main()

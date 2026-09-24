@@ -18,7 +18,7 @@ public class GeminiClient : IGeminiClient
     private readonly string _apiKey;
     private readonly IVisionPromptBuilder _promptBuilder;
     private readonly ILogger<GeminiClient>? _logger;
-    private const string TargetModel = "gemini-1.5-flash";
+    private const string TargetModel = "gemini-3.6-flash";
 
     public GeminiClient(
         HttpClient httpClient,

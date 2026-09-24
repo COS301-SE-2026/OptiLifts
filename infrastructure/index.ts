@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as resources from "@pulumi/azure-native/resources";
 import * as storage from "@pulumi/azure-native/storage";
+import * as servicebus from "@pulumi/azure-native/servicebus";
 import * as dbforpostgresql from "@pulumi/azure-native/dbforpostgresql";
 
 import * as containerregistry from "@pulumi/azure-native/containerregistry";
@@ -109,6 +110,28 @@ const optivisionpayloadsContainer = new storage.BlobContainer("bc-optivision-pay
     accountName: storageAcc.name,
     containerName: "optivision-payloads",
     publicAccess: storage.PublicAccess.Blob, 
+});
+
+// Azure Service Bus (Basic tier - AMQP 1.0)
+const serviceBusNamespace = new servicebus.Namespace("sb-optilifts", {
+    resourceGroupName: resourceGroup.name,
+    location: resourceGroup.location,
+    sku: {
+        name: "Basic",
+        tier: "Basic",
+    },
+});
+
+const formAnalysisQueue = new servicebus.Queue("q-form-analysis-jobs", {
+    resourceGroupName: resourceGroup.name,
+    namespaceName: serviceBusNamespace.name,
+    queueName: "form-analysis-jobs",
+});
+
+const serviceBusKeys = servicebus.listNamespaceKeysOutput({
+    resourceGroupName: resourceGroup.name,
+    namespaceName: serviceBusNamespace.name,
+    authorizationRuleName: "RootManageSharedAccessKey",
 });
 
 const storageAccKeys = storage.listStorageAccountKeysOutput({
@@ -289,6 +312,10 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 name: "storage-connection-string",
                 value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
             },
+            {
+                name: "servicebus-connection-string",
+                value: serviceBusKeys.primaryConnectionString
+            },
             { name: "core-api-sentry-dsn", value: coreApiSentryDsn },
             { name: "google-client-id", value: googleClientId },
             { name: "google-client-secret", value: googleClientSecret }, 
@@ -328,6 +355,8 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
                 { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
+                { name: "CONNECTIONSTRINGS__SERVICEBUS", secretRef: "servicebus-connection-string" },
+                { name: "SERVICEBUS_QUEUE_NAME", value: formAnalysisQueue.name },
                 { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
                 { name: "GOOGLE_CLIENT_ID", secretRef: "google-client-id" },
                 { name: "GOOGLE_CLIENT_SECRET", secretRef: "google-client-secret" },
@@ -361,3 +390,5 @@ dnsRecord("core-api-asuid", `asuid.${hostOf(backendDomain)}`, "TXT", coreApiApp.
 
 export const frontendAzureUrl = pulumi.interpolate`https://${fqdnOf(frontendApp)}`;
 export const acrLoginServer = acr.loginServer;
+export const serviceBusConnectionString = serviceBusKeys.primaryConnectionString;
+export const formAnalysisQueueName = formAnalysisQueue.name;

@@ -30,6 +30,8 @@ export type VisionJobStatus = 'pending' | 'processing' | 'completed' | 'failed'
 export type ResultRes = Readonly<{
   status: VisionJobStatus
   coach_summary?: string
+  score?: number
+  issues?: readonly string[]
 }>
 
 export type VisionJobState =
@@ -37,7 +39,7 @@ export type VisionJobState =
   | Readonly<{ phase: 'extracting'; progress: number }>
   | Readonly<{ phase: 'submitting' }>
   | Readonly<{ phase: 'polling' }>
-  | Readonly<{ phase: 'completed'; coachSummary: string }>
+  | Readonly<{ phase: 'completed'; coachSummary: string; score: number; issues: readonly string[] }>
   | Readonly<{ phase: 'failed'; message: string }>
 
 export type ExerCheck = Readonly<{

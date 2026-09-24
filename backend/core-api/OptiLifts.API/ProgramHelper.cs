@@ -50,7 +50,7 @@ public static class SecurityExtensions
                     {
                         var accessToken = context.Request.Query["access_token"];
                         var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/clash-hub")))
+                        if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/clash-hub") || path.StartsWithSegments("/api/hubs")))
                         {
                             context.Token = accessToken;
                         }

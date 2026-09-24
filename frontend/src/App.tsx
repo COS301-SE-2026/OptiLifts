@@ -44,6 +44,8 @@ const LandingPage = lazyWithReload(() => import('@/pages/landing'))
 const HelpPage = lazyWithReload(() => import('@/pages/help'))
 const ProgressionPage = lazyWithReload(() => import('@/pages/progression'))
 const FriendsPage = lazyWithReload(() => import('@/pages/opticlash/friends'))
+const ArenaHubPage = lazyWithReload(() => import('@/pages/opticlash/index'))
+const ArenaLeaderboardPage = lazyWithReload(() => import('@/pages/opticlash/arena-detail'))
 
 function AppLayout() {
   return (
@@ -135,8 +137,8 @@ function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />
           <Route path="clash/friends" element={<FriendsPage />} />
-          <Route path="clash" element={<Navigate to="/clash/friends" replace />} />
-          {/* replace the above */}
+          <Route path="clash" element={<ArenaHubPage />} />
+          <Route path="clash/:arenaId" element={<ArenaLeaderboardPage />} />
         </Route>
       </Route>
 

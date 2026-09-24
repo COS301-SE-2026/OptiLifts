@@ -39,6 +39,7 @@ export default function ArenaHubPage() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
         void fetchMyArenas();
     }, []);
 

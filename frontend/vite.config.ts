@@ -84,6 +84,7 @@ export default defineConfig(({ mode }) => {
           target: apiBaseUrl,
           changeOrigin: true,
           secure: false,
+          ws: true,
         },
       },
     },

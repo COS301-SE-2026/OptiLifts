@@ -12,7 +12,6 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ShareArenaModal } from "@/components/opticlash/share-arena-modal";
 import { customFetch } from "@/lib/custom-fetch";
-import { _adapters } from "chart.js";
 
 const PAGE_SIZE = 10;
 

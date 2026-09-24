@@ -46,6 +46,7 @@ export function ShareArenaModal({
         }
 
     let isMounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
     setIsLoadingFriends(true);
     customFetch('/api/clash/friends').then(async (res) => {
         if (res.ok){

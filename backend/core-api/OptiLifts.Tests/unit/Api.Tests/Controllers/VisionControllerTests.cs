@@ -33,6 +33,8 @@ public class VisionControllerTests
     [Fact]
     public async Task Analyze_WhenValidRequest_ReturnsOkWithJobId()
     {
+        var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "user_123") };
+        _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
 
         var request = new VisionAnalyzeRequest
         {
@@ -58,6 +60,8 @@ public class VisionControllerTests
     [Fact]
     public async Task Analyze_WhenExerciseMissing_ReturnsBadRequest()
     {
+        var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "user_123") };
+        _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
 
         var request = new VisionAnalyzeRequest
         {
@@ -73,7 +77,7 @@ public class VisionControllerTests
     }
 
     [Fact]
-    public async Task Analyze_WhenUserIdMissingAndNoAuthClaim_ReturnsBadRequest()
+    public async Task Analyze_WhenNoAuthClaim_ReturnsUnauthorized()
     {
 
         var request = new VisionAnalyzeRequest
@@ -86,7 +90,7 @@ public class VisionControllerTests
         var result = await _controller.Analyze(request, CancellationToken.None);
 
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        result.Should().BeOfType<UnauthorizedObjectResult>();
     }
 
     [Fact]

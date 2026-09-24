@@ -116,3 +116,73 @@ def get_model(exercise: str):
     model.eval()
     LOADED_MODELS[normalised] = model
     return normalised, model
+
+
+def send_heartbeat_ping(status: str, job_id: Optional[str] = None) -> bool:
+    url = f"{CORE_API_URL}/api/internal/workers/heartbeat"
+    headers = {"Content-Type": APPLICATION_JSON}
+    if INTERNAL_SECRET:
+        headers["X-Internal-Secret"] = INTERNAL_SECRET
+
+    payload = {
+        "workerId": NODE_INFO["node_id"],
+        "hostname": NODE_INFO["hostname"],
+        "device": NODE_INFO["compute_engine"],
+        "status": status,
+        "currentJobId": job_id,
+        "timestamp": time.time(),
+    }
+
+    try:
+        res = requests.post(url, json=payload, headers=headers, timeout=5)
+        return res.status_code in (200, 201, 204)
+    except requests.exceptions.RequestException:
+        return False
+
+
+def heartbeat_daemon():
+    logger.info("Heartbeat daemon thread active (interval: %ds).", HEARTBEAT_INTERVAL_SECONDS)
+    while not HEARTBEAT_STOP_EVENT.is_set():
+        send_heartbeat_ping(CURRENT_STATE, CURRENT_JOB_ID)
+        HEARTBEAT_STOP_EVENT.wait(HEARTBEAT_INTERVAL_SECONDS)
+
+
+def notify_offline():
+    url = f"{CORE_API_URL}/api/internal/workers/offline"
+    headers = {"Content-Type": APPLICATION_JSON}
+    if INTERNAL_SECRET:
+        headers["X-Internal-Secret"] = INTERNAL_SECRET
+
+    payload = {
+        "workerId": NODE_INFO["node_id"],
+        "status": "offline",
+    }
+    try:
+        requests.post(url, json=payload, headers=headers, timeout=3)
+        logger.info("Deregistration sent: node marked offline in cluster.")
+    except Exception:
+        pass
+
+
+def signal_handler(signum, frame):
+    global RUNNING, CURRENT_STATE
+    CURRENT_STATE = "offline"
+    logger.info("\nShutdown signal received (%s). Stopping AMQP listener...", signum)
+    RUNNING = False
+    HEARTBEAT_STOP_EVENT.set()
+    notify_offline()
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+
+def validate_config():
+    missing = []
+    if not SERVICEBUS_CONN_STR:
+        missing.append("SERVICEBUS_CONNECTION_STRING")
+    if not STORAGE_CONN_STR:
+        missing.append("AZURE_STORAGE_CONNECTION_STRING")
+    if missing:
+        logger.error("Missing required environment variables: %s", ", ".join(missing))
+        sys.exit(1)

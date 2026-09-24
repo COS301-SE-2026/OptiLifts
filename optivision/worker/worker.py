@@ -56,3 +56,63 @@ EXERCISE_ALIASES = {
     "deadlift": "deadlift",
     "deadlifts": "deadlift",
 }
+
+#states
+RUNNING = True
+CURRENT_STATE = "idle"
+CURRENT_JOB_ID: Optional[str] = None
+HEARTBEAT_STOP_EVENT = threading.Event()
+LOADED_MODELS: Dict[str, Any] = {}
+DEVICE: torch.device = torch.device("cpu")
+
+
+def detect_hardware():
+    global DEVICE
+    hostname = socket.gethostname()
+    os_info = f"{platform.system()} {platform.release()}"
+    device_name = "CPU Only"
+    total_memory_gb = 0.0
+
+    try:
+        if torch.cuda.is_available():
+            DEVICE = torch.device("cuda:0")
+            device_name = torch.cuda.get_device_name(0)
+            mem_bytes = torch.cuda.get_device_properties(0).total_memory
+            total_memory_gb = round(mem_bytes / (1024**3), 1)
+            compute_engine = f"CUDA:0 ({device_name} - {total_memory_gb} GB VRAM)"
+        else:
+            DEVICE = torch.device("cpu")
+            compute_engine = f"PyTorch CPU ({os_info})"
+    except Exception as exc:
+        DEVICE = torch.device("cpu")
+        compute_engine = f"CPU Fallback ({exc})"
+
+    short_id = uuid.uuid4().hex[:6]
+    clean_dev = device_name.lower().replace(" ", "-").replace("nvidia-", "")[:16]
+    node_id = f"node-{hostname}-{clean_dev}-{short_id}"
+
+    return {
+        "node_id": node_id,
+        "hostname": hostname,
+        "os": os_info,
+        "device_name": device_name,
+        "compute_engine": compute_engine,
+        "vram_gb": total_memory_gb,
+    }
+
+NODE_INFO = detect_hardware()
+
+def get_model(exercise: str):
+    normalised = EXERCISE_ALIASES.get(exercise.lower(), exercise.lower())
+    if normalised in LOADED_MODELS:
+        return normalised, LOADED_MODELS[normalised]
+
+    model_file = WEIGHTS_DIR / f"{normalised}_side.pt"
+    if not model_file.exists():
+        raise FileNotFoundError(f"Model weights not found for '{normalised}' at {model_file}")
+
+    logger.info("Loading TorchScript model: %s onto %s...", model_file.name, DEVICE)
+    model = torch.jit.load(str(model_file), map_location=DEVICE)
+    model.eval()
+    LOADED_MODELS[normalised] = model
+    return normalised, model

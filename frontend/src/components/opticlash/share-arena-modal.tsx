@@ -145,9 +145,9 @@ export function ShareArenaModal({
                 </div>
                     {/* invite code sec */}
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5 font-sans">
+                        <span className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5 font-sans">
                             Arena Join Code
-                        </label>
+                        </span>
                         <div className="flex items-center gap-2">
                             <div className="flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 font-mono text-sm font-bold text-brand tracking-widest uppercase">
                                 {arena.code || '------'}
@@ -162,9 +162,9 @@ export function ShareArenaModal({
                     {/* direct invites to vriende */}
                     <div className="pt-3 border-t border-border">
                         <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs font-bold uppercase tracking-[1px] text-muted-foreground flex items-center gap-1.5 font-sans">
+                            <span className="text-xs font-bold uppercase tracking-[1px] text-muted-foreground flex items-center gap-1.5 font-sans">
                                 <Users className="w-3.5 h-3.5 text-brand"/>Direct Friend Invites
-                            </label>
+                            </span>
                             <span className="text-[11px] text-muted-foreground font-sans">
                                 {friends.length} Friends
                             </span>

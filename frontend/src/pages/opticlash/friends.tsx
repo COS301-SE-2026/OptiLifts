@@ -281,7 +281,6 @@ export default function FriendsManagementPage(){
                         <PageTitle title="FRIENDS AND INVITES"/>
                     </div>
 
-                    {/* users code: todo: replace mockdata */}
                     <div className="flex items-center gap-3 bg-surface border border-border p-3 rounded-xl self-start md:self-auto shadow-sm">
                         <div>
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block font-sans tracking-[1px]">

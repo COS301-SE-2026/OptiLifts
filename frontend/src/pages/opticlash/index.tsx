@@ -230,7 +230,7 @@ export default function ArenaHubPage() {
             initials: athleteName.slice(0, 2).toUpperCase() || 'AT',
             avatarUrl: userStanding?.avatarUrl || user?.avatarUrl,
             code: 'OPTICLASH',
-            gender: 'female',
+            gender: (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male'),
             bodyweightKg: userStanding?.bodyweightKg || 74,
             squat1RM: userStanding?.squat1RM || 0,
             bench1RM: userStanding?.bench1RM || 0,
@@ -471,7 +471,6 @@ export default function ArenaHubPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            {/* slider todo: accomdate for private arenas in future */}
                             <button type="button" onClick={handleToggleOptIn} 
                             className="flex items-center gap-2.5 bg-surface-2 hover:bg-surface-2/80 border border-border px-3 py-1.5 rounded-xl cursor-pointer transition select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-pressed={isLeaderboardOptedIn} title="Toggle opt into public global and divisional leaderboards">
                                 <span className="text-xs font-sans font-semibold text-muted-foreground">
@@ -575,9 +574,11 @@ export default function ArenaHubPage() {
                             </div>
                             ) : (
                             activityList.map((act) => (
-                                <div key={act.id} onClick={() => handleOpenAthlete(act.athleteId)}
-                                className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition cursor-pointer">
-                                    <div className="flex items-center gap-3.5">
+                                <div key={act.id}
+                                className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition">
+                                    <button type="button" onClick={() => handleOpenAthlete(act.athleteId)}
+                                    className="flex items-center gap-3.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg">
+
                                         <AthleteAvatar initials={act.athleteInitials} name={act.athleteName} avatarUrl={act.athleteAvatarUrl} size="md"/>
                                         <div>
                                             <div className="flex items-center gap-2 font-sans">
@@ -591,7 +592,7 @@ export default function ArenaHubPage() {
                                                 <span className="font-semibold text-brand">{act.eventText}</span> - {act.details}
                                             </p>
                                         </div>
-                                    </div>
+                                    </button>
 
                                     <div className="flex items-center gap-3">
                                         <Button variant="secondary" size="sm" onClick={(e) => handleFeedKudos(e, act.id)}

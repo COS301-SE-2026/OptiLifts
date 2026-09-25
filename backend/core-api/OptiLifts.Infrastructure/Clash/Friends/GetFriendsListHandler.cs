@@ -32,7 +32,7 @@ public sealed class GetFriendsListHandler : IRequestHandler<GetFriendsListQuery,
         var snapshots = await _db.AthleteSeasonSnapshots.AsNoTracking().Where(s => friendids.Contains(s.UserId) && s.SeasonKey == ssnKey)
         .ToDictionaryAsync(s => s.UserId, cancellationToken);
 
-        return users.Select(u => 
+        return users.Select(u =>
         {
             snapshots.TryGetValue(u.Id, out var snap);
             var isOptedIn = u.GlobalLeaderboardOptIn;

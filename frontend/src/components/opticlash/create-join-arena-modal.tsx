@@ -177,12 +177,12 @@ export function CreateJoinArenaModal({
                     {tab === 'join' ? (
                         <form onSubmit={handleJoin} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
+                                <label htmlFor="join-code-input" className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
                                     Private Arena Invite Code
                                 </label>
                                 <div className="relative">
                                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-                                    <Input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} 
+                                    <Input id="join-code-input" type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} 
                                     placeholder="e.g. IRON99" maxLength={10} disabled={isSubmitting}
                                     className="pl-9 font-mono tracking-widest uppercase bg-surface-2 border-border"/>
                                 </div>
@@ -206,16 +206,16 @@ export function CreateJoinArenaModal({
                     ): (
                         <form onSubmit={handleCreate} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">Arena Name</label>
-                                <Input type="text" value={arenaName} onChange={(e) => setArenaName(e.target.value)}
+                                <label htmlFor="arena-name-input" className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">Arena Name</label>
+                                <Input id="arena-name-input" type="text" value={arenaName} onChange={(e) => setArenaName(e.target.value)}
                                 placeholder="e.g. Hazelwood Overloaders" disabled={isSubmitting} 
                                 className="bg-surface-2 border-border"/>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
+                                <span className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
                                     Primary Ranking Metric
-                                </label>
+                                </span>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger variant="filter" className="w-full bg-surface-2" aria-label="Primary Rankign Metric">
                                         <span className="min-w-0 truncate">
@@ -233,9 +233,9 @@ export function CreateJoinArenaModal({
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
+                                <span className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
                                     Duration
-                                </label>
+                                </span>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger variant="filter" disabled={isSubmitting}
                                     className="w-full bg-surface-2" aria-label="Arena Duration">

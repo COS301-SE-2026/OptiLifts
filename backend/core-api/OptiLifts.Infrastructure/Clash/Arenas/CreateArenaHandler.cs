@@ -42,7 +42,7 @@ public sealed class CreateArenaHandler : IRequestHandler<CreateArenaCommand, Cre
         {
             return new CreateArenaResult(false, "User not found.");
         }
-        
+
         if (string.IsNullOrWhiteSpace(user.Weight) || !float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bw) || bw <= 0f)
         {
             return new CreateArenaResult(false, "Please set your bodyweight in your profile before creating a DOTS-based arena.");

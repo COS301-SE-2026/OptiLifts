@@ -83,11 +83,6 @@ export default function ArenaLeaderboardPage() {//
         return 'dots';
     };
     const primaryMetric = isPrivate ? getFrontendMetric(liveArena?.metricType) : 'dots';
-    useEffect(() => {
-        if (liveArena?.metricType && isPrivate) {
-            setSelectedMetric(getFrontendMetric(liveArena.metricType));
-        }
-    }, [liveArena?.metricType, isPrivate]);
 
     const activeBracket = WEIGHT_CLASS_BRACKETS.find((b) => b.id === selectedBracketId) || WEIGHT_CLASS_BRACKETS[0];
     const userWeightBracket = getWeightClassBracket(currentUserStanding?.bodyweightKg ?? 74);
@@ -126,6 +121,9 @@ export default function ArenaLeaderboardPage() {//
                     const data = await res.json();
                     if (data?.arena) {
                         setLiveArena(data.arena);
+                        if (data.arena.metricType) {
+                            setSelectedMetric(getFrontendMetric(data.arena.metricType));
+                        }
                     }
                     if (Array.isArray(data?.standings)) {
                         const mapped: LeaderboardAthleteDto[] = data.standings.map((s: Record<string, unknown>) => ({

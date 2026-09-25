@@ -3,10 +3,10 @@ using MediatR;
 namespace OptiLifts.Application.Clash.Leaderboard.Queries;
 
 public sealed record GetGlobalLeaderboardQuery(
-    Guid RequestingUserId, 
+    Guid RequestingUserId,
     string Metric,
     string Timeframe = "monthly",
-    int Page = 1, 
+    int Page = 1,
     int PageSize = 10
 ) : IRequest<LeaderboardPageResult>;
 

@@ -53,10 +53,10 @@ public sealed class GetGlobalLeaderboardHandler : IRequestHandler<GetGlobalLeade
                 entity.WeeklyVolumeKg = allTimeVolumes?.GetValueOrDefault(entity.UserId, 0m) ?? 0m;
             }
             var count = allEntities.Count;
-            var ordered = allEntities.OrderByDescending(s => s.WeeklyVolumeKg).ThenBy(s=> s.DisplayName).ToList();
+            var ordered = allEntities.OrderByDescending(s => s.WeeklyVolumeKg).ThenBy(s => s.DisplayName).ToList();
             var pageEntities = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
             var entries = pageEntities.Select((s, index) => LeaderboardMetrics.ToDto(s, (page - 1) * pageSize + index + 1, request.RequestingUserId)).ToList();
-            
+
             var selfEntity = ordered.FirstOrDefault(s => s.UserId == request.RequestingUserId);
             var selfRank = selfEntity != null ? ordered.IndexOf(selfEntity) + 1 : 0;
             var currentUserEntry = selfEntity != null ? LeaderboardMetrics.ToDto(selfEntity, selfRank, request.RequestingUserId) : null;

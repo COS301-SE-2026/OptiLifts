@@ -20,18 +20,19 @@ public sealed class GetArenaFeedHandler : IRequestHandler<GetArenaFeedQuery, IRe
     public async Task<IReadOnlyList<ClashActivityDto>> Handle(GetArenaFeedQuery request, CancellationToken cancellationToken)
     {
         List<ClashActivity> activities;
-        var isAllArenas  = request.ArenaStringId == "all" || string.Equals(request.ArenaStringId, "feed", StringComparison.OrdinalIgnoreCase) || (string.IsNullOrWhiteSpace(request.ArenaStringId) && request.ArenaId == Guid.Empty);
+        var isAllArenas = request.ArenaStringId == "all" || string.Equals(request.ArenaStringId, "feed", StringComparison.OrdinalIgnoreCase) || (string.IsNullOrWhiteSpace(request.ArenaStringId) && request.ArenaId == Guid.Empty);
         if (isAllArenas)
         {
             var userArenaIds = await _db.ArenaMembers.AsNoTracking().Where(m => m.UserId == request.UserId).Select(m => m.ArenaId).ToListAsync(cancellationToken);
-        
+
             activities = await _db.ClashActivities
             .AsNoTracking()
             .Where(a => userArenaIds.Contains(a.ArenaId))
             .OrderByDescending(a => a.CreatedAt)
             .Take(100)
             .ToListAsync(cancellationToken);
-        } else
+        }
+        else
         {
             var arenaIdStr = !string.IsNullOrWhiteSpace(request.ArenaStringId)
             ? request.ArenaStringId

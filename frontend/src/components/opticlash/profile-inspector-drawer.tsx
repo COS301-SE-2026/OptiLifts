@@ -188,7 +188,7 @@ export function ProfileInspectorDrawer({
             id: w.logId,
             title: w.title,
             date: dateStr,
-            durationMins: 45,
+            durationMins:0,
             volumeKg: Number(w.volumeKg),
             exercises: w.exercises.map((ex) => ({
                 name: ex.exerciseName,
@@ -356,7 +356,7 @@ export function ProfileInspectorDrawer({
                                                         {w.title}
                                                     </h4>
                                                     <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 font-sans">
-                                                        {w.date} - {w.durationMins} mins
+                                                        {w.date}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-2">

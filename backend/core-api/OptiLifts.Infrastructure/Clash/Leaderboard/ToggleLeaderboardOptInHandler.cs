@@ -27,7 +27,7 @@ public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeader
         }
         if (request.OptIn)
         {
-            if (string.IsNullOrWhiteSpace(user.Weight) ||!float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bodyweightKg) || bodyweightKg <= 0f)
+            if (string.IsNullOrWhiteSpace(user.Weight) || !float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bodyweightKg) || bodyweightKg <= 0f)
             {
                 return new ToggleLeaderboardOptInResult(false, false, "Please set your bodyweight in your profile before opting into competitive leaderboards.");
             }

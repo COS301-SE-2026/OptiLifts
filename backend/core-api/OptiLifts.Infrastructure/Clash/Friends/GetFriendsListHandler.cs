@@ -35,6 +35,9 @@ public sealed class GetFriendsListHandler : IRequestHandler<GetFriendsListQuery,
         return users.Select(u => 
         {
             snapshots.TryGetValue(u.Id, out var snap);
+            var isOptedIn = u.GlobalLeaderboardOptIn;
+            var tier = isOptedIn ? (snap?.Tier ?? "Bronze") : "Unranked";
+
             return new FriendDto(
             Id: u.Id,
             Name: u.DisplayName,
@@ -42,7 +45,7 @@ public sealed class GetFriendsListHandler : IRequestHandler<GetFriendsListQuery,
             AvatarUrl: u.ProfileImageUrl,
             Code: u.FriendCode,
             DotsScore: snap?.DotsScore ?? 0m,
-            Tier: snap?.Tier ?? "Bronze"
+            Tier: tier
             );
         }).ToList();
     }

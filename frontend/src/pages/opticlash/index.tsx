@@ -237,7 +237,7 @@ export default function ArenaHubPage() {
             deadlift1RM: userStanding?.deadlift1RM || 0,
             totalE1RM: userStanding?.totalE1RM || 0,
             dotsScore: userStanding?.dotsScore || 0,
-            tier: (userStanding?.tier as ClashAthlete['tier']) || 'Bronze',
+            tier: isLeaderboardOptedIn ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked',
             tierLevel: userStanding?.tierLevel || 1,
             rankTrend: userStanding?.rankTrend || 0,
             weeklyVolumeKg: userStanding?.weeklyVolumeKg || 0,

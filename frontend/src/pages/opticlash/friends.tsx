@@ -1,6 +1,7 @@
 import { AddFriendModal } from "@/components/opticlash/add-friend-modal";
 import { AthleteAvatar } from "@/components/opticlash/athlete-avatar";
 import { ClashTabs } from "@/components/opticlash/clash-tabs";
+import { ProfileInspectorDrawer } from "@/components/opticlash/profile-inspector-drawer";
 import { TierBadge } from "@/components/opticlash/tier-badge";
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
 import { customFetch } from "@/lib/custom-fetch";
+import type { ClashAthlete } from "@/types/clash";
 import { ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -57,6 +59,34 @@ export default function FriendsManagementPage(){
     const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
 
     //f2 - profile inspector drawer
+    const [selectedAthlete, setSelectedAthlete] = useState<ClashAthlete | null>(null);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const handleOpenFriendDrawer = (friend: FriendItem) => {
+        const fallbackAthlete: ClashAthlete = {
+            id: friend.id,
+            name: friend.name,
+            initials: friend.initials || 'AT',
+            avatarUrl: friend.avatarUrl,
+            code: friend.code,
+            gender: 'male',
+            bodyweightKg: 0,
+            squat1RM: 0,
+            bench1RM: 0,
+            deadlift1RM: 0,
+            totalE1RM: 0,
+            dotsScore: friend.dotsScore,
+            tier: (friend.tier as ClashAthlete['tier']) || 'Unranked',
+            tierLevel: 1,
+            rankTrend: 0,
+            weeklyVolumeKg: 0,
+            lastWorkoutDate: new Date().toISOString(),
+            muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+            trophies: [],
+            recentWorkouts: []
+        };
+        setSelectedAthlete(fallbackAthlete);
+        setIsDrawerOpen(true);
+    }
     //f3 - arena invites
     const [arenaInvites, setArenaInvites] = useState<ArenaInviteItem[]>([]);
     //f4 - duel invites
@@ -297,7 +327,7 @@ export default function FriendsManagementPage(){
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredFriends.map((friend) => (
-                            <Card key={friend.id} className="bg-surface border-border p-5 shadow-sm flex flex-col justify-between">
+                            <Card key={friend.id} onClick={() => handleOpenFriendDrawer(friend)} className="bg-surface hover:bg-surface-2 transition cursor-pointer border-border group p-5 shadow-sm flex flex-col justify-between">
                                 <CardContent className="p-0">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-3.5">
@@ -318,7 +348,7 @@ export default function FriendsManagementPage(){
                                         </div>
                                         {/* tier badge */}
                                         <div>
-                                            <TierBadge tier={friend.tier} size="md" />
+                                            <TierBadge tier={friend.tier || 'Unranked'} size="md" />
                                         </div>
                                     </div>
 
@@ -457,6 +487,7 @@ export default function FriendsManagementPage(){
                 </div>
 
             <AddFriendModal isOpen={isAddFriendOpen} onClose={() => setIsAddFriendOpen(false)} onFriendAdded={() => fetchFriendsData()} />
+                <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
         </div>
     );
 }

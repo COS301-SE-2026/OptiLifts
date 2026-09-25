@@ -48,13 +48,16 @@ public sealed class GetAthleteProfileHandler : IRequestHandler<GetAthleteProfile
         var isFriend = await _db.Friendships.AsNoTracking().AnyAsync(f => (f.UserId1 == request.RequestingUserId && f.UserId2 == request.AthleteId)
         || (f.UserId1 == request.AthleteId && f.UserId2 == request.RequestingUserId), cancellationToken);
 
+        var isOptedIn = user.GlobalLeaderboardOptIn;
+        var tier = isOptedIn ? (snap?.Tier ?? "Bronze") : "Unranked";
+        var tierLevel = isOptedIn ? (snap?.TierLevel ?? 1) : 0;
         return new AthleteProfileResult(
             user.Id,
             user.DisplayName,
             user.ProfileImageUrl,
             snap?.BodyweightKg ?? 0m,
-            snap?.Tier ?? "Bronze",
-            snap?.TierLevel ?? 3,
+            tier,
+            tierLevel,
             snap?.DotsScore ?? 0m,
             snap?.Squat1RM ?? 0m,
             snap?.Bench1RM ?? 0m,

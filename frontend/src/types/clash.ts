@@ -1,4 +1,4 @@
-export type ClashAthleteTier = 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Overload Master';
+export type ClashAthleteTier = 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Overload Master' | 'Unranked';
 
 export interface WeightClassBracket {
     id: string;
@@ -51,7 +51,7 @@ export interface ClashAthlete {
     deadlift1RM: number;
     totalE1RM: number;
     dotsScore: number;
-    tier: 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Overload Master';
+    tier: ClashAthleteTier;
     tierLevel: number;
     rankTrend: number;
     weeklyVolumeKg: number;

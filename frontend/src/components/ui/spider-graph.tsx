@@ -48,10 +48,13 @@ export function SpiderGraph({data, secondaryData, secondaryMultiplier = DEFAULT_
     //configuring the size and mins and maxs
     const highestSet = Math.max(...chartValues, 0)
     const minimum = 4
-    const bufferpadding = 2
+    const bufferpadding = highestSet > 50 ? Math.ceil(highestSet * 0.05) : 2
     const max = Math.max(minimum, highestSet + bufferpadding)
-    const stepSize = max > 12 ? 4 : 2 //in case high volume
-    const calculatedMax = Math.ceil(max /stepSize) * stepSize
+
+    const targetRings = 4
+    const max2 = (max > 6 ? 2 : 1)
+    const stepSize = max <= 12 ?  max2: Math.ceil(max / targetRings) //in case high volume
+    const calculatedMax = stepSize * targetRings
     // const totalSets = chartValues.reduce((sum, value) => sum + value, 0)
 
     const chartData: ChartData<'radar'> = {

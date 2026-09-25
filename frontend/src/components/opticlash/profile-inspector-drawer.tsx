@@ -110,6 +110,7 @@ export function ProfileInspectorDrawer({
         if(hasGivenKudos || isSubmittingKudos) {
             return;
         }
+        const rect = e.currentTarget?.getBoundingClientRect();
         setIsSubmittingKudos(true);
         try {
             const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
@@ -119,15 +120,16 @@ export function ProfileInspectorDrawer({
                 setKudosCount((prev) => prev + 1);
                 setHasGivenKudos(true);
                 toast.success(`You sent kudos to ${athlete.name}`, 'Kudos Delivered');
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = (rect.left + rect.width / 2) / window.innerWidth;
-                const y = (rect.top + rect.height / 2) / window.innerHeight;
-                confetti({
-                    particleCount: 35,
-                    spread: 60,
-                    origin: {x,y},
-                    colors: ['#CC0022', '#B35C00', '#FF9800', '#FFFFFF'],
-                });                
+                if (rect) {
+                    const x = (rect.left + rect.width / 2) / window.innerWidth;
+                    const y = (rect.top + rect.height / 2) / window.innerHeight;
+                    confetti({
+                        particleCount: 35,
+                        spread: 60,
+                        origin: {x,y},
+                        colors: ['#CC0022', '#B35C00', '#FF9800', '#FFFFFF'],
+                    });
+                }
             } else {
                 const errData = await res.json().catch(() => null);
                 toast.error(errData?.message ?? 'Failed to send kudos');
@@ -223,7 +225,7 @@ export function ProfileInspectorDrawer({
                             </div>
                             {/* tier + dots badges */}
                             <div className="flex items-center gap-2 mt-2 font-sans">
-                                <TierBadge tier={athlete.tier} size="md"/>
+                                <TierBadge tier={profile?.tier || athlete.tier || 'Unranked'} size="md"/>
                                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-surface text-brand border border-border">
                                     {athlete.dotsScore} DOTS
                                 </span>
@@ -329,7 +331,7 @@ export function ProfileInspectorDrawer({
                                         <span className="text-[11px] text-brand font-semibold lowercase">last 30 days</span>
                                     </div>
                                     <div className="flex justify-center items-center py-2">
-                                        <SpiderGraph data={muscleBalanceData} className="max-w-[280pc] max-h-[280px]"/>
+                                        <SpiderGraph data={muscleBalanceData} className="max-w-[280px] max-h-[280px]"/>
                                     </div>
                                 </CardContent>
                             </Card>

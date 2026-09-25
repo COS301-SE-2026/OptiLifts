@@ -317,7 +317,7 @@ public sealed class FriendsHandlerTests : IDisposable
         friend.Name.Should().Be("Khal Drogo");
         friend.Initials.Should().Be("KD");
         friend.Code.Should().Be(code2);
-        friend.Tier.Should().Be("Bronze");
+        friend.Tier.Should().Be("Unranked");
     }
 
     //GetPendingFriendRequestsHandler tests - all pass

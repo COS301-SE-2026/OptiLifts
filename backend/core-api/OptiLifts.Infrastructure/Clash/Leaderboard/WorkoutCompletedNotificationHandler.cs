@@ -32,7 +32,7 @@ public sealed class WorkoutCompletedNotificationHandler : IRequestHandler<Workou
 
         var memberships = await _db.ArenaMembers.AsNoTracking().Where(m => m.UserId == request.UserId).ToListAsync(cancellationToken);
         if (memberships.Count == 0) return;
-        
+
         var now = DateTime.UtcNow;
         foreach (var mem in memberships)
         {

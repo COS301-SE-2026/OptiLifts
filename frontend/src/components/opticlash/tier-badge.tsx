@@ -1,6 +1,6 @@
 import {Award} from 'lucide-react';
 
-export type TierType = 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Overload Master';
+export type TierType = 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Overload Master' | 'Unranked';
 
 interface TierBadgeProps{
     tier: string;
@@ -49,10 +49,16 @@ export function TierBadge({
                     <span>Silver</span>
                 </span>
             );
-        default:
+        case 'Bronze':
             return (
                 <span className={`rounded-full font-bold bg-amber-500/15 text-amber-800 dark:text-amber-600 border border-amber-700/50 inline-flex items-center justify-center uppercase tracking-wide font-sans ${sizeClasses} ${className}`}>
                     <span>Bronze</span>
+                </span>
+            );
+        default:
+            return (
+                <span className={`rounded-full font-semibold bg-muted text-muted-foreground border border-border inline-flex items-center justify-center uppercase tracking-wide font-sans ${sizeClasses} ${className}`}>
+                    <span>Unranked</span>
                 </span>
             );
     }

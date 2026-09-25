@@ -36,5 +36,6 @@ public sealed record AthleteProfileResult(
     IReadOnlyList<TrophyDto> Trophies,
     IReadOnlyList<RecentWorkoutDto> RecentWorkouts,
     int KudosCount,
-    bool HasSentKudos
+    bool HasSentKudos,
+    bool isFriend = false
 );

@@ -3,7 +3,7 @@ import { ProfileInspectorDrawer } from "@/components/opticlash/profile-inspector
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CURRENT_USER_ID, MOCK_ARENAS, MOCK_ATHLETES, type ClashActivityItem, type ClashAthlete } from "@/data/clash-mock-data";
+import { type ClashActivityItem, type ClashAthlete, type ClashArena } from "@/types/clash";
 import { ArrowRight, Clock, Trophy, UserPlus, Users, Flame, Heart, Plus } from "lucide-react";
 import { useState, useEffect, useRef, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -28,6 +28,41 @@ interface SignalRActivityPayload {
     hasUserKudoed?: boolean;
 }
 
+interface UserStandingDto {
+    userId: string;
+    rank: number;
+    displayName: string;
+    avatarUrl?: string;
+    bodyweightKg: number;
+    tier: string;
+    tierLevel: number;
+    dotsScore: number;
+    squat1RM: number;
+    bench1RM: number;
+    deadlift1RM: number;
+    totalE1RM: number;
+    weeklyVolumeKg: number;
+    rankTrend: number;
+    isCurrentUser: boolean;
+}
+
+const SYSTEM_ARENAS: ClashArena[] = [
+  {
+    id: 'global-league',
+    name: 'OptiLifts Global League',
+    type: 'global',
+    metricType: 'DOTS Overall',
+    memberCount: 0,
+  },
+  {
+    id: 'weight-class-league',
+    name: 'Divisional Weight-Class League',
+    type: 'divisional',
+    metricType: 'DOTS Overall',
+    memberCount: 0,
+  },
+];
+
 export default function ArenaHubPage() {
     const {user } = useAuth();
     const [selectedAthlete, setSelectedAthlete] = useState<ClashAthlete | null>(null);
@@ -38,15 +73,23 @@ export default function ArenaHubPage() {
     const [arenaMode, setArenaMode] = useState<'global' | 'private'>('global');
     const [activityList, setActivityList] = useState<ClashActivityItem[]>([]);
     const [kudosGivenMap, setKudosGivenMap] = useState<Record<string, boolean>>({});
-    const [myArenas, setMyArenas] = useState<typeof MOCK_ARENAS>([]);
+    const [myArenas, setMyArenas] = useState<ClashArena[]>([]);
     const activityListRef = useRef<ClashActivityItem[]>([]);
     const kudosGivenMapRef = useRef<Record<string, boolean>>({});
+
+    const [userStanding, setUserStanding] = useState<UserStandingDto | null>(null);
+    const [globalMemberCount, setGlobalMemberCount] = useState<number>(0);
+
     useEffect(() => {
         activityListRef.current = activityList;
     }, [activityList]);
     useEffect(() => {
         kudosGivenMapRef.current = kudosGivenMap;
     }, [kudosGivenMap]);
+    const myArenasRef = useRef<ClashArena[]>([]);
+    useEffect(() => {
+        myArenasRef.current = myArenas;
+    }, [myArenas]);
 
     const fetchMyArenas = async () => {
         try {
@@ -99,38 +142,112 @@ export default function ArenaHubPage() {
         }
     };
 
+    const fetchUserSnapshot = async () => {
+        try {
+            const res = await customFetch('/api/clash/leaderboard/global?pageSize=1');
+            if (res.ok) {
+                const data = await res.json();
+                setIsLeaderboardOptedIn(data?.isUserOptedIn ?? false);
+                if (typeof data?.totalCount === 'number'){
+                    setGlobalMemberCount(data.totalCount);
+                }
+                if (data?.currentUserEntry) {
+                    setUserStanding(data.currentUserEntry);
+                } else {
+                    setUserStanding(null);
+                }
+            }
+        } catch {
+            //keep default
+        }
+    };
+
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
         void fetchMyArenas();
         void fetchFeed();
+        void fetchUserSnapshot();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const arenasWithCount = SYSTEM_ARENAS.map((a) => ({
+        ...a,
+        memberCount: globalMemberCount
+    }));
+
     const allArenas = [
-        ...MOCK_ARENAS.filter((a) => a.type?.toLowerCase() !== 'private'),
+        ...arenasWithCount,
         ...myArenas
     ];
 
     const filtArenas = allArenas.filter((a) => arenaMode === 'global' ? (a.type?.toLowerCase() === 'global' || a.type?.toLowerCase() === 'divisional') : a.type?.toLowerCase() === 'private');
 
+    const isArenaConcluded = (arena: ClashArena): boolean => {
+        return arena.isActive === false || (arena.daysRemaining !== undefined && arena.daysRemaining <= 0);
+    };
 
     const navigate = useNavigate();
-    const currentUser = MOCK_ATHLETES.find((a) => a.id === CURRENT_USER_ID)!; //todo: replace mock data
-    const handleToggleOptIn = () => {
+    const [isTogglingOptIn, setIsTogglingOptIn] = useState<boolean>(false);
+    const handleToggleOptIn = async () => {
+        if (isTogglingOptIn) return;
         const nextState = !isLeaderboardOptedIn;
-        setIsLeaderboardOptedIn(nextState);
-        if (nextState){
-            toast.success("Your lifts and e1RM are now actively ranked in global and divisonal leaderboards.", 'Opted in to Public Leagues');
-        } else {
-            toast.success('Your profile and lifts have been hidden from public leagues.', 'Opted out of Public Leagues');
+        setIsTogglingOptIn(true);
+        try {
+            const res = await customFetch('/api/clash/leaderboard/opt-in', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    optIn: nextState
+                }),
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok && data?.success) {
+                setIsLeaderboardOptedIn(data.isOptedIn ?? nextState);
+                if (data.isOptedIn ?? nextState) {
+                    toast.success("Your lifts and e1RM are now actively ranked in global and divisonal leaderboards.", 'Opted in to Public Leagues');
+                } else {
+                    toast.success('Your profile and lifts have been hidden from public leagues.', 'Opted out of Public Leagues');
+                }
+                void fetchUserSnapshot();
+            } else {
+                toast.error(data?.message || 'Failed to update leaderboard privacy settings', 'Bodyweight Required');
+            }
+        } catch {
+            toast.error('Network error updating leaderboard privacy settings');
+        } finally {
+            setIsTogglingOptIn(false);
         }
     };
-    const handleOpenAthlete = (athleteId: string) => {
-        const found = MOCK_ATHLETES.find((a) => a.id === athleteId);//todo: replace mock data
-        if (found) {
-            setSelectedAthlete(found);
-            setIsDrawerOpen(true);
+
+    const handleOpenAthlete = (athleteId?: string) => {
+        const athId = athleteId || user?.id || '';
+        const athleteName = userStanding?.displayName || user?.name || 'You';
+        const fallbackAthlete: ClashAthlete = {
+            id: athId,
+            name: athleteName,
+            initials: athleteName.slice(0, 2).toUpperCase() || 'AT',
+            avatarUrl: userStanding?.avatarUrl || user?.avatarUrl,
+            code: 'OPTICLASH',
+            gender: (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male'),
+            bodyweightKg: userStanding?.bodyweightKg || 74,
+            squat1RM: userStanding?.squat1RM || 0,
+            bench1RM: userStanding?.bench1RM || 0,
+            deadlift1RM: userStanding?.deadlift1RM || 0,
+            totalE1RM: userStanding?.totalE1RM || 0,
+            dotsScore: userStanding?.dotsScore || 0,
+            tier: isLeaderboardOptedIn ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked',
+            tierLevel: userStanding?.tierLevel || 1,
+            rankTrend: userStanding?.rankTrend || 0,
+            weeklyVolumeKg: userStanding?.weeklyVolumeKg || 0,
+            lastWorkoutDate: new Date().toISOString(),
+            muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+            trophies: [],
+            recentWorkouts: []
         }
+        setSelectedAthlete(fallbackAthlete);
+        setIsDrawerOpen(true);
     };
 
     //f3-5: handle feed kudos
@@ -180,7 +297,7 @@ export default function ArenaHubPage() {
                 void connection.stop();
                 return;
             }
-            myArenas.forEach((arena) => {
+            myArenasRef.current.forEach((arena) => {
                 if (arena.type?.toLowerCase() === "private") {
                     connection.invoke("JoinArena", arena.id);
                 }
@@ -197,7 +314,7 @@ export default function ArenaHubPage() {
                 athleteName: newActivity.userName,
                 athleteInitials: newActivity.userInitials || "AT",
                 athleteAvatarUrl: newActivity.userAvatarUrl,
-                arenaName: myArenas.find((a) => a.id === newActivity.arenaId)?.name || "Squad Arena",
+                arenaName: myArenasRef.current.find((a) => a.id === newActivity.arenaId)?.name || "Squad Arena",
                 eventText: newActivity.eventText,
                 details: newActivity.details,
                 kudosCount: newActivity.kudosCount ?? 0,
@@ -229,9 +346,30 @@ export default function ArenaHubPage() {
 
         return () => {
             isCancelled = true;
-            void connection.stop();
+            if (connection.state === signalR.HubConnectionState.Connected){
+                void connection.stop();
+            }
         };
-    }, [myArenas, user]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]);
+
+    const displayName = userStanding?.displayName || user?.name || 'Athlete';
+    const userInitials = displayName.slice(0,2).toUpperCase() || 'AT';
+    const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+    const tierBadge = userStanding ? `${userStanding.tier.toUpperCase()} TIER ${userStanding.tierLevel}` : 'UNRANKED';
+
+    const getSeasonCountDown = (): string =>{
+        const now = new Date();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        const diffMS = endOfMonth.getTime() - now.getTime();
+        if (diffMS <= 0) {
+            return '0D 00H';
+        }
+        const days = Math.floor(diffMS/(1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMS % (1000*60*60*24))/(1000*60*60));
+        return `${days}D ${String(hours).padStart(2, '0')}H`;
+    }
+    const seasonCountdown = getSeasonCountDown();
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
@@ -270,32 +408,35 @@ export default function ArenaHubPage() {
                 <Card className="bg-surface border-border overflow-hidden shadow-sm p-6 relative">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
                         <div className="flex items-start gap-4">
-                            <button type="button" onClick={() => handleOpenAthlete(currentUser.id)}
+                            <button type="button" onClick={() => handleOpenAthlete(user?.id)}
                             className="hover:opacity-90 transition cursor-pointer shrink-0 rounded-2xl">
-                                <AthleteAvatar initials={currentUser.initials} name={currentUser.name} avatarUrl={currentUser.avatarUrl} isCurrentUser={true} size="xl"/>
+                                <AthleteAvatar initials={userInitials} name={displayName} avatarUrl={userStanding?.avatarUrl || user?.avatarUrl} isCurrentUser={true} size="xl"/>
                             </button>
 
                             <div>
                                 <div className="flex items-center gap-2 font-sans">
                                     <span className="text-xs font-bold text-brand bg-brand-fill border border-brand/30 px-2 py-0.5 rounded uppercase tracking-wider">
-                                        {/* todo: replace alll this mock data */}
-                                        GOLD TIER II 
+                                        {tierBadge}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        September Season
+                                        {currentMonth} Season
                                     </span>
                                 </div>
                                 <h2 className="font-display text-2xl md:text-3xl tracking-wide text-foreground mt-1">
-                                    Cailin Smith
+                                    {displayName}
                                 </h2>
                                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1.5 font-sans">
-                                    <span className="flex items-center gap-1 font-bold text-brand">
-                                        <Trophy className="w-4 h-4 text-warning"/>Rank #2 on Season League
-                                    </span>
-                                    <span>-</span>
-                                    <span>Score:<strong className="text-foreground">{currentUser.dotsScore} DOTS</strong></span>
-                                    <span>-</span>
-                                    <span className="text-success font-semibold">6.3 pts to Rank #1</span>
+                                    {userStanding ? (
+                                        <>
+                                            <span className="flex items-center gap-1 font-bold text-brand">
+                                                <Trophy className="w-4 h-4 text-warning" />Rank #{userStanding.rank} on Season League
+                                            </span>                                            
+                                            <span>-</span>
+                                            <span>Score:<strong className="text-foreground">{userStanding.dotsScore} DOTS</strong></span>
+                                        </>
+                                        ) : (
+                                            <span className="text-muted-foreground">Opt into the global leagues and log your workouts to earn a rank and DOTS score for this month.</span>
+                                        )}
                                 </div>
                             </div>
                         </div>
@@ -306,7 +447,7 @@ export default function ArenaHubPage() {
                                     Season Reset In
                                 </span>
                                 <span className="font-display text-2xl text-foreground flex items-center gap-1.5 mt-0.5">
-                                    <Clock className="w-4 h-4 text-warning"/> 17D 08H
+                                    <Clock className="w-4 h-4 text-warning"/> {seasonCountdown}
                                 </span>
                             </div>
 
@@ -330,7 +471,6 @@ export default function ArenaHubPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            {/* slider todo: accomdate for private arenas in future */}
                             <button type="button" onClick={handleToggleOptIn} 
                             className="flex items-center gap-2.5 bg-surface-2 hover:bg-surface-2/80 border border-border px-3 py-1.5 rounded-xl cursor-pointer transition select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-pressed={isLeaderboardOptedIn} title="Toggle opt into public global and divisional leaderboards">
                                 <span className="text-xs font-sans font-semibold text-muted-foreground">
@@ -383,10 +523,22 @@ export default function ArenaHubPage() {
                                             </div>
                                             {/* f3: when youve done private arenas, you can add the arena code here */}
 
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className="text-xs uppercase font-bold text-brand bg-brand-fill border border-brand/30 px-2.5 py-1 rounded-md font-sans">
                                                     Metric: {arena.metricType}
                                                 </span>
+                                                {arena.type?.toLowerCase() === 'private' && (
+                                                    isArenaConcluded(arena) ? (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/30 px-2 py-0.5 rounded-md font-sans">
+                                                            Concluded
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 px-2 py-0.5 rounded-md font-sans flex items-center gap-1">
+                                                            <Clock className="w-3 h-3"/>
+                                                            {arena.daysRemaining ?? arena.durationDays}d left
+                                                        </span>
+                                                    )
+                                                )}
                                             </div>
                                         </div>
 
@@ -422,9 +574,11 @@ export default function ArenaHubPage() {
                             </div>
                             ) : (
                             activityList.map((act) => (
-                                <div key={act.id} onClick={() => handleOpenAthlete(act.athleteId)}
-                                className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition cursor-pointer">
-                                    <div className="flex items-center gap-3.5">
+                                <div key={act.id}
+                                className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition">
+                                    <button type="button" onClick={() => handleOpenAthlete(act.athleteId)}
+                                    className="flex items-center gap-3.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg">
+
                                         <AthleteAvatar initials={act.athleteInitials} name={act.athleteName} avatarUrl={act.athleteAvatarUrl} size="md"/>
                                         <div>
                                             <div className="flex items-center gap-2 font-sans">
@@ -438,7 +592,7 @@ export default function ArenaHubPage() {
                                                 <span className="font-semibold text-brand">{act.eventText}</span> - {act.details}
                                             </p>
                                         </div>
-                                    </div>
+                                    </button>
 
                                     <div className="flex items-center gap-3">
                                         <Button variant="secondary" size="sm" onClick={(e) => handleFeedKudos(e, act.id)}

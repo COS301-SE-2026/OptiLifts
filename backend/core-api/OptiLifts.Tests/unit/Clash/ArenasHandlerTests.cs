@@ -48,7 +48,8 @@ public sealed class ArenasHandlerTests : IDisposable
             EmailHash = $"hash_{friendCode.ToLowerInvariant()}",
             PasswordHash = "test-hash",
             DisplayName = name,
-            FriendCode = friendCode
+            FriendCode = friendCode,
+            Weight = "75.0"
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync();

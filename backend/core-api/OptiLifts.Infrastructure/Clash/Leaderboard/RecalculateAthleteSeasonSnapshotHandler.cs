@@ -54,7 +54,7 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
 
         var (tier, tierLevel) = DetermineTier(dotsScore);
 
-        var weeklyVolInKgs = await GetWeeklyVolAsync(request.UserId, now, cancellationToken);
+        var weeklyVolInKgs = await GetWeeklyVolAsync(request.UserId, ssnStart, ssnEnd, cancellationToken);
         var lastWorkoutDate = await GetLastWorkoutDateAsync(request.UserId, cancellationToken) ?? ssnStart.Date;
 
         //making of snapshot
@@ -135,10 +135,8 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
         return (decimal)best;
     }
 
-    private async Task<decimal> GetWeeklyVolAsync(Guid userId, DateTime referenceDate, CancellationToken cancellationToken)
+    private async Task<decimal> GetWeeklyVolAsync(Guid userId, DateTime seasonStart, DateTime seasonEnd, CancellationToken cancellationToken)
     {
-        var windowStart = referenceDate.AddDays(-7);
-
         var sets = await _dbContext.WorkoutLogSets
             .AsNoTracking()
             .Join(_dbContext.WorkoutLogs, s => s.LogId, l => l.Id, (s, l) => new { Set = s, Log = l })
@@ -146,8 +144,8 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
             .Where(x => x.Entry.UserId == userId
                 && x.Set.Type == SetType.Normal
                 && x.Log.CompletedAt != null
-                && x.Log.CompletedAt >= windowStart
-                && x.Log.CompletedAt <= referenceDate)
+                && x.Log.CompletedAt >= seasonStart
+                && x.Log.CompletedAt <= seasonEnd)
             .Select(x => new { x.Set.Weight, x.Set.Reps })
             .ToListAsync(cancellationToken);
 

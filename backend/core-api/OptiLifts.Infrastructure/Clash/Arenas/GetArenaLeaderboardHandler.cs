@@ -81,8 +81,9 @@ public sealed class GetArenaLeaderboardHandler : IRequestHandler<GetArenaLeaderb
                 var deadlift = snap?.Deadlift1RM ?? 0m;
                 var totalE1rm = snap?.TotalE1RM ?? 0m;
                 var volume = snap?.WeeklyVolumeKg ?? 0m;
-                var tier = snap?.Tier ?? "Bronze";
-                var tierLevel = snap?.TierLevel ?? 1;
+                var isOptedIn = user.GlobalLeaderboardOptIn;
+                var tier = isOptedIn ? (snap?.Tier ?? "Bronze") : "Unranked";
+                var tierLevel = isOptedIn ? (snap?.TierLevel ?? 1) : 0;
                 var trend = snap?.RankTrend ?? 0;
                 var gender = snap?.Gender ?? (user.Sex ?? "Male");
                 var bodyweight = snap?.BodyweightKg ?? 75.0m;

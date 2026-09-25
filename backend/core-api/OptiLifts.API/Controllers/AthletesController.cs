@@ -3,8 +3,8 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OptiLifts.Application.Clash.Athletes.Queries;
 using OptiLifts.Application.Clash.Athletes.Commands;
+using OptiLifts.Application.Clash.Athletes.Queries;
 
 namespace OptiLifts.API.Controllers;
 
@@ -55,7 +55,7 @@ public sealed class AthletesController : ControllerBase
         }
 
         var profile = await _sender.Send(new GetAthleteProfileQuery(id, userId), cancellationToken);
-        
+
         if (profile is null)
         {
             return NotFound();

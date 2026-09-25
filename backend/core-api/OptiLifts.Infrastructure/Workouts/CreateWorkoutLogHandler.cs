@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using OptiLifts.Application.Clash.Leaderboard.Commands;
+using OptiLifts.Application.Clash.Notifications;
 using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.CreateSession;
 using OptiLifts.Domain.Workouts;
@@ -14,12 +14,14 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
     private readonly OptiLiftsDbContext _dbContext;
     private readonly IPlateauDetectionService _plateauDetectionService;
     private readonly ISender? _sender;
+    private readonly IPublisher? _publisher;
 
-    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
+    public CreateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null, IPublisher? publisher = null)
     {
         _dbContext = dbContext;
         _plateauDetectionService = plateauDetectionService;
         _sender = sender;
+        _publisher = publisher;
     }
 
     public async Task<CreateWorkoutLogRes?> Handle(CreateWorkoutLogCom request, CancellationToken cancellationToken)
@@ -151,7 +153,7 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
             await _plateauDetectionService.DetectAsync(request.UserId, exerciseId, cancellationToken);
         }
         await GenerateOverloadAsync(request.UserId, log.CompletedAt.HasValue, orderedExercises.Select(exercise => exercise.ExerciseId), cancellationToken);
-        await NotifyWorkoutCompletedAsync(request.UserId, log.CompletedAt.HasValue, cancellationToken);
+        await NotifyWorkoutCompletedAsync(request.UserId, log.Id, log.CompletedAt.HasValue, cancellationToken);
 
         return new CreateWorkoutLogRes(log.Id, entryId, AlreadyExisted: false);
     }
@@ -169,14 +171,14 @@ public sealed class CreateWorkoutLogHandler : IRequestHandler<CreateWorkoutLogCo
         }
     }
 
-    private async Task NotifyWorkoutCompletedAsync(Guid userId, bool isCompleted, CancellationToken cancellationToken)
+    private async Task NotifyWorkoutCompletedAsync(Guid userId, Guid logId, bool isCompleted, CancellationToken cancellationToken)
     {
-        if (!isCompleted || _sender is null)
+        if (!isCompleted || _publisher is null)
         {
             return;
         }
 
-        await _sender.Send(new WorkoutCompletedCommand(userId), cancellationToken);
+        await _publisher.Publish(new WorkoutCompletedNotification(userId, logId), cancellationToken);
     }
 
     private async Task<Dictionary<(Guid ExerciseId, ExercisePrType PrType), float>> LoadCurrentBestValuesAsync(

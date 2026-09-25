@@ -1,4 +1,5 @@
-import { AlertTriangle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { AlertTriangle, Brain, XCircle, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { VisionJobState } from '@/types/optivision'
@@ -9,6 +10,15 @@ type ResultPanelProps = Readonly<{
 }>
 
 export function ResultPanel({ state, onReset }: ResultPanelProps) {
+  const [animatedScore, setAnimatedScore] = useState(0)
+
+  useEffect(() => {
+    if (state.phase === 'completed') {
+      const timer = setTimeout(() => setAnimatedScore(state.score), 100)
+      return () => clearTimeout(timer)
+    }
+  }, [state])
+
   if (state.phase === 'failed') {
     return (
       <Card className="border-border bg-card" role="alert">
@@ -50,10 +60,15 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
       {/* feedback */}
       <Card className="border-border bg-card">
         <CardHeader className="px-5 py-4">
-          <CardTitle className="text-base font-bold text-foreground">Coach feedback</CardTitle>
+          <CardTitle className="text-base font-bold text-foreground">
+            <div className="flex flex-row items-center gap-2">
+              <Brain className="h-5 w-5 text-brand shrink-0" aria-hidden="true"/>
+              <span>AI Coach Feedback</span>
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="border-l-[3px] border-brand pl-4 text-base leading-relaxed text-foreground prose prose-sm dark:prose-invert">
+          <div className="text-base leading-relaxed text-foreground prose prose-sm dark:prose-invert">
             {phaseOutput}
           </div>
         </CardContent>
@@ -75,8 +90,8 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
                   cx="50" cy="50" r="42"
                   fill="transparent" stroke="currentColor" strokeWidth="8"
                   strokeLinecap="round"
-                  className={scoreColour}
-                  strokeDasharray={`${(score / 100) * 264} 264`}
+                  className={`transition-all duration-1000 ease-out ${scoreColour}`}
+                  strokeDasharray={`${(animatedScore / 100) * 264} 264`}
                 />
               </svg>
               <div className="flex flex-col items-center justify-center pt-1">
@@ -92,13 +107,13 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
                 {state.phase === 'completed' && state.issues && state.issues.length > 0 ? (
                   state.issues.map((issue) => (
                     <li key={issue} className="flex items-center gap-3">
-                      <div className="h-2 w-2 rounded-full bg-destructive shrink-0" />
+                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
                       <span className="truncate leading-tight">{issue}</span>
                     </li>
                   ))
                 ) : (
                   <li className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                     <span className="text-foreground font-medium leading-tight">Perfect Form</span>
                   </li>
                 )}

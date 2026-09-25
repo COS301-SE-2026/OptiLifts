@@ -4,16 +4,16 @@ import shutil
 
 EXERCISES = {
     "squat": {
-        "classes": 3,
-        "lacking_indices": [2],  # heels_raised
+        "classes": 2,
+        "lacking_indices": [],  # removed clafs raised
     },
     "bench_press": {
-        "classes": 5,
-        "lacking_indices": [0],  # glutes_raised
+        "classes": 4,
+        "lacking_indices": [],  # removed glutes raised
     },
     "deadlift": {
         "classes": 5,
-        "lacking_indices": [1],  # hips_early_rise
+        "lacking_indices": [1],  # hips early rise
     },
 }
 

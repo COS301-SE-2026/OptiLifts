@@ -153,13 +153,14 @@ def train_model(
     criterion_eval,
     optimizer,
     scheduler,
-    f1_metric,
     epochs,
     weights_dir,
     model_save_name,
     device,
+    val_meta,
 ):
     best_val_loss = float("inf")
+    best_val_f1 = 0.0
     best_epoch = 1
 
     # training loop
@@ -182,28 +183,63 @@ def train_model(
 
         model.eval()
         val_loss = 0.0
-        f1_metric.reset()
+
+        all_val_probs = []
+        all_val_targets = []
 
         with torch.no_grad():
             for tensors, labels in val_loader:
                 tensors, labels = tensors.to(device), labels.to(device)
-
                 outputs = model(tensors)
                 loss = criterion_eval(outputs, labels)
-
                 val_loss += loss.item()
 
-                f1_metric.update(torch.sigmoid(outputs), labels.long())
+                all_val_probs.append(torch.sigmoid(outputs).cpu())
+                all_val_targets.append(labels.cpu())
 
         avg_val_loss = val_loss / len(val_loader)
-        val_f1 = f1_metric.compute()
+
+        # video level F1
+        # get all batches together
+        all_val_probs = torch.cat(all_val_probs, dim=0) #NOSONAR
+        all_val_targets = torch.cat(all_val_targets, dim=0) #NOSONAR
+
+        # map windows to rows in concatenated tensor
+        idx_to_row = {orig_idx: row for row, orig_idx in enumerate(val_meta["indices"])}
+
+        video_preds = []
+        video_targets = []
+
+        # get window preds for each vid
+        for i in val_meta["cores"]:
+            row_pos = [idx_to_row[idx] for idx in val_meta["mapping"][i]]
+            vid_wndw_probs = all_val_probs[row_pos]
+            vid_max_probs = torch.max(vid_wndw_probs, dim=0)[0]
+
+            video_preds.append(vid_max_probs)
+            video_targets.append(
+                all_val_targets[row_pos[0]]
+            )  # answer key to check against
+
+        preds_tensor = torch.stack(video_preds).to(device)
+        targets_tensor = torch.stack(video_targets).to(device)
+
+        metric = MultilabelF1Score(
+            num_labels=val_meta["num_classes"], threshold=0.5, average="macro"
+        ).to(device)
+        val_f1 = metric(preds_tensor, targets_tensor.long()).item()
 
         print(
-            f"Epoch [{epoch+1}/{epochs}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1*100:.1f}%"
+            f"Epoch [{epoch+1}/{epochs}] | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Video Val F1: {val_f1*100:.1f}%"
         )
 
         # save best model
-        if avg_val_loss < best_val_loss:
+        is_best = (val_f1 > best_val_f1 + 1e-4) or (
+            abs(val_f1 - best_val_f1) <= 1e-4 and avg_val_loss < best_val_loss
+        )
+
+        if is_best:
+            best_val_f1 = val_f1
             best_val_loss = avg_val_loss
             best_epoch = epoch + 1
 
@@ -214,7 +250,9 @@ def train_model(
 
         scheduler.step(avg_val_loss)
 
-    print(f"\nTraining complete: Epoch {best_epoch} with Val Loss {best_val_loss:.4f})")
+    print(
+        f"\nTraining complete: Epoch {best_epoch} with Video Val F1: {best_val_f1*100:.1f}% (Val Loss: {best_val_loss:.4f})"
+    )
 
 
 def main():
@@ -249,12 +287,12 @@ def main():
     )
 
     train_indices = []
-    for core in train_cores:
-        train_indices.extend(core_to_indices[core])
+    for i in train_cores:
+        train_indices.extend(core_to_indices[i])
 
     val_indices = []
-    for core in val_cores:
-        val_indices.extend(core_to_indices[core])
+    for i in val_cores:
+        val_indices.extend(core_to_indices[i])
 
     # create datasets
     train_dataset = Subset(full_dataset, train_indices)
@@ -297,9 +335,13 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.1, patience=3
     )
-    f1_metric = MultilabelF1Score(
-        num_labels=NUM_CLASSES, threshold=0.5, average="macro"
-    ).to(device)
+
+    val_meta = {
+        "cores": val_cores,
+        "indices": val_indices,
+        "mapping": core_to_indices,
+        "num_classes": NUM_CLASSES,
+    }
 
     train_model(
         model=model,
@@ -309,11 +351,11 @@ def main():
         criterion_eval=criterion_eval,
         optimizer=optimizer,
         scheduler=scheduler,
-        f1_metric=f1_metric,
         epochs=EPOCHS,
         weights_dir=WEIGHTS_DIR,
         model_save_name=MODEL_SAVE_NAME,
         device=device,
+        val_meta=val_meta,
     )
 
 

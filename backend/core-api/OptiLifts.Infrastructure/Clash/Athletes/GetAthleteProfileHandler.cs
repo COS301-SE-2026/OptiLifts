@@ -45,6 +45,9 @@ public sealed class GetAthleteProfileHandler : IRequestHandler<GetAthleteProfile
         var hasSentKudos = await _db.AthleteProfileKudos.AsNoTracking()
             .AnyAsync(k => k.TargetUserId == request.AthleteId && k.SenderUserId == request.RequestingUserId, cancellationToken);
 
+        var isFriend = await _db.Friendships.AsNoTracking().AnyAsync(f => (f.UserId1 == request.RequestingUserId && f.UserId2 == request.AthleteId)
+        || (f.UserId1 == request.AthleteId && f.UserId2 == request.RequestingUserId), cancellationToken);
+
         return new AthleteProfileResult(
             user.Id,
             user.DisplayName,
@@ -62,7 +65,8 @@ public sealed class GetAthleteProfileHandler : IRequestHandler<GetAthleteProfile
             trophies,
             recentWorkouts,
             amountOfKudos,
-            hasSentKudos
+            hasSentKudos,
+            isFriend
         );
     }
 

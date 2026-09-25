@@ -30,12 +30,14 @@ public sealed class GetDivisionalLeaderboardHandler : IRequestHandler<GetDivisio
         var ssnKey = currDate.ToString("yyyy-MM", CultureInfo.InvariantCulture);
         var ssnStart = new DateTime(currDate.Year, currDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        var normalisedGender = string.Equals(request.Gender, "Female", StringComparison.OrdinalIgnoreCase) ? "Female" : "Male";
+
         var baseQuery = _db.AthleteSeasonSnapshots
             .AsNoTracking()
             .Where(s => s.SeasonKey == ssnKey
                 && s.IsOptedIn
                 && s.LastWorkoutDate >= ssnStart
-                && s.Gender == request.Gender
+                && s.Gender == normalisedGender
                 && s.BodyweightKg > minExclusive
                 && s.BodyweightKg <= maxInclusive);
 

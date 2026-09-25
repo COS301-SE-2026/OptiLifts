@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Clash.Friends;
@@ -27,14 +28,22 @@ public sealed class GetFriendsListHandler : IRequestHandler<GetFriendsListQuery,
         var friendids = friendships.Select(f => f.UserId1 == request.UserId ? f.UserId2 : f.UserId1).Distinct().ToList();
         var users = await _db.Users.AsNoTracking().Where(u => friendids.Contains(u.Id)).ToListAsync(cancellationToken);
 
-        return users.Select(u => new FriendDto(
+        var ssnKey = DateTime.UtcNow.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+        var snapshots = await _db.AthleteSeasonSnapshots.AsNoTracking().Where(s => friendids.Contains(s.UserId) && s.SeasonKey == ssnKey)
+        .ToDictionaryAsync(s => s.UserId, cancellationToken);
+
+        return users.Select(u => 
+        {
+            snapshots.TryGetValue(u.Id, out var snap);
+            return new FriendDto(
             Id: u.Id,
             Name: u.DisplayName,
             Initials: FriendshipHelpers.extractInitials(u.DisplayName),
             AvatarUrl: u.ProfileImageUrl,
             Code: u.FriendCode,
-            DotsScore: 0m, //f2 - will be changed
-            Tier: "Bronze"
-        )).ToList();
+            DotsScore: snap?.DotsScore ?? 0m,
+            Tier: snap?.Tier ?? "Bronze"
+            );
+        }).ToList();
     }
 }

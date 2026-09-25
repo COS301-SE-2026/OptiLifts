@@ -53,8 +53,9 @@ export default function ArenaLeaderboardPage() {//
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const [selectedMetric, setSelectedMetric] = useState<'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'>('dots');
-    const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('female');
-    const [selectedBracketId, setSelectedBracketId] = useState<string>('u74');
+    const defaultGender = user?.sex?.toLowerCase() === 'female' ? 'female' : 'male';
+    const [selectedGender, setSelectedGender] = useState<'male' | 'female'>(defaultGender);
+    const [selectedBracketId, setSelectedBracketId] = useState<string>('u59');
     const [currentPage, setCurrentPage] = useState<number>(1);
 
     const [selectedTimeframe, setSelectedTimeframe] = useState<'monthly' | 'all-time'>('monthly');
@@ -71,6 +72,21 @@ export default function ArenaLeaderboardPage() {//
     const isGlobal = arenaId === 'global-league';
     const isPrivate = !isDivisional && !isGlobal;
     const isCreator = (liveArena as { userRole?: string; createdById?: string})?.userRole === 'Owner' || liveArena?.createdById === user?.id;
+
+    const getFrontendMetric = (backendMetric?: string): 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift' => {
+        const m = backendMetric?.toLowerCase() || '';
+        if (m.includes('volume')) return 'volume';
+        if (m.includes('squat')) return 'squat';
+        if (m.includes('bench')) return 'bench';
+        if (m.includes('deadlift')) return 'deadlift';
+        return 'dots';
+    };
+    const primaryMetric = isPrivate ? getFrontendMetric(liveArena?.metricType) : 'dots';
+    useEffect(() => {
+        if (liveArena?.metricType && isPrivate) {
+            setSelectedMetric(getFrontendMetric(liveArena.metricType));
+        }
+    }, [liveArena?.metricType, isPrivate]);
 
     const activeBracket = WEIGHT_CLASS_BRACKETS.find((b) => b.id === selectedBracketId) || WEIGHT_CLASS_BRACKETS[0];
     const userWeightBracket = getWeightClassBracket(currentUserStanding?.bodyweightKg ?? 74);
@@ -365,42 +381,67 @@ export default function ArenaLeaderboardPage() {//
                             }}
                             className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
                                 <span>Overall DOTS</span>
-                                <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${
-                                    selectedMetric === 'dots' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                }`}>
-                                    PRIMARY
-                                </span>
+                                {primaryMetric === 'dots' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'dots' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
 
                             <Button variant={selectedMetric === 'volume' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('volume');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Total Volume
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Total Volume</span>
+                                {primaryMetric === 'volume' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'volume' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
 
                             <Button variant={selectedMetric === 'squat' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('squat');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Squat e1RM
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Squat e1RM</span>
+                                {primaryMetric === 'squat' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'squat' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
 
                             <Button variant={selectedMetric === 'bench' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('bench');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Bench e1RM
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Bench e1RM</span>
+                                {primaryMetric === 'bench' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'bench' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
                             <Button variant={selectedMetric === 'deadlift' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('deadlift');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Deadlift e1RM
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Deadlift e1RM</span>
+                                {primaryMetric === 'deadlift' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'deadlift' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
                         </div>
 

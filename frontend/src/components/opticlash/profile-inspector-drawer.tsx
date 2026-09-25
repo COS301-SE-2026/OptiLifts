@@ -54,6 +54,7 @@ interface AthleteProfileApiResponse {
     recentWorkouts: RecentWorkoutDto[];
     kudosCount: number;
     hasSentKudos: boolean;
+    isFriend?: boolean;
 }
 interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
@@ -103,7 +104,7 @@ export function ProfileInspectorDrawer({
     }
 
     const isCurrentUser = user?.id === athlete.id;
-    const isAlreadyFriend = false;
+    const isAlreadyFriend = profile?.isFriend ?? false;
 
     const handleKudos = async (e: MouseEvent<HTMLButtonElement>) => {
         if(hasGivenKudos || isSubmittingKudos) {
@@ -138,9 +139,28 @@ export function ProfileInspectorDrawer({
         }
     };
 
-    const handleSendFriendRequest = () => {
-        setSentFriendRequest(true);
-        toast.success(`Friend request sent to ${athlete.name}`, 'Request Dispatched');
+    const handleSendFriendRequest = async () => {
+        if (!athlete.code || sentFriendRequest) return;
+        try {
+            const res = await customFetch('/api/clash/friends/requests', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    friendCode: athlete.code
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok) {
+                setSentFriendRequest(true);
+                toast.success(`Friend request sent to ${athlete.name}`, 'Request Dispatched');
+            } else {
+                toast.error(data?.message ?? 'Could not send friend request');
+            }
+        } catch {
+            toast.error('Network error sending friend request');
+        }
     };
 
     const muscleBalanceData: Record<string, number> = {

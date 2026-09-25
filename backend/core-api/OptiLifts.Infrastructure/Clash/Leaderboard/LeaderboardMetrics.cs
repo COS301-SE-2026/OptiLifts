@@ -87,7 +87,7 @@ internal static class LeaderboardMetrics
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.UserId == userId && s.SeasonKey == seasonKey, cancellationToken);
 
-        if (self is null)
+        if (self is null || !self.IsOptedIn)
         {
             return null;
         }

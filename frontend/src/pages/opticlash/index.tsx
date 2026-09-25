@@ -78,6 +78,7 @@ export default function ArenaHubPage() {
     const kudosGivenMapRef = useRef<Record<string, boolean>>({});
 
     const [userStanding, setUserStanding] = useState<UserStandingDto | null>(null);
+    const [globalMemberCount, setGlobalMemberCount] = useState<number>(0);
 
     useEffect(() => {
         activityListRef.current = activityList;
@@ -147,6 +148,9 @@ export default function ArenaHubPage() {
             if (res.ok) {
                 const data = await res.json();
                 setIsLeaderboardOptedIn(data?.isUserOptedIn ?? false);
+                if (typeof data?.totalCount === 'number'){
+                    setGlobalMemberCount(data.totalCount);
+                }
                 if (data?.currentUserEntry) {
                     setUserStanding(data.currentUserEntry);
                 } else {
@@ -166,8 +170,13 @@ export default function ArenaHubPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const arenasWithCount = SYSTEM_ARENAS.map((a) => ({
+        ...a,
+        memberCount: globalMemberCount
+    }));
+
     const allArenas = [
-        ...SYSTEM_ARENAS,
+        ...arenasWithCount,
         ...myArenas
     ];
 

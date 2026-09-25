@@ -8,15 +8,20 @@ import sys
 import threading
 import time
 import uuid
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
-import numpy as np
 import requests
 import torch
 from azure.servicebus import ServiceBusClient, ServiceBusReceiver, ServiceBusReceivedMessage
 from azure.storage.blob import BlobClient
 from dotenv import load_dotenv
+
+from sliding_window import (
+    WEIGHTS_DIR,
+    set_device,
+    run_sliding_window_inference,
+)
+
 
 load_dotenv()
 logging.basicConfig(
@@ -35,34 +40,11 @@ INTERNAL_SECRET = os.getenv("INTERNAL_WORKER_SECRET", "")
 HEARTBEAT_INTERVAL_SECONDS = int(os.getenv("HEARTBEAT_INTERVAL_SECONDS", "15"))
 APPLICATION_JSON = "application/json"
 
-#sliding window params
-WEIGHTS_DIR = Path(__file__).resolve().parent.parent / "training" / "weights"
-WINDOW_SIZE = 90
-STRIDE = 30
-THRESHOLD = 0.80
-
-LABELS = {
-    "squat": ["shallow_depth", "excessive_forward_lean", "heels_raised"],
-    "bench_press": ["glutes_raised", "excessive_elbow_flare", "no_chest_touch", "incorrect_bar_path", "bad_arch"],
-    "deadlift": ["lumbar_flexion", "hips_early_rise", "bar_drifting", "knees_forward", "shallow_depth"]
-}
-
-EXERCISE_ALIASES = {
-    "bench": "bench_press",
-    "benchpress": "bench_press",
-    "bench_press": "bench_press",
-    "squat": "squat",
-    "squats": "squat",
-    "deadlift": "deadlift",
-    "deadlifts": "deadlift",
-}
-
 #states
 RUNNING = True
 CURRENT_STATE = "idle"
 CURRENT_JOB_ID: Optional[str] = None
 HEARTBEAT_STOP_EVENT = threading.Event()
-LOADED_MODELS: Dict[str, Any] = {}
 DEVICE: torch.device = torch.device("cpu")
 
 
@@ -87,6 +69,7 @@ def detect_hardware():
         DEVICE = torch.device("cpu")
         compute_engine = f"CPU Fallback ({exc})"
 
+    set_device(DEVICE)
     short_id = uuid.uuid4().hex[:6]
     clean_dev = device_name.lower().replace(" ", "-").replace("nvidia-", "")[:16]
     node_id = f"node-{hostname}-{clean_dev}-{short_id}"
@@ -100,22 +83,8 @@ def detect_hardware():
         "vram_gb": total_memory_gb,
     }
 
+
 NODE_INFO = detect_hardware()
-
-def get_model(exercise: str):
-    normalised = EXERCISE_ALIASES.get(exercise.lower(), exercise.lower())
-    if normalised in LOADED_MODELS:
-        return normalised, LOADED_MODELS[normalised]
-
-    model_file = WEIGHTS_DIR / f"{normalised}_side.pt"
-    if not model_file.exists():
-        raise FileNotFoundError(f"Model weights not found for '{normalised}' at {model_file}")
-
-    logger.info("Loading TorchScript model: %s onto %s...", model_file.name, DEVICE)
-    model = torch.jit.load(str(model_file), map_location=DEVICE)
-    model.eval()
-    LOADED_MODELS[normalised] = model
-    return normalised, model
 
 
 def send_heartbeat_ping(status: str, job_id: Optional[str] = None) -> bool:
@@ -167,7 +136,7 @@ def notify_offline():
 def signal_handler(signum, frame):
     global RUNNING, CURRENT_STATE
     CURRENT_STATE = "offline"
-    logger.info("\nShutdown signal received (%s). Stopping AMQP listener...", signum)
+    logger.info("\nShutdown signal received (%s). Stopping AMQP listener.", signum)
     RUNNING = False
     HEARTBEAT_STOP_EVENT.set()
     notify_offline()
@@ -215,74 +184,6 @@ def download_coordinates(blob_url_or_name: str) -> Dict[str, Any]:
     return json.loads(content.decode("utf-8"))
 
 
-def parse_frames_to_tensor(coordinates_data: Dict[str, Any]) -> torch.Tensor:
-    frames = coordinates_data.get("frames", [])
-    if not frames:
-        raise ValueError("No frames found in coordinate payload.")
-
-    frame_matrix = []
-    for f in frames:
-        raw_lm = f.get("landmarks", [])
-        frame_lms = []
-        for lm in raw_lm:
-            if isinstance(lm, dict):
-                frame_lms.append([lm.get("x", 0.0), lm.get("y", 0.0), lm.get("z", 0.0)])
-            elif isinstance(lm, (list, tuple)) and len(lm) >= 3:
-                frame_lms.append([lm[0], lm[1], lm[2]])
-            else:
-                frame_lms.append([0.0, 0.0, 0.0])
-        while len(frame_lms) < 33:
-            frame_lms.append([0.0, 0.0, 0.0])
-        frame_matrix.append(frame_lms[:33])
-    tensor_np = np.array(frame_matrix, dtype=np.float32)
-    flattened = tensor_np.reshape(len(frames), -1)
-    transposed = flattened.T
-    batch_tensor = torch.from_numpy(transposed).unsqueeze(0).to(DEVICE)
-    return batch_tensor
-
-
-def run_sliding_window_inference(exercise: str, coordinates_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    normalised_exercise, model = get_model(exercise)
-    class_labels = LABELS.get(normalised_exercise, LABELS["squat"])
-
-    model_input = parse_frames_to_tensor(coordinates_data)
-    total_frames = model_input.shape[2]
-    logger.info("Analysing %d frames for '%s'...", total_frames, normalised_exercise)
-    if total_frames < WINDOW_SIZE:
-        pad_size = WINDOW_SIZE - total_frames
-        last_frame = model_input[:, :, -1:].repeat(1, 1, pad_size)
-        model_input = torch.cat([model_input, last_frame], dim=2)
-        total_frames = WINDOW_SIZE
-
-    peak_scores = dict.fromkeys(class_labels, 0.0)
-
-    with torch.no_grad():
-        for start_idx in range(0, total_frames - WINDOW_SIZE + 1, STRIDE):
-            end_idx = start_idx + WINDOW_SIZE
-            window_tensor = model_input[:, :, start_idx:end_idx]
-
-            outputs = model(window_tensor)
-            probs = torch.sigmoid(outputs)[0].cpu().numpy()
-
-            for i, prob in enumerate(probs):
-                if i < len(class_labels):
-                    flaw = class_labels[i]
-                    if float(prob) > peak_scores[flaw]:
-                        peak_scores[flaw] = float(prob)
-    detected_anomalies = []
-    for flaw, score in peak_scores.items():
-        if score >= THRESHOLD:
-            detected_anomalies.append({
-                "error": flaw,
-                "severity": round(score, 3)
-            })
-    detected_anomalies.sort(key=lambda x: x["severity"], reverse=True)
-    logger.info("Inference complete: %d anomalies detected over threshold (%s).",
-                len(detected_anomalies), detected_anomalies)
-
-    return detected_anomalies
-
-
 def report_results_to_backend(job_id: str, anomalies: List[Dict[str, Any]]):
     webhook_url = f"{CORE_API_URL}/api/Vision/worker-result"
     headers = {
@@ -297,7 +198,7 @@ def report_results_to_backend(job_id: str, anomalies: List[Dict[str, Any]]):
         "detected_anomalies": anomalies,
     }
 
-    logger.info("Reporting results to Core API webhook (%s) for job %s...", webhook_url, job_id)
+    logger.info("Reporting results to Core API webhook (%s) for job %s.", webhook_url, job_id)
     response = requests.post(webhook_url, json=payload, headers=headers, timeout=30)
     response.raise_for_status()
     logger.info("Results successfully accepted by Core API (HTTP %d).", response.status_code)
@@ -306,7 +207,7 @@ def report_results_to_backend(job_id: str, anomalies: List[Dict[str, Any]]):
 def process_message(receiver: ServiceBusReceiver, message: ServiceBusReceivedMessage):
     global CURRENT_STATE, CURRENT_JOB_ID
     raw_body = str(message)
-    logger.info("⚡ [JOB RECEIVED] Message: %s", raw_body)
+    logger.info("[JOB RECEIVED] Message: %s", raw_body)
 
     try:
         data = json.loads(raw_body)
@@ -327,7 +228,7 @@ def process_message(receiver: ServiceBusReceiver, message: ServiceBusReceivedMes
         logger.info("Job %s completed successfully and acknowledged on Service Bus.", job_id)
 
     except Exception as exc:
-        logger.exception("Failed to process message (Job error: %s). Abandoning for retr", exc)
+        logger.exception("Failed to process message (Job error: %s). Abandoning for retry", exc)
         try:
             receiver.abandon_message(message)
         except Exception as abandon_err:
@@ -341,11 +242,11 @@ def print_banner():
     print("=" * 67)
     print("OptiVision Distributed Node Initialising")
     print("=" * 67)
-    print(f"Machine Name    : {NODE_INFO['hostname']}")
-    print(f"Node ID         : {NODE_INFO['node_id']}")
-    print(f"Compute Engine  : {NODE_INFO['compute_engine']}")
-    print(f"Weights Dir     : {WEIGHTS_DIR}")
-    print(f"Service Bus     : {QUEUE_NAME}")
+    print(f"Machine Name: {NODE_INFO['hostname']}")
+    print(f"Node ID: {NODE_INFO['node_id']}")
+    print(f"Compute Engine: {NODE_INFO['compute_engine']}")
+    print(f"Weights Dir: {WEIGHTS_DIR}")
+    print(f"Service Bus: {QUEUE_NAME}")
     print("=" * 67)
 
 

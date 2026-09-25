@@ -183,7 +183,7 @@ def train_model(
 
         model.eval()
         val_loss = 0.0
-        
+
         all_val_probs = []
         all_val_targets = []
 
@@ -193,12 +193,12 @@ def train_model(
                 outputs = model(tensors)
                 loss = criterion_eval(outputs, labels)
                 val_loss += loss.item()
-                
+
                 all_val_probs.append(torch.sigmoid(outputs).cpu())
                 all_val_targets.append(labels.cpu())
 
         avg_val_loss = val_loss / len(val_loader)
-        
+
         # video level F1
         # get all batches together
         all_val_probs = torch.cat(all_val_probs, dim=0)
@@ -206,24 +206,27 @@ def train_model(
 
         # map windows to rows in concatenated tensor
         idx_to_row = {orig_idx: row for row, orig_idx in enumerate(val_meta["indices"])}
-        
+
         video_preds = []
         video_targets = []
 
-        # get window preds for each vid 
+        # get window preds for each vid
         for i in val_meta["cores"]:
-
             row_pos = [idx_to_row[idx] for idx in val_meta["mapping"][i]]
-            vid_wndw_probs = all_val_probs[row_pos] 
-            vid_max_probs = torch.max(vid_wndw_probs, dim=0)[0] 
-            
+            vid_wndw_probs = all_val_probs[row_pos]
+            vid_max_probs = torch.max(vid_wndw_probs, dim=0)[0]
+
             video_preds.append(vid_max_probs)
-            video_targets.append(all_val_targets[row_pos[0]]) #answer key to check against
-            
+            video_targets.append(
+                all_val_targets[row_pos[0]]
+            )  # answer key to check against
+
         preds_tensor = torch.stack(video_preds).to(device)
         targets_tensor = torch.stack(video_targets).to(device)
-        
-        metric = MultilabelF1Score(num_labels=val_meta["num_classes"], threshold=0.5, average="macro").to(device)
+
+        metric = MultilabelF1Score(
+            num_labels=val_meta["num_classes"], threshold=0.5, average="macro"
+        ).to(device)
         val_f1 = metric(preds_tensor, targets_tensor.long()).item()
 
         print(
@@ -231,7 +234,9 @@ def train_model(
         )
 
         # save best model
-        is_best = (val_f1 > best_val_f1 + 1e-4) or (abs(val_f1 - best_val_f1) <= 1e-4 and avg_val_loss < best_val_loss)
+        is_best = (val_f1 > best_val_f1 + 1e-4) or (
+            abs(val_f1 - best_val_f1) <= 1e-4 and avg_val_loss < best_val_loss
+        )
 
         if is_best:
             best_val_f1 = val_f1
@@ -245,7 +250,9 @@ def train_model(
 
         scheduler.step(avg_val_loss)
 
-    print(f"\nTraining complete: Epoch {best_epoch} with Video Val F1: {best_val_f1*100:.1f}% (Val Loss: {best_val_loss:.4f})")
+    print(
+        f"\nTraining complete: Epoch {best_epoch} with Video Val F1: {best_val_f1*100:.1f}% (Val Loss: {best_val_loss:.4f})"
+    )
 
 
 def main():
@@ -328,12 +335,12 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.1, patience=3
     )
-    
+
     val_meta = {
         "cores": val_cores,
         "indices": val_indices,
         "mapping": core_to_indices,
-        "num_classes": NUM_CLASSES
+        "num_classes": NUM_CLASSES,
     }
 
     train_model(

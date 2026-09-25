@@ -429,12 +429,10 @@ export default function ArenaHubPage() {
                                     {userStanding ? (
                                         <>
                                             <span className="flex items-center gap-1 font-bold text-brand">
-                                                <Trophy className="w-4 h-4 text-warning" />Rank #2 on Season League
+                                                <Trophy className="w-4 h-4 text-warning" />Rank #{userStanding.rank} on Season League
                                             </span>                                            
                                             <span>-</span>
                                             <span>Score:<strong className="text-foreground">{userStanding.dotsScore} DOTS</strong></span>
-                                            <span>-</span>
-                                            <span className="text-success font-semibold">6.3 pts to Rank #1</span>
                                         </>
                                         ) : (
                                             <span className="text-muted-foreground">Log your workouts to earn a rank and DOTS score in this month&apos;s league.</span>

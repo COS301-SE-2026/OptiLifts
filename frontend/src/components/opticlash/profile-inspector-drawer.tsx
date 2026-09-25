@@ -281,7 +281,7 @@ export function ProfileInspectorDrawer({
                         className={`flex-1 py-3 font-sans text-xs font-bold uppercase tracking-[1px] border-b-2 transition whitespace-nowrap shrink-0 ${
                             activeTab === 'workouts' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'
                         }`}>
-                        Recent Workouts ({workoutsList.length})
+                        Recent Workouts
                     </button>
                 </div>
 
@@ -313,7 +313,10 @@ export function ProfileInspectorDrawer({
 
                                     <div className="pt-2.5 border-t border-border flex justify-between items-center text-xs text-muted-foreground font-sans">
                                         <span>Total e1RM: <strong className="text-foreground">{ profile?.totalE1RM ?? athlete.totalE1RM} kg</strong></span>
-                                        <span>Weekly Volume: <strong className="text-brand font-bold">{ (profile?.weeklyVolumeKg ?? athlete.weeklyVolumeKg).toLocaleString()} kg</strong></span>
+                                        {/* pls note im aware the variable says weekly volume but i made an exec 
+                                        decision to make it monthly volume instead but dont want to change everywhere 
+                                        it says 'weekly'. in terms of correctness, weekly actually holds monthly so its fine */}
+                                        <span>Monthly Volume: <strong className="text-brand font-bold">{ (profile?.weeklyVolumeKg ?? athlete.weeklyVolumeKg).toLocaleString()} kg</strong></span>
                                     </div>
                                 </CardContent>
                             </Card>

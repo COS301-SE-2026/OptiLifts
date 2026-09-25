@@ -16,9 +16,8 @@ const ARENA_METRIC_OPTIONS = [
     { value: 'DeadliftE1RM', label: 'Deadlift e1RM Ranking'},
 ] as const;
 const ARENA_DURATION_OPTIONS = [
-    { value: '7', label: '7 Days (Sprint Challenge)'},
-    { value:'14', label: '14 Days (Bi-weekly Clash)'},
     { value: '30', label: '30 Days (Full Calendar Season)'},
+    { value: '365', label: 'Annual Season (1 Year)'},
 ] as const;
 
 interface CreateJoinArenaModalProps {
@@ -37,7 +36,7 @@ export function CreateJoinArenaModal({
     const navigate = useNavigate();
     const [arenaName, setArenaName] = useState('');
     const [metric, setMetric] = useState<string>(ARENA_METRIC_OPTIONS[0].value);
-    const [duration, setDuration] = useState<string>(ARENA_DURATION_OPTIONS[2].value);
+    const [duration, setDuration] = useState<string>(ARENA_DURATION_OPTIONS[0].value);
 
     if (!isOpen){
         return null;
@@ -129,9 +128,9 @@ export function CreateJoinArenaModal({
     };
 
     const selectedMetricobj = ARENA_METRIC_OPTIONS.find((m) => m.value === metric) || ARENA_METRIC_OPTIONS[0];
-    const selectedDurobj = ARENA_DURATION_OPTIONS.find((d) => d.value === duration) || ARENA_DURATION_OPTIONS[2];
+    const selectedDurobj = ARENA_DURATION_OPTIONS.find((d) => d.value === duration) || ARENA_DURATION_OPTIONS[0];
 
-    return (//
+    return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-border pb-4">

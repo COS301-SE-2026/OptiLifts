@@ -459,6 +459,7 @@ export default function ArenaLeaderboardPage() {//
                         </div>
 
                         {/* timeframe month vs all time */}
+                        {!isPrivate && (
                         <div className="flex bg-surface-2 border border-border rounded-lg p-1 self-start md:self-auto shrink-0 overflow-x-auto">
                             <button type="button" onClick={() => {
                                 setSelectedTimeframe('monthly');
@@ -479,6 +480,7 @@ export default function ArenaLeaderboardPage() {//
                                 All Time
                             </button>
                         </div>
+                        )}
                     </CardContent>
                 </Card>
 

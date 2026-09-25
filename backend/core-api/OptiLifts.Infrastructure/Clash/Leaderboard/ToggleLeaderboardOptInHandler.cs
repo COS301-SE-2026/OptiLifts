@@ -9,10 +9,12 @@ namespace OptiLifts.Infrastructure.Clash.Leaderboard;
 public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeaderboardOptInCommand, ToggleLeaderboardOptInResult>
 {
     private readonly OptiLiftsDbContext _db;
+    private readonly ISender _sender;
 
-    public ToggleLeaderboardOptInHandler(OptiLiftsDbContext db)
+    public ToggleLeaderboardOptInHandler(OptiLiftsDbContext db, ISender sender)
     {
         _db = db;
+        _sender = sender;
     }
 
     public async Task<ToggleLeaderboardOptInResult> Handle(ToggleLeaderboardOptInCommand request, CancellationToken cancellationToken)
@@ -21,7 +23,14 @@ public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeader
 
         if (user is null)
         {
-            return new ToggleLeaderboardOptInResult(false, false);
+            return new ToggleLeaderboardOptInResult(false, false, "User not found");
+        }
+        if (request.OptIn)
+        {
+            if (string.IsNullOrWhiteSpace(user.Weight) ||!float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bodyweightKg) || bodyweightKg <= 0f)
+            {
+                return new ToggleLeaderboardOptInResult(false, false, "Please set your bodyweight in your profile before opting into competitive leaderboards.");
+            }
         }
 
         user.GlobalLeaderboardOptIn = request.OptIn;
@@ -35,6 +44,11 @@ public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeader
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (request.OptIn)
+        {
+            await _sender.Send(new RecalculateAthleteSeasonSnapshotCommand(request.UserId), cancellationToken);
+        }
 
         return new ToggleLeaderboardOptInResult(true, request.OptIn);
     }

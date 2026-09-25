@@ -49,6 +49,8 @@ public sealed class GetDivisionalLeaderboardHandler : IRequestHandler<GetDivisio
         var currUserEntry = await LeaderboardMetrics.BuildCurrentUserEntryAsync(
             _db, baseQuery, request.Metric, request.RequestingUserId, ssnKey, cancellationToken);
 
-        return new LeaderboardPageResult(entries, totalCount, page, pageSize, currUserEntry);
+        var isUserOptedIn = await _db.Users.Where(u => u.Id == request.RequestingUserId).Select(u => u.GlobalLeaderboardOptIn).FirstOrDefaultAsync(cancellationToken);
+
+        return new LeaderboardPageResult(entries, totalCount, page, pageSize, currUserEntry, isUserOptedIn);
     }
 }

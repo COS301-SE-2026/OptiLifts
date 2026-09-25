@@ -39,6 +39,8 @@ public sealed class GetGlobalLeaderboardHandler : IRequestHandler<GetGlobalLeade
         var currUserEntry = await LeaderboardMetrics.BuildCurrentUserEntryAsync(
             _db, baseQuery, request.Metric, request.RequestingUserId, ssnKey, cancellationToken);
 
-        return new LeaderboardPageResult(entries, totalCount, page, pageSize, currUserEntry);
+            var isUserOptedIn = await _db.Users.Where(u => u.Id == request.RequestingUserId).Select(u => u.GlobalLeaderboardOptIn).FirstOrDefaultAsync(cancellationToken);
+
+        return new LeaderboardPageResult(entries, totalCount, page, pageSize, currUserEntry, isUserOptedIn);
     }
 }

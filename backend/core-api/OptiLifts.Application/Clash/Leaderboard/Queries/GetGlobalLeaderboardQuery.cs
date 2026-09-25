@@ -9,5 +9,6 @@ public sealed record LeaderboardPageResult(
     int TotalCount,
     int Page,
     int PageSize,
-    LeaderboardEntryDto? CurrentUserEntry
+    LeaderboardEntryDto? CurrentUserEntry,
+    bool IsUserOptedIn = false
 );

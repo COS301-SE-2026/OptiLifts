@@ -201,8 +201,8 @@ def train_model(
 
         # video level F1
         # get all batches together
-        all_val_probs = torch.cat(all_val_probs, dim=0)
-        all_val_targets = torch.cat(all_val_targets, dim=0)
+        all_val_probs = torch.cat(all_val_probs, dim=0) #NOSONAR
+        all_val_targets = torch.cat(all_val_targets, dim=0) #NOSONAR
 
         # map windows to rows in concatenated tensor
         idx_to_row = {orig_idx: row for row, orig_idx in enumerate(val_meta["indices"])}

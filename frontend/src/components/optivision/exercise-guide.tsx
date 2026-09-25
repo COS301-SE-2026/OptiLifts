@@ -61,9 +61,9 @@ export function ExerGuide({ exercise, onExerciseChange, disabled }: ExerGuidProp
 
         <div className="flex flex-col gap-2">
           <span className={LABEL_CLASS}>What we check</span>
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-4">
             {guide.checks.map(({ label, tip }) => (
-              <li key={label} className="border-l-[3px] border-brand pl-3">
+              <li key={label} className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="text-xs text-muted-foreground">{tip}</p>
               </li>

@@ -10,7 +10,6 @@ export const EXERCISE_GUIDES: Readonly<Record<VisionExercise, ExerGuideData>> = 
     checks: [
       { label: 'Depth', tip: 'Lower until the crease of your hip is below the top of your kneecap, shallow squats are flagged.' },
       { label: 'Forward lean', tip: 'Keep your chest up and your torso upright, folding forward like a good morning is flagged.' },
-      { label: 'Heels', tip: 'Keep your heels flat on the floor, heels lifting at the bottom are flagged.' },
     ],
   },
   deadlift: {
@@ -30,7 +29,6 @@ export const EXERCISE_GUIDES: Readonly<Record<VisionExercise, ExerGuideData>> = 
     note: 'Filmed from the side.',
     gifUrl: `${GIF_BASE}/0025-EIeI8Vf.gif`,
     checks: [
-      { label: 'Glutes', tip: 'Keep your glutes on the bench for the whole press, glutes lifting off are flagged.' },
       { label: 'Elbow flare', tip: 'Keep your elbows tucked in, elbows flared out to 90 degrees from your torso are flagged.' },
       { label: 'Chest touch', tip: 'Lower the bar all the way to your chest, half reps that never touch are flagged.' },
       { label: 'Bar path', tip: 'Touch the bar to your mid to lower sternum, touching near your neck or down at your stomach is flagged.' },

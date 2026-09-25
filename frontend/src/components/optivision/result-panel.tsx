@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Brain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { VisionJobState } from '@/types/optivision'
@@ -50,10 +50,13 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
       {/* feedback */}
       <Card className="border-border bg-card">
         <CardHeader className="px-5 py-4">
-          <CardTitle className="text-base font-bold text-foreground">Coach feedback</CardTitle>
+          <CardTitle className="text-base font-bold text-foreground">
+            <Brain className="h-5 w-5 text-brand" aria-hidden="true"/>
+            AI Coach Feedback
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="border-l-[3px] border-brand pl-4 text-base leading-relaxed text-foreground prose prose-sm dark:prose-invert">
+          <div className="text-base leading-relaxed text-foreground prose prose-sm dark:prose-invert">
             {phaseOutput}
           </div>
         </CardContent>

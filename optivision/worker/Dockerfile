@@ -14,10 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install python requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && addgroup --system app \
+    && adduser --system --group app
 
 # Copy worker application
-COPY worker.py .
+COPY worker.py sliding_window.py ./
+
+USER app
 
 CMD ["python", "worker.py"]
 

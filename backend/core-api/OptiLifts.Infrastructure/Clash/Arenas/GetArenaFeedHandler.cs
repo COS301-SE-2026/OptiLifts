@@ -48,7 +48,7 @@ public sealed class GetArenaFeedHandler : IRequestHandler<GetArenaFeedQuery, IRe
             .OrderByDescending(a => a.CreatedAt)
             .Take(100)
             .ToListAsync(cancellationToken);
-        }//
+        }
 
         if (activities.Count == 0)
         {

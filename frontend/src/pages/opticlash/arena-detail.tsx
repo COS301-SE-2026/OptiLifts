@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getWeightClassBracket, WEIGHT_CLASS_BRACKETS, type ClashAthlete, type ClashArena } from "@/types/clash";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
+import { Clock, ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -73,6 +73,7 @@ export default function ArenaLeaderboardPage() {//
     const isPrivate = !isDivisional && !isGlobal;
     const isCreator = (liveArena as { userRole?: string; createdById?: string})?.userRole === 'Owner' || liveArena?.createdById === user?.id;
 
+    const isConcluded = isPrivate && liveArena ? (liveArena.isActive === false || (liveArena.daysRemaining !== undefined && liveArena.daysRemaining <= 0)): false;
     const getFrontendMetric = (backendMetric?: string): 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift' => {
         const m = backendMetric?.toLowerCase() || '';
         if (m.includes('volume')) return 'volume';
@@ -153,7 +154,7 @@ export default function ArenaLeaderboardPage() {//
                 }
             } else if (isDivisional) {
                 const normalisedBracket = getNormalisedBracketId(selectedBracketId);
-                const res = await customFetch(`/api/clash/leaderboard/divisional?gender=${selectedGender}&bracketId=${normalisedBracket}&metric=${metricParam}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
+                const res = await customFetch(`/api/clash/leaderboard/divisional?gender=${selectedGender}&bracketId=${normalisedBracket}&metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
                 if (res.ok) {
                     const data: LeaderboardApiResponse = await res.json();
                     setStandings(data.entries ?? []);
@@ -161,7 +162,7 @@ export default function ArenaLeaderboardPage() {//
                     setCurrentUserStanding(data.currentUserEntry ?? null);
                 }
             } else {
-                const res = await customFetch(`/api/clash/leaderboard/global?metric=${metricParam}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
+                const res = await customFetch(`/api/clash/leaderboard/global?metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
                 if (res.ok) {
                     const data: LeaderboardApiResponse = await res.json();
                     setStandings(data.entries ?? []);
@@ -180,7 +181,7 @@ export default function ArenaLeaderboardPage() {//
         // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on dependency change
         void fetchLeaderboard();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [arenaId, selectedMetric, selectedGender, selectedBracketId, currentPage]);
+    }, [arenaId, selectedMetric, selectedGender, selectedBracketId, currentPage, selectedTimeframe]);
 
     //sonqorqube nested ternary issues
     const arenaName = liveArena?.name || (isDivisional ? 'Divisional Weight-Class League': 'Global Season League');
@@ -327,6 +328,18 @@ export default function ArenaLeaderboardPage() {//
                                     <span className="text-[11px] font-bold uppercase tracking-wider bg-brand-fill text-brand border border-brand/30 px-2.5 py-0.5 rounded-full font-sans">
                                         Squad Creator
                                     </span>
+                                )}
+                                {isPrivate && liveArena && (
+                                    isConcluded ? (
+                                        <span className="text-[11px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-0.5 rounded-full font-sans">
+                                            Season Concluded
+                                        </span>
+                                    ) : (
+                                        <span className="text-[11px] font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 px-2.5 py-0.5 rounded-full font-sans flex items-center gap-1.5">
+                                            <Clock className="w-3.5 h-3.5"/>
+                                            {liveArena.daysRemaining ?? liveArena.durationDays} Days Left
+                                        </span>
+                                    )
                                 )}
                             </h1>
                         </div>

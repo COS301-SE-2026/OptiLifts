@@ -182,6 +182,9 @@ export default function ArenaHubPage() {
 
     const filtArenas = allArenas.filter((a) => arenaMode === 'global' ? (a.type?.toLowerCase() === 'global' || a.type?.toLowerCase() === 'divisional') : a.type?.toLowerCase() === 'private');
 
+    const isArenaConcluded = (arena: ClashArena): boolean => {
+        return arena.isActive === false || (arena.daysRemaining !== undefined && arena.daysRemaining <= 0);
+    };
 
     const navigate = useNavigate();
     const [isTogglingOptIn, setIsTogglingOptIn] = useState<boolean>(false);
@@ -523,10 +526,22 @@ export default function ArenaHubPage() {
                                             </div>
                                             {/* f3: when youve done private arenas, you can add the arena code here */}
 
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className="text-xs uppercase font-bold text-brand bg-brand-fill border border-brand/30 px-2.5 py-1 rounded-md font-sans">
                                                     Metric: {arena.metricType}
                                                 </span>
+                                                {arena.type?.toLowerCase() === 'private' && (
+                                                    isArenaConcluded(arena) ? (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/30 px-2 py-0.5 rounded-md font-sans">
+                                                            Concluded
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 px-2 py-0.5 rounded-md font-sans flex items-center gap-1">
+                                                            <Clock className="w-3 h-3"/>
+                                                            {arena.daysRemaining ?? arena.durationDays}d left
+                                                        </span>
+                                                    )
+                                                )}
                                             </div>
                                         </div>
 

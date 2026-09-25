@@ -50,6 +50,7 @@ public sealed class LeaderboardController : ControllerBase
     [HttpGet("global")]
     public async Task<ActionResult<LeaderboardPageResult>> GetGlobal(
         [FromQuery] string metric = "DotsOverall",
+        [FromQuery] string timeframe = "monthly",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -59,7 +60,7 @@ public sealed class LeaderboardController : ControllerBase
             return Unauthorized();
         }
 
-        var res = await _sender.Send(new GetGlobalLeaderboardQuery(userId, metric, page, pageSize), cancellationToken);
+        var res = await _sender.Send(new GetGlobalLeaderboardQuery(userId, metric, timeframe, page, pageSize), cancellationToken);
         return Ok(res);
     }
 
@@ -68,6 +69,7 @@ public sealed class LeaderboardController : ControllerBase
         [FromQuery] string gender,
         [FromQuery] string bracketId,
         [FromQuery] string metric = "DotsOverall",
+        [FromQuery] string timeframe = "monthly",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -77,7 +79,7 @@ public sealed class LeaderboardController : ControllerBase
             return Unauthorized();
         }
 
-        var res = await _sender.Send(new GetDivisionalLeaderboardQuery(userId, gender, bracketId, metric, page, pageSize), cancellationToken);
+        var res = await _sender.Send(new GetDivisionalLeaderboardQuery(userId, gender, bracketId, metric, timeframe, page, pageSize), cancellationToken);
         return Ok(res);
     }
 

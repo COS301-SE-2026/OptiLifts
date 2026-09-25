@@ -30,6 +30,9 @@ export interface ClashArena {
     creatorName?: string;
     memberCount: number;
     endsInText?: string;
+    daysRemaining?: number;
+    isActive?: boolean;
+    seasonEndDate?: string;
     durationDays?: number;
     metricType: 'DOTS Overall' | 'Total Volume' | 'Bench e1RM' | 'Squat e1RM';
     userRole?: string;

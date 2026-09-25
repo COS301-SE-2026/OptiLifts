@@ -13,7 +13,7 @@ EXERCISES = {
     },
     "deadlift": {
         "classes": 5,
-        "lacking_indices": [1],  # hips_early_rise
+        "lacking_indices": [1],  # hips early rise 
     },
 }
 

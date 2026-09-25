@@ -37,7 +37,9 @@ export default function FormCheckPage() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-6">
-        <PageTitle title="FORM CHECK" />
+        <PageTitle>
+          Opti<span className="text-brand">Vision</span>
+        </PageTitle>
       </div>
 
       {!isOnline && <OfflineBanner message="You're offline - reconnect to analyse a video." />}

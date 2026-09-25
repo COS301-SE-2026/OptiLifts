@@ -18,7 +18,7 @@ export const WEIGHT_CLASS_BRACKETS: WeightClassBracket[] = [
 ];
 
 export function getWeightClassBracket(weightKg: number): WeightClassBracket {
-    return WEIGHT_CLASS_BRACKETS.find((b) => weightKg <= b.maxKg) || WEIGHT_CLASS_BRACKETS[WEIGHT_CLASS_BRACKETS.length - 1];
+    return WEIGHT_CLASS_BRACKETS.find((b) => weightKg <= b.maxKg) || WEIGHT_CLASS_BRACKETS.at(-1)!;
 }
 
 export interface ClashArena {

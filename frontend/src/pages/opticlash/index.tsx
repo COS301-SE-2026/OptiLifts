@@ -435,7 +435,7 @@ export default function ArenaHubPage() {
                                             <span>Score:<strong className="text-foreground">{userStanding.dotsScore} DOTS</strong></span>
                                         </>
                                         ) : (
-                                            <span className="text-muted-foreground">Log your workouts to earn a rank and DOTS score in this month&apos;s league.</span>
+                                            <span className="text-muted-foreground">Opt into the global leagues and log your workouts to earn a rank and DOTS score for this month.</span>
                                         )}
                                 </div>
                             </div>

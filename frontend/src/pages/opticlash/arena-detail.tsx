@@ -130,9 +130,9 @@ export default function ArenaLeaderboardPage() {//
                             userId: String(s.userId),
                             rank: Number(s.rank),
                             displayName: String(s.displayName),
-                            avatarUrl: s.avatarUrl ? String(s.avatarUrl) : undefined,
+                            avatarUrl: typeof s.avatarUrl === 'string' ? s.avatarUrl : undefined,
                             bodyweightKg: Number(s.bodyweightKg ?? 0),
-                            tier: String(s.tier ?? 'Unranked'),
+                            tier: typeof s.tier === 'string' ? s.tier : 'Unranked',
                             tierLevel: Number(s.tierLevel ?? 1),
                             dotsScore: Number(s.dotsScore ?? 0),
                             squat1RM: Number(s.squat1RM ?? 0),
@@ -308,6 +308,89 @@ export default function ArenaLeaderboardPage() {//
         }
         return `Rank #${currentUserStanding.rank}`;
     }
+
+    const renderTable = () => {
+        if (isLoading) {
+            return (
+                <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                        Loading leaderboad standings...
+                    </td>
+                </tr>
+            );
+        }
+        if (standings.length === 0) {
+            return (
+                <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                        No athletes ranked yet in this division.
+                    </td>
+                </tr>
+            );
+        }
+        return standings.map((ath) => {
+            const isCurrentUser = ath.isCurrentUser;
+            const isMaster = ath.rank === 1 && ath.tier === 'Overload Master';
+            const initials = ath.displayName.slice(0, 2).toUpperCase() || 'AT';
+
+            return (
+                <tr key={ath.userId} onClick={() => handleOpenAthleteDrawer(ath)}
+                    className={`cursor-pointer transition hover:bg-surface-2/60 ${isCurrentUser ? 'bg-brand-fill/40 border-l-4 border-l-brand' : ''}
+                                ${isMaster ? 'bg-overload-master/5' : ''}`}>
+                    <td className="py-4 px-4 text-center">
+                        <div className="flex justify-center items-center">
+                            {getRankBadgeIcons(ath.rank)}
+                        </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                            <AthleteAvatar initials={initials} name={ath.displayName} avatarUrl={ath.avatarUrl} isCurrentUser={isCurrentUser} size="md" />
+                            <div>
+                                <strong className={`font-sans font-bold text-base md:text-lg block ${getAthleteNameClass(isMaster, isCurrentUser)}`}>
+                                    {ath.displayName}
+                                </strong>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td className="py-4 px-4 text-center">
+                        <TierBadge tier={ath.tier} size="md" />
+                    </td>
+
+                    <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
+                        {ath.bodyweightKg} kg
+                    </td>
+                    <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
+                        {ath.totalE1RM} kg
+                    </td>
+
+                    <td className="py-4 px-4 text-center">
+                        {renderMetricValue(ath)}
+                    </td>
+
+                    {/* trend arrow */}
+                    <td className="py-4 px-4 text-center">
+                        {ath.rankTrend > 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
+                                <TrendingUp className="w-3.5 h-3.5" /> +{ath.rankTrend}
+                            </span>
+                        )}
+                        {ath.rankTrend < 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
+                                <TrendingDown className="w-3.5 h-3.5" /> {ath.rankTrend}
+                            </span>
+                        )}
+                        {ath.rankTrend === 0 && (
+                            <span className="inline-flex items-center text-muted-foreground">
+                                <Minus className="w-3.5 h-3.5" />
+                            </span>
+                        )}
+                    </td>
+                </tr>
+            );
+        });
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-24">
@@ -577,82 +660,7 @@ export default function ArenaLeaderboardPage() {//
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border text-sm md:text-base">
-                                {isLoading ? (
-                                    <tr>
-                                        <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
-                                            Loading leaderboad standings...
-                                        </td>
-                                    </tr>
-                                    ) : standings.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
-                                                No athletes ranked yet in this division.
-                                            </td>
-                                        </tr>
-                                        ) : (
-                                            standings.map((ath) => {
-                                                const isCurrentUser = ath.isCurrentUser;
-                                                const isMaster = ath.rank === 1 && ath.tier === 'Overload Master';
-                                                const initials = ath.displayName.slice(0,2).toUpperCase() || 'AT';
-
-                                                return (
-                                                    <tr key={ath.userId} onClick={() => handleOpenAthleteDrawer(ath)}
-                                                    className={`cursor-pointer transition hover:bg-surface-2/60 ${isCurrentUser ? 'bg-brand-fill/40 border-l-4 border-l-brand' : '' }
-                                                    ${isMaster ? 'bg-overload-master/5' : ''}`}>
-                                                        <td className="py-4 px-4 text-center">
-                                                            <div className="flex justify-center items-center">
-                                                                {getRankBadgeIcons(ath.rank)}
-                                                            </div>
-                                                        </td>
-
-                                                        <td className="py-4 px-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <AthleteAvatar initials={initials} name={ath.displayName} avatarUrl={ath.avatarUrl} isCurrentUser={isCurrentUser} size="md"/>
-                                                                <div>
-                                                                    <strong className={`font-sans font-bold text-base md:text-lg block ${getAthleteNameClass(isMaster, isCurrentUser)}`}>
-                                                                        {ath.displayName}
-                                                                    </strong>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-
-                                                        <td className="py-4 px-4 text-center">
-                                                            <TierBadge tier={ath.tier} size="md"/>
-                                                        </td>
-
-                                                        <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
-                                                            {ath.bodyweightKg} kg
-                                                        </td>
-                                                        <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
-                                                            {ath.totalE1RM} kg
-                                                        </td>
-
-                                                        <td className="py-4 px-4 text-center">
-                                                            {renderMetricValue(ath)}
-                                                        </td>
-
-                                                        {/* trend arrow */}
-                                                        <td className="py-4 px-4 text-center">
-                                                            {ath.rankTrend > 0 && (
-                                                                <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
-                                                                    <TrendingUp className="w-3.5 h-3.5" /> +{ath.rankTrend}
-                                                                </span>
-                                                            )}
-                                                            {ath.rankTrend < 0 && (
-                                                                <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
-                                                                    <TrendingDown className="w-3.5 h-3.5" /> {ath.rankTrend}
-                                                                </span>
-                                                            )}
-                                                            {ath.rankTrend === 0 && (
-                                                                <span className="inline-flex items-center text-muted-foreground">
-                                                                    <Minus className="w-3.5 h-3.5" />
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
+                                {renderTable()}
                             </tbody>
                         </table>
                     </div>

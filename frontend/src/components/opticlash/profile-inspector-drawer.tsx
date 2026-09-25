@@ -1,5 +1,4 @@
-import { CURRENT_USER_ID, MOCK_FRIENDS, type ClashAthlete } from "@/data/clash-mock-data";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { MouseEvent } from "react";
 import { toast } from "../ui/alert";
 import confetti from "canvas-confetti";
@@ -9,7 +8,53 @@ import { Button } from "../ui/button";
 import { Activity, ChevronDown, ChevronUp, Dumbbell, Heart, Medal, Trophy, UserCheck, UserPlus, X } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import SpiderGraph from "../ui/spider-graph";
+import { type ClashAthlete } from "@/types/clash";
+import { useAuth } from "@/context/auth-context";
+import { customFetch } from "@/lib/custom-fetch";
 
+interface MuscleBalanceDto {
+    muscleGroup: string;
+    volumeKg: number;
+}
+interface TrophyDto {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    iconUrl?: string;
+    earnedAt: string;
+}
+interface RecentWorkoutExerciseDto {
+    exerciseName: string;
+    sets: number;
+}
+
+interface RecentWorkoutDto {
+    logId: string;
+    title: string;
+    notes?: string;
+    completedAt?: string;
+    volumeKg: number;
+    exercises: RecentWorkoutExerciseDto[];
+}
+interface AthleteProfileApiResponse {
+    userId: string;
+    displayName: string;
+    bodyweightKg: number;
+    tier: string;
+    tierLevel: number;
+    dotsScore: number;
+    squat1RM: number;
+    bench1RM: number;
+    deadlift1RM: number;
+    totalE1RM: number;
+    weeklyVolumeKg: number;
+    muscleBalance30d: MuscleBalanceDto[];
+    trophies: TrophyDto[];
+    recentWorkouts: RecentWorkoutDto[];
+    kudosCount: number;
+    hasSentKudos: boolean;
+}
 interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
     isOpen: boolean;
@@ -19,35 +64,77 @@ interface ProfileInspectorDrawerProps {
 export function ProfileInspectorDrawer({
     athlete, isOpen, onClose,
 }: Readonly<ProfileInspectorDrawerProps>) {
+    const {user} = useAuth();
+    const [profile, setProfile] = useState<AthleteProfileApiResponse | null>(null);
+    const [isSubmittingKudos, setIsSubmittingKudos] = useState<boolean>(false);
+
     const [activeTab, setActiveTab] = useState<'overview' | 'workouts'>('overview');
-    const [kudosCount, setKudosCount] = useState<number>(14) //todo: replace mock data
+    const [kudosCount, setKudosCount] = useState<number>(0)
     const [hasGivenKudos, setHasGivenKudos] = useState<boolean>(false);
     const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
     const [showTrophiesModal, setShowTrophiesModal] = useState<boolean>(false);
     const [sentFriendRequest, setSentFriendRequest] = useState<boolean>(false);
 
+    useEffect (() => {
+        if (!isOpen || !athlete?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- reset profile on drawer close
+            setProfile(null);
+            return;
+        }
+        let isMounted = true;
+        customFetch(`/api/clash/athletes/${athlete.id}/profile`).then(async (res) => {
+            if (res.ok) {
+                const data: AthleteProfileApiResponse = await res.json();
+                if (isMounted) {
+                    setProfile(data);
+                    setKudosCount(data.kudosCount ?? 0);
+                    setHasGivenKudos(data.hasSentKudos ?? false);
+                }
+            }
+        }).catch(() => {}).finally(() => {});
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isOpen, athlete?.id]);
+
     if(!isOpen || !athlete){
         return null;
     }
 
-    const isCurrentUser = athlete.id === CURRENT_USER_ID; //todo: replace mock data
-    const isAlreadyFriend = MOCK_FRIENDS.some((f) => f.id === athlete.id);
+    const isCurrentUser = user?.id === athlete.id;
+    const isAlreadyFriend = false;
 
-    const handleKudos = (e: MouseEvent<HTMLButtonElement>) => {
-        if (!hasGivenKudos){
-            setKudosCount((prev) => prev + 1);
-            setHasGivenKudos(true);
-            toast.success(`You sent kudos to ${athlete.name}`, 'Kudos Delivered');
-
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = (rect.left + rect.width / 2) / window.innerWidth;
-            const y = (rect.top + rect.height / 2) / window.innerHeight;
-            confetti({
-                particleCount: 35,
-                spread: 60,
-                origin: {x,y},
-                colors: ['#CC0022', '#B35C00', '#FF9800', '#FFFFFF'],
+    const handleKudos = async (e: MouseEvent<HTMLButtonElement>) => {
+        if(hasGivenKudos || isSubmittingKudos) {
+            return;
+        }
+        setIsSubmittingKudos(true);
+        try {
+            const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
+                method: 'POST',
             });
+            if (res.ok) {
+                setKudosCount((prev) => prev + 1);
+                setHasGivenKudos(true);
+                toast.success(`You sent kudos to ${athlete.name}`, 'Kudos Delivered');
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = (rect.left + rect.width / 2) / window.innerWidth;
+                const y = (rect.top + rect.height / 2) / window.innerHeight;
+                confetti({
+                    particleCount: 35,
+                    spread: 60,
+                    origin: {x,y},
+                    colors: ['#CC0022', '#B35C00', '#FF9800', '#FFFFFF'],
+                });                
+            } else {
+                const errData = await res.json().catch(() => null);
+                toast.error(errData?.message ?? 'Failed to send kudos');
+            }
+        } catch {
+            toast.error('Network error sending kudos');
+        } finally {
+            setIsSubmittingKudos(false);
         }
     };
 
@@ -55,6 +142,46 @@ export function ProfileInspectorDrawer({
         setSentFriendRequest(true);
         toast.success(`Friend request sent to ${athlete.name}`, 'Request Dispatched');
     };
+
+    const muscleBalanceData: Record<string, number> = {
+        Chest: 0,
+        Core: 0,
+        Shoulders: 0,
+        Arms: 0,
+        Legs: 0,
+        Back: 0,
+    };
+    if (profile?.muscleBalance30d) {
+        for (const item of profile.muscleBalance30d) {
+            if (item.muscleGroup in muscleBalanceData) {
+                muscleBalanceData[item.muscleGroup] = Number(item.volumeKg);
+            }
+        }
+    } else if (athlete.muscleBalance30d) {
+        Object.assign(muscleBalanceData, athlete.muscleBalance30d);
+    }
+    const workoutsList = profile?.recentWorkouts?.map((w) => {
+        const dateStr = w.completedAt ? new Date(w.completedAt).toLocaleDateString(): 'Recent';
+        return {
+            id: w.logId,
+            title: w.title,
+            date: dateStr,
+            durationMins: 45,
+            volumeKg: Number(w.volumeKg),
+            exercises: w.exercises.map((ex) => ({
+                name: ex.exerciseName,
+                sets: `${ex.sets} sets`,
+            })),
+        };
+    }) ?? athlete.recentWorkouts;
+
+    const trophiesList = profile?.trophies?.map((t) => ({
+        id: t.id,
+        name: t.name,
+        category: t.category,
+        description: t.description,
+        earnedAt: t.earnedAt,
+    })) ?? athlete.trophies;
 
     return (
         <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
@@ -86,7 +213,7 @@ export function ProfileInspectorDrawer({
 
                     {/* action bar */}
                     <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-border">
-                        <Button variant="secondary" size="sm" onClick={handleKudos} 
+                        <Button variant="secondary" size="sm" onClick={handleKudos} disabled={hasGivenKudos || isSubmittingKudos || isCurrentUser}
                         className={`flex-1 min-w-[100px] h-8 text-xs font-semibold ${hasGivenKudos ? 'border border-brand text-brand' : ''}`}>
                             <Heart className={`w-3.5 h-3.5 mr-1 ${hasGivenKudos ? 'fill-brand text-brand': ''}`}/>
                             <span>{kudosCount} Kudos</span>
@@ -134,7 +261,7 @@ export function ProfileInspectorDrawer({
                         className={`flex-1 py-3 font-sans text-xs font-bold uppercase tracking-[1px] border-b-2 transition whitespace-nowrap shrink-0 ${
                             activeTab === 'workouts' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'
                         }`}>
-                        Recent Workouts ({athlete.recentWorkouts.length})
+                        Recent Workouts ({workoutsList.length})
                     </button>
                 </div>
 
@@ -152,21 +279,21 @@ export function ProfileInspectorDrawer({
                                     <div className="grid grid-cols-3 gap-2.5">
                                         <div className="p-2.5 bg-surface-2 rounded-lg border border-border text-center">
                                             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block font-sans">Squat</span>
-                                            <span className="font-display text-xl font-bold text-foreground">{athlete.squat1RM} kg</span>
+                                            <span className="font-display text-xl font-bold text-foreground">{profile?.squat1RM ?? athlete.squat1RM} kg</span>
                                         </div>
                                         <div className="p-2.5 bg-surface-2 rounded-lg border border-border text-center">
                                             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block font-sans">Bench</span>
-                                            <span className="font-display text-xl font-bold text-foreground">{athlete.bench1RM} kg</span>
+                                            <span className="font-display text-xl font-bold text-foreground">{profile?.bench1RM ?? athlete.bench1RM} kg</span>
                                         </div>
                                         <div className="p-2.5 bg-surface-2 rounded-lg border border-border text-center">
                                             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block font-sans">Deadlift</span>
-                                            <span className="font-display text-xl font-bold text-foreground">{athlete.deadlift1RM} kg</span>
+                                            <span className="font-display text-xl font-bold text-foreground">{profile?.deadlift1RM ?? athlete.deadlift1RM} kg</span>
                                         </div>
                                     </div>
 
                                     <div className="pt-2.5 border-t border-border flex justify-between items-center text-xs text-muted-foreground font-sans">
-                                        <span>Total e1RM: <strong className="text-foreground">{athlete.totalE1RM} kg</strong></span>
-                                        <span>Weekly Volume: <strong className="text-brand font-bold">{athlete.weeklyVolumeKg.toLocaleString()} kg</strong></span>
+                                        <span>Total e1RM: <strong className="text-foreground">{ profile?.totalE1RM ?? athlete.totalE1RM} kg</strong></span>
+                                        <span>Weekly Volume: <strong className="text-brand font-bold">{ (profile?.weeklyVolumeKg ?? athlete.weeklyVolumeKg).toLocaleString()} kg</strong></span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -179,7 +306,7 @@ export function ProfileInspectorDrawer({
                                         <span className="text-[11px] text-brand font-semibold lowercase">last 30 days</span>
                                     </div>
                                     <div className="flex justify-center items-center py-2">
-                                        <SpiderGraph data={athlete.muscleBalance30d} className="max-w-[280pc] max-h-[280px]"/>
+                                        <SpiderGraph data={muscleBalanceData} className="max-w-[280pc] max-h-[280px]"/>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -188,12 +315,12 @@ export function ProfileInspectorDrawer({
 
                     {activeTab === 'workouts' && (
                         <div className="space-y-3">
-                            {athlete.recentWorkouts.length === 0 ? (
+                            {workoutsList.length === 0 ? (
                                 <div className="text-center py-10 text-muted-foreground text-xs font-sans">
                                     No public workout logs shared yet for this user.
                                 </div>
                             ):(
-                                athlete.recentWorkouts.map((w) => {
+                                workoutsList.map((w) => {
                                     const isExpanded = expandedWorkoutId === w.id;
                                     return (
                                         <Card key={w.id} className="bg-surface border-border shadow-sm overflow-hidden transition">
@@ -259,7 +386,7 @@ export function ProfileInspectorDrawer({
                         </p>
 
                         <div className="my-5 space-y-2.5 text-left">
-                            {athlete.trophies.length > 0 ? (
+                            {trophiesList.length > 0 ? (
                                 athlete.trophies.map((t) => (
                                     <div key={t.id} className="p-3 bg-surface-2 rounded-xl border border-border flex items-start gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shrink-0">

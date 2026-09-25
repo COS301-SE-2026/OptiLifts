@@ -83,10 +83,16 @@ export interface ClashAthlete {
 
 export interface ClashActivityItem {
     id: string;
+    arenaId: string;
+    arenaName: string;
+    athleteId: string;
     athleteName: string;
+    athleteInitials: string;
     athleteAvatarUrl?: string;
-    message: string;
-    timestamp: string;
-    type: 'pr' | 'tier_up' | 'rank_jump' | 'streak';
-    badgeText?: string;
+    timeAgo: string;
+    eventText: string;
+    details: string;
+    kudosCount: number;
+    isPr?: boolean;
+    isPromotion?: boolean;
 }

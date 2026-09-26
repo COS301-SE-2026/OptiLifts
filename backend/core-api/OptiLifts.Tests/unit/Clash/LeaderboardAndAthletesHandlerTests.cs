@@ -263,7 +263,7 @@ public sealed class LeaderboardAndAthletesHandlerTests : IDisposable
     {
         var user = await SeedUserAsync("Dany", code1);
         var handler = new GetDivisionalLeaderboardHandler(_db);
-        var res = await handler.Handle(new GetDivisionalLeaderboardQuery(user.Id, "Female", "not-a-bracket", "DotsOverall", 1, 10), CancellationToken.None);
+        var res = await handler.Handle(new GetDivisionalLeaderboardQuery(user.Id, "Female", "not-a-bracket", "DotsOverall", "monthly", 1, 10), CancellationToken.None);
 
         res.TotalCount.Should().Be(0);
         res.Entries.Should().BeEmpty();
@@ -289,7 +289,7 @@ public sealed class LeaderboardAndAthletesHandlerTests : IDisposable
 
         res.Should().NotBeNull();
         res!.DotsScore.Should().Be(0m);
-        res.Tier.Should().Be("Bronze");
+        res.Tier.Should().Be("Unranked");
         res.MuscleBalance30d.Should().HaveCount(6);
         res.Trophies.Should().BeEmpty();
         res.RecentWorkouts.Should().BeEmpty();

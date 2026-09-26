@@ -99,3 +99,184 @@ export interface ClashActivityItem {
     isPr?: boolean;
     isPromotion?: boolean;
 }
+
+export interface DuelSummary {
+    id: string;
+    title: string;
+    challengerUserId: string;
+    challengerName: string;
+    challengerAvatarUrl?: string | null;
+    rivalUserId: string;
+    rivalName: string;
+    rivalAvatarUrl?: string | null;
+    exerciseName: string;
+    targetType: string; 
+    status: string; //pending, active, finished, declined
+    startDate?: string | null;
+    endDate?: string | null;
+    challengerCurrentValue: number | string;
+    rivalCurrentValue: number | string;
+    challengerBaselineValue?: number | string | null;
+    rivalBaselineValue?: number | string | null;
+    winnerUserId?: string | null;
+    isDraw: boolean;
+}
+
+export interface DuelTimelineEventItem {
+    id: string;
+    userId: string;
+    userName: string;
+    eventText: string;
+    isPr: boolean;
+    createdAt: string;
+}
+
+export interface DuelDetail extends DuelSummary {
+    timeline: DuelTimelineEventItem[];
+}
+
+export interface UserDuelsResponse {
+    duels: DuelSummary[];
+    won: number;
+    lost: number;
+    active: number;
+    winRatePercent: number;
+}
+
+export interface DuelInviteItem {
+    id: string;
+    challengerUserId: string;
+    challengerName: string;
+    challengerAvatarUrl?: string | null;
+    exerciseName: string;
+    targetType: string;
+    durationDays: number;
+    createdAt: string;
+}
+
+export interface DuelMatchupState {
+    isUserChallenger: boolean;
+    userRawValue: number;
+    rivalRawValue: number;
+    rivalName: string;
+    rivalId: string;
+    rivalFirstName: string;
+    rivalInitials: string;
+    rivalAvatarUrl?: string | null;
+    userInitials: string;
+    userAvatarUrl?: string | null;
+    userDisplayMetric: string;
+    rivalDisplayMetric: string;
+    userProgressPercent: number;
+    rivalProgressPercent: number;
+    isWinning: boolean;
+    isTied: boolean;
+    leadText: string;
+    endsInText: string;
+    isFinished: boolean;
+    userWon: boolean;
+}
+
+export function getDuelMatchupState(
+    duel: DuelSummary,
+    currentUserId?: string,
+    currentUserName?: string,
+    now: number = Date.now()
+) : DuelMatchupState {
+    const isUserChallenger = !currentUserId || duel.challengerUserId === currentUserId;
+
+    const userRawValue = Number(isUserChallenger ? duel.challengerCurrentValue : duel.rivalCurrentValue) || 0;
+    const rivalRawValue = Number(isUserChallenger ? duel.rivalCurrentValue : duel.challengerCurrentValue) || 0;
+    const userBaseline = Number(isUserChallenger ? duel.challengerBaselineValue : duel.rivalBaselineValue) || 0;
+    const rivalBaseline = Number(isUserChallenger ? duel.rivalBaselineValue : duel.challengerBaselineValue) || 0;
+    const rivalName = (isUserChallenger ? duel.rivalName : duel.challengerName) || 'Rival';
+    const rivalId = (isUserChallenger ? duel.rivalUserId : duel.challengerUserId) || '';
+    const rivalAvatarUrl = isUserChallenger ? duel.rivalAvatarUrl : duel.challengerAvatarUrl;
+    const userAvatarUrl = isUserChallenger ? duel.challengerAvatarUrl : duel.rivalAvatarUrl;
+
+    const rivalInitials = rivalName ? rivalName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
+    const userInitials = (currentUserName || (isUserChallenger ? duel.challengerName : duel.rivalName) || 'You').split(' ').map((n) => n[0]).join('').slice(0,2).toUpperCase();
+
+    const isVolume = duel.targetType?.toLowerCase().includes('volume');
+    const calculateGain = (current: number, baseline: number) => {
+        if (baseline <= 0 || current <= 0) return 0;
+        return ((current - baseline) / baseline) * 100;
+    };
+    const userScore = isVolume ? userRawValue : calculateGain(userRawValue, userBaseline);
+    const rivalScore = isVolume ? rivalRawValue : calculateGain(rivalRawValue, rivalBaseline);
+
+    const format = (score: number, rawKg: number) => {
+        if (isVolume) {
+            return `${score.toLocaleString()} kg`;
+        }
+        if (rawKg <= 0) {
+            return '+0.0%';
+        }
+        return `${score >= 0 ? '+' : ''}${score.toFixed(1)}% (${rawKg.toFixed(1)} kg)`;
+    };
+
+    const userDisplayMetric = format(userScore, userRawValue);
+    const rivalDisplayMetric = format(rivalScore, rivalRawValue);    
+    const valA = Math.max(0, userScore);
+    const valB = Math.max(0, rivalScore);
+    let userProgressPercent = 50;
+    let rivalProgressPercent = 50;
+    if (valA + valB > 0) {
+        userProgressPercent = Math.round((valA/(valA+valB))*100);
+        rivalProgressPercent = 100 - userProgressPercent;
+    }
+
+    const isWinning = userScore > rivalScore;
+    const isTied = userScore === rivalScore;
+
+    let leadText = 'All Tied';
+    if (!isTied) {
+        const diff = Math.abs(userScore - rivalScore);
+        const formattedDiff = isVolume ? `${diff.toLocaleString()} kg` : `${diff.toFixed(1)}%`;
+        leadText = isWinning ? `+${formattedDiff} lead` : `-${formattedDiff} behind`;
+    }
+
+    let endsInText = 'Active'
+    if (duel.endDate) {
+        const diffMs = new Date(duel.endDate).getTime() - now;
+        if (diffMs <= 0) {
+            endsInText = 'Concluded';
+        } else {
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            if (diffDays >= 1) {
+                endsInText = `${diffDays}d`;
+            } else {
+                const diffHours = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60)));
+                endsInText = `${diffHours}h`;
+            }
+        }
+    }
+
+    const isFinished = duel.status?.toLowerCase() === 'finished';
+    const temp = (isUserChallenger ? duel.winnerUserId === duel.challengerUserId : duel.winnerUserId === duel.rivalUserId);
+    const userWon = duel.winnerUserId ? temp : userRawValue > rivalRawValue;
+
+    return {
+        isUserChallenger,
+        userRawValue,
+        rivalRawValue,
+        rivalName,
+        rivalId,
+        rivalFirstName: rivalName.split(' ')[0] || 'Rival',
+        rivalInitials,
+        rivalAvatarUrl,
+        userInitials,
+        userAvatarUrl,
+        userDisplayMetric,
+        rivalDisplayMetric,
+        userProgressPercent,
+        rivalProgressPercent,
+        isWinning,
+        isTied,
+        leadText,
+        endsInText,
+        isFinished,
+        userWon,
+    }
+}
+

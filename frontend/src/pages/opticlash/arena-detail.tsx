@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ShareArenaModal } from "@/components/opticlash/share-arena-modal";
 import { customFetch } from "@/lib/custom-fetch";
 import { useAuth } from "@/context/auth-context";
+import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 
 const PAGE_SIZE = 10;
 interface LeaderboardAthleteDto {
@@ -67,6 +68,8 @@ export default function ArenaLeaderboardPage() {//
     const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
+
+    const [isDuelModalOpen, setIsDuelModalOpen] = useState<boolean>(false);
 
     const isDivisional = arenaId === 'weight-class-league';
     const isGlobal = arenaId === 'global-league';
@@ -729,7 +732,12 @@ export default function ArenaLeaderboardPage() {//
                 </div>
             </aside>
 
-            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
+            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
+            onChallengeDuel={() => {
+                setIsDrawerOpen(false);
+                setIsDuelModalOpen(true);
+            }}/>
+            <CreateDuelModal isOpen={isDuelModalOpen} onClose={() => setIsDuelModalOpen(false)} defaultFriend={selectedAthlete}/>
 
             {liveArena && (
                 <>

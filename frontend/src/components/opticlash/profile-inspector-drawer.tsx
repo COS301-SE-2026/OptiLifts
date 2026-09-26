@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import { AthleteAvatar } from "./athlete-avatar";
 import { TierBadge } from "./tier-badge";
 import { Button } from "../ui/button";
-import { Activity, ChevronDown, ChevronUp, Dumbbell, Heart, Medal, Trophy, UserCheck, UserPlus, X } from "lucide-react";
+import { Activity, ChevronDown, ChevronUp, Dumbbell, Heart, Medal, Swords, Trophy, UserCheck, UserPlus, X } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import SpiderGraph from "../ui/spider-graph";
 import { type ClashAthlete } from "@/types/clash";
@@ -40,6 +40,7 @@ interface RecentWorkoutDto {
 interface AthleteProfileApiResponse {
     userId: string;
     displayName: string;
+    avatarUrl?: string;
     bodyweightKg: number;
     tier: string;
     tierLevel: number;
@@ -55,15 +56,16 @@ interface AthleteProfileApiResponse {
     kudosCount: number;
     hasSentKudos: boolean;
     isFriend?: boolean;
+    hasPendingFriendRequest?: boolean;
 }
 interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
     isOpen: boolean;
     onClose: () => void;
-    // onChallengeDuel?: (athlete: ClashAthlete) => void; //f4
+    onChallengeDuel?: (athlete: ClashAthlete) => void; //f4
 }
 export function ProfileInspectorDrawer({
-    athlete, isOpen, onClose,
+    athlete, isOpen, onClose, onChallengeDuel,
 }: Readonly<ProfileInspectorDrawerProps>) {
     const {user} = useAuth();
     const [profile, setProfile] = useState<AthleteProfileApiResponse | null>(null);
@@ -80,9 +82,11 @@ export function ProfileInspectorDrawer({
         if (!isOpen || !athlete?.id) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- reset profile on drawer close
             setProfile(null);
+            setSentFriendRequest(false);
             return;
         }
         let isMounted = true;
+        setSentFriendRequest(false);
         customFetch(`/api/clash/athletes/${athlete.id}/profile`).then(async (res) => {
             if (res.ok) {
                 const data: AthleteProfileApiResponse = await res.json();
@@ -90,6 +94,9 @@ export function ProfileInspectorDrawer({
                     setProfile(data);
                     setKudosCount(data.kudosCount ?? 0);
                     setHasGivenKudos(data.hasSentKudos ?? false);
+                    if (data.hasPendingFriendRequest) {
+                        setSentFriendRequest(true);
+                    }
                 }
             }
         }).catch(() => {}).finally(() => {});
@@ -142,7 +149,8 @@ export function ProfileInspectorDrawer({
     };
 
     const handleSendFriendRequest = async () => {
-        if (!athlete.code || sentFriendRequest) return;
+        if (sentFriendRequest) return;
+        const targetUserId = profile?.userId || athlete.id;
         try {
             const res = await customFetch('/api/clash/friends/requests', {
                 method: 'POST',
@@ -150,13 +158,14 @@ export function ProfileInspectorDrawer({
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    friendCode: athlete.code
+                    targetUserId,
+                    friendCode: athlete.code && athlete.code !== 'OPTICLASH' ? athlete.code : undefined
                 })
             });
             const data = await res.json().catch(() => null);
             if (res.ok) {
                 setSentFriendRequest(true);
-                toast.success(`Friend request sent to ${athlete.name}`, 'Request Dispatched');
+                toast.success(`Friend request sent to ${displayName}`, 'Request Dispatched');
             } else {
                 toast.error(data?.message ?? 'Could not send friend request');
             }
@@ -205,29 +214,33 @@ export function ProfileInspectorDrawer({
         earnedAt: t.earnedAt,
     })) ?? athlete.trophies;
 
+    const displayName = profile?.displayName || athlete.name;
+    const displayInitials = profile?.displayName ? profile.displayName.slice(0, 2).toUpperCase() : athlete.initials;
+    const displayAvatarUrl = profile?.avatarUrl || athlete.avatarUrl;
+
     return (
-        <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-[120] flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
             <button type="button" className="flex-1 cursor-default bg-transparent border-0 outline-none" onClick={onClose} aria-label="Close drawer backdrop"/>
-            <section aria-label={`Athlete profile for ${athlete.name}`}
+            <section aria-label={`Athlete profile for ${displayName}`}
             className="w-full max-w-lg h-full bg-surface border-l border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 text-foreground">
                 <header className="relative bg-surface-2 p-5 border-b border-border">
                     <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4 h-8 w-8 rounded-lg" aria-label="Close">
                         <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
                     </Button>
                     <div className="flex items-center gap-4">
-                        <AthleteAvatar initials={athlete.initials} name={athlete.name} avatarUrl={athlete.avatarUrl} isCurrentUser={isCurrentUser} size="xl"/>
+                        <AthleteAvatar initials={displayInitials} name={displayName} avatarUrl={displayAvatarUrl} isCurrentUser={isCurrentUser} size="xl"/>
                         <div>
                             <h2 className="font-display text-2xl tracking-wide text-foreground leading-tight">
-                                {athlete.name}
+                                {displayName}
                             </h2>
                             <div className="text-xs text-muted-foreground mt-0.5 font-sans">
-                                Bodyweight: <strong className="text-foreground">{athlete.bodyweightKg} kg</strong>
+                                Bodyweight: <strong className="text-foreground">{profile?.bodyweightKg ?? athlete.bodyweightKg} kg</strong>
                             </div>
                             {/* tier + dots badges */}
                             <div className="flex items-center gap-2 mt-2 font-sans">
                                 <TierBadge tier={profile?.tier || athlete.tier || 'Unranked'} size="md"/>
                                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-surface text-brand border border-border">
-                                    {athlete.dotsScore} DOTS
+                                    {profile?.dotsScore ?? athlete.dotsScore} DOTS
                                 </span>
                             </div>
                         </div>
@@ -244,7 +257,13 @@ export function ProfileInspectorDrawer({
                         {!isCurrentUser && (
                             <>
                             {/* f4: 1v1 challenge duel btn */}
-                                {!isAlreadyFriend && (
+                                {isAlreadyFriend ? (
+                                    <Button variant="default" size="sm" onClick={() => onChallengeDuel?.(athlete)}
+                                    className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5">
+                                        <Swords className="w-3.5 h-3.5" />
+                                        <span>1v1 Duel</span>
+                                    </Button>
+                                ) : (
                                     <Button variant={sentFriendRequest ? 'secondary' : 'default'} size="sm" disabled={sentFriendRequest} onClick={handleSendFriendRequest}
                                     className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5">
                                         {sentFriendRequest ? (
@@ -393,7 +412,7 @@ export function ProfileInspectorDrawer({
 
             {/* trophies + achievments modal */}
             {showTrophiesModal && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <Card className="bg-surface border-border max-w-md w-full p-6 text-center relative shadow-2xl">
                         <Button variant="ghost" size="icon" onClick={() => setShowTrophiesModal(false)}
                             className="absolute top-4 right-4 h-8 w-8" aria-label="Close">
@@ -404,15 +423,15 @@ export function ProfileInspectorDrawer({
                             <Trophy className="w-7 h-7"/>
                         </div>
                         <h3 className="font-display text-2xl tracking-wide text-foreground">
-                            {athlete.name}&apos;s Trophies
+                            {displayName}&apos;s Trophies
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5 font-sans">
                             Earned milestones and competitive season badges
                         </p>
 
-                        <div className="my-5 space-y-2.5 text-left">
+                        <div className="my-5 space-y-2.5 text-left max-h-80 overflow-y-auto pr-1">
                             {trophiesList.length > 0 ? (
-                                athlete.trophies.map((t) => (
+                                trophiesList.map((t) => (
                                     <div key={t.id} className="p-3 bg-surface-2 rounded-xl border border-border flex items-start gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shrink-0">
                                             <Medal className="w-5 h-5"/>

@@ -27,7 +27,7 @@ public sealed class SendDuelHypeHandler : IRequestHandler<SendDuelHypeCommand, S
         }
 
         var sender = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
-        
+
         if (sender is null)
         {
             return new SendDuelHypeResult(false, "User not found");

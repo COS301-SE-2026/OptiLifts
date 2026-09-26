@@ -60,7 +60,7 @@ public sealed class DuelsController : ControllerBase
         }
 
         var success = await _sender.Send(new RespondToDuelCommand(userId, id, request.Accept), cancellationToken);
-        
+
         if (!success)
         {
             return NotFound(new { message = "Duel not found or already resolved" });
@@ -90,12 +90,12 @@ public sealed class DuelsController : ControllerBase
         }
 
         var res = await _sender.Send(new GetDuelDetailQuery(userId, id), cancellationToken);
-        
+
         if (res is null)
         {
             return NotFound();
         }
-        
+
         return Ok(res);
     }
 
@@ -108,13 +108,49 @@ public sealed class DuelsController : ControllerBase
         }
 
         var res = await _sender.Send(new SendDuelHypeCommand(userId, id), cancellationToken);
-        
+
         if (!res.Success)
         {
             return BadRequest(res);
         }
 
         return Ok(res);
+    }
+
+    public sealed record UpdateDuelPrivacyApiRequest(string Privacy);
+
+    [HttpGet("privacy")]
+    public async Task<ActionResult<object>> GetPrivacy(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var privacy = await _sender.Send(new GetDuelPrivacyQuery(userId), cancellationToken);
+        return Ok(new
+        {
+            privacy
+        });
+    }
+
+    [HttpPut("privacy")]
+    public async Task<IActionResult> UpdatePrivacy([FromBody] UpdateDuelPrivacyApiRequest request, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var ok = await _sender.Send(new UpdateDuelPrivacyCommand(userId, request.Privacy), cancellationToken);
+        if (!ok)
+        {
+            return NotFound();
+        }
+        return Ok(new
+        {
+            success = true,
+            privacy = request.Privacy
+        });
     }
 
     private bool TryGetUserId(out Guid userId)

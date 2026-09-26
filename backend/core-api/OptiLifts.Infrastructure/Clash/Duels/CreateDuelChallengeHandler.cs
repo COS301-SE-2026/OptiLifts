@@ -37,7 +37,7 @@ public sealed class CreateDuelChallengeHandler : IRequestHandler<CreateDuelChall
         }
 
         var rival = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == request.RivalUserId, cancellationToken);
-        
+
         if (rival is null)
         {
             return new CreateDuelChallengeResult(false, "Athlete not found");
@@ -50,7 +50,7 @@ public sealed class CreateDuelChallengeHandler : IRequestHandler<CreateDuelChall
 
         var (u1, u2) = FriendshipHelpers.toCanonOrder(request.ChallengerUserId, request.RivalUserId);
         var isFriends = await _db.Friendships.AsNoTracking().AnyAsync(f => f.UserId1 == u1 && f.UserId2 == u2, cancellationToken);
-        
+
         if (!isFriends)
         {
             return new CreateDuelChallengeResult(false, "You can only challenge your friends");

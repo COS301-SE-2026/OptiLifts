@@ -56,6 +56,7 @@ interface AthleteProfileApiResponse {
     kudosCount: number;
     hasSentKudos: boolean;
     isFriend?: boolean;
+    hasPendingFriendRequest?: boolean;
 }
 interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
@@ -81,9 +82,11 @@ export function ProfileInspectorDrawer({
         if (!isOpen || !athlete?.id) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- reset profile on drawer close
             setProfile(null);
+            setSentFriendRequest(false);
             return;
         }
         let isMounted = true;
+        setSentFriendRequest(false);
         customFetch(`/api/clash/athletes/${athlete.id}/profile`).then(async (res) => {
             if (res.ok) {
                 const data: AthleteProfileApiResponse = await res.json();
@@ -91,6 +94,9 @@ export function ProfileInspectorDrawer({
                     setProfile(data);
                     setKudosCount(data.kudosCount ?? 0);
                     setHasGivenKudos(data.hasSentKudos ?? false);
+                    if (data.hasPendingFriendRequest) {
+                        setSentFriendRequest(true);
+                    }
                 }
             }
         }).catch(() => {}).finally(() => {});
@@ -143,7 +149,8 @@ export function ProfileInspectorDrawer({
     };
 
     const handleSendFriendRequest = async () => {
-        if (!athlete.code || sentFriendRequest) return;
+        if (sentFriendRequest) return;
+        const targetUserId = profile?.userId || athlete.id;
         try {
             const res = await customFetch('/api/clash/friends/requests', {
                 method: 'POST',
@@ -151,13 +158,14 @@ export function ProfileInspectorDrawer({
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    friendCode: athlete.code
+                    targetUserId,
+                    friendCode: athlete.code && athlete.code !== 'OPTICLASH' ? athlete.code : undefined
                 })
             });
             const data = await res.json().catch(() => null);
             if (res.ok) {
                 setSentFriendRequest(true);
-                toast.success(`Friend request sent to ${athlete.name}`, 'Request Dispatched');
+                toast.success(`Friend request sent to ${displayName}`, 'Request Dispatched');
             } else {
                 toast.error(data?.message ?? 'Could not send friend request');
             }

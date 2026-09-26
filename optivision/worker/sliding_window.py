@@ -190,11 +190,6 @@ def _find_suppressed_flaws(
             if any(w["probs"][flaw_idx] < CLEARANCE_THRESHOLD for w in active_windows):
                 suppressed.add(flaw)
 
-    if exercise == "deadlift":
-        hips_threshold = FLAW_THRESHOLDS.get("bad_hip_movement", THRESHOLD)
-        if peak_scores.get("bad_hip_movement", 0.0) >= hips_threshold:
-            suppressed.add("lumbar_flexion")
-
     return suppressed
 
 

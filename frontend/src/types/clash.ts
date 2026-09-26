@@ -153,3 +153,115 @@ export interface DuelInviteItem {
     durationDays: number;
     createdAt: string;
 }
+
+export interface DuelMatchupState {
+    isUserChallenger: boolean;
+    userRawValue: number;
+    rivalRawValue: number;
+    rivalName: string;
+    rivalId: string;
+    rivalFirstName: string;
+    rivalInitials: string;
+    rivalAvatarUrl?: string | null;
+    userInitials: string;
+    userDisplayMetric: string;
+    rivalDisplayMetric: string;
+    userProgressPercent: number;
+    rivalProgressPercent: number;
+    isWinning: boolean;
+    isTied: boolean;
+    leadText: string;
+    endsInText: string;
+    isFinished: boolean;
+    userWon: boolean;
+}
+
+export function getDuelMatchupState(
+    duel: DuelSummary,
+    currentUserId?: string,
+    currentUserName?: string,
+    now: number = Date.now()
+) : DuelMatchupState {
+    const isUserChallenger = !currentUserId || duel.challengerUserId === currentUserId;
+
+    const userRawValue = Number(isUserChallenger ? duel.challengerCurrentValue : duel.rivalCurrentValue) || 0;
+    const rivalRawValue = Number(isUserChallenger ? duel.rivalCurrentValue : duel.challengerCurrentValue) || 0;
+    const rivalName = (isUserChallenger ? duel.rivalName : duel.challengerName) || 'Rival';
+    const rivalId = (isUserChallenger ? duel.rivalUserId : duel.challengerUserId) || '';
+    const rivalAvatarUrl = isUserChallenger ? duel.rivalAvatarUrl : duel.challengerAvatarUrl;
+
+    const rivalInitials = rivalName ? rivalName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
+    const userInitials = (currentUserName || (isUserChallenger ? duel.challengerName : duel.rivalName) || 'You').split(' ').map((n) => n[0]).join('').slice(0,2).toUpperCase();
+
+    const isVolume = duel.targetType?.toLowerCase().includes('volume');
+    const format = (val: number) => {
+        if (isVolume) {
+            return `${val.toLocaleString()} kg`;
+        }
+        return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
+    };
+
+    const userDisplayMetric = format(userRawValue);
+    const rivalDisplayMetric = format(rivalRawValue);    
+    const valA = Math.max(0, userRawValue);
+    const valB = Math.max(0, rivalRawValue);
+    let userProgressPercent = 50;
+    let rivalProgressPercent = 50;
+    if (valA + valB > 0) {
+        userProgressPercent = Math.round((valA/(valA+valB))*100);
+        rivalProgressPercent = 100 - userProgressPercent;
+    }
+
+    const isWinning = userRawValue > rivalRawValue;
+    const isTied = userRawValue === rivalRawValue;
+
+    let leadText = 'All Tied';
+    if (!isTied) {
+        const diff = Math.abs(userRawValue - rivalRawValue);
+        const formattedDiff = isVolume ? `${diff.toLocaleString()} kg` : `${diff.toFixed(1)}%`;
+        leadText = isWinning ? `+${formattedDiff} lead` : `-${formattedDiff} behind`;
+    }
+
+    let endsInText = 'Active'
+    if (duel.endDate) {
+        const diffMs = new Date(duel.endDate).getTime() - now;
+        if (diffMs <= 0) {
+            endsInText = 'Concluded';
+        } else {
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            if (diffDays >= 1) {
+                endsInText = `${diffDays}d`;
+            } else {
+                const diffHours = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60)));
+                endsInText = `${diffHours}h`;
+            }
+        }
+    }
+
+    const isFinished = duel.status?.toLowerCase() === 'finished';
+    const temp = (isUserChallenger ? duel.winnerUserId === duel.challengerUserId : duel.winnerUserId === duel.rivalUserId);
+    const userWon = duel.winnerUserId ? temp : userRawValue > rivalRawValue;
+
+    return {
+        isUserChallenger,
+        userRawValue,
+        rivalRawValue,
+        rivalName,
+        rivalId,
+        rivalFirstName: rivalName.split(' ')[0] || 'Rival',
+        rivalInitials,
+        rivalAvatarUrl,
+        userInitials,
+        userDisplayMetric,
+        rivalDisplayMetric,
+        userProgressPercent,
+        rivalProgressPercent,
+        isWinning,
+        isTied,
+        leadText,
+        endsInText,
+        isFinished,
+        userWon,
+    }
+}
+

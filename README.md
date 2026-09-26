@@ -206,7 +206,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 
 </details>
 
-<details open>
+<details>
 <summary><strong>Demo 3 Documentation</strong></summary>
 <br>
 

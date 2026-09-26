@@ -155,6 +155,18 @@ public sealed class ArenasController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("feed")]
+    public async Task<ActionResult<IReadOnlyList<ClashActivityDto>>> GetMyArenasFeed(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var query = new GetArenaFeedQuery("all", userId);
+        var feed = await _sender.Send(query, cancellationToken);
+        return Ok(feed);
+    }
+
     [HttpGet("{id}/feed")]
     public async Task<ActionResult<IReadOnlyList<ClashActivityDto>>> GetArenaFeed(
         [FromRoute] string id,

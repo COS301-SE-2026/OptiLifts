@@ -17,6 +17,7 @@
   --muted-text: #666666;
   --success: #1B6E1F;
   --warning: #B35C00;
+  --overload-master: #4a7a9f;
 
   /* Shadcn semantic mapping */
   --card: var(--surface);
@@ -58,6 +59,7 @@
   --muted-text: #9A9AA8;
   --success: #4CAF50;
   --warning: #FF9800;
+  --overload-master: #8eaecf;
 
   /* shadcn semantic mapping */
   --card: var(--surface);
@@ -108,6 +110,7 @@
   --color-ring: var(--ring);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-overload-master: var(--overload-master);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

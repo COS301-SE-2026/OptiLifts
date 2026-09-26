@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Clash;
@@ -40,6 +41,11 @@ public sealed class CreateArenaHandler : IRequestHandler<CreateArenaCommand, Cre
         if (user is null)
         {
             return new CreateArenaResult(false, "User not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Weight) || !float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bw) || bw <= 0f)
+        {
+            return new CreateArenaResult(false, "Please set your bodyweight in your profile before creating a DOTS-based arena.");
         }
 
         // to generate a unique 6 char code

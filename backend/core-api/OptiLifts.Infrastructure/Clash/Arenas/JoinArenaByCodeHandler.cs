@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Clash;
@@ -38,6 +39,10 @@ public sealed class JoinArenaByCodeHandler : IRequestHandler<JoinArenaByCodeComm
         if (user is null)
         {
             return new JoinArenaResult(false, "User not found.");
+        }
+        if (string.IsNullOrWhiteSpace(user.Weight) || !float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var bw) || bw <= 0f)
+        {
+            return new JoinArenaResult(false, "Please set your bodyweight in your profile before joining an arena.");
         }
 
         var isAlreadyMember = await _db.ArenaMembers

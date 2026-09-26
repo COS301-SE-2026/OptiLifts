@@ -7,6 +7,7 @@ public sealed record GetDivisionalLeaderboardQuery(
     string Gender,
     string BracketId,
     string Metric,
-    int Page,
-    int PageSize
+    string Timeframe = "monthly",
+    int Page = 1,
+    int PageSize = 10
 ) : IRequest<LeaderboardPageResult>;

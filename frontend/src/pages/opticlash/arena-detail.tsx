@@ -4,93 +4,272 @@ import { TierBadge } from "@/components/opticlash/tier-badge";
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CURRENT_USER_ID, getWeightClassBracket, MOCK_ARENAS, MOCK_ATHLETES, WEIGHT_CLASS_BRACKETS, type ClashAthlete } from "@/data/clash-mock-data";
+import { getWeightClassBracket, WEIGHT_CLASS_BRACKETS, type ClashAthlete, type ClashArena } from "@/types/clash";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Clock, ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareArenaModal } from "@/components/opticlash/share-arena-modal";
+import { customFetch } from "@/lib/custom-fetch";
+import { useAuth } from "@/context/auth-context";
 
 const PAGE_SIZE = 10;
+interface LeaderboardAthleteDto {
+    userId: string;
+    rank: number;
+    displayName: string;
+    avatarUrl?: string;
+    gender?: string;
+    bodyweightKg: number;
+    tier: string;
+    tierLevel: number;
+    dotsScore: number;
+    squat1RM: number;
+    bench1RM: number;
+    deadlift1RM: number;
+    totalE1RM: number;
+    weeklyVolumeKg: number;
+    rankTrend: number;
+    isCurrentUser: boolean;
+}
+interface LeaderboardApiResponse {
+    entries: LeaderboardAthleteDto[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    currentUserEntry?: LeaderboardAthleteDto | null;
+}
 
-export default function ArenaLeaderboardPage() {
+export default function ArenaLeaderboardPage() {//
     const {arenaId} = useParams<{arenaId: string}>();
-    // todo: replace mock data
-    const arena = MOCK_ARENAS.find((a) => a.id === arenaId) || MOCK_ARENAS[0];
-    const currentUser = MOCK_ATHLETES.find((a) => a.id === CURRENT_USER_ID)!;
-    const isDivisional = arena.type === 'divisional' || arena.id === 'weight-class-league';
-    const currentUserBracket = getWeightClassBracket(currentUser.bodyweightKg); //todo: getweightclassbracket function
+    const navigate = useNavigate();
+    const {user} = useAuth();
+    
+    const [liveArena, setLiveArena] = useState<ClashArena | null>(null);
+    const [standings, setStandings] = useState<LeaderboardAthleteDto[]>([]);
+    const [currentUserStanding, setCurrentUserStanding] = useState<LeaderboardAthleteDto | null>(null);
+    const [totalAthletes, setTotalAthletes] = useState<number>(0);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const [selectedMetric, setSelectedMetric] = useState<'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'>('dots');
+    const defaultGender = user?.sex?.toLowerCase() === 'female' ? 'female' : 'male';
+    const [selectedGender, setSelectedGender] = useState<'male' | 'female'>(defaultGender);
+    const [selectedBracketId, setSelectedBracketId] = useState<string>('u59');
+    const [currentPage, setCurrentPage] = useState<number>(1);
+
     const [selectedTimeframe, setSelectedTimeframe] = useState<'monthly' | 'all-time'>('monthly');
-    const [selectedGender, setSelectedGender] = useState<'male' | 'female'>(currentUser.gender || 'female');
-    const [selectedBracketId, setSelectedBracketId] = useState<string>(currentUserBracket.id);
     const [selectedAthlete, setSelectedAthlete] = useState<ClashAthlete | null>(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+    const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+
+    const isDivisional = arenaId === 'weight-class-league';
+    const isGlobal = arenaId === 'global-league';
+    const isPrivate = !isDivisional && !isGlobal;
+    const isCreator = (liveArena as { userRole?: string; createdById?: string})?.userRole === 'Owner' || liveArena?.createdById === user?.id;
+
+    const isConcluded = isPrivate && liveArena ? (liveArena.isActive === false || (liveArena.daysRemaining !== undefined && liveArena.daysRemaining <= 0)): false;
+    const getFrontendMetric = (backendMetric?: string): 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift' => {
+        const m = backendMetric?.toLowerCase() || '';
+        if (m.includes('volume')) return 'volume';
+        if (m.includes('squat')) return 'squat';
+        if (m.includes('bench')) return 'bench';
+        if (m.includes('deadlift')) return 'deadlift';
+        return 'dots';
+    };
+    const primaryMetric = isPrivate ? getFrontendMetric(liveArena?.metricType) : 'dots';
 
     const activeBracket = WEIGHT_CLASS_BRACKETS.find((b) => b.id === selectedBracketId) || WEIGHT_CLASS_BRACKETS[0];
-    
-    const handleRefresh = () => {
-        setIsRefreshing(true);
-        setTimeout(() => {
-            setIsRefreshing(false);
-            toast.success('Leaderboard updated', 'Refreshed');
-        }, 600); //todo: replace later along with everything else fake lol
+    const userWeightBracket = getWeightClassBracket(currentUserStanding?.bodyweightKg ?? 74);
+
+    //mission avoid sonarqube errors
+    const getBackendMetricName = (metric: string): string => {
+        switch (metric) {
+            case 'volume':
+                return 'TotalVolume';
+            case 'squat':
+                return 'SquatE1RM';
+            case 'bench':
+                return 'BenchE1RM';
+            case 'deadlift':
+                return 'DeadliftE1RM';
+            default:
+                return 'DotsOverall';
+        }
+    };
+    const getNormalisedBracketId = (bracketId: string): string => {
+        if (bracketId.startsWith('u') || bracketId.endsWith('p')) {
+            return bracketId;
+        }
+        return `u${bracketId}`;
+    }
+
+    const fetchLeaderboard = async () => {
+        if (!arenaId) return;
+        setIsLoading(true);
+
+        const metricParam = getBackendMetricName(selectedMetric);
+        try {
+            if (isPrivate) {
+                const res = await customFetch(`/api/clash/arenas/${arenaId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.arena) {
+                        setLiveArena(data.arena);
+                        if (data.arena.metricType) {
+                            setSelectedMetric(getFrontendMetric(data.arena.metricType));
+                        }
+                    }
+                    if (Array.isArray(data?.standings)) {
+                        const mapped: LeaderboardAthleteDto[] = data.standings.map((s: Record<string, unknown>) => ({
+                            userId: String(s.userId),
+                            rank: Number(s.rank),
+                            displayName: String(s.displayName),
+                            avatarUrl: typeof s.avatarUrl === 'string' ? s.avatarUrl : undefined,
+                            bodyweightKg: Number(s.bodyweightKg ?? 0),
+                            tier: typeof s.tier === 'string' ? s.tier : 'Unranked',
+                            tierLevel: Number(s.tierLevel ?? 1),
+                            dotsScore: Number(s.dotsScore ?? 0),
+                            squat1RM: Number(s.squat1RM ?? 0),
+                            bench1RM: Number(s.bench1RM ?? 0),
+                            deadlift1RM: Number(s.deadlift1RM ?? 0),
+                            totalE1RM: Number(s.totalE1RM ?? 0),
+                            weeklyVolumeKg: Number(s.weeklyVolumeKg ?? 0),
+                            rankTrend: Number(s.trend ?? 0),
+                            isCurrentUser: Boolean(s.isCurrentUser)
+                        }));
+                        setStandings(mapped);
+                        setTotalAthletes(mapped.length);
+                    }
+                    if (data?.userStanding) {
+                        setCurrentUserStanding(data.userStanding as LeaderboardAthleteDto);
+                    }
+                }
+            } else if (isDivisional) {
+                const normalisedBracket = getNormalisedBracketId(selectedBracketId);
+                const res = await customFetch(`/api/clash/leaderboard/divisional?gender=${selectedGender}&bracketId=${normalisedBracket}&metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
+                if (res.ok) {
+                    const data: LeaderboardApiResponse = await res.json();
+                    setStandings(data.entries ?? []);
+                    setTotalAthletes(data.totalCount ?? 0);
+                    setCurrentUserStanding(data.currentUserEntry ?? null);
+                }
+            } else {
+                const res = await customFetch(`/api/clash/leaderboard/global?metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
+                if (res.ok) {
+                    const data: LeaderboardApiResponse = await res.json();
+                    setStandings(data.entries ?? []);
+                    setTotalAthletes(data.totalCount ?? 0);
+                    setCurrentUserStanding(data.currentUserEntry ?? null);
+                }
+            }
+        } catch {
+            toast.error('Failed to load leaderboard data', 'Connection Error');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const activeAthletes = MOCK_ATHLETES.filter((a) =>{
-        if (selectedTimeframe === 'monthly'){
-            const workoutDate = new Date(a.lastWorkoutDate);
-            const now = new Date();
-            const isThisMonth = workoutDate.getMonth() === now.getMonth() && workoutDate.getFullYear() === now.getFullYear();
-            if (!isThisMonth){
-                return false;
-            }
-        }
-        if (isDivisional){
-            const genderMatch = a.gender === selectedGender;
-            const weightMatch = a.bodyweightKg >= activeBracket.minKg && a.bodyweightKg <= activeBracket.maxKg;
-            return genderMatch && weightMatch;
-        }
-        return true;
-    });
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on dependency change
+        void fetchLeaderboard();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [arenaId, selectedMetric, selectedGender, selectedBracketId, currentPage, selectedTimeframe]);
 
-    //sort athletes based on metric - should i be doing this elsewhere?
-    const sortedAthletes = [...activeAthletes].sort((a, b) => {
-        switch (selectedMetric) {
-            case 'volume':
-                return b.weeklyVolumeKg - a.weeklyVolumeKg;
-            case 'squat':
-                return b.squat1RM - a.squat1RM;
-            case 'bench':
-                return b.bench1RM - a.bench1RM;
-            case 'deadlift':
-                return b.deadlift1RM - a.deadlift1RM;
-            case 'dots':
-            default:
-                return b.dotsScore - a.dotsScore;
-        }
-    });
-
-    const totalPages = Math.ceil(sortedAthletes.length / PAGE_SIZE);
+    //sonqorqube nested ternary issues
+    const arenaName = liveArena?.name || (isDivisional ? 'Divisional Weight-Class League': 'Global Season League');
+    const totalPages = Math.max(1, Math.ceil(totalAthletes / PAGE_SIZE));
     const startIndex = (currentPage-1) * PAGE_SIZE;
-    const paginatedAthletes = sortedAthletes.slice(startIndex, startIndex + PAGE_SIZE);
+
+    const handleOpenAthleteDrawer = (ath: LeaderboardAthleteDto) => {
+        const initials = ath.displayName.slice(0,2).toUpperCase();
+        const fallbackAthlete: ClashAthlete = {
+            id: ath.userId,
+            name: ath.displayName,
+            initials: initials || 'AT',
+            avatarUrl: ath.avatarUrl,
+            code: 'OPTICLASH',
+            gender: (ath.gender as 'male' | 'female') || selectedGender,
+            bodyweightKg: ath.bodyweightKg,
+            squat1RM: ath.squat1RM,
+            bench1RM: ath.bench1RM,
+            deadlift1RM: ath.deadlift1RM,
+            totalE1RM: ath.totalE1RM,
+            dotsScore: ath.dotsScore,
+            tier: (ath.tier as ClashAthlete['tier']) || 'Unranked',
+            tierLevel: ath.tierLevel,
+            rankTrend: ath.rankTrend,
+            weeklyVolumeKg: ath.weeklyVolumeKg,
+            lastWorkoutDate: new Date().toISOString(),
+            muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+            trophies: [],
+            recentWorkouts: []
+        };
+        setSelectedAthlete(fallbackAthlete);
+        setIsDrawerOpen(true);
+    };
+
+    const handleShareClick = () => {
+        if (isCreator) {
+            setIsShareModalOpen(true);
+        } else if (liveArena?.code) {
+            navigator.clipboard.writeText(liveArena.code);
+            setCopied(true);
+            toast.success('Arena join code copied to clipboard', liveArena.code);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const handleLeaveArena = async () => {
+        if (!liveArena) return;
+        setIsLeaving(true);
+        try {
+            const res = await customFetch(`/api/clash/arenas/${liveArena.id}/leave`, {
+                method: 'POST',
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok){
+                setIsLeaveConfirmOpen(false);
+                toast.success(`You have left ${liveArena.name}`, 'Left Arena');
+                navigate('/clash');
+            } else {
+                toast.error(data?.message ?? 'Failed to leave arena');
+                setIsLeaveConfirmOpen(false);
+            }
+        } catch {
+            toast.error('Network error leaving arena');
+            setIsLeaveConfirmOpen(false);
+        } finally {
+            setIsLeaving(false);
+        }
+    };
+    
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await fetchLeaderboard();
+        setIsRefreshing(false);
+        toast.success('Leaderboard updated', 'Refreshed');
+    };
 
     const getRankBadgeIcons = (index: number) => {
-        if (index === 0) {
+        if (index === 1) {
             return <Medal className="w-5 h-5 md:w-6 md:h-6 text-warning"/>;
         }
-        if (index === 1){
+        if (index === 2){
             return <Medal className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />;
         }
-        if (index === 2){
+        if (index === 3){
             return <Medal className="w-5 h-5 md:w-6 md:h-6 text-amber-700" />;
         }
-        return <span className="font-display text-base md:text-lg text-muted-foreground">#{index + 1}</span>;
+        return <span className="font-display text-base md:text-lg text-muted-foreground">#{index}</span>;
     };
 
-    const renderMetricValue = (athlete: ClashAthlete) => {
+     const renderMetricValue = (athlete: LeaderboardAthleteDto) => {
         switch (selectedMetric) {
             case 'volume':
                 return <span className="font-bold text-brand font-sans text-sm md:text-base">{athlete.weeklyVolumeKg.toLocaleString()} kg</span>;
@@ -110,7 +289,108 @@ export default function ArenaLeaderboardPage() {
                 );
         }
     };
-    const currentUserRankIndex = sortedAthletes.findIndex((a) => a.id === CURRENT_USER_ID);//todo: obv replace hardcoded
+
+    const getAthleteNameClass = (isMaster: boolean, isCurrent: boolean) => {
+        if (isMaster){
+            return 'text-overload-master';
+        }
+        if (isCurrent) {
+            return 'text-brand';
+        }
+        return 'text-foreground';
+    };
+    const renderUserStandingSTatus = () => {
+        if (!currentUserStanding) {
+            return 'Not ranked in this divisin yet';
+        }
+        if (currentUserStanding.rank === 1) {
+            return 'Leading Division #1';
+        }
+        return `Rank #${currentUserStanding.rank}`;
+    }
+
+    const renderTable = () => {
+        if (isLoading) {
+            return (
+                <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                        Loading leaderboad standings...
+                    </td>
+                </tr>
+            );
+        }
+        if (standings.length === 0) {
+            return (
+                <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                        No athletes ranked yet in this division.
+                    </td>
+                </tr>
+            );
+        }
+        return standings.map((ath) => {
+            const isCurrentUser = ath.isCurrentUser;
+            const isMaster = ath.rank === 1 && ath.tier === 'Overload Master';
+            const initials = ath.displayName.slice(0, 2).toUpperCase() || 'AT';
+
+            return (
+                <tr key={ath.userId} onClick={() => handleOpenAthleteDrawer(ath)}
+                    className={`cursor-pointer transition hover:bg-surface-2/60 ${isCurrentUser ? 'bg-brand-fill/40 border-l-4 border-l-brand' : ''}
+                                ${isMaster ? 'bg-overload-master/5' : ''}`}>
+                    <td className="py-4 px-4 text-center">
+                        <div className="flex justify-center items-center">
+                            {getRankBadgeIcons(ath.rank)}
+                        </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                            <AthleteAvatar initials={initials} name={ath.displayName} avatarUrl={ath.avatarUrl} isCurrentUser={isCurrentUser} size="md" />
+                            <div>
+                                <strong className={`font-sans font-bold text-base md:text-lg block ${getAthleteNameClass(isMaster, isCurrentUser)}`}>
+                                    {ath.displayName}
+                                </strong>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td className="py-4 px-4 text-center">
+                        <TierBadge tier={ath.tier} size="md" />
+                    </td>
+
+                    <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
+                        {ath.bodyweightKg} kg
+                    </td>
+                    <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
+                        {ath.totalE1RM} kg
+                    </td>
+
+                    <td className="py-4 px-4 text-center">
+                        {renderMetricValue(ath)}
+                    </td>
+
+                    {/* trend arrow */}
+                    <td className="py-4 px-4 text-center">
+                        {ath.rankTrend > 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
+                                <TrendingUp className="w-3.5 h-3.5" /> +{ath.rankTrend}
+                            </span>
+                        )}
+                        {ath.rankTrend < 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
+                                <TrendingDown className="w-3.5 h-3.5" /> {ath.rankTrend}
+                            </span>
+                        )}
+                        {ath.rankTrend === 0 && (
+                            <span className="inline-flex items-center text-muted-foreground">
+                                <Minus className="w-3.5 h-3.5" />
+                            </span>
+                        )}
+                    </td>
+                </tr>
+            );
+        });
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-24">
@@ -124,7 +404,24 @@ export default function ArenaLeaderboardPage() {
                         <div className="flex items-center gap-3 flex-wrap">
                             <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground flex items-center gap-2.5">
                                 <Trophy className="w-7 h-7 md:w-8 md:h-8 text-warning shrink-0"/>
-                                <span>{arena.name}</span>
+                                <span>{arenaName}</span>
+                                {isCreator && (
+                                    <span className="text-[11px] font-bold uppercase tracking-wider bg-brand-fill text-brand border border-brand/30 px-2.5 py-0.5 rounded-full font-sans">
+                                        Squad Creator
+                                    </span>
+                                )}
+                                {isPrivate && liveArena && (
+                                    isConcluded ? (
+                                        <span className="text-[11px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-0.5 rounded-full font-sans">
+                                            Season Concluded
+                                        </span>
+                                    ) : (
+                                        <span className="text-[11px] font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 px-2.5 py-0.5 rounded-full font-sans flex items-center gap-1.5">
+                                            <Clock className="w-3.5 h-3.5"/>
+                                            {liveArena.daysRemaining ?? liveArena.durationDays} Days Left
+                                        </span>
+                                    )
+                                )}
                             </h1>
                         </div>
                     </div>
@@ -138,6 +435,27 @@ export default function ArenaLeaderboardPage() {
                         </Button>
 
                         {/* f3: share arena + leave arena btns */}
+                        {isPrivate && (
+                            <>
+                            <Button variant={isCreator ? 'default' : 'secondary'} size="sm" onClick={handleShareClick} 
+                            className="h-8 text-xs flex items-center gap-2">
+                                {isCreator ? (
+                                    <>
+                                        <Share2 className="w-3.5 h-3.5"/>
+                                        <span>Share Arena and Invite</span>
+                                    </>
+                                    ) : (
+                                        <>
+                                        {copied ? <Check className="w-3.5 h-3.5 text-success"/> : <Copy className="w-3.5 h-3.5"/>}
+                                        <span>{copied ? 'Code Copied' : 'Copy Code'}</span></>
+                                    )}    
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setIsLeaveConfirmOpen(true)}
+                            className="h-8 text-xs flex items-center gap-1.5 border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors">
+                                <LogOut className="w-3.5 h-3.5"/>
+                                <span>Leave Arena</span>    
+                            </Button></>
+                        )}
                     </div>
                 </div>
             </div>
@@ -157,46 +475,72 @@ export default function ArenaLeaderboardPage() {
                             }}
                             className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
                                 <span>Overall DOTS</span>
-                                <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${
-                                    selectedMetric === 'dots' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                }`}>
-                                    PRIMARY
-                                </span>
+                                {primaryMetric === 'dots' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'dots' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
 
                             <Button variant={selectedMetric === 'volume' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('volume');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Total Volume
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Total Volume</span>
+                                {primaryMetric === 'volume' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'volume' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
 
                             <Button variant={selectedMetric === 'squat' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('squat');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Squat e1RM
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Squat e1RM</span>
+                                {primaryMetric === 'squat' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'squat' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
 
                             <Button variant={selectedMetric === 'bench' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('bench');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Bench e1RM
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Bench e1RM</span>
+                                {primaryMetric === 'bench' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'bench' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
                             <Button variant={selectedMetric === 'deadlift' ? 'default' : 'secondary'} size="sm" onClick={() =>{
                                 setSelectedMetric('deadlift');
                                 setCurrentPage(1);
                             }}
-                            className="h-8 text-xs whitespace-nowrap shrink-0">
-                                Deadlift e1RM
+                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>Deadlift e1RM</span>
+                                {primaryMetric === 'deadlift' && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'deadlift' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
+                                        }`}>
+                                        PRIMARY
+                                    </span>
+                                )}
                             </Button>
                         </div>
 
                         {/* timeframe month vs all time */}
+                        {!isPrivate && (
                         <div className="flex bg-surface-2 border border-border rounded-lg p-1 self-start md:self-auto shrink-0 overflow-x-auto">
                             <button type="button" onClick={() => {
                                 setSelectedTimeframe('monthly');
@@ -217,6 +561,7 @@ export default function ArenaLeaderboardPage() {
                                 All Time
                             </button>
                         </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -265,12 +610,12 @@ export default function ArenaLeaderboardPage() {
                                         <DropdownMenuTrigger variant="filter" className="w-full sm:w-[220px] bg-surface-2" aria-label="Select Weight Class Bracket">
                                             <span className="min-w-0 truncate font-sans font-semibold">
                                                 {activeBracket.label}
-                                                {currentUserBracket.id === activeBracket.id && currentUser.gender === selectedGender ? ' (Your Class)' : ''}
+                                                {currentUserStanding && userWeightBracket.id === activeBracket.id ? ' (Your Class)' : ''}
                                             </span>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
                                             {WEIGHT_CLASS_BRACKETS.map((bracket) => {
-                                                const isUserBracket = currentUserBracket.id === bracket.id && currentUser.gender === selectedGender;
+                                                const isUserBracket = currentUserStanding && userWeightBracket.id === bracket.id;
                                                 return (
                                                     <DropdownMenuItem key={bracket.id} onSelect={() => {
                                                         setSelectedBracketId(bracket.id);
@@ -315,76 +660,7 @@ export default function ArenaLeaderboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border text-sm md:text-base">
-                                {paginatedAthletes.map((ath, pageIdx) => {
-                                    const globalIdx = startIndex + pageIdx;
-                                    const isCurrentUser = ath.id === CURRENT_USER_ID;
-                                    const isMaster = globalIdx === 0 && ath.tier === 'Overload Master';
-                                    return (
-                                        <tr key={ath.id} onClick={() => {
-                                            setSelectedAthlete(ath);
-                                            setIsDrawerOpen(true);
-                                        }}
-                                        className={`cursor-pointer transition hover:bg-surface-2/60 ${
-                                            isCurrentUser ? 'bg-brand-fill/40 border-l-4 border-l-brand' : ''
-                                        } ${isMaster ? 'bg-overload-master/5' : ''}`}>
-                                            {/* rank icon */}
-                                            <td className="py-4 px-4 text-center">
-                                                <div className="flex justify-center items-center">
-                                                    {getRankBadgeIcons(globalIdx)}
-                                                </div>
-                                            </td>
-
-                                            {/* athlete deets */}
-                                            <td className="py-4 px-4">
-                                                <div className="flex items-center gap-3">
-                                                    <AthleteAvatar initials={ath.initials} name={ath.name} avatarUrl={ath.avatarUrl} isCurrentUser={isCurrentUser} size="md"/>
-                                                    <div>
-                                                        <strong className={`font-sans font-bold text-base md:text-lg block ${
-                                                            isMaster ? 'text-overload-master' : isCurrentUser ? 'text-brand' : 'text-foreground'
-                                                        }`}>{ath.name}</strong>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* tier badge */}
-                                            <td className="py-4 px-4 text-center">
-                                                <TierBadge tier={ath.tier} size="md"/>
-                                            </td>
-
-                                            {/* bodyweight stats */}
-                                            <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
-                                                {ath.bodyweightKg} kg
-                                            </td>
-
-                                            <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
-                                                {ath.totalE1RM} kg
-                                            </td>
-
-                                            <td className="py-4 px-4 text-center">
-                                                {renderMetricValue(ath)}
-                                            </td>
-
-                                            {/* trend arrow */}
-                                            <td className="py-4 px-4 text-center">
-                                                {ath.rankTrend > 0 && (
-                                                    <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
-                                                        <TrendingUp className="w-3.5 h-3.5"/> +{ath.rankTrend}
-                                                    </span>
-                                                )}
-                                                {ath.rankTrend < 0 && (
-                                                    <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
-                                                        <TrendingDown className="w-3.5 h-3.5"/> {ath.rankTrend}
-                                                    </span>
-                                                )}
-                                                {ath.rankTrend === 0 && (
-                                                    <span className="inline-flex items-center text-muted-foreground">
-                                                        <Minus className="w-3.5 h-3.5"/>
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                {renderTable()}
                             </tbody>
                         </table>
                     </div>
@@ -393,8 +669,8 @@ export default function ArenaLeaderboardPage() {
                     <div className="p-4 border-t border-border bg-surface-2/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs md:text-sm text-muted-foreground font-sans">
                         <div>
                             Showing <strong className="text-foreground">{startIndex + 1}</strong> to{' '}
-                            <strong className="text-foreground">{Math.min(startIndex + PAGE_SIZE, sortedAthletes.length)}</strong> of{' '}
-                            <strong className="text-foreground">{sortedAthletes.length}</strong> athletes
+                            <strong className="text-foreground">{Math.min(startIndex + PAGE_SIZE, totalAthletes)}</strong> of{' '}
+                            <strong className="text-foreground">{totalAthletes}</strong> athletes
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -428,8 +704,7 @@ export default function ArenaLeaderboardPage() {
                                 YOUR STANDING
                             </span>
                             <strong className="text-sm font-sans font-bold text-foreground">
-                                {/* todo: change this fake data as well */}
-                                {currentUserRankIndex >= 0 ? `Rank #${currentUserRankIndex + 1} — Cailin Smith (You)` : `Cailin Smith (You) — Competing in Women's 66 kg Division`}
+                                {currentUserStanding ? `Rank #${currentUserStanding.rank} — ${currentUserStanding.displayName} (You)` : `${user?.name ?? 'You'} — Not ranked in this category yet`}
                             </strong>
                         </div>
                     </div>
@@ -437,26 +712,36 @@ export default function ArenaLeaderboardPage() {
                     <div className="flex items-center gap-4">
                         <div className="text-right">
                             <span className="text-xs font-sans font-bold text-brand">
-                                {currentUser.dotsScore} DOTS
+                                {currentUserStanding?.dotsScore ?? 0} DOTS
                             </span>
                             <span className="text-[10px] text-success block font-sans font-semibold">
-                                {currentUserRankIndex === 0 ? 'Leading Division #1' : currentUserRankIndex > 0 ? `Rank #${currentUserRankIndex + 1}` : '64.0 kg Bodyweight'}
+                                {renderUserStandingSTatus()}
                             </span>
                         </div>
-                        <Button variant="default" size="sm" onClick={() => {
-                            setSelectedAthlete(currentUser);
-                            setIsDrawerOpen(true);
-                        }}
+                        {currentUserStanding && (
+                        <Button variant="default" size="sm" onClick={() => handleOpenAthleteDrawer(currentUserStanding)}
                         className="h-8 text-xs">
                             Profile
                         </Button>
+
+                        )}
                     </div>
                 </div>
             </aside>
 
             <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
 
-            {/* f3: share arena modal and leave arena confirmation dialog */}
+            {liveArena && (
+                <>
+                {/* f3: share arena modal and leave arena confirmation dialog */}
+                <ShareArenaModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} arena={liveArena}/>
+                <ConfirmDialog isOpen={isLeaveConfirmOpen} onClose={() => setIsLeaveConfirmOpen(false)} onConfirm={handleLeaveArena} 
+                isLoading={isLeaving} title={`Leave ${liveArena.name}?`} description="You will be removed from this arena's leaderboard. You can rejoin at any time using the arena invite code" confirmText="Leave Arena"
+                cancelText="Cancel" variant="danger"/>
+                
+                </>
+            )}
+
         </div>
     )
 }

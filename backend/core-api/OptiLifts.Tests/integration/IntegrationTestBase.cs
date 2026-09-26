@@ -52,7 +52,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             Email = email,
             EmailHash = EmailHasher.HashEmail(email),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
-            DisplayName = "Test User"
+            DisplayName = "Test User",
+            Weight = "75.0"
         });
 
         db.Folders.Add(new Folder { Name = "Default", UserId = userId });

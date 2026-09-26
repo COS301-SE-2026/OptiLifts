@@ -99,3 +99,57 @@ export interface ClashActivityItem {
     isPr?: boolean;
     isPromotion?: boolean;
 }
+
+export interface DuelSummary {
+    id: string;
+    title: string;
+    challengerUserId: string;
+    challengerName: string;
+    challengerAvatarUrl?: string | null;
+    rivalUserId: string;
+    rivalName: string;
+    rivalAvatarUrl?: string | null;
+    exerciseName: string;
+    targetType: string; 
+    status: string; //pending, active, finished, declined
+    startDate?: string | null;
+    endDate?: string | null;
+    challengerCurrentValue: string;
+    rivalCurrentValue: string;
+    challengerBaselineValue?: string | null;
+    rivalBaselineValue?: string | null;
+    winnerUserId?: string | null;
+    isDraw: boolean;
+}
+
+export interface DuelTimelineEventItem {
+    id: string;
+    userId: string;
+    userName: string;
+    eventText: string;
+    isPr: boolean;
+    createdAt: string;
+}
+
+export interface DuelDetail extends DuelSummary {
+    timeline: DuelTimelineEventItem[];
+}
+
+export interface UserDuelsResponse {
+    duels: DuelSummary[];
+    won: number;
+    lost: number;
+    active: number;
+    winRatePercent: number;
+}
+
+export interface DuelInviteItem {
+    id: string;
+    challengerUserId: string;
+    challengerName: string;
+    challengerAvatarUrl?: string | null;
+    exerciseName: string;
+    targetType: string;
+    durationDays: number;
+    createdAt: string;
+}

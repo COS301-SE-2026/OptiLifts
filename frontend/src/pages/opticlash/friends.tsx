@@ -1,6 +1,7 @@
 import { AddFriendModal } from "@/components/opticlash/add-friend-modal";
 import { AthleteAvatar } from "@/components/opticlash/athlete-avatar";
 import { ClashTabs } from "@/components/opticlash/clash-tabs";
+import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 import { ProfileInspectorDrawer } from "@/components/opticlash/profile-inspector-drawer";
 import { TierBadge } from "@/components/opticlash/tier-badge";
 import { toast } from "@/components/ui/alert";
@@ -9,8 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
 import { customFetch } from "@/lib/custom-fetch";
-import type { ClashAthlete } from "@/types/clash";
-import { ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail } from "lucide-react";
+import type { ClashAthlete, DuelInviteItem } from "@/types/clash";
+import { Shield, ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail, Swords } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -90,14 +91,18 @@ export default function FriendsManagementPage(){
     //f3 - arena invites
     const [arenaInvites, setArenaInvites] = useState<ArenaInviteItem[]>([]);
     //f4 - duel invites
+    const [duelInvites, setDuelInvites] = useState<DuelInviteItem[]>([]);
+    const [privacyPolicy, setPrivacyPolicy] = useState<'friends' | 'none'>('friends');
+    const [isCreateDuelOpen, setIsCreateDuelOpen] = useState(false);
+    const [selectedFriendForDuel, setSelectedFriendForDuel] = useState<{ id: string; name: string; dotsScore?: number } | null>(null);
 
     //handlers
     const fetchFriendsData = async () => {
         await Promise.resolve();
         try {
-            const [friendsRes, requestsRes, codeRes, invitesRes] = await Promise.all([
+            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes] = await Promise.all([
                 customFetch('/api/clash/friends'), customFetch('/api/clash/friends/requests'), customFetch('/api/clash/friends/code'),
-                customFetch('/api/clash/arenas/invites'),
+                customFetch('/api/clash/arenas/invites'), customFetch('/api/clash/duels/invites'),
             ]);
             if (friendsRes.ok){
                 const data = await friendsRes.json();
@@ -114,6 +119,10 @@ export default function FriendsManagementPage(){
             if (invitesRes.ok) {
                 const data = await invitesRes.json();
                 setArenaInvites(Array.isArray(data) ? data : []);
+            }
+            if (duelInvitesRes.ok) {
+                const data = await duelInvitesRes.json();
+                setDuelInvites(Array.isArray(data) ? data : []);
             }
         } catch {
             toast.error('Failed to load friends');
@@ -243,6 +252,77 @@ export default function FriendsManagementPage(){
     };
 
     //f4 - handle accept duel + handle reject duel 
+    const handleAcceptDuel = async (inviteId: string, challengerName: string) => {
+        try {
+            const res = await customFetch(`/api/clash/duels/${inviteId}/respond`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    accept: true
+                 }),
+            });
+            if (res.ok) {
+                setDuelInvites((prev) => prev.filter((d) => d.id !== inviteId));
+                toast.success(`1v1 duel with ${challengerName} has started`, 'Duel Accepted');
+            } else {
+                toast.error('Failed to accept duel invite');
+            }
+        } catch {
+            toast.error('Network error accepting duel invite');
+        }
+    };
+    const handleRejectDuel = async (inviteId: string) => {
+        try {
+            const res = await customFetch(`/api/clash/duels/${inviteId}/respond`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    accept: false
+                 }),
+            });
+            if (res.ok) {
+                setDuelInvites((prev) => prev.filter((d) => d.id !== inviteId));
+                toast.info('Duel challenge declined.');
+            } else {
+                toast.error('Failed to decline duel challenge');
+            }
+        } catch {
+            toast.error('Network error declining duel challenge');
+        }
+    };
+    const handleDeclineAllInvites = async () => {
+        try {
+            await Promise.all([
+                ...arenaInvites.map((ainv) => customFetch(`/api/clash/arenas/invites/${ainv.id}/respond`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({ 
+                        accept: false 
+                    }),
+                })),
+                ...duelInvites.map((dinv) => customFetch(`/api/clash/duels/${dinv.id}/respond`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({ 
+                        accept: false 
+                    }),
+                })),
+            ]);
+            setArenaInvites([]);
+            setDuelInvites([]);
+            toast.info('All arena and duel invitations declined.');
+        } catch {
+            toast.error('Failed to decline all invites');
+        }
+    };
     //f3 + f4 - handle reject all arena + duel invites
     const handleDeclineAllArenaInvites = async () => {
         try {
@@ -303,7 +383,7 @@ export default function FriendsManagementPage(){
                         tabs={[
                             { id: 'friends', label: 'My Friends', count: friendsList.length, icon: <Users className="w-3.5 h-3.5"/>},
                             { id: 'requests', label: 'Requests', count: requestsLists.length, icon: <UserPlus className="w-3.5 h-3.5"/>},
-                            { id: 'invites', label: 'Arena Invites', count: arenaInvites.length, icon: <Mail className="w-3.5 h-3.5"/>}
+                            { id: 'invites', label: 'Arena & Duel Invites', count: arenaInvites.length + duelInvites.length, icon: <Mail className="w-3.5 h-3.5"/>}
                             ]}/>
                 </div>
             </div>
@@ -353,6 +433,25 @@ export default function FriendsManagementPage(){
 
                                     {/* f2 - inspect profile btn */}
                                     {/* f4 - challenge 1v1 btn */}
+                                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border">
+                                        <Button variant="secondary" size="sm" onClick={() => handleOpenFriendDrawer(friend)}
+                                        className="flex-1 h-8 text-xs font-semibold">
+                                            Inspect Profile
+                                        </Button>
+                                        <Button variant="default" size="sm"
+                                        onClick={() => {
+                                            setSelectedFriendForDuel({
+                                                id: friend.id,
+                                                name: friend.name,
+                                                dotsScore: friend.dotsScore,
+                                            });
+                                            setIsCreateDuelOpen(true);
+                                        }}
+                                        className="flex-1 h-8 text-xs flex items-center justify-center gap-1.5">
+                                            <Swords className="w-3.5 h-3.5" />
+                                            <span>Challenge 1v1</span>
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -426,6 +525,101 @@ export default function FriendsManagementPage(){
                 {/* f3 + f4 - tab 3 arena + duel invites */}
                 {activeTab === 'invites' && (
                     <div className="space-y-6">
+                    <Card className="bg-surface border-border p-4 shadow-sm">
+                        <CardContent className="p-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                        <Shield className="w-5 h-5 text-brand shrink-0" />
+                                        <div>
+                                            <h4 className="font-sans font-bold text-sm text-foreground">1v1 Duel Invite Privacy</h4>
+                                            <p className="text-xs text-muted-foreground font-sans">
+                                                Control who can send you direct 1v1 progressive overload challenges.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 self-start lg:self-auto flex-wrap">
+                                        <div className="flex bg-surface-2 border border-border rounded-lg p-1">
+                                            <button type="button" onClick={() => {
+                                                    setPrivacyPolicy('friends');
+                                                    toast.info('Duel invites set to Friends Only.');
+                                                }}
+                                                className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
+                                                    privacyPolicy === 'friends' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                                }`} >
+                                                Friends Only
+                                            </button>
+                                            <button type="button"
+                                                onClick={() => {
+                                                    setPrivacyPolicy('none');
+                                                    toast.info('Duel invites disabled.');
+                                                }}
+                                                className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
+                                                    privacyPolicy === 'none' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                                }`}>
+                                                No One
+                                            </button>
+                                        </div>
+                                        {(arenaInvites.length > 0 || duelInvites.length > 0) && (
+                                            <Button variant="outline" size="sm" onClick={handleDeclineAllInvites}
+                                            className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 flex items-center gap-1.5 shrink-0">
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                <span>Decline All Invites</span>
+                                            </Button>
+                                        )}
+                                    </div>
+                        </CardContent>
+                    </Card>
+
+                        <div className="space-y-3">
+                            <h3 className="font-display text-xl tracking-wide text-foreground flex items-center gap-2">
+                                <Swords className="w-5 h-5 text-brand" /> 1v1 Duel Invites ({duelInvites.length})
+                            </h3>
+
+                            {duelInvites.length === 0 ? (
+                                <Card className="bg-surface border-border p-6 text-center text-muted-foreground text-xs font-sans">
+                                    No pending 1v1 duel challenges
+                                </Card>
+                            ) : (
+                                <div className="space-y-3">
+                                    {duelInvites.map((dinv) => {
+                                        const initials = dinv.challengerName ? dinv.challengerName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
+                                        const targetLabel = dinv.targetType.toLowerCase().includes('volume') ? 'Total Volume (kg)' : 'E1RM Gain (%)';
+                                        return (
+                                            <Card key={dinv.id} className="bg-surface border-border p-4 shadow-sm">
+                                                <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <AthleteAvatar initials={initials} name={dinv.challengerName} avatarUrl={dinv.challengerAvatarUrl ?? undefined} size="md"/>
+                                                        <div>
+                                                                <strong className="font-sans font-bold text-base text-foreground block">
+                                                                    {dinv.challengerName} challenged you to a 1v1!
+                                                                </strong>
+                                                                <p className="text-xs text-muted-foreground font-sans mt-0.5">
+                                                                    <strong className="text-foreground">{dinv.exerciseName}</strong> &bull; {targetLabel} &bull; <strong className="font-mono text-brand">{dinv.durationDays} Days</strong>
+                                                                </p>
+                                                            </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                                                            <Button variant="secondary" size="sm" onClick={() => void handleRejectDuel(dinv.id)}
+                                                                className="h-8 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                                                                <XCircle className="w-3.5 h-3.5" />
+                                                                <span>Decline</span>
+                                                            </Button>
+                                                            <Button variant="default" size="sm" onClick={() => void handleAcceptDuel(dinv.id, dinv.challengerName)}
+                                                                className="h-8 flex items-center gap-1 text-xs">
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                <span>Accept Duel</span>
+                                                            </Button>
+                                                        </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                    </div>
+                                    )}
+                                    </div>
+                            
+
+                    <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="font-display text-xl tracking-wide text-foreground flex items-center gap-2">
                                 <Users className="w-5 h-5 text-brand"/> Arena Invites ({arenaInvites.length})
@@ -482,11 +676,22 @@ export default function FriendsManagementPage(){
                             </div>
                         )}
                     </div>
+                    </div>
                 )}
                 </div>
 
-            <AddFriendModal isOpen={isAddFriendOpen} onClose={() => setIsAddFriendOpen(false)} onFriendAdded={() => fetchFriendsData()} />
-                <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
+            <AddFriendModal isOpen={isAddFriendOpen} onClose={() => setIsAddFriendOpen(false)} onFriendAdded={() => void fetchFriendsData()} />
+            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
+                onChallengeDuel={(friend) => {
+                    setIsDrawerOpen(false);
+                    setSelectedFriendForDuel({
+                        id: friend.id,
+                        name: friend.name,
+                        dotsScore: friend.dotsScore,
+                    });
+                    setIsCreateDuelOpen(true);
+                }}/>
+                <CreateDuelModal isOpen={isCreateDuelOpen} onClose={() => setIsCreateDuelOpen(false)} defaultFriend={selectedFriendForDuel} onDuelCreated={() => void fetchFriendsData()}/>
         </div>
     );
 }

@@ -10,6 +10,7 @@ import { ArrowLeft, Clock, Loader2, Sparkles, Swords } from "lucide-react";
 import { useState, useRef, useEffect, type MouseEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import * as signalR from "@microsoft/signalr";
+import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 
 interface DuelUpdatePaylod {
     duelId: string;
@@ -30,7 +31,13 @@ export default function DuelArenaPage() {
     const [reactionSent, setReactionSent] = useState(false);
     const [renderTimestamp] = useState(() => Date.now());
 
+    const [isDuelModalOpen, setIsDuelModalOpen] = useState(false);
+
     const hubRef = useRef<signalR.HubConnection | null>(null);
+    const userRef = useRef(user);
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
 
     const fetchDetail = async () => {
         if (!duelId) return;
@@ -74,6 +81,7 @@ export default function DuelArenaPage() {
                 };
             });            
             if (update.latestEventText) {
+                toast.info(update.latestEventText, 'Live Duel Activity');
                 const newEv: DuelTimelineEventItem = {
                     id: `live-${Date.now()}`,
                     userId: '',
@@ -90,6 +98,10 @@ export default function DuelArenaPage() {
     });
 
         connection.on('ReceiveDuelHype', (_dId: string, senderName: string) => {
+            const currentUserName = userRef.current?.name;
+            if (currentUserName && senderName?.trim().toLowerCase() === currentUserName.trim().toLowerCase()) {
+                return;
+            }
             toast.success(`${senderName} cheered on this duel!`, 'Hype Received');
             confetti({
                 particleCount: 25,
@@ -340,7 +352,12 @@ export default function DuelArenaPage() {
         </Card>
             </div >
 
-            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
+            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
+                onChallengeDuel={() => {
+                    setIsDrawerOpen(false);
+                    setIsDuelModalOpen(true);
+                }} />
+            <CreateDuelModal isOpen={isDuelModalOpen} onClose={() => setIsDuelModalOpen(false)} defaultFriend={selectedAthlete} />
         </div >
     );
 

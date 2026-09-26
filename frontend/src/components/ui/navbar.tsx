@@ -14,6 +14,7 @@ const LINKS = [
   { to: '/workouts',  label: 'Workouts'  },
   { to: '/schedule',  label: 'Schedule'  },
   { to: '/progression',   label: 'Progression'   },
+  { to: '/form-check',   label: 'OptiVision'   },
   { to: '/help',  label: 'Help'  },
   { to: '/profile',   label: 'Profile'   },
 ]

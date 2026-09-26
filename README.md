@@ -188,7 +188,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 ## <img src="docs/images/images.svg" width="24" height="24" style="vertical-align: middle;"> Documentation
 
 <details open>
-<summary><strong>Demo 3 Documentation</strong></summary>
+<summary><strong>Demo 4 Documentation</strong></summary>
 <br>
 
 <div align="center">
@@ -198,6 +198,25 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 [![Coding Standards](https://img.shields.io/badge/Coding_Standards-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/CODING_STANDARDS.md)
 [![Testing Policy](https://img.shields.io/badge/Testing_Policy-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/TESTING_POLICY.md)
 [![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/User_Manual.pdf)
+[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/demo3-brandstyle.pdf)
+[![Figma](https://img.shields.io/badge/Figma-View_Panels-B01030?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/site/xHXj3tG6pv2UuKHFgeug8s/OptiLifts--Copy-?node-id=0-1&p=f)
+[![Demo 4 Video](https://img.shields.io/badge/Demo_3-View_Video-B01030?style=for-the-badge&logo=google&logoColor=white)](https://drive.google.com/file/d/1yKSPtSmVicaUzwDjMS1FbkR9pfRA02Dt/view?usp=sharing)
+
+</div>
+
+</details>
+
+<details open>
+<summary><strong>Demo 3 Documentation</strong></summary>
+<br>
+
+<div align="center">
+
+[![Functional Requirements](https://img.shields.io/badge/Functional_Requirements-View_SRS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-3/SRS.md)
+[![Architecture Specification](https://img.shields.io/badge/Architecture_Specification-View_SAS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-3/SAS.md)
+[![Coding Standards](https://img.shields.io/badge/Coding_Standards-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-3/CODING_STANDARDS.md)
+[![Testing Policy](https://img.shields.io/badge/Testing_Policy-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-3/TESTING_POLICY.md)
+[![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-3/User_Manual.pdf)
 [![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/demo3-brandstyle.pdf)
 [![Figma](https://img.shields.io/badge/Figma-View_Panels-B01030?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/site/xHXj3tG6pv2UuKHFgeug8s/OptiLifts--Copy-?node-id=0-1&p=f)
 [![Demo 3 Video](https://img.shields.io/badge/Demo_3-View_Video-B01030?style=for-the-badge&logo=google&logoColor=white)](https://drive.google.com/file/d/1yKSPtSmVicaUzwDjMS1FbkR9pfRA02Dt/view?usp=sharing)

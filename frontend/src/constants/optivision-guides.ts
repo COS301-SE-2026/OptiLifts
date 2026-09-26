@@ -18,10 +18,9 @@ export const EXERCISE_GUIDES: Readonly<Record<VisionExercise, ExerGuideData>> = 
     gifUrl: `${GIF_BASE}/0032-ila4NZS.gif`,
     checks: [
       { label: 'Lower back', tip: 'Keep your spine neutral and straight through the pull, a rounded lower back is flagged.' },
-      { label: 'Hip rise', tip: 'Keep your hips down until the bar leaves the floor, hips shooting up early are flagged.' },
+      { label: 'Bad hip movement', tip: 'Start with your hips low and raise them simultaneously with your back, hips starting too high or shooting up early are flagged.' },
       { label: 'Bar path', tip: 'Start with the bar over the middle of your foot and drag it up your shins, a bar drifting away from your legs is flagged.' },
       { label: 'Knees', tip: 'Keep your knees from travelling far over your toes at the start, knees pushed too far forward are flagged.' },
-      { label: 'Start position', tip: 'Start with your hips low to the ground, high hips and glutes are flagged.' },
     ],
   },
   bench: {

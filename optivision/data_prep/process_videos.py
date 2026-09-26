@@ -37,7 +37,7 @@ def process_dataset():
 
         # pulling using the exact column names in CSV
         l_flex = int(row.get("lumbar_flexion", 0))
-        h_rise = int(row.get("hips_early_rise", 0))
+        h_rise = int(row.get("bad_hip_movement", 0))
         b_drift = int(row.get("bar_drifting", 0))
         k_fwd = int(row.get("knees_forward", 0))
         s_depth = int(row.get("shallow_depth", 0))

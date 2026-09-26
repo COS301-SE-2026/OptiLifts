@@ -15,6 +15,7 @@ WEIGHTS_DIR = Path(os.getenv("WEIGHTS_DIR", str(_DEFAULT_WEIGHTS_DIR)))
 WINDOW_SIZE = 90
 STRIDE = 30
 THRESHOLD = 0.80
+CLEARANCE_THRESHOLD = 0.45
 FLAW_THRESHOLDS: Dict[str, float] = {}
 
 TRAJECTORY_FLAWS = {"shallow_depth", "no_chest_touch"}
@@ -23,7 +24,7 @@ IDLE_DISPLACEMENT_THRESHOLD = 0.08
 LABELS: Dict[str, List[str]] = {
     "squat": ["shallow_depth", "excessive_forward_lean"],
     "bench_press": [ "excessive_elbow_flare", "no_chest_touch", "incorrect_bar_path", "bad_arch"],
-    "deadlift": ["lumbar_flexion", "hips_early_rise", "bar_drifting", "knees_forward", "shallow_depth"],
+    "deadlift": ["lumbar_flexion", "bad_hip_movement", "bar_drifting", "knees_forward"],
 }
 
 EXERCISE_ALIASES: Dict[str, str] = {
@@ -186,13 +187,12 @@ def _find_suppressed_flaws(
     for flaw in TRAJECTORY_FLAWS:
         if flaw in class_labels:
             flaw_idx = class_labels.index(flaw)
-            threshold = FLAW_THRESHOLDS.get(flaw, THRESHOLD)
-            if any(w["probs"][flaw_idx] < threshold for w in active_windows):
+            if any(w["probs"][flaw_idx] < CLEARANCE_THRESHOLD for w in active_windows):
                 suppressed.add(flaw)
 
     if exercise == "deadlift":
-        hips_threshold = FLAW_THRESHOLDS.get("hips_early_rise", THRESHOLD)
-        if peak_scores.get("hips_early_rise", 0.0) >= hips_threshold:
+        hips_threshold = FLAW_THRESHOLDS.get("bad_hip_movement", THRESHOLD)
+        if peak_scores.get("bad_hip_movement", 0.0) >= hips_threshold:
             suppressed.add("lumbar_flexion")
 
     return suppressed

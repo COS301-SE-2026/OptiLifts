@@ -1,5 +1,5 @@
 import { customFetch } from "@/lib/custom-fetch";
-import { useState, type FormEvent } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { toast } from "../ui/alert";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -42,7 +42,7 @@ export function CreateJoinArenaModal({
         return null;
     }
 
-    const handleJoin = async (e: FormEvent) => {
+    const handleJoin = async (e: SyntheticEvent) => {
         e.preventDefault();
         const cleanCode = joinCode.trim().toUpperCase();
         if (!cleanCode){
@@ -84,7 +84,7 @@ export function CreateJoinArenaModal({
         }
     };
 
-    const handleCreate = async (e: FormEvent) => {
+    const handleCreate = async (e: SyntheticEvent) => {
         e.preventDefault();
         const cleanName = arenaName.trim();
         if (!cleanName) {

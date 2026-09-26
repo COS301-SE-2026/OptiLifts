@@ -51,26 +51,26 @@ describe('AthleteAvtr', () => {
         cleanup();
     });
 
-    it('renders initials when no avatarUrl is provided', () => {
+    it('renders init if no avatarUrl', () => {
         render(<AthleteAvatar initials="JD" />);
         expect(screen.getByText('JD')).toBeDefined();
     });
 
-    it('renders an image when avatarUrl is provided', () => {
+    it('renders img if avatarUrl given', () => {
         render(<AthleteAvatar initials="JD" avatarUrl="http://test.com/a.jpg" name="John" />);
         const img = screen.getByAltText('John') as HTMLImageElement;
         expect(img).toBeDefined();
         expect(img.src).toContain('a.jpg');
     });
 
-    it('falls back to initials when the image fails to load', () => {
+    it('falls back to init on img error', () => {
         render(<AthleteAvatar initials="JD" avatarUrl="http://test.com/broken.jpg" />);
         const img = screen.getByAltText('JD');
         fireEvent.error(img);
         expect(screen.getByText('JD')).toBeDefined();
     });
 
-    it('uses initials as the title attribute when name is not provided', () => {
+    it('uses init as title if no name', () => {
         render(<AthleteAvatar initials="JD" />);
         expect(screen.getByTitle('JD')).toBeDefined();
     });
@@ -86,24 +86,24 @@ describe('ClashTabs', () => {
         { id: 'b', label: 'Tab B' },
     ];
 
-    it('renders all tab labels', () => {
+    it('renders tab labels', () => {
         render(<ClashTabs tabs={tabs} activeTab="a" onChange={vi.fn()} />);
         expect(screen.getByText('Tab A')).toBeDefined();
         expect(screen.getByText('Tab B')).toBeDefined();
     });
 
-    it('shows the count badge when provided', () => {
+    it('shows count badge if given', () => {
         render(<ClashTabs tabs={tabs} activeTab="a" onChange={vi.fn()} />);
         expect(screen.getByText('3')).toBeDefined();
     });
 
-    it('marks the active tab as selected via aria-selected', () => {
+    it('marks active tab selected', () => {
         render(<ClashTabs tabs={tabs} activeTab="b" onChange={vi.fn()} />);
         const tabB = screen.getByRole('tab', { name: /Tab B/i });
         expect(tabB.getAttribute('aria-selected')).toBe('true');
     });
 
-    it('calls onChange with the clicked tab id', () => {
+    it('calls onChange w/ clicked id', () => {
         const onChange = vi.fn();
         render(<ClashTabs tabs={tabs} activeTab="a" onChange={onChange} />);
         fireEvent.click(screen.getByText('Tab B'));
@@ -123,7 +123,7 @@ describe('AllTierBadges', () => {
         ['Silver', 'Silver'],
         ['Bronze', 'Bronze'],
         ['SomeUnknownTier', 'Unranked'],
-    ])('renders %s tier correctly', (tier, expectedText) => {
+    ])('renders %s tier', (tier, expectedText) => {
         render(<TierBadge tier={tier} />);
         expect(screen.getByText(expectedText)).toBeDefined();
     });
@@ -140,12 +140,12 @@ describe('ModelAddFriend', () => {
         cleanup();
     });
 
-    it('renders nothing when isOpen is false', () => {
+    it('renders null if closed', () => {
         const { container } = render(<AddFriendModal isOpen={false} onClose={vi.fn()} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it('shows a validation error for a too-short code', () => {
+    it('errors on short code', () => {
         render(<AddFriendModal isOpen={true} onClose={vi.fn()} />);
         const inpt = screen.getByPlaceholderText('eg. AB1234');
         fireEvent.change(inpt, { target: { value: 'AB' } });
@@ -153,7 +153,7 @@ describe('ModelAddFriend', () => {
         expect(screen.getByText(/valid 6-character friend code/i)).toBeDefined();
     });
 
-    it('sends a friend request and shows the success state', async () => {
+    it('sends req, shows success', async () => {
         mockingFtch.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
         const onAdded = vi.fn();
         render(<AddFriendModal isOpen={true} onClose={vi.fn()} onFriendAdded={onAdded} />);
@@ -168,7 +168,7 @@ describe('ModelAddFriend', () => {
         expect(onAdded).toHaveBeenCalledWith('AB1234');
     });
 
-    it('shows the backend error message when the request fails', async () => {
+    it('shows error on fail', async () => {
         mockingFtch.mockResolvedValue({ ok: false, json: async () => ({ message: 'Code not found' }) });
         render(<AddFriendModal isOpen={true} onClose={vi.fn()} />);
 
@@ -181,7 +181,7 @@ describe('ModelAddFriend', () => {
         });
     });
 
-    it('handles network errors gracefully', async () => {
+    it('handles network error', async () => {
         mockingFtch.mockRejectedValue(new Error('network down'));
         render(<AddFriendModal isOpen={true} onClose={vi.fn()} />);
 
@@ -194,14 +194,14 @@ describe('ModelAddFriend', () => {
         });
     });
 
-    it('closes on Escape key press', () => {
+    it('closes on Escape', () => {
         const onClose = vi.fn();
         render(<AddFriendModal isOpen={true} onClose={onClose} />);
         fireEvent.keyDown(window, { key: 'Escape' });
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('closes when the backdrop is clicked', () => {
+    it('closes on backdrop click', () => {
         const onClose = vi.fn();
         render(<AddFriendModal isOpen={true} onClose={onClose} />);
         fireEvent.click(screen.getByLabelText('Close modal'));
@@ -209,7 +209,7 @@ describe('ModelAddFriend', () => {
     });
 });
 
-describe('ModalCreateJoinArena', () => {
+describe('ModelCreateJoinArena', () => {
     const mockingFtch = customFetch as unknown as Mock;
 
     beforeEach(() => {
@@ -220,30 +220,30 @@ describe('ModalCreateJoinArena', () => {
         cleanup();
     });
 
-    it('renders nothing when isOpen is false', () => {
+    it('renders null if closed', () => {
         const { container } = render(<CreateJoinArenaModal isOpen={false} onClose={vi.fn()} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it('defaults to the join tab', () => {
+    it('defaults to join tab', () => {
         render(<CreateJoinArenaModal isOpen={true} onClose={vi.fn()} />);
         expect(screen.getByPlaceholderText('e.g. IRON99')).toBeDefined();
     });
 
-    it('switches to the create tab', () => {
+    it('switches to create tab', () => {
         render(<CreateJoinArenaModal isOpen={true} onClose={vi.fn()} />);
         fireEvent.click(screen.getByText('Create New Arena'));
         expect(screen.getByPlaceholderText('e.g. Hazelwood Overloaders')).toBeDefined();
     });
 
-    it('shows an error when submitting an empty join code', () => {
+    it('errors on empty join code', () => {
         render(<CreateJoinArenaModal isOpen={true} onClose={vi.fn()} />);
         const inpt = screen.getByPlaceholderText('e.g. IRON99');
         fireEvent.submit(inpt.closest('form')!);
         expect(screen.getByText(/Please enter a 6 character arena code/i)).toBeDefined();
     });
 
-    it('shows an error for a too-short join code', () => {
+    it('errors on short join code', () => {
         render(<CreateJoinArenaModal isOpen={true} onClose={vi.fn()} />);
         const inpt = screen.getByPlaceholderText('e.g. IRON99');
         fireEvent.change(inpt, { target: { value: 'AB' } });
@@ -251,7 +251,7 @@ describe('ModalCreateJoinArena', () => {
         expect(screen.getByText(/Arena code must be 6 characters/i)).toBeDefined();
     });
 
-    it('joins an arena successfully and navigates to it', async () => {
+    it('joins arena, navigates', async () => {
         mockingFtch.mockResolvedValue({
             ok: true,
             json: async () => ({ success: true, arena: { id: 'arena-1' } }),
@@ -271,7 +271,7 @@ describe('ModalCreateJoinArena', () => {
         expect(mockNavig).toHaveBeenCalledWith('/clash/arena-1');
     });
 
-    it('shows an error message when joining fails', async () => {
+    it('errors if join fails', async () => {
         mockingFtch.mockResolvedValue({
             ok: false,
             json: async () => ({ message: 'Arena not found' }),
@@ -287,7 +287,7 @@ describe('ModalCreateJoinArena', () => {
         });
     });
 
-    it('shows an error when submitting an empty arena name on create', () => {
+    it('errors on empty arena name', () => {
         render(<CreateJoinArenaModal isOpen={true} onClose={vi.fn()} />);
         fireEvent.click(screen.getByText('Create New Arena'));
         const inpt = screen.getByPlaceholderText('e.g. Hazelwood Overloaders');
@@ -295,7 +295,7 @@ describe('ModalCreateJoinArena', () => {
         expect(screen.getByText(/Please provide an arena name/i)).toBeDefined();
     });
 
-    it('creates an arena successfully and navigates to it', async () => {
+    it('creates arena, navigates', async () => {
         mockingFtch.mockResolvedValue({
             ok: true,
             json: async () => ({ success: true, arena: { id: 'arena-2' } }),
@@ -314,7 +314,7 @@ describe('ModalCreateJoinArena', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('shows an error message when creating fails', async () => {
+    it('errors if create fails', async () => {
         mockingFtch.mockResolvedValue({
             ok: false,
             json: async () => ({ message: 'Name already taken' }),
@@ -345,17 +345,17 @@ describe('ModelShareArena', () => {
         cleanup();
     });
 
-    it('renders nothing when isOpen is false', () => {
+    it('renders null if closed', () => {
         const { container } = render(<ShareArenaModal isOpen={false} onClose={vi.fn()} arena={testArena} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders nothing when arena is null', () => {
+    it('renders null if no arena', () => {
         const { container } = render(<ShareArenaModal isOpen={true} onClose={vi.fn()} arena={null} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it('shows the arena code and copies it to the clipboard', async () => {
+    it('shows code, copies to clipboard', async () => {
         mockingFtch.mockResolvedValue({ ok: true, json: async () => [] });
         render(<ShareArenaModal isOpen={true} onClose={vi.fn()} arena={testArena} />);
 
@@ -365,13 +365,13 @@ describe('ModelShareArena', () => {
         expect(await screen.findByText('Copied')).toBeDefined();
     });
 
-    it('shows placeholder dashes when arena has no code', () => {
+    it('shows dashes if no code', () => {
         mockingFtch.mockResolvedValue({ ok: true, json: async () => [] });
         render(<ShareArenaModal isOpen={true} onClose={vi.fn()} arena={{ id: 'a', name: 'X', code: null }} />);
         expect(screen.getByText('------')).toBeDefined();
     });
 
-    it('fetches and displays friends, filtered by search', async () => {
+    it('fetches friends, filters by search', async () => {
         mockingFtch.mockResolvedValue({
             ok: true,
             json: async () => [
@@ -391,7 +391,7 @@ describe('ModelShareArena', () => {
         expect(screen.queryByText('Bob')).toBeNull();
     });
 
-    it('shows an empty state when there are no friends', async () => {
+    it('shows empty state if none', async () => {
         mockingFtch.mockResolvedValue({ ok: true, json: async () => [] });
         render(<ShareArenaModal isOpen={true} onClose={vi.fn()} arena={testArena} />);
 
@@ -400,7 +400,7 @@ describe('ModelShareArena', () => {
         });
     });
 
-    it('invites a friend and shows the invited state', async () => {
+    it('invites friend, shows invited', async () => {
         mockingFtch.mockImplementation(async (url: string) => {
             if (url.includes('/invite')) {
                 return { ok: true, json: async () => ({ success: true }) };
@@ -422,7 +422,7 @@ describe('ModelShareArena', () => {
         });
     });
 
-    it('calls onClose when Done is clicked', () => {
+    it('calls onClose on Done click', () => {
         mockingFtch.mockResolvedValue({ ok: true, json: async () => [] });
         const onClose = vi.fn();
         render(<ShareArenaModal isOpen={true} onClose={onClose} arena={testArena} />);
@@ -468,23 +468,23 @@ describe('ProfInspDrawer', () => {
         cleanup();
     });
 
-    it('renders nothing when isOpen is false', () => {
+    it('renders null if closed', () => {
         const { container } = render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={false} onClose={vi.fn()} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders nothing when athlete is null', () => {
+    it('renders null if no athlete', () => {
         const { container } = render(<ProfileInspectorDrawer athlete={null} isOpen={true} onClose={vi.fn()} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders athlete details from props before the profile fetch resolves', () => {
+    it('renders props before fetch', () => {
         render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
         expect(screen.getByText('Jane Lifter')).toBeDefined();
         expect(screen.getByText('100 kg')).toBeDefined();
     });
 
-    it('overrides displayed stats once the profile fetch resolves', async () => {
+    it('overrides stats after fetch', async () => {
         mockingFtch.mockImplementation(async (url: string) => {
             if (url.includes('/profile')) {
                 return {
@@ -519,7 +519,7 @@ describe('ProfInspDrawer', () => {
         expect(screen.getByText('4 Kudos')).toBeDefined();
     });
 
-    it('sends kudos and updates the count when the button is clicked', async () => {
+    it('sends kudos, updates count', async () => {
         mockingFtch.mockImplementation(async (url: string) => {
             if (url.includes('/kudos')) {
                 return { ok: true, json: async () => ({}) };
@@ -535,7 +535,7 @@ describe('ProfInspDrawer', () => {
         });
     });
 
-    it('sends a friend request and shows the sent state', async () => {
+    it('sends req, shows sent', async () => {
         mockingFtch.mockImplementation(async (url: string) => {
             if (url.includes('/friends/requests')) {
                 return { ok: true, json: async () => ({ success: true }) };
@@ -551,32 +551,32 @@ describe('ProfInspDrawer', () => {
         });
     });
 
-    it('does not show the add friend button for the current user', () => {
+    it('hides add friend for self', () => {
         mockingAuth.mockReturnValue({ user: { id: testAthlete.id } });
         render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
         expect(screen.queryByText('Add Friend')).toBeNull();
     });
 
-    it('opens the trophies modal and shows the empty state', () => {
+    it('opens trophies, shows empty', () => {
         render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
         fireEvent.click(screen.getByText('Trophies'));
         expect(screen.getByText(/No trophy milestones earned yet/i)).toBeDefined();
     });
 
-    it('switches to the workouts tab and shows the empty state', () => {
+    it('switches tab, shows empty', () => {
         render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
         fireEvent.click(screen.getByText('Recent Workouts'));
         expect(screen.getByText(/No public workout logs shared yet/i)).toBeDefined();
     });
 
-    it('calls onClose when the header close button is clicked', () => {
+    it('calls onClose on close click', () => {
         const onClose = vi.fn();
         render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={onClose} />);
         fireEvent.click(screen.getByLabelText('Close'));
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('shows a populated workout in the workouts tab and expands it', async () => {
+    it('shows workout, expands it', async () => {
         mockingFtch.mockImplementation(async (url: string) => {
             if (url.includes('/profile')) {
                 return {

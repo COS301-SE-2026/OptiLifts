@@ -100,9 +100,9 @@ export default function FriendsManagementPage(){
     const fetchFriendsData = async () => {
         await Promise.resolve();
         try {
-            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes] = await Promise.all([
+            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes, privacyRes] = await Promise.all([
                 customFetch('/api/clash/friends'), customFetch('/api/clash/friends/requests'), customFetch('/api/clash/friends/code'),
-                customFetch('/api/clash/arenas/invites'), customFetch('/api/clash/duels/invites'),
+                customFetch('/api/clash/arenas/invites'), customFetch('/api/clash/duels/invites'), customFetch('/api/clash/duels/privacy'),
             ]);
             if (friendsRes.ok){
                 const data = await friendsRes.json();
@@ -123,6 +123,12 @@ export default function FriendsManagementPage(){
             if (duelInvitesRes.ok) {
                 const data = await duelInvitesRes.json();
                 setDuelInvites(Array.isArray(data) ? data : []);
+            }
+            if (privacyRes.ok) {
+                const pData = await privacyRes.json();
+                if (pData?.privacy) {
+                    setPrivacyPolicy(pData.privacy.toLowerCase() === 'none' ? 'none' : 'friends');
+                }
             }
         } catch {
             toast.error('Failed to load friends');
@@ -344,6 +350,28 @@ export default function FriendsManagementPage(){
         }
     };
 
+    const handleUpdatePrivacy = async (newPolicy: 'friends' | 'none') => {
+        setPrivacyPolicy(newPolicy);
+        try {
+            const res = await customFetch('/api/clash/duels/privacy', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    privacy: newPolicy === 'none' ? 'None' : 'Friends',
+                }),
+            });
+            if (res.ok) {
+                toast.info(newPolicy === 'none' ? 'Duel invites disabled.' : 'Duel invites set to Friends Only.');
+            } else {
+                toast.error('Failed to update privacy setting');
+            }
+        } catch {
+            toast.error('Network error updating privacy setting');
+        }
+    };
+
     const filteredFriends = friendsList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()) 
     || f.code.toLowerCase().includes(searchQuery.toLowerCase()));
     const filteredRequests = requestsLists.filter((f) => f.fromName.toLowerCase().includes(requestSearchQuery.toLowerCase()) 
@@ -539,20 +567,13 @@ export default function FriendsManagementPage(){
 
                                     <div className="flex items-center gap-3 self-start lg:self-auto flex-wrap">
                                         <div className="flex bg-surface-2 border border-border rounded-lg p-1">
-                                            <button type="button" onClick={() => {
-                                                    setPrivacyPolicy('friends');
-                                                    toast.info('Duel invites set to Friends Only.');
-                                                }}
+                                            <button type="button" onClick={() => void handleUpdatePrivacy('friends')}
                                                 className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
                                                     privacyPolicy === 'friends' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                                                 }`} >
                                                 Friends Only
                                             </button>
-                                            <button type="button"
-                                                onClick={() => {
-                                                    setPrivacyPolicy('none');
-                                                    toast.info('Duel invites disabled.');
-                                                }}
+                                            <button type="button" onClick={() => void handleUpdatePrivacy('none')}
                                                 className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
                                                     privacyPolicy === 'none' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                                                 }`}>

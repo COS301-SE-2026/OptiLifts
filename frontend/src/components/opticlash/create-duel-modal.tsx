@@ -49,6 +49,13 @@ export function CreateDuelModal({
             return;
         }
 
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+
         const fetchFriends = async () => {
             setLoadingFriends(true);
             try {
@@ -69,7 +76,8 @@ export function CreateDuelModal({
             }
         };
         void fetchFriends();
-    }, [isOpen, defaultFriend]);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, defaultFriend, onClose]);
 
     if (!isOpen){
         return null;
@@ -162,27 +170,26 @@ export function CreateDuelModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <Card className="bg-surface border-border max-w-md w-full overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-150 p-0">
-                <Button variant="ghost" size="icon" onClick={handleModalClose}
-                className="absolute top-4 right-4 h-8 w-8 z-10" aria-label="Close">
-                    <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
-                </Button>
-
+            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={handleModalClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full" />
+            <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5 cursor-default">
                 {/* modal header */}
-                <div className="p-6 pb-4 border-b border-border bg-surface-2">
-                    <div className="w-12 h-12 rounded-xl bg-brand-fill border border-brand/30 text-brand flex items-center justify-center mb-3">
-                        <Swords className="w-6 h-6"/>
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                    <div>
+                        <h3 className="font-display text-2xl tracking-wide text-foreground flex items-center gap-2.5">
+                            <Swords className="w-6 h-6 text-brand" />
+                            <span>1v1 Duel Challenge</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-sans">
+                            Start a progressive overload duel against a gym friend.
+                        </p>
                     </div>
-                    <h3 className="font-display text-2xl tracking-wide text-foreground">
-                        Challenge Friend to 1v1 Duel
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-sans">
-                        Start a progressive overload duel. The duel will begin when your friend accepts your invitation.
-                    </p>
+                    <Button variant="ghost" size="icon" onClick={handleModalClose}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" aria-label="Close" disabled={isSubmitting}>
+                        <X className="w-4 h-4" />
+                    </Button>
                 </div>
 
                 {/* modal body */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-surface">
                     {submitted ? (
                         <div className="p-6 text-center space-y-2">
                             <div className="w-12 h-12 rounded-full bg-success/10 text-success border border-success/30 flex items-center justify-center mx-auto">
@@ -191,15 +198,15 @@ export function CreateDuelModal({
                             <h4 className="font-sans font-bold text-base text-foreground">
                                 Duel Invite Sent
                             </h4>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground font-sans">
                                 Your friend will be notified. Once accepted, your {durationDays} day battle will begin.
                             </p>
                         </div>
                         ) : (
-                            <>
+                            <form onSubmit={handleSubmit} className="space-y-4">
                             {/* select yo friend */}
                             <div>
-                                <label htmlFor="duel-friend-trigger" className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
+                                <label htmlFor="duel-friend-trigger" className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5 font-sans">
                                     Select Friend
                                 </label>
                                 <DropdownMenu>
@@ -215,7 +222,7 @@ export function CreateDuelModal({
                             </div>
                             {/* metric type */}
                             <div>
-                                <span className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5">
+                                <span className="block text-xs font-bold uppercase tracking-[1px] text-muted-foreground mb-1.5 font-sans">
                                     Duel Metric Target
                                 </span>
                                 <div className="grid grid-cols-2 gap-2">
@@ -274,9 +281,8 @@ export function CreateDuelModal({
                                         'Send Challenge'
                                     )}
                             </Button>
-                            </>
+                            </form>
                         )}
-                </form>
             </Card>
         </div>
     );

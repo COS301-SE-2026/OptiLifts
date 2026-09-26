@@ -11,6 +11,7 @@ import { useState, useRef, useEffect, type MouseEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import * as signalR from "@microsoft/signalr";
 import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
+import { AthleteAvatar } from "@/components/opticlash/athlete-avatar";
 
 interface DuelUpdatePaylod {
     duelId: string;
@@ -99,7 +100,7 @@ export default function DuelArenaPage() {
 
         connection.on('ReceiveDuelHype', (_dId: string, senderName: string) => {
             const currentUserName = userRef.current?.name;
-            if (currentUserName && senderName?.trim().toLowerCase() === currentUserName.trim().toLowerCase()) {
+            if (senderName && senderName.trim().toLowerCase() === currentUserName?.trim().toLowerCase()) {
                 return;
             }
             toast.success(`${senderName} cheered on this duel!`, 'Hype Received');
@@ -140,7 +141,7 @@ export default function DuelArenaPage() {
             await customFetch(`/api/clash/duels/${duelId}/hype`, {
                 method: 'POST',
             });
-            toast.success(`You hyped up your 1v1 duel against ${duel.rivalName}!`, 'Hype Delivered');
+            toast.success(`You hyped up your 1v1 duel against ${m.rivalName}!`, 'Hype Delivered');
         } catch {
             //ignored
         } finally {
@@ -232,10 +233,11 @@ export default function DuelArenaPage() {
                     <CardContent className="p-0">
                     <div className="grid grid-cols-3 items-center text-center gap-2 md:gap-4 relative z-10">
                         <div className="flex flex-col items-center">
-                        <button type="button" onClick={() => handleOpenAthlete(user?.id || '', user?.name || 'You', m.userInitials)}
-                        className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-brand text-primary-foreground flex items-center justify-center font-display text-2xl md:text-3xl font-bold shadow-md hover:opacity-90 transition cursor-pointer"
-                        aria-label="Inspect Your Profile">
-                            {m.userInitials}
+                        <button type="button" onClick={() => handleOpenAthlete(user?.id || '', user?.name || 'You', m.userInitials, m.userAvatarUrl || user?.avatarUrl)}
+                            className="rounded-2xl hover:opacity-90 transition cursor-pointer"
+                            aria-label="Inspect Your Profile">
+                            <AthleteAvatar initials={m.userInitials} name={user?.name || 'You'} avatarUrl={m.userAvatarUrl || user?.avatarUrl || undefined}
+                                isCurrentUser={true} size="xl" className="md:w-20 md:h-20 md:text-3xl shadow-md"/>
                         </button>
                         <strong className="font-sans text-base md:text-lg font-bold text-foreground mt-2 block">
                             {user?.name || 'You'} (You)
@@ -259,10 +261,11 @@ export default function DuelArenaPage() {
                     </div>
 
                     <div className="flex flex-col items-center">
-                        <button type="button" onClick={() => handleOpenAthlete(m.rivalId, m.rivalName, m.rivalInitials)}
-                        className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-surface-2 border border-border text-foreground flex items-center justify-center font-display text-2xl md:text-3xl font-bold shadow-sm hover:opacity-90 transition cursor-pointer"
-                        aria-label={`Inspect ${m.rivalName}'s Profile`}>
-                            {m.rivalInitials}
+                        <button type="button" onClick={() => handleOpenAthlete(m.rivalId, m.rivalName, m.rivalInitials, m.rivalAvatarUrl)}
+                            className="rounded-2xl hover:opacity-90 transition cursor-pointer"
+                            aria-label={`Inspect ${m.rivalName}'s Profile`}>
+                            <AthleteAvatar initials={m.rivalInitials} name={m.rivalName} avatarUrl={m.rivalAvatarUrl || undefined}
+                                size="xl" className="md:w-20 md:h-20 md:text-3xl shadow-sm"/>
                         </button>
                         <strong className="font-sans text-base md:text-lg font-bold text-foreground mt-2 block">
                             {m.rivalName}
@@ -300,7 +303,7 @@ export default function DuelArenaPage() {
                                 <Sparkles className="w-4 h-4 text-warning" />
                                 <span>{reactionSent ? 'Reaction Sent' : 'Send Hype Reaction'}</span>
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleOpenAthlete(m.rivalId, m.rivalName, m.rivalInitials)}
+                            <Button variant="outline" size="sm" onClick={() => handleOpenAthlete(m.rivalId, m.rivalName, m.rivalInitials, m.rivalAvatarUrl)}
                                 className="flex items-center gap-1.5 border-border">
                                 <span>Inspect Rival Profile</span>
                             </Button>

@@ -40,6 +40,7 @@ interface RecentWorkoutDto {
 interface AthleteProfileApiResponse {
     userId: string;
     displayName: string;
+    avatarUrl?: string;
     bodyweightKg: number;
     tier: string;
     tierLevel: number;
@@ -205,29 +206,33 @@ export function ProfileInspectorDrawer({
         earnedAt: t.earnedAt,
     })) ?? athlete.trophies;
 
+    const displayName = profile?.displayName || athlete.name;
+    const displayInitials = profile?.displayName ? profile.displayName.slice(0, 2).toUpperCase() : athlete.initials;
+    const displayAvatarUrl = profile?.avatarUrl || athlete.avatarUrl;
+
     return (
         <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
             <button type="button" className="flex-1 cursor-default bg-transparent border-0 outline-none" onClick={onClose} aria-label="Close drawer backdrop"/>
-            <section aria-label={`Athlete profile for ${athlete.name}`}
+            <section aria-label={`Athlete profile for ${displayName}`}
             className="w-full max-w-lg h-full bg-surface border-l border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 text-foreground">
                 <header className="relative bg-surface-2 p-5 border-b border-border">
                     <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4 h-8 w-8 rounded-lg" aria-label="Close">
                         <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
                     </Button>
                     <div className="flex items-center gap-4">
-                        <AthleteAvatar initials={athlete.initials} name={athlete.name} avatarUrl={athlete.avatarUrl} isCurrentUser={isCurrentUser} size="xl"/>
+                        <AthleteAvatar initials={displayInitials} name={displayName} avatarUrl={displayAvatarUrl} isCurrentUser={isCurrentUser} size="xl"/>
                         <div>
                             <h2 className="font-display text-2xl tracking-wide text-foreground leading-tight">
-                                {athlete.name}
+                                {displayName}
                             </h2>
                             <div className="text-xs text-muted-foreground mt-0.5 font-sans">
-                                Bodyweight: <strong className="text-foreground">{athlete.bodyweightKg} kg</strong>
+                                Bodyweight: <strong className="text-foreground">{profile?.bodyweightKg ?? athlete.bodyweightKg} kg</strong>
                             </div>
                             {/* tier + dots badges */}
                             <div className="flex items-center gap-2 mt-2 font-sans">
                                 <TierBadge tier={profile?.tier || athlete.tier || 'Unranked'} size="md"/>
                                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-surface text-brand border border-border">
-                                    {athlete.dotsScore} DOTS
+                                    {profile?.dotsScore ?? athlete.dotsScore} DOTS
                                 </span>
                             </div>
                         </div>

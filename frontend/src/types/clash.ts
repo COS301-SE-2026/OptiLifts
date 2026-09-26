@@ -164,6 +164,7 @@ export interface DuelMatchupState {
     rivalInitials: string;
     rivalAvatarUrl?: string | null;
     userInitials: string;
+    userAvatarUrl?: string | null;
     userDisplayMetric: string;
     rivalDisplayMetric: string;
     userProgressPercent: number;
@@ -186,25 +187,38 @@ export function getDuelMatchupState(
 
     const userRawValue = Number(isUserChallenger ? duel.challengerCurrentValue : duel.rivalCurrentValue) || 0;
     const rivalRawValue = Number(isUserChallenger ? duel.rivalCurrentValue : duel.challengerCurrentValue) || 0;
+    const userBaseline = Number(isUserChallenger ? duel.challengerBaselineValue : duel.rivalBaselineValue) || 0;
+    const rivalBaseline = Number(isUserChallenger ? duel.rivalBaselineValue : duel.challengerBaselineValue) || 0;
     const rivalName = (isUserChallenger ? duel.rivalName : duel.challengerName) || 'Rival';
     const rivalId = (isUserChallenger ? duel.rivalUserId : duel.challengerUserId) || '';
     const rivalAvatarUrl = isUserChallenger ? duel.rivalAvatarUrl : duel.challengerAvatarUrl;
+    const userAvatarUrl = isUserChallenger ? duel.challengerAvatarUrl : duel.rivalAvatarUrl;
 
     const rivalInitials = rivalName ? rivalName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
     const userInitials = (currentUserName || (isUserChallenger ? duel.challengerName : duel.rivalName) || 'You').split(' ').map((n) => n[0]).join('').slice(0,2).toUpperCase();
 
     const isVolume = duel.targetType?.toLowerCase().includes('volume');
-    const format = (val: number) => {
+    const calculateGain = (current: number, baseline: number) => {
+        if (baseline <= 0 || current <= 0) return 0;
+        return ((current - baseline) / baseline) * 100;
+    };
+    const userScore = isVolume ? userRawValue : calculateGain(userRawValue, userBaseline);
+    const rivalScore = isVolume ? rivalRawValue : calculateGain(rivalRawValue, rivalBaseline);
+
+    const format = (score: number, rawKg: number) => {
         if (isVolume) {
-            return `${val.toLocaleString()} kg`;
+            return `${score.toLocaleString()} kg`;
         }
-        return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
+        if (rawKg <= 0) {
+            return '+0.0%';
+        }
+        return `${score >= 0 ? '+' : ''}${score.toFixed(1)}% (${rawKg.toFixed(1)} kg)`;
     };
 
-    const userDisplayMetric = format(userRawValue);
-    const rivalDisplayMetric = format(rivalRawValue);    
-    const valA = Math.max(0, userRawValue);
-    const valB = Math.max(0, rivalRawValue);
+    const userDisplayMetric = format(userScore, userRawValue);
+    const rivalDisplayMetric = format(rivalScore, rivalRawValue);    
+    const valA = Math.max(0, userScore);
+    const valB = Math.max(0, rivalScore);
     let userProgressPercent = 50;
     let rivalProgressPercent = 50;
     if (valA + valB > 0) {
@@ -212,12 +226,12 @@ export function getDuelMatchupState(
         rivalProgressPercent = 100 - userProgressPercent;
     }
 
-    const isWinning = userRawValue > rivalRawValue;
-    const isTied = userRawValue === rivalRawValue;
+    const isWinning = userScore > rivalScore;
+    const isTied = userScore === rivalScore;
 
     let leadText = 'All Tied';
     if (!isTied) {
-        const diff = Math.abs(userRawValue - rivalRawValue);
+        const diff = Math.abs(userScore - rivalScore);
         const formattedDiff = isVolume ? `${diff.toLocaleString()} kg` : `${diff.toFixed(1)}%`;
         leadText = isWinning ? `+${formattedDiff} lead` : `-${formattedDiff} behind`;
     }
@@ -252,6 +266,7 @@ export function getDuelMatchupState(
         rivalInitials,
         rivalAvatarUrl,
         userInitials,
+        userAvatarUrl,
         userDisplayMetric,
         rivalDisplayMetric,
         userProgressPercent,

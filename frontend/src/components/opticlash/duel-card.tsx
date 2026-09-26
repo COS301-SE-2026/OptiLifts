@@ -59,7 +59,7 @@ export function DuelCard({
                 {/* vs match */}
                 <div className="flex items-center justify-between my-3">
                     <div className="flex items-center gap-2.5">
-                        <AthleteAvatar initials={m.userInitials} isCurrentUser={true} size="md"/>
+                        <AthleteAvatar initials={m.userInitials} avatarUrl={m.userAvatarUrl || user?.avatarUrl || undefined} isCurrentUser={true} size="md"/>
                         <div>
                             <span className="text-xs text-muted-foreground block font-sans">You</span>
                             <strong className="text-sm font-bold text-foreground font-sans">{m.userDisplayMetric}</strong>

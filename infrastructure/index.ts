@@ -228,7 +228,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     },
     template: {
         scale: {
-            minReplicas: 0,
+            minReplicas: 1,
             maxReplicas: 2,
         },
         containers: [{
@@ -271,7 +271,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     },
     template: {
         scale: {
-            minReplicas: 0,
+            minReplicas: 1,
             maxReplicas: 2,
         },
         containers: [{
@@ -332,7 +332,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
     },
     template: {
         scale: {
-            minReplicas: 0,
+            minReplicas: 1,
             maxReplicas: 3,
         },
         containers: [{

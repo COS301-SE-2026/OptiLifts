@@ -15,16 +15,14 @@ WEIGHTS_DIR = Path(os.getenv("WEIGHTS_DIR", str(_DEFAULT_WEIGHTS_DIR)))
 WINDOW_SIZE = 90
 STRIDE = 30
 THRESHOLD = 0.80
-FLAW_THRESHOLDS: Dict[str, float] = {
-    "heels_raised": 0.92,
-}
+FLAW_THRESHOLDS: Dict[str, float] = {}
 
 TRAJECTORY_FLAWS = {"shallow_depth", "no_chest_touch"}
 IDLE_DISPLACEMENT_THRESHOLD = 0.08
 
 LABELS: Dict[str, List[str]] = {
-    "squat": ["shallow_depth", "excessive_forward_lean", "heels_raised"],
-    "bench_press": ["glutes_raised", "excessive_elbow_flare", "no_chest_touch", "incorrect_bar_path", "bad_arch"],
+    "squat": ["shallow_depth", "excessive_forward_lean"],
+    "bench_press": [ "excessive_elbow_flare", "no_chest_touch", "incorrect_bar_path", "bad_arch"],
     "deadlift": ["lumbar_flexion", "hips_early_rise", "bar_drifting", "knees_forward", "shallow_depth"],
 }
 

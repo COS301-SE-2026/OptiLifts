@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Copy worker application
 COPY worker.py sliding_window.py ./
 
+COPY models /app/training/weights
+
 USER app
 
 CMD ["python", "worker.py"]

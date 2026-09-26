@@ -1,0 +1,19 @@
+services:
+  worker-node:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: optivision-worker-node
+    restart: unless-stopped
+    volumes:
+      - ./training/weights:/app/training/weights:ro
+    env_file:
+      - ../.env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+

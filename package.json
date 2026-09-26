@@ -11,6 +11,12 @@
     "dev:backend": "cd backend/core-api && dotnet watch run --project OptiLifts.API/OptiLifts.API.csproj",
     "dev:ai": "cd backend/ai-api && ./venv/bin/uvicorn main:app --reload --port 8000",
 
+    "start:worker:node": "cd optivision && ./venv/bin/python worker/worker.py",
+    "start:worker:node:docker": "docker compose -f optivision/docker-compose.worker.yml up --build",
+    "stop:worker:node:docker": "docker compose -f optivision/docker-compose.worker.yml stop",
+    "down:worker:node:docker": "docker compose -f optivision/docker-compose.worker.yml down",
+    "down:worker:node:clean": "docker compose -f optivision/docker-compose.worker.yml down -v --remove-orphans",
+
     "prod": "docker compose -f docker-compose.prod.yml up --build -d",
     "prod:stop": "docker compose -f docker-compose.prod.yml stop",
     "prod:down": "docker compose -f docker-compose.prod.yml down",

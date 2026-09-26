@@ -145,9 +145,11 @@ public static class OptiVisionExtensions
             serviceBusConnection = "Endpoint=sb://optilifts.servicebus.windows.net/;SharedAccessKeyName=SendAccess;SharedAccessKey=dummykey=;";
         }
 
-        var serviceBusQueueName = configuration["SERVICE_BUS_QUEUE_NAME"]
+        var serviceBusQueueName = configuration["SERVICEBUS_QUEUE_NAME"]
+            ?? configuration["SERVICE_BUS_QUEUE_NAME"]
+            ?? Environment.GetEnvironmentVariable("SERVICEBUS_QUEUE_NAME")
             ?? Environment.GetEnvironmentVariable("SERVICE_BUS_QUEUE_NAME")
-            ?? "cv-jobs-queue";
+            ?? "form-analysis-jobs";
 
         services.AddSingleton(new ServiceBusClient(serviceBusConnection));
         services.AddSingleton(sp => sp.GetRequiredService<ServiceBusClient>().CreateSender(serviceBusQueueName));

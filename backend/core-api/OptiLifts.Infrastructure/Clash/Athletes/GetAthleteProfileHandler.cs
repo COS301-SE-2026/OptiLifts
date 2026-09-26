@@ -51,18 +51,32 @@ public sealed class GetAthleteProfileHandler : IRequestHandler<GetAthleteProfile
         var isOptedIn = user.GlobalLeaderboardOptIn;
         var tier = isOptedIn ? (snap?.Tier ?? "Bronze") : "Unranked";
         var tierLevel = isOptedIn ? (snap?.TierLevel ?? 1) : 0;
+
+        var bodyweight = snap?.BodyweightKg ?? 0m;
+        if (bodyweight == 0m && float.TryParse(user.Weight, NumberStyles.Any, CultureInfo.InvariantCulture, out var userW) && userW > 0f)
+        {
+            bodyweight = (decimal)userW;
+        }
+        var dotsScore = snap?.DotsScore ?? 0m;
+        var totalE1RM = snap?.TotalE1RM ?? 0m;
+        if (dotsScore == 0m && bodyweight > 0m && totalE1RM > 0m)
+        {
+            var gender = string.Equals(user.Sex, "Female", StringComparison.OrdinalIgnoreCase) ? "Female" : "Male";
+            dotsScore = (decimal)DotsCalculationEngine.CalculateDots((float)totalE1RM, (float)bodyweight, gender);
+        }
+
         return new AthleteProfileResult(
             user.Id,
             user.DisplayName,
             user.ProfileImageUrl,
-            snap?.BodyweightKg ?? 0m,
+            bodyweight,
             tier,
             tierLevel,
-            snap?.DotsScore ?? 0m,
+            dotsScore,
             snap?.Squat1RM ?? 0m,
             snap?.Bench1RM ?? 0m,
             snap?.Deadlift1RM ?? 0m,
-            snap?.TotalE1RM ?? 0m,
+            totalE1RM,
             snap?.WeeklyVolumeKg ?? 0m,
             muscBal,
             trophies,

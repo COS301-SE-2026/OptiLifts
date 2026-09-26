@@ -557,4 +557,25 @@ public sealed class DuelsTests : IDisposable
 
         await act.Should().NotThrowAsync();
     }
+
+    [Fact]
+    public async Task GetDuelPrivacyReturnsSavedValue()
+    {
+        var user = await SeedUserAsync("PrivacyUser", code1, privacy: "None");
+        var handler = new GetDuelPrivacyHandler(_db);
+        var res = await handler.Handle(new GetDuelPrivacyQuery(user.Id), CancellationToken.None);
+        res.Should().Be("None");
+    }
+
+    [Fact]
+    public async Task UpdateDuelPrivacyPersistsToDatabase()
+    {
+        var user = await SeedUserAsync("PrivacyUser2", code2, privacy: "Friends");
+        var handler = new UpdateDuelPrivacyHandler(_db);
+        var ok = await handler.Handle(new UpdateDuelPrivacyCommand(user.Id, "None"), CancellationToken.None);
+
+        ok.Should().BeTrue();
+        var upd = await _db.Users.FirstAsync(u => u.Id == user.Id);
+        upd.DuelInvitePrivacy.Should().Be("None");
+    }
 }

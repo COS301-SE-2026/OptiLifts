@@ -211,7 +211,7 @@ export function ProfileInspectorDrawer({
     const displayAvatarUrl = profile?.avatarUrl || athlete.avatarUrl;
 
     return (
-        <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-[120] flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
             <button type="button" className="flex-1 cursor-default bg-transparent border-0 outline-none" onClick={onClose} aria-label="Close drawer backdrop"/>
             <section aria-label={`Athlete profile for ${displayName}`}
             className="w-full max-w-lg h-full bg-surface border-l border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 text-foreground">
@@ -404,7 +404,7 @@ export function ProfileInspectorDrawer({
 
             {/* trophies + achievments modal */}
             {showTrophiesModal && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <Card className="bg-surface border-border max-w-md w-full p-6 text-center relative shadow-2xl">
                         <Button variant="ghost" size="icon" onClick={() => setShowTrophiesModal(false)}
                             className="absolute top-4 right-4 h-8 w-8" aria-label="Close">
@@ -415,15 +415,15 @@ export function ProfileInspectorDrawer({
                             <Trophy className="w-7 h-7"/>
                         </div>
                         <h3 className="font-display text-2xl tracking-wide text-foreground">
-                            {athlete.name}&apos;s Trophies
+                            {displayName}&apos;s Trophies
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5 font-sans">
                             Earned milestones and competitive season badges
                         </p>
 
-                        <div className="my-5 space-y-2.5 text-left">
+                        <div className="my-5 space-y-2.5 text-left max-h-80 overflow-y-auto pr-1">
                             {trophiesList.length > 0 ? (
-                                athlete.trophies.map((t) => (
+                                trophiesList.map((t) => (
                                     <div key={t.id} className="p-3 bg-surface-2 rounded-xl border border-border flex items-start gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shrink-0">
                                             <Medal className="w-5 h-5"/>

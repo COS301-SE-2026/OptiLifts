@@ -107,6 +107,10 @@ builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionSe
 
 //badges
 builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();
+builder.Services.AddScoped<IBadgeRule, DotsScoreRule>();
+builder.Services.AddScoped<IBadgeRule, MonthlyVolumeRule>();
+builder.Services.AddScoped<IBadgeRule, DuelWinsRule>();
+builder.Services.AddScoped<IBadgeRule, SeasonRankRule>();
 builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 
 //register auth implementations

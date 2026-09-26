@@ -2,6 +2,7 @@ using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Clash.Athletes.Queries;
+using OptiLifts.Application.Gamification.Abstraction;
 using OptiLifts.Domain.Clash;
 using OptiLifts.Domain.Workouts;
 using OptiLifts.Infrastructure.Database;
@@ -14,14 +15,21 @@ public sealed class GetAthleteProfileHandler : IRequestHandler<GetAthleteProfile
     private const int MuscBalanceWindowDays = 30;
 
     private readonly OptiLiftsDbContext _db;
+    private readonly IBadgeAwardingService? _badgeAwardingService;
 
-    public GetAthleteProfileHandler(OptiLiftsDbContext db)
+    public GetAthleteProfileHandler(OptiLiftsDbContext db, IBadgeAwardingService? badgeAwardingService = null)
     {
         _db = db;
+        _badgeAwardingService = badgeAwardingService;
     }
 
     public async Task<AthleteProfileResult?> Handle(GetAthleteProfileQuery request, CancellationToken cancellationToken)
     {
+        if (_badgeAwardingService is not null)
+        {
+            await _badgeAwardingService.AwardEligibleAsync(request.AthleteId, cancellationToken);
+        }
+
         var user = await _db.Users
             .AsNoTracking().FirstOrDefaultAsync(u => u.Id == request.AthleteId, cancellationToken);
 

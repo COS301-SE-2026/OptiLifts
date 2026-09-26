@@ -26,6 +26,8 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [Google Calendar](#google-calendar)
 	- [User Profile and Analytics](#user-profile-and-analytics)
 	- [OptiVision Form Analysis](#optivision-form-analysis)
+	- [OptiClash - Social & Friend Network](#opticlash--social--friend-network)
+	- [OptiClash - Private Gym Arenas & Live Squad Feed](#opticlash--private-gym-arenas--live-squad-feed)
 - [Deployment](#deployment)
 	- [Deployment Diagrams](#deployment-diagrams)
 	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
@@ -2491,6 +2493,824 @@ GET /api/vision/result/job_e9b46995079a4087b3be17ff14316d9b HTTP/1.1
 	]
 }
 ```
+
+---
+
+## OptiClash - Social & Friend Network
+
+### GET /api/clash/friends/code
+**Service Name:** Athlete Friend Code Retrieval Service
+
+**Description:**
+Retrieves the authenticated athlete's permanent 6-character uppercase alphanumeric friend referral code (e.g., `"CS6499"`), enabling them to share it with training partners to establish mutual friendships.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `code`: string - The user's unique 6-character friend code.
+
+**Usage / Interaction Rules:**
+- Requires an active authenticated session (`401 Unauthorized` if missing).
+- Returns `404 Not Found` if the athlete's user record does not exist.
+- Returns `200 OK` on success.
+
+**Example Response:**
+```json
+{
+	"code": "CS6499"
+}
+```
+
+---
+
+### GET /api/clash/friends
+**Service Name:** Friends List Query Service
+
+**Description:**
+Retrieves the list of all mutual, accepted friends for the authenticated athlete, including display name, avatar URL, initials, friend code, current DOTS score, and competitive tier badge.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Array of `FriendDto`:
+	- `id`: Guid - Unique friend user identifier.
+	- `name`: string - Athlete display name.
+	- `initials`: string - Formatted initials for avatar fallback.
+	- `avatarUrl`: string | null - Profile avatar image URL.
+	- `code`: string - Permanent 6-character friend code.
+	- `dotsScore`: decimal - Active seasonal DOTS score.
+	- `tier`: string - Competitive metal bracket (e.g., `"Bronze"`, `"Silver"`, `"Gold"`).
+
+**Usage / Interaction Rules:**
+- Queries the canonical `Friendships` table (`UserId1 < UserId2`).
+- Returns `200 OK` with an empty array if the user has no mutual friends.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+[
+	{
+		"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"name": "Jordan Naidoo",
+		"initials": "JN",
+		"avatarUrl": "https://storage.example.com/avatars/jordan.png",
+		"code": "JN4412",
+		"dotsScore": 345.50,
+		"tier": "Gold"
+	}
+]
+```
+
+---
+
+### GET /api/clash/friends/requests
+**Service Name:** Pending Friend Requests Query Service
+
+**Description:**
+Retrieves all pending incoming and outgoing friend requests for the authenticated athlete.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `PendingFriendRequestsResult`:
+	- `incoming`: array of `FriendRequestDto` - Pending requests received by the user:
+		- `id`: Guid - Request identifier.
+		- `fromUserId`: Guid - Sender athlete identifier.
+		- `fromName`: string - Sender display name.
+		- `fromInitials`: string - Sender initials.
+		- `fromAvatarUrl`: string | null - Sender avatar URL.
+		- `fromCode`: string - Sender friend code.
+		- `createdAt`: datetime - Request dispatch timestamp.
+	- `outgoing`: array of `FriendRequestDto` - Pending requests sent by the user to other athletes.
+
+**Usage / Interaction Rules:**
+- Returns `200 OK` with incoming and outgoing arrays.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"incoming": [
+		{
+			"id": "e1f18210-9b48-4e8a-bf90-349f50e7b892",
+			"fromUserId": "7ca241b1-2947-49f3-8b7a-6b45a34e0a91",
+			"fromName": "Alex Johnson",
+			"fromInitials": "AJ",
+			"fromAvatarUrl": null,
+			"fromCode": "AJ1029",
+			"createdAt": "2026-09-22T08:15:00Z"
+		}
+	],
+	"outgoing": []
+}
+```
+
+---
+
+### POST /api/clash/friends/requests
+**Service Name:** Send Friend Request Service
+
+**Description:**
+Dispatches a friend request to another athlete using their unique 6-character alphanumeric friend code.
+
+**Inputs:**
+- Body:
+	- `friendCode`: string - Target athlete's 6-character code (case-insensitive).
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `SendFriendRequestResult`:
+	- `success`: boolean - Request dispatch status.
+	- `message`: string - Feedback description.
+	- `requestId`: Guid | null - Created request identifier.
+
+**Usage / Interaction Rules:**
+- Rejects if `friendCode` is empty (`400 Bad Request`).
+- Rejects if the friend code does not match any user (`400 Bad Request`).
+- Rejects if attempting to send a request to oneself (`400 Bad Request`).
+- Rejects if the athletes are already mutual friends or a pending request exists (`400 Bad Request`).
+- Returns `200 OK` upon successful creation.
+
+**Example Request:**
+```http
+POST /api/clash/friends/requests HTTP/1.1
+Content-Type: application/json
+
+{
+	"friendCode": "JN4412"
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Friend request sent successfully",
+	"requestId": "e1f18210-9b48-4e8a-bf90-349f50e7b892"
+}
+```
+
+---
+
+### POST /api/clash/friends/requests/{id}/respond
+**Service Name:** Respond to Friend Request Service
+
+**Description:**
+Accepts or declines an incoming pending friend request. On acceptance, inserts a canonical row into the `Friendships` table (`UserId1 < UserId2`).
+
+**Inputs:**
+- `id`: Guid (path parameter) - Friend request identifier.
+- Body:
+	- `accept`: boolean - `true` to accept, `false` to decline.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `success`: boolean - Processing status (`true`).
+
+**Usage / Interaction Rules:**
+- Returns `404 Not Found` if the request does not exist, was not addressed to the caller, or has already been resolved.
+- Returns `200 OK` on successful resolution.
+
+**Example Request:**
+```http
+POST /api/clash/friends/requests/e1f18210-9b48-4e8a-bf90-349f50e7b892/respond HTTP/1.1
+Content-Type: application/json
+
+{
+	"accept": true
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true
+}
+```
+
+---
+
+### POST /api/clash/friends/requests/reject-all
+**Service Name:** Bulk Dismiss Friend Requests Service
+
+**Description:**
+Bulk rejects all incoming pending friend requests addressed to the authenticated user.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `rejectCount`: integer - Total number of dismissed incoming requests.
+
+**Usage / Interaction Rules:**
+- Returns `200 OK` with the count of rejected records.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"rejectCount": 4
+}
+```
+
+---
+
+### DELETE /api/clash/friends/{friendId}
+**Service Name:** Remove Friend Service
+
+**Description:**
+Dissolves a mutual friendship between the authenticated athlete and the specified friend.
+
+**Inputs:**
+- `friendId`: Guid (path parameter) - Identifier of the friend to remove.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Status code `204 No Content`.
+
+**Usage / Interaction Rules:**
+- Resolves friendship row via canonical order (`UserId1 < UserId2`).
+- Returns `404 Not Found` if no mutual friendship exists.
+- Returns `204 No Content` on successful deletion.
+
+---
+
+## OptiClash - Private Gym Arenas & Live Squad Feed
+
+### POST /api/v1/clash/arenas
+**Service Name:** Create Private Arena Service
+
+**Description:**
+Creates a new private gym arena/squad with a custom name, target evaluation metric, and mandatory duration (in days). Automatically generates a collision-resistant 6-character uppercase alphanumeric join code, registers the creator as `Owner`, and posts an initial squad launch event to the live activity feed.
+
+**Inputs:**
+- Body:
+	- `name`: string - Name of the arena / squad (1–100 characters).
+	- `metricType`: string - Evaluation metric (`"DotsOverall"`, `"TotalVolume"`, `"SquatE1RM"`, `"BenchE1RM"`, `"DeadliftE1RM"`). Defaults to `"DotsOverall"`.
+	- `durationDays`: integer - Duration preset in days (7, 14, 30, up to 365).
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `CreateArenaResult`:
+	- `success`: boolean - Creation status.
+	- `message`: string - Informational message.
+	- `arena`: `ArenaDto` - Full created arena details:
+		- `id`: string - Unique arena UUID string.
+		- `name`: string - Arena display name.
+		- `type`: string - `"Private"`.
+		- `code`: string - Unique 6-character join code (e.g. `"IRON99"`).
+		- `createdById`: Guid - Identifier of the squad owner.
+		- `metricType`: string - Target competitive metric.
+		- `durationDays`: integer - Challenge duration.
+		- `seasonEndDate`: datetime - Expiration timestamp (`CreatedAt + durationDays`).
+		- `createdAt`: datetime - Creation timestamp.
+		- `memberCount`: integer - Initial active member count (`1`).
+		- `isActive`: boolean - True while unexpired.
+		- `daysRemaining`: integer - Days left until completion.
+		- `userRole`: string - Role of caller (`"Owner"`).
+		- `isUserMember`: boolean - True.
+
+**Usage / Interaction Rules:**
+- Rejects empty names or names exceeding 100 characters with `400 Bad Request`.
+- Returns `201 Created` with `Location` header pointing to `/api/v1/clash/arenas/{id}`.
+- Broadcasts squad creation to the SignalR hub.
+
+**Example Request:**
+```http
+POST /api/v1/clash/arenas HTTP/1.1
+Content-Type: application/json
+
+{
+	"name": "The Iron Squad",
+	"metricType": "DotsOverall",
+	"durationDays": 30
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Arena created successfully.",
+	"arena": {
+		"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"name": "The Iron Squad",
+		"type": "Private",
+		"code": "IRON99",
+		"createdById": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"metricType": "DotsOverall",
+		"durationDays": 30,
+		"seasonEndDate": "2026-10-26T12:00:00Z",
+		"createdAt": "2026-09-26T12:00:00Z",
+		"memberCount": 1,
+		"isActive": true,
+		"daysRemaining": 30,
+		"userRole": "Owner",
+		"isUserMember": true
+	}
+}
+```
+
+---
+
+### POST /api/v1/clash/arenas/join
+**Service Name:** Join Arena by Code Service
+
+**Description:**
+Enrolls an athlete into a private gym arena using its unique 6-character alphanumeric code. If a pending direct friend invitation exists for this squad, it is automatically stamped as `Accepted`. Appends a join event to the live squad feed, prunes older events beyond the 100-event limit, and broadcasts real-time join events via SignalR.
+
+**Inputs:**
+- Body:
+	- `code`: string - 6-character uppercase alphanumeric code (e.g. `"IRON99"`).
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `JoinArenaResult`:
+	- `success`: boolean
+	- `message`: string
+	- `arena`: `ArenaDto` - Updated arena details with incremented member count and role `"Member"`.
+
+**Usage / Interaction Rules:**
+- Returns `400 Bad Request` if:
+	- The code is empty or does not match any private arena.
+	- The user is already an active member of the squad.
+	- The arena season duration has expired (`SeasonEndDate <= now`).
+- Returns `200 OK` upon successful enrollment.
+
+**Example Request:**
+```http
+POST /api/v1/clash/arenas/join HTTP/1.1
+Content-Type: application/json
+
+{
+	"code": "IRON99"
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Successfully joined arena.",
+	"arena": {
+		"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"name": "The Iron Squad",
+		"type": "Private",
+		"code": "IRON99",
+		"createdById": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"metricType": "DotsOverall",
+		"durationDays": 30,
+		"seasonEndDate": "2026-10-26T12:00:00Z",
+		"createdAt": "2026-09-26T12:00:00Z",
+		"memberCount": 2,
+		"isActive": true,
+		"daysRemaining": 30,
+		"userRole": "Member",
+		"isUserMember": true
+	}
+}
+```
+
+---
+
+### GET /api/v1/clash/arenas/my
+**Service Name:** User Joined Arenas Query Service
+
+**Description:**
+Retrieves all private gym squads where the authenticated athlete holds an active membership, ordered by active status and creation recency.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Array of `ArenaDto`: Complete metadata for each joined squad, including active countdown, total members, and the user's role (`"Owner"` vs. `"Member"`).
+
+**Usage / Interaction Rules:**
+- Returns `200 OK` with an empty array if the user belongs to no private squads.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+[
+	{
+		"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"name": "The Iron Squad",
+		"type": "Private",
+		"code": "IRON99",
+		"createdById": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"metricType": "DotsOverall",
+		"durationDays": 30,
+		"seasonEndDate": "2026-10-26T12:00:00Z",
+		"createdAt": "2026-09-26T12:00:00Z",
+		"memberCount": 5,
+		"isActive": true,
+		"daysRemaining": 30,
+		"userRole": "Owner",
+		"isUserMember": true
+	}
+]
+```
+
+---
+
+### GET /api/v1/clash/arenas/{id}
+**Service Name:** Arena Details and Leaderboard Query Service
+
+**Description:**
+Retrieves detailed arena metadata and dynamically computed competitive leaderboard standings ranked by the arena's target metric (`DotsOverall`, `TotalVolume`, `SquatE1RM`, `BenchE1RM`, or `DeadliftE1RM`). Also resolves the requesting user's explicit rank and score.
+
+**Inputs:**
+- `id`: string (path parameter) - Arena identifier (UUID for private squads, or `"global-league"` / `"weight-class-league"`).
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `ArenaLeaderboardResult`:
+	- `arena`: `ArenaDto` - Arena summary.
+	- `standings`: array of `ArenaLeaderboardEntryDto` - Dynamically ranked athlete standings:
+		- `rank`: integer - Current position (`1..N`).
+		- `userId`: Guid - Athlete user ID.
+		- `displayName`: string - Athlete display name.
+		- `initials`: string - Formatted initials for avatar.
+		- `avatarUrl`: string | null - Profile avatar URL.
+		- `gender`: string - Athlete biological gender (`"Male"` / `"Female"`).
+		- `bodyweightKg`: decimal - Bodyweight in kilograms.
+		- `score`: decimal - Primary score evaluated for the leaderboard.
+		- `dotsScore`: decimal - DOTS strength-to-weight score.
+		- `totalE1RM`: decimal - Peak 3-lift compound e1RM total.
+		- `squat1RM`: decimal - Peak Squat e1RM.
+		- `bench1RM`: decimal - Peak Bench Press e1RM.
+		- `deadlift1RM`: decimal - Peak Deadlift e1RM.
+		- `weeklyVolumeKg`: decimal - Rolling 7-day training volume.
+		- `tier`: string - Competitive metal badge (`"Bronze"`, `"Silver"`, `"Gold"`, `"Diamond"`, `"Overload Master"`).
+		- `tierLevel`: integer - Metal sub-bracket level (`1`–`3`).
+		- `trend`: integer - Rank trajectory delta (`+N`, `-N`, `0`).
+		- `role`: string - Role in squad (`"Owner"`, `"Member"`).
+		- `isCurrentUser`: boolean - `true` if this row matches the caller.
+	- `userStanding`: `ArenaLeaderboardEntryDto` | null - The caller's standing row.
+
+**Usage / Interaction Rules:**
+- For Private Arenas: Queries `ArenaMembers` and matches each member against `AthleteSeasonSnapshots` for the active calendar month.
+- For System Leagues (`global-league`, `weight-class-league`): Queries opted-in snapshots directly via composite B-Tree indexes.
+- Returns `404 Not Found` if the arena does not exist.
+- Returns `200 OK` on success.
+
+**Example Response:**
+```json
+{
+	"arena": {
+		"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"name": "The Iron Squad",
+		"type": "Private",
+		"code": "IRON99",
+		"metricType": "DotsOverall",
+		"durationDays": 30,
+		"memberCount": 2,
+		"isActive": true,
+		"daysRemaining": 30,
+		"userRole": "Owner",
+		"isUserMember": true
+	},
+	"standings": [
+		{
+			"rank": 1,
+			"userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"displayName": "Cailin Smith",
+			"initials": "CS",
+			"avatarUrl": null,
+			"gender": "Female",
+			"bodyweightKg": 64.0,
+			"score": 382.45,
+			"dotsScore": 382.45,
+			"totalE1RM": 405.0,
+			"squat1RM": 150.0,
+			"bench1RM": 95.0,
+			"deadlift1RM": 160.0,
+			"weeklyVolumeKg": 24500.0,
+			"tier": "Diamond",
+			"tierLevel": 1,
+			"trend": 1,
+			"role": "Owner",
+			"isCurrentUser": true
+		},
+		{
+			"rank": 2,
+			"userId": "7ca241b1-2947-49f3-8b7a-6b45a34e0a91",
+			"displayName": "Jordan Naidoo",
+			"initials": "JN",
+			"avatarUrl": null,
+			"gender": "Male",
+			"bodyweightKg": 82.5,
+			"score": 345.50,
+			"dotsScore": 345.50,
+			"totalE1RM": 485.0,
+			"squat1RM": 180.0,
+			"bench1RM": 125.0,
+			"deadlift1RM": 180.0,
+			"weeklyVolumeKg": 21800.0,
+			"tier": "Gold",
+			"tierLevel": 2,
+			"trend": 0,
+			"role": "Member",
+			"isCurrentUser": false
+		}
+	],
+	"userStanding": {
+		"rank": 1,
+		"userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"displayName": "Cailin Smith",
+		"score": 382.45,
+		"tier": "Diamond"
+	}
+}
+```
+
+---
+
+### POST /api/v1/clash/arenas/{id}/invite
+**Service Name:** Invite Friend to Arena Service
+
+**Description:**
+Dispatches a squad invitation to an established mutual friend. Validates that the caller is an active squad member, the recipient is in the caller's mutual friendships list, and the recipient is not already an enrolled member or pending invitee.
+
+**Inputs:**
+- `id`: string (path parameter) - Target arena identifier.
+- Body:
+	- `friendId`: Guid - User identifier of the mutual friend to invite.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `InviteFriendToArenaResult`:
+	- `success`: boolean
+	- `message`: string
+	- `inviteId`: Guid | null - Unique invitation identifier.
+
+**Usage / Interaction Rules:**
+- Returns `400 Bad Request` if:
+	- Inviting self (`friendId == callerId`).
+	- Caller and target are not confirmed mutual friends in `Friendships`.
+	- Target friend is already a member of the arena.
+	- An invitation is already pending for this user and arena.
+- Returns `404 Not Found` if the arena or friend does not exist.
+- Returns `200 OK` on success.
+
+**Example Request:**
+```http
+POST /api/v1/clash/arenas/b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91/invite HTTP/1.1
+Content-Type: application/json
+
+{
+	"friendId": "7ca241b1-2947-49f3-8b7a-6b45a34e0a91"
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Invitation sent successfully.",
+	"inviteId": "c4d5e6f7-1a2b-3c4d-5e6f-7a8b9c0d1e2f"
+}
+```
+
+---
+
+### POST /api/v1/clash/arenas/{id}/leave
+**Service Name:** Leave Arena Service
+
+**Description:**
+Removes the requesting athlete's membership record from a private arena and logs a departure activity in the squad feed. Enforces that squad `Owner`s cannot abandon an arena.
+
+**Inputs:**
+- `id`: string (path parameter) - Target arena identifier.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `LeaveArenaResult`:
+	- `success`: boolean
+	- `message`: string
+	- `isOwner`: boolean - Set to `true` if departure was prevented due to owner status.
+
+**Usage / Interaction Rules:**
+- Returns `400 Bad Request` if the caller is the arena `Owner` (`isOwner: true`).
+- Returns `404 Not Found` if the arena does not exist or caller is not a member.
+- Returns `200 OK` on successful removal.
+- Broadcasts departure event to connected squad members via SignalR.
+
+**Example Request:**
+```http
+POST /api/v1/clash/arenas/b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91/leave HTTP/1.1
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Successfully left the arena.",
+	"isOwner": false
+}
+```
+
+---
+
+### GET /api/v1/clash/arenas/{id}/feed
+**Service Name:** Arena Activity Feed Query Service
+
+**Description:**
+Retrieves the latest live activity feed events for a private arena (strictly auto-pruned to retain only the latest 100 entries per arena). Each event includes author profile metadata, PR flags, cheer counts, and an individualized `hasUserKudoed` indicator reflecting whether the caller has cheered the activity.
+
+**Inputs:**
+- `id`: string (path parameter) - Target arena identifier.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Array of `ClashActivityDto`:
+	- `id`: Guid - Unique activity record identifier.
+	- `arenaId`: string - Associated arena identifier.
+	- `userId`: Guid - Author athlete identifier.
+	- `userName`: string - Author display name.
+	- `userInitials`: string - Formatted initials.
+	- `userAvatarUrl`: string | null - Author profile image URL.
+	- `eventText`: string - Headline text (e.g. `"Cailin Smith set a new PR!"`).
+	- `details`: string - Detail description (e.g. `"150kg x 3 (e1RM: 162.5kg)"`).
+	- `isPr`: boolean - True if the event represents an e1RM or volume personal record.
+	- `isPromotion`: boolean - True if the event was triggered by a competitive tier upgrade.
+	- `kudosCount`: integer - Total cheers received.
+	- `hasUserKudoed`: boolean - True if the requesting user has already cheered this item.
+	- `createdAt`: datetime - Event timestamp.
+
+**Usage / Interaction Rules:**
+- Enforces 100-event auto-pruning at data insertion; queries return up to 100 events ordered chronologically descending (`CreatedAt DESC`).
+- Returns `200 OK` with an array of activities.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+[
+	{
+		"id": "f5e4d3c2-b1a0-9f8e-7d6c-5b4a3f2e1d0c",
+		"arenaId": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"userName": "Cailin Smith",
+		"userInitials": "CS",
+		"userAvatarUrl": null,
+		"eventText": "Cailin Smith set a new Squat PR!",
+		"details": "150kg x 3 (e1RM: 162.5kg)",
+		"isPr": true,
+		"isPromotion": false,
+		"kudosCount": 3,
+		"hasUserKudoed": false,
+		"createdAt": "2026-09-26T11:45:00Z"
+	}
+]
+```
+
+---
+
+### POST /api/v1/clash/activities/{id}/kudos
+**Service Name:** Send Activity Kudos Service
+
+**Description:**
+Sends an interactive cheer / kudos endorsement to a live activity feed item. Enforces a strict one-cheer-per-user constraint and broadcasts the updated cheer count to active squad members in real time via SignalR.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Activity record identifier.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `SendActivityKudosResult`:
+	- `success`: boolean
+	- `kudosCount`: integer - Updated total cheer count on the activity item.
+	- `message`: string
+
+**Usage / Interaction Rules:**
+- Enforces database-level unique constraint on `(ActivityId, SenderUserId)` in `ClashActivityKudos`.
+- Returns `400 Bad Request` if the user has already cheered this activity.
+- Returns `404 Not Found` if the activity item does not exist.
+- Returns `200 OK` upon successfully recording the cheer.
+
+**Example Request:**
+```http
+POST /api/v1/clash/activities/f5e4d3c2-b1a0-9f8e-7d6c-5b4a3f2e1d0c/kudos HTTP/1.1
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"kudosCount": 4,
+	"message": "Cheer sent successfully!"
+}
+```
+
+---
+
+### POST /api/v1/clash/arenas/invites/{id}/respond
+**Service Name:** Respond to Arena Invitation Service
+
+**Description:**
+Accepts or declines a pending private arena squad invitation. On acceptance, enrolls the athlete into the squad as `Member`, appends a join event to the activity feed, prunes older events, and broadcasts the event via SignalR.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Arena invitation identifier.
+- Body:
+	- `accept`: boolean - `true` to accept and join, `false` to decline.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `success`: boolean - `true` on successful resolution.
+
+**Usage / Interaction Rules:**
+- Returns `404 Not Found` if the invitation does not exist, was not addressed to the caller, or has already been resolved (`Status != 'Pending'`).
+- Returns `200 OK` on success.
+
+**Example Request:**
+```http
+POST /api/v1/clash/arenas/invites/c4d5e6f7-1a2b-3c4d-5e6f-7a8b9c0d1e2f/respond HTTP/1.1
+Content-Type: application/json
+
+{
+	"accept": true
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true
+}
+```
+
+---
+
+### GET /api/v1/clash/arenas/invites
+**Service Name:** User Pending Arena Invitations Query Service
+
+**Description:**
+Retrieves all pending incoming arena squad invitations addressed to the authenticated user, complete with originating squad name, join code, and inviter profile information.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Array of `ArenaInviteDto`:
+	- `id`: Guid - Invitation identifier.
+	- `arenaId`: string - Associated arena identifier.
+	- `arenaName`: string - Squad name.
+	- `arenaCode`: string | null - Squad join code.
+	- `invitedByUserId`: Guid - Inviting athlete user ID.
+	- `invitedByName`: string - Inviter display name.
+	- `invitedByInitials`: string - Inviter initials.
+	- `invitedByAvatarUrl`: string | null - Inviter avatar image URL.
+	- `status`: string - `"Pending"`.
+	- `createdAt`: datetime - Invitation dispatch timestamp.
+
+**Usage / Interaction Rules:**
+- Returns `200 OK` with an array of pending invitations.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+[
+	{
+		"id": "c4d5e6f7-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+		"arenaId": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"arenaName": "The Iron Squad",
+		"arenaCode": "IRON99",
+		"invitedByUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		"invitedByName": "Cailin Smith",
+		"invitedByInitials": "CS",
+		"invitedByAvatarUrl": null,
+		"status": "Pending",
+		"createdAt": "2026-09-26T12:05:00Z"
+	}
+]
+```
+
+---
+
+### Real-Time Service Contract: SignalR ClashHub
+**Hub Route:** `/hubs/clash` and `/clash-hub`  
+**Service Name:** OptiClash Real-Time Telemetry & Cheering Hub (`ClashHub`)
+
+**Description:**
+Manages bi-directional WebSocket / SSE connections for squad activity feeds, PR announcements, and live cheering particles. Scopes active connections into dynamic broadcast channels (`Arena_{arenaId}`).
+
+**Transport & Authentication:**
+- Transports: WebSockets with fallback to Server-Sent Events / Long Polling.
+- Authentication: JWT Bearer authentication parsed via `access_token` query parameter or standard HTTP-only session cookies.
+
+**Client Invocations (Client -> Hub):**
+- `JoinArena(arenaId: string)`: Enrolls the active connection into group `Arena_{arenaId}`.
+- `LeaveArena(arenaId: string)`: Removes the active connection from group `Arena_{arenaId}`.
+
+**Hub Broadcasts (Hub -> Clients in `Arena_{arenaId}`):**
+- `ReceiveActivity(activity: ClashActivityDto)`: Broadcast when a new set PR, promotion, or join event is recorded.
+- `ReceiveKudos(activityId: Guid, kudosCount: int)`: Broadcast when a feed item is cheered, triggering real-time confetti animations and incrementing counters across connected squad members.
+- `ReceiveUserJoined(arenaId: string, userName: string)`: Broadcast when an athlete enrolls into the arena.
+- `ReceiveUserLeft(arenaId: string, userName: string)`: Broadcast when a member departs from the arena.
 
 ---
 

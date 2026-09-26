@@ -68,6 +68,9 @@ public class OptiLiftsDbContext : DbContext
     public DbSet<ClashActivity> ClashActivities { get; set; }
     public DbSet<ClashActivityKudos> ClashActivityKudos { get; set; }
 
+    //f4
+    public DbSet<Duel> Duels { get; set; }
+    public DbSet<DuelTimelineEvent> DuelTimelineEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -9,9 +9,9 @@ namespace OptiLifts.Infrastructure.Clash.Leaderboard;
 public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeaderboardOptInCommand, ToggleLeaderboardOptInResult>
 {
     private readonly OptiLiftsDbContext _db;
-    private readonly ISender _sender;
+    private readonly ISender? _sender;
 
-    public ToggleLeaderboardOptInHandler(OptiLiftsDbContext db, ISender sender)
+    public ToggleLeaderboardOptInHandler(OptiLiftsDbContext db, ISender? sender = null)
     {
         _db = db;
         _sender = sender;
@@ -45,7 +45,7 @@ public sealed class ToggleLeaderboardOptInHandler : IRequestHandler<ToggleLeader
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        if (request.OptIn)
+        if (request.OptIn && _sender is not null)
         {
             await _sender.Send(new RecalculateAthleteSeasonSnapshotCommand(request.UserId), cancellationToken);
         }

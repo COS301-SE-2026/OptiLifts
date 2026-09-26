@@ -50,6 +50,7 @@ export default function AllDuelsPage() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
         void fetchDuels();
     }, []);
 
@@ -206,7 +207,7 @@ export default function AllDuelsPage() {
                 {/* filter+ search bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="w-full max-w-md">
-                        <SearchInput placeholder="Search by friend name, lift, or exercise..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 text-xs bg-surface border-border font-sans"/>
+                        <SearchInput placeholder="Search by friend name, lift, or exercise" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 text-xs bg-surface border-border font-sans"/>
                     </div>
 
                     <div className="w-full sm:w-auto">

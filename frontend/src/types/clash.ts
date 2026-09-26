@@ -114,10 +114,10 @@ export interface DuelSummary {
     status: string; //pending, active, finished, declined
     startDate?: string | null;
     endDate?: string | null;
-    challengerCurrentValue: string;
-    rivalCurrentValue: string;
-    challengerBaselineValue?: string | null;
-    rivalBaselineValue?: string | null;
+    challengerCurrentValue: number | string;
+    rivalCurrentValue: number | string;
+    challengerBaselineValue?: number | string | null;
+    rivalBaselineValue?: number | string | null;
     winnerUserId?: string | null;
     isDraw: boolean;
 }

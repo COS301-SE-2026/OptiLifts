@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import { AthleteAvatar } from "./athlete-avatar";
 import { TierBadge } from "./tier-badge";
 import { Button } from "../ui/button";
-import { Activity, ChevronDown, ChevronUp, Dumbbell, Heart, Medal, Trophy, UserCheck, UserPlus, X } from "lucide-react";
+import { Activity, ChevronDown, ChevronUp, Dumbbell, Heart, Medal, Swords, Trophy, UserCheck, UserPlus, X } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import SpiderGraph from "../ui/spider-graph";
 import { type ClashAthlete } from "@/types/clash";
@@ -60,10 +60,10 @@ interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
     isOpen: boolean;
     onClose: () => void;
-    // onChallengeDuel?: (athlete: ClashAthlete) => void; //f4
+    onChallengeDuel?: (athlete: ClashAthlete) => void; //f4
 }
 export function ProfileInspectorDrawer({
-    athlete, isOpen, onClose,
+    athlete, isOpen, onClose, onChallengeDuel,
 }: Readonly<ProfileInspectorDrawerProps>) {
     const {user} = useAuth();
     const [profile, setProfile] = useState<AthleteProfileApiResponse | null>(null);
@@ -244,7 +244,13 @@ export function ProfileInspectorDrawer({
                         {!isCurrentUser && (
                             <>
                             {/* f4: 1v1 challenge duel btn */}
-                                {!isAlreadyFriend && (
+                                {isAlreadyFriend ? (
+                                    <Button variant="default" size="sm" onClick={() => onChallengeDuel?.(athlete)}
+                                    className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5">
+                                        <Swords className="w-3.5 h-3.5" />
+                                        <span>1v1 Duel</span>
+                                    </Button>
+                                ) : (
                                     <Button variant={sentFriendRequest ? 'secondary' : 'default'} size="sm" disabled={sentFriendRequest} onClick={handleSendFriendRequest}
                                     className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5">
                                         {sentFriendRequest ? (

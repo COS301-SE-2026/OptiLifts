@@ -601,6 +601,7 @@ export default function ArenaLeaderboardPage() {//
 
     useEffect(() => {
         if (isPrivate) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
             void fetchLeaderboard();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -608,6 +609,7 @@ export default function ArenaLeaderboardPage() {//
 
     useEffect(() => {
         if (!isPrivate) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
             void fetchLeaderboard();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

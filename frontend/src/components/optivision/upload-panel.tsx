@@ -41,10 +41,10 @@ export function UploadPanel({ disabled, onAnalyse }: UploadPanelProps) {
           <div className="flex flex-col gap-1.5">
             <span className={LABEL_CLASS}>For best results</span>
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              <li>Film from a side-view, so we see your profile.</li>
-              <li>Ensure that your entire body is in frame.</li>
-              <li>Keep camera steady and preferably at hip height.</li>
-              <li>Only one lifter in view, with good lighting.</li>
+              <li>Film from a side-view, as seen in the examples exercise video.</li>
+              <li>Film from roughly hip height.</li>
+              <li>Ensure your entire body is visible in the video.</li>
+              <li>Only one lifter should be in view, with good lighting.</li>
               <li>
                 Film one set, between {MIN_VIDEO_SECONDS} and {MAX_VIDEO_SECONDS} seconds.
               </li>

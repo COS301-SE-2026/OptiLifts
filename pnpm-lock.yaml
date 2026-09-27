@@ -985,6 +985,7 @@ packages:
 
   '@mediapipe/tasks-vision@1.0.1':
     resolution: {integrity: sha512-rvRE2FmAZ6ZxKSw7wq+e+jQDpN3t1B/tD2mJz9SmAzb1msoDkd4dMoE4wAh8Z30Um0PQwLiHr9QtomhmXk3aUQ==}
+
   '@microsoft/signalr@10.0.11':
     resolution: {integrity: sha512-FulOJ2EEtKvLQcswe/U7v8pzyXyk7Jua5xgWJPPwyQU/2Z9ORvKcVjyO75VvLsem+CJ1ORRexJ+7Bz1FCei2aw==}
 
@@ -6608,6 +6609,7 @@ snapshots:
   '@logdna/tail-file@2.2.0': {}
 
   '@mediapipe/tasks-vision@1.0.1': {}
+
   '@microsoft/signalr@10.0.11':
     dependencies:
       abort-controller: 3.0.0

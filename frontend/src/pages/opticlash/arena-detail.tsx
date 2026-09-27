@@ -201,7 +201,7 @@ function LeaderboardTableBody({ isLoading, standings, selectedMetric, onSelectAt
     if (standings.length === 0) {
         return (
             <tr>
-                <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground font-sans">
                     No athletes ranked yet in this division.
                 </td>
             </tr>
@@ -245,25 +245,6 @@ function LeaderboardTableBody({ isLoading, standings, selectedMetric, onSelectAt
 
                 <td className="py-4 px-4 text-center">
                     {renderMetricValue(ath, selectedMetric)}
-                </td>
-
-                {/* trend arrow */}
-                <td className="py-4 px-4 text-center">
-                    {ath.rankTrend > 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
-                            <TrendingUp className="w-3.5 h-3.5"/> +{ath.rankTrend}
-                        </span>
-                    )}
-                    {ath.rankTrend < 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
-                            <TrendingDown className="w-3.5 h-3.5"/> {ath.rankTrend}
-                        </span>
-                    )}
-                    {ath.rankTrend === 0 && (
-                        <span className="inline-flex items-center text-muted-foreground">
-                            <Minus className="w-3.5 h-3.5"/>
-                        </span>
-                    )}
                 </td>
             </tr>
         );
@@ -807,7 +788,6 @@ export default function ArenaLeaderboardPage() {//
                                             {selectedMetric === 'dots' ? 'DOTS Score' : 'Score'}
                                         </span>
                                     </th>
-                                    <th className="py-3.5 px-4 text-center w-20">Trend</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border text-sm md:text-base">

@@ -177,6 +177,97 @@ export interface DuelMatchupState {
     userWon: boolean;
 }
 
+function getDuelParticipantValues(duel: DuelSummary, isUserChallenger: boolean) {
+    if (isUserChallenger) {
+        return {
+            userRawValue: Number(duel.challengerCurrentValue) || 0,
+            rivalRawValue: Number(duel.rivalCurrentValue) || 0,
+            userBaseline: Number(duel.challengerBaselineValue) || 0,
+            rivalBaseline: Number(duel.rivalBaselineValue) || 0,
+            rivalName: duel.rivalName || 'Rival',
+            rivalId: duel.rivalUserId || '',
+            rivalAvatarUrl: duel.rivalAvatarUrl,
+            userAvatarUrl: duel.challengerAvatarUrl,
+        };
+    }
+    return {
+        userRawValue: Number(duel.rivalCurrentValue) || 0,
+        rivalRawValue: Number(duel.challengerCurrentValue) || 0,
+        userBaseline: Number(duel.rivalBaselineValue) || 0,
+        rivalBaseline: Number(duel.challengerBaselineValue) || 0,
+        rivalName: duel.challengerName || 'Rival',
+        rivalId: duel.challengerUserId || '',
+        rivalAvatarUrl: duel.challengerAvatarUrl,
+        userAvatarUrl: duel.rivalAvatarUrl,
+    };
+}
+
+function getInitials(name?: string, fallback: string = 'OP'): string {
+    if (!name) {
+        return fallback;
+    }
+    return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function calculateGain(current: number, baseline: number): number {
+    if (baseline <= 0 || current <= 0) {
+        return 0;
+    }
+    return ((current - baseline) / baseline) * 100;
+}
+
+function formatDuelMetric(score: number, rawKg: number, isVolume: boolean): string {
+    if (isVolume) {
+        return `${score.toLocaleString()} kg`;
+    }
+    if (rawKg <= 0) {
+        return '+0.0%';
+    }
+    return `${score >= 0 ? '+' : ''}${score.toFixed(1)}% (${rawKg.toFixed(1)} kg)`;
+}
+
+function getProgressPercents(userScore: number, rivalScore: number) {
+    const valA = Math.max(0, userScore);
+    const valB = Math.max(0, rivalScore);
+    if (valA + valB > 0) {
+        const userProgressPercent = Math.round((valA / (valA + valB)) * 100);
+        return { userProgressPercent, rivalProgressPercent: 100 - userProgressPercent,};
+    }
+    return { userProgressPercent: 50, rivalProgressPercent: 50, };
+}
+
+function getLeadText(userScore: number, rivalScore: number, isVolume: boolean): string {
+    if (userScore === rivalScore) {
+        return 'All Tied';
+    }
+    const diff = Math.abs(userScore - rivalScore);
+    const formattedDiff = isVolume ? `${diff.toLocaleString()} kg` : `${diff.toFixed(1)}%`;
+    return userScore > rivalScore ? `+${formattedDiff} lead` : `-${formattedDiff} behind`;
+}
+
+function getEndsInText(endDate?: string | null, now: number = Date.now()): string {
+    if (!endDate) {
+        return 'Active';
+    }
+    const diffMs = new Date(endDate).getTime() - now;
+    if (diffMs <= 0) {
+        return 'Concluded';
+    }
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays >= 1) {
+        return `${diffDays}d`;
+    }
+    const diffHours = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60)));
+    return `${diffHours}h`;
+}
+
+function checkUserWon(duel: DuelSummary, isUserChallenger: boolean, userRawValue: number, rivalRawValue: number): boolean {
+    if (duel.winnerUserId) {
+        return isUserChallenger ? duel.winnerUserId === duel.challengerUserId : duel.winnerUserId === duel.rivalUserId;
+    }
+    return userRawValue > rivalRawValue;
+}
+
 export function getDuelMatchupState(
     duel: DuelSummary,
     currentUserId?: string,
@@ -185,76 +276,27 @@ export function getDuelMatchupState(
 ) : DuelMatchupState {
     const isUserChallenger = !currentUserId || duel.challengerUserId === currentUserId;
 
-    const userRawValue = Number(isUserChallenger ? duel.challengerCurrentValue : duel.rivalCurrentValue) || 0;
-    const rivalRawValue = Number(isUserChallenger ? duel.rivalCurrentValue : duel.challengerCurrentValue) || 0;
-    const userBaseline = Number(isUserChallenger ? duel.challengerBaselineValue : duel.rivalBaselineValue) || 0;
-    const rivalBaseline = Number(isUserChallenger ? duel.rivalBaselineValue : duel.challengerBaselineValue) || 0;
-    const rivalName = (isUserChallenger ? duel.rivalName : duel.challengerName) || 'Rival';
-    const rivalId = (isUserChallenger ? duel.rivalUserId : duel.challengerUserId) || '';
-    const rivalAvatarUrl = isUserChallenger ? duel.rivalAvatarUrl : duel.challengerAvatarUrl;
-    const userAvatarUrl = isUserChallenger ? duel.challengerAvatarUrl : duel.rivalAvatarUrl;
+    const { userRawValue, rivalRawValue, userBaseline, rivalBaseline, rivalName, rivalId, rivalAvatarUrl, userAvatarUrl,} = getDuelParticipantValues(duel, isUserChallenger);
+    const rivalInitials = getInitials(rivalName, 'OP');
+    const fallbackUserName = isUserChallenger ? duel.challengerName : duel.rivalName;
+    const userInitials = getInitials(currentUserName || fallbackUserName || 'You', 'You');
 
-    const rivalInitials = rivalName ? rivalName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
-    const userInitials = (currentUserName || (isUserChallenger ? duel.challengerName : duel.rivalName) || 'You').split(' ').map((n) => n[0]).join('').slice(0,2).toUpperCase();
-
-    const isVolume = duel.targetType?.toLowerCase().includes('volume');
-    const calculateGain = (current: number, baseline: number) => {
-        if (baseline <= 0 || current <= 0) return 0;
-        return ((current - baseline) / baseline) * 100;
-    };
+    const isVolume = Boolean(duel.targetType?.toLowerCase().includes('volume'));
     const userScore = isVolume ? userRawValue : calculateGain(userRawValue, userBaseline);
     const rivalScore = isVolume ? rivalRawValue : calculateGain(rivalRawValue, rivalBaseline);
 
-    const format = (score: number, rawKg: number) => {
-        if (isVolume) {
-            return `${score.toLocaleString()} kg`;
-        }
-        if (rawKg <= 0) {
-            return '+0.0%';
-        }
-        return `${score >= 0 ? '+' : ''}${score.toFixed(1)}% (${rawKg.toFixed(1)} kg)`;
-    };
-
-    const userDisplayMetric = format(userScore, userRawValue);
-    const rivalDisplayMetric = format(rivalScore, rivalRawValue);    
-    const valA = Math.max(0, userScore);
-    const valB = Math.max(0, rivalScore);
-    let userProgressPercent = 50;
-    let rivalProgressPercent = 50;
-    if (valA + valB > 0) {
-        userProgressPercent = Math.round((valA/(valA+valB))*100);
-        rivalProgressPercent = 100 - userProgressPercent;
-    }
+    const userDisplayMetric = formatDuelMetric(userScore, userRawValue, isVolume);
+    const rivalDisplayMetric = formatDuelMetric(rivalScore, rivalRawValue, isVolume);
+    const { userProgressPercent, rivalProgressPercent } = getProgressPercents(userScore, rivalScore);
 
     const isWinning = userScore > rivalScore;
     const isTied = userScore === rivalScore;
 
-    let leadText = 'All Tied';
-    if (!isTied) {
-        const diff = Math.abs(userScore - rivalScore);
-        const formattedDiff = isVolume ? `${diff.toLocaleString()} kg` : `${diff.toFixed(1)}%`;
-        leadText = isWinning ? `+${formattedDiff} lead` : `-${formattedDiff} behind`;
-    }
-
-    let endsInText = 'Active'
-    if (duel.endDate) {
-        const diffMs = new Date(duel.endDate).getTime() - now;
-        if (diffMs <= 0) {
-            endsInText = 'Concluded';
-        } else {
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            if (diffDays >= 1) {
-                endsInText = `${diffDays}d`;
-            } else {
-                const diffHours = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60)));
-                endsInText = `${diffHours}h`;
-            }
-        }
-    }
+    const leadText = getLeadText(userScore, rivalScore, isVolume);
+    const endsInText = getEndsInText(duel.endDate, now);
 
     const isFinished = duel.status?.toLowerCase() === 'finished';
-    const temp = (isUserChallenger ? duel.winnerUserId === duel.challengerUserId : duel.winnerUserId === duel.rivalUserId);
-    const userWon = duel.winnerUserId ? temp : userRawValue > rivalRawValue;
+    const userWon = checkUserWon(duel, isUserChallenger, userRawValue, rivalRawValue);
 
     return {
         isUserChallenger,
@@ -277,6 +319,6 @@ export function getDuelMatchupState(
         endsInText,
         isFinished,
         userWon,
-    }
+    };
 }
 

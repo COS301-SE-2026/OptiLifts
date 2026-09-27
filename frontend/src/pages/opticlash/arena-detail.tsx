@@ -42,7 +42,8 @@ interface LeaderboardApiResponse {
     currentUserEntry?: LeaderboardAthleteDto | null;
 }
 
-function getFrontendMetric(backendMetric?: string): 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift' {
+type ArenaMetric = 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift';
+function getFrontendMetric(backendMetric?: string): ArenaMetric {
     const m = backendMetric?.toLowerCase() || '';
     if (m.includes('volume')) return 'volume';
     if (m.includes('squat')) return 'squat';
@@ -126,7 +127,7 @@ function getUserStandingStatus(currentUserStanding: LeaderboardAthleteDto | null
     return `Rank #${currentUserStanding.rank}`;
 }
 
-function renderMetricValue(athlete: LeaderboardAthleteDto, selectedMetric: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift') {
+function renderMetricValue(athlete: LeaderboardAthleteDto, selectedMetric: ArenaMetric) {
     switch (selectedMetric) {
         case 'volume':
             return <span className="font-bold text-brand font-sans text-sm md:text-base">{athlete.weeklyVolumeKg.toLocaleString()} kg</span>;
@@ -150,7 +151,7 @@ function renderMetricValue(athlete: LeaderboardAthleteDto, selectedMetric: 'dots
 interface LeaderboardTableBodyProps {
     isLoading: boolean;
     standings: LeaderboardAthleteDto[];
-    selectedMetric: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift';
+    selectedMetric: ArenaMetric;
     onSelectAthlete: (athlete: LeaderboardAthleteDto) => void;
 }
 
@@ -324,7 +325,7 @@ function ArenaHeader({
     );
 }
 
-const METRIC_BUTTONS: { id: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'; label: string }[] = [
+const METRIC_BUTTONS: { id: ArenaMetric; label: string }[] = [
     { id: 'dots', label: 'Overall DOTS' },
     { id: 'volume', label: 'Total Volume' },
     { id: 'squat', label: 'Squat e1RM' },
@@ -332,11 +333,11 @@ const METRIC_BUTTONS: { id: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'; 
     { id: 'deadlift', label: 'Deadlift e1RM' },
 ];
 interface ArenaFilterBarProps {
-    selectedMetric: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift';
-    primaryMetric: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift';
+    selectedMetric: ArenaMetric;
+    primaryMetric: ArenaMetric;
     isPrivate: boolean;
     selectedTimeframe: 'monthly' | 'all-time';
-    onSelectMetric: (metric: 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift') => void;
+    onSelectMetric: (metric: ArenaMetric) => void;
     onSelectTimeframe: (timeframe: 'monthly' | 'all-time') => void;
 }
 
@@ -479,7 +480,7 @@ export default function ArenaLeaderboardPage() {//
     const [totalAthletes, setTotalAthletes] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const [selectedMetric, setSelectedMetric] = useState<'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'>('dots');
+    const [selectedMetric, setSelectedMetric] = useState<ArenaMetric>('dots');
     const defaultGender = user?.sex?.toLowerCase() === 'female' ? 'female' : 'male';
     const [selectedGender, setSelectedGender] = useState<'male' | 'female'>(defaultGender);
     const [selectedBracketId, setSelectedBracketId] = useState<string>('u59');

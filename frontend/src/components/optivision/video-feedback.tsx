@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
   export function VideoFeedback({ issues, videoFile, exercise }: Readonly<{ issues: readonly string[], videoFile?: File | null, exercise: string }>) {
@@ -37,10 +36,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="mb-4 w-full justify-start font-normal text-foreground border-border">
-              {selectedIssue ? `Review Issue: ${selectedIssue.split('|')[0].replaceAll('_', ' ')}` : 'Select an identified issue'}
-            </Button>
+          <DropdownMenuTrigger variant="filter" className="mb-4">
+            {selectedIssue ? `Review Issue: ${selectedIssue.split('|')[0].replaceAll('_', ' ')}` : 'Select an identified issue'}
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full min-w-[200px]">
             {issues.map(issue => {

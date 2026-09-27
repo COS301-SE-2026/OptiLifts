@@ -101,6 +101,10 @@ builder.Services.AddScoped<OptiLifts.Infrastructure.Training.IPlateauDetectionSe
 
 //badges
 builder.Services.AddScoped<IBadgeRule, WorkoutCountRule>();
+builder.Services.AddScoped<IBadgeRule, DotsScoreRule>();
+builder.Services.AddScoped<IBadgeRule, MonthlyVolumeRule>();
+builder.Services.AddScoped<IBadgeRule, DuelWinsRule>();
+builder.Services.AddScoped<IBadgeRule, SeasonRankRule>();
 builder.Services.AddScoped<IBadgeAwardingService, BadgeAwardingService>();
 
 //register auth implementations
@@ -110,6 +114,9 @@ builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 
 builder.Services.AddAiIntegrations(builder.Configuration);
 builder.Services.AddRateLimitingServices(builder.Configuration);
+
+builder.Services.AddSignalR();
+builder.Services.AddScoped<OptiLifts.Application.Clash.IClashNotifier, OptiLifts.API.Hubs.SignalRClashNotifier>();
 
 var app = builder.Build();
 
@@ -134,6 +141,9 @@ app.UseAuthentication(); //authentication middleware
 app.UseAuthorization(); //authorization middleware
 app.UseRateLimiter(); //rate limiting middleware
 app.MapControllers();
+app.MapHub<OptiLifts.API.Hubs.ClashHub>("/hubs/clash");
+app.MapHub<OptiLifts.API.Hubs.ClashHub>("/clash-hub");
+app.MapHub<OptiLifts.API.Hubs.ClashHub>("/api/hubs/clash");
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq
 app.MapGet("/api/healthCheck", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow })).DisableRateLimiting();

@@ -1,6 +1,7 @@
 using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Clash.Notifications;
 using OptiLifts.Application.Users;
 using OptiLifts.Infrastructure.Database;
 
@@ -10,10 +11,12 @@ public sealed class UpdateProfileDetailsHandler : IRequestHandler<UpdateProfileD
 {
 
     private readonly OptiLiftsDbContext _dbContext;
+    private readonly IPublisher? _publisher;
 
-    public UpdateProfileDetailsHandler(OptiLiftsDbContext dbContext)
+    public UpdateProfileDetailsHandler(OptiLiftsDbContext dbContext, IPublisher? publisher = null)
     {
         _dbContext = dbContext;
+        _publisher = publisher;
     }
 
     public async Task Handle(UpdateProfileDetailsCommand request, CancellationToken cancellationToken)
@@ -34,5 +37,10 @@ public sealed class UpdateProfileDetailsHandler : IRequestHandler<UpdateProfileD
         user.Height = request.Height?.ToString(CultureInfo.InvariantCulture);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (_publisher is not null)
+        {
+            await _publisher.Publish(new UserProfileUpdatedNotification(request.UserId), cancellationToken);
+        }
     }
 }

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OptiLifts.Application.Clash.Notifications;
 using OptiLifts.Application.ProgressiveOverload;
 using OptiLifts.Application.Workouts.UpdateWorkoutLog;
 using OptiLifts.Domain.Workouts;
@@ -13,13 +14,16 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
     private readonly OptiLiftsDbContext _dbContext;
     private readonly IPlateauDetectionService _plateauDetectionService;
     private readonly ISender? _sender;
+    private readonly IPublisher? _publisher;
 
-    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null)
+    public UpdateWorkoutLogHandler(OptiLiftsDbContext dbContext, IPlateauDetectionService plateauDetectionService, ISender? sender = null, IPublisher? publisher = null)
     {
         _dbContext = dbContext;
         _plateauDetectionService = plateauDetectionService;
         _sender = sender;
+        _publisher = publisher;
     }
+
 
     public async Task<bool> Handle(UpdateWorkoutLogCommand request, CancellationToken cancellationToken)
     {
@@ -151,6 +155,10 @@ public sealed class UpdateWorkoutLogHandler : IRequestHandler<UpdateWorkoutLogCo
             }
         }
 
+        if (log.CompletedAt.HasValue && _publisher is not null)
+        {
+            await _publisher.Publish(new WorkoutCompletedNotification(request.UserId, log.Id), cancellationToken);
+        }
 
         return true;
     }

@@ -167,7 +167,7 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
     {
         if (dotsScore >= 450.0m)
         {
-            return ("OverloadMaster", 1);
+            return ("Overload Master", 1);
         }
 
         var band = dotsScore switch

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getWeightClassBracket, WEIGHT_CLASS_BRACKETS, type ClashAthlete, type ClashArena } from "@/types/clash";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Clock, ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
+import { Clock, ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, RotateCw, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -168,7 +168,7 @@ function LeaderboardTableBody({ isLoading, standings, selectedMetric, onSelectAt
     if (standings.length === 0) {
         return (
             <tr>
-                <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground font-sans">
                     No athletes ranked yet in this division.
                 </td>
             </tr>
@@ -212,25 +212,6 @@ function LeaderboardTableBody({ isLoading, standings, selectedMetric, onSelectAt
 
                 <td className="py-4 px-4 text-center">
                     {renderMetricValue(ath, selectedMetric)}
-                </td>
-
-                {/* trend arrow */}
-                <td className="py-4 px-4 text-center">
-                    {ath.rankTrend > 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
-                            <TrendingUp className="w-3.5 h-3.5"/> +{ath.rankTrend}
-                        </span>
-                    )}
-                    {ath.rankTrend < 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
-                            <TrendingDown className="w-3.5 h-3.5"/> {ath.rankTrend}
-                        </span>
-                    )}
-                    {ath.rankTrend === 0 && (
-                        <span className="inline-flex items-center text-muted-foreground">
-                            <Minus className="w-3.5 h-3.5"/>
-                        </span>
-                    )}
                 </td>
             </tr>
         );
@@ -688,7 +669,6 @@ export default function ArenaLeaderboardPage() {//
                                             {selectedMetric === 'dots' ? 'DOTS Score' : 'Score'}
                                         </span>
                                     </th>
-                                    <th className="py-3.5 px-4 text-center w-20">Trend</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border text-sm md:text-base">

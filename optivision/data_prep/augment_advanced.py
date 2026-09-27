@@ -5,15 +5,15 @@ import shutil
 EXERCISES = {
     "squat": {
         "classes": 2,
-        "lacking_indices": [], 
+        "lacking_indices": [],
     },
     "bench_press": {
         "classes": 4,
-        "lacking_indices": [],  
+        "lacking_indices": [],
     },
     "deadlift": {
         "classes": 4,
-        "lacking_indices": [],  
+        "lacking_indices": [],
     },
 }
 

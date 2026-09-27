@@ -14,9 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install python requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+
+RUN pip install --no-cache-dir --only-binary :all: -r requirements.txt \
     && addgroup --system app \
-    && adduser --system --group app
+    && adduser --system --group app # NOSONAR
 
 # Copy worker application
 COPY worker.py sliding_window.py ./
@@ -26,4 +27,3 @@ COPY models /app/training/weights
 USER app
 
 CMD ["python", "worker.py"]
-

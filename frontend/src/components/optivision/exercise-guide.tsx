@@ -54,7 +54,7 @@ export function ExerGuide({ exercise, onExerciseChange, disabled }: ExerGuidProp
             />
           )}
           <div className="min-w-[8rem] flex-1">
-            <h3 className="text-base font-bold text-foreground">{guide.name}</h3>
+            <h2 className="text-base font-bold text-foreground">{guide.name}</h2>
             <p className="mt-1 text-xs text-muted-foreground">{guide.note}</p>
           </div>
         </div>

@@ -64,6 +64,12 @@ public class VisionAnomaly
     [JsonPropertyName("severity")]
     public double Severity { get; set; } = 1.0;
 
+    [JsonPropertyName("start_frame")]
+    public int StartFrame { get; set; }
+
+    [JsonPropertyName("end_frame")]
+    public int EndFrame { get; set; }
+
     public VisionAnomaly() { }
 
     public VisionAnomaly(string error, double severity = 1.0)
@@ -75,7 +81,7 @@ public class VisionAnomaly
     public static implicit operator VisionAnomaly(string error) => new(error);
     public static implicit operator string(VisionAnomaly anomaly) => anomaly?.Error ?? string.Empty;
 
-    public override string ToString() => Severity < 0.999 ? $"{Error} ({Severity:F2})" : Error;
+    public override string ToString() => $"{Error}|{StartFrame}";
 }
 
 public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
@@ -89,54 +95,75 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
             return list;
         }
 
-        while (reader.Read())
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
         {
-            if (reader.TokenType == JsonTokenType.EndArray)
-            {
-                break;
-            }
-
             if (reader.TokenType == JsonTokenType.String)
             {
-                var str = reader.GetString();
-                if (!string.IsNullOrWhiteSpace(str))
-                {
-                    list.Add(new VisionAnomaly(str.Trim(), 1.0));
-                }
+                var anomaly = ParseStringAnomaly(reader.GetString());
+                if (anomaly != null) list.Add(anomaly);
             }
             else if (reader.TokenType == JsonTokenType.StartObject)
             {
                 using var doc = JsonDocument.ParseValue(ref reader);
-                var root = doc.RootElement;
-                string error = string.Empty;
-                double severity = 1.0;
-
-                if (root.TryGetProperty("error", out var errorProp))
-                {
-                    error = errorProp.GetString() ?? string.Empty;
-                }
-                else if (root.TryGetProperty("name", out var nameProp))
-                {
-                    error = nameProp.GetString() ?? string.Empty;
-                }
-
-                if (root.TryGetProperty("severity", out var severityProp) && severityProp.TryGetDouble(out var s))
-                {
-                    severity = s;
-                }
-                else if (root.TryGetProperty("confidence", out var confProp) && confProp.TryGetDouble(out var c))
-                {
-                    severity = c;
-                }
-
-                if (!string.IsNullOrWhiteSpace(error))
-                {
-                    list.Add(new VisionAnomaly(error.Trim(), severity));
-                }
+                var anomaly = ParseObjectAnomaly(doc.RootElement);
+                if (anomaly != null) list.Add(anomaly);
             }
         }
 
         return list;
+    }
+
+    private static VisionAnomaly? ParseStringAnomaly(string? str)
+    {
+        if (string.IsNullOrWhiteSpace(str))
+        {
+            return null;
+        }
+        else
+        {
+            return new VisionAnomaly(str.Trim(), 1.0);
+        }
+    }
+
+    private static VisionAnomaly? ParseObjectAnomaly(JsonElement root)
+    {
+        string error = ExtractStringProperty(root, "error", "name");
+        double severity = ExtractDoubleProperty(root, "severity", "confidence");
+
+        if (string.IsNullOrWhiteSpace(error))
+        {
+            return null;
+        }
+        else
+        {
+            return new VisionAnomaly(error.Trim(), severity);
+        }
+    }
+
+    private static string ExtractStringProperty(JsonElement root, string primary, string fallback)
+    {
+        if (root.TryGetProperty(primary, out var p1) && p1.GetString() is string s1)
+        {
+            return s1;
+        }
+        if (root.TryGetProperty(fallback, out var p2) && p2.GetString() is string s2)
+        {
+            return s2;
+        }
+        return string.Empty;
+    }
+
+    private static double ExtractDoubleProperty(JsonElement root, string primary, string fallback)
+    {
+        if (root.TryGetProperty(primary, out var p1) && p1.TryGetDouble(out var d1))
+        {
+            return d1;
+        }
+        if (root.TryGetProperty(fallback, out var p2) && p2.TryGetDouble(out var d2))
+        {
+            return d2;
+        }
+        return 1.0;
     }
 
     public override void Write(Utf8JsonWriter writer, List<VisionAnomaly> value, JsonSerializerOptions options)

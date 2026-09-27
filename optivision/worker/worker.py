@@ -279,6 +279,7 @@ def main():
             with ServiceBusClient.from_connection_string(
                 conn_str=SERVICEBUS_CONN_STR,
                 logging_enable=False,
+                keep_alive_interval=30,
             ) as sb_client:
                 with sb_client.get_queue_receiver(
                     queue_name=QUEUE_NAME,

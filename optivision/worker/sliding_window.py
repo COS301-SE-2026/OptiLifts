@@ -23,7 +23,12 @@ IDLE_DISPLACEMENT_THRESHOLD = 0.08
 
 LABELS: Dict[str, List[str]] = {
     "squat": ["shallow_depth", "excessive_forward_lean"],
-    "bench_press": [ "excessive_elbow_flare", "no_chest_touch", "incorrect_bar_path", "bad_arch"],
+    "bench_press": [
+        "excessive_elbow_flare",
+        "no_chest_touch",
+        "incorrect_bar_path",
+        "bad_arch",
+    ],
     "deadlift": ["lumbar_flexion", "bad_hip_movement", "bar_drifting", "knees_forward"],
 }
 
@@ -65,9 +70,13 @@ def get_model(
 
     model_file = target_weights_dir / f"{normalised}_side.pt"
     if not model_file.exists():
-        raise FileNotFoundError(f"Model weights not found for '{normalised}' at {model_file}")
+        raise FileNotFoundError(
+            f"Model weights not found for '{normalised}' at {model_file}"
+        )
 
-    logger.info("Loading TorchScript model: %s onto %s.", model_file.name, target_device)
+    logger.info(
+        "Loading TorchScript model: %s onto %s.", model_file.name, target_device
+    )
     model = torch.jit.load(str(model_file), map_location=target_device)
     model.eval()
     LOADED_MODELS[cache_key] = model
@@ -153,7 +162,14 @@ def _evaluate_windows(
             else:
                 probs = np.zeros(len(class_labels), dtype=np.float32)
 
-            window_records.append({"is_idle": idle, "probs": probs, "start_frame": start_idx, "end_frame": end_idx})
+            window_records.append(
+                {
+                    "is_idle": idle,
+                    "probs": probs,
+                    "start_frame": start_idx,
+                    "end_frame": end_idx,
+                }
+            )
 
     return window_records
 
@@ -172,7 +188,10 @@ def _aggregate_peak_scores(
             flaw = class_labels[i]
             if float(prob) > peak_scores[flaw]:
                 peak_scores[flaw] = float(prob)
-                peak_frames[flaw] = {"start": w.get("start_frame", 0), "end": w.get("end_frame", 0)}
+                peak_frames[flaw] = {
+                    "start": w.get("start_frame", 0),
+                    "end": w.get("end_frame", 0),
+                }
 
     return peak_scores, peak_frames
 
@@ -202,12 +221,14 @@ def _filter_detected_anomalies(
     for flaw, score in peak_scores.items():
         threshold = FLAW_THRESHOLDS.get(flaw, THRESHOLD)
         if score >= threshold and flaw not in suppressed_flaws:
-            detected.append({
-                "error": flaw, 
-                "severity": round(score, 3),
-                "start_frame": peak_frames[flaw]["start"],
-                "end_frame": peak_frames[flaw]["end"]
-            })
+            detected.append(
+                {
+                    "error": flaw,
+                    "severity": round(score, 3),
+                    "start_frame": peak_frames[flaw]["start"],
+                    "end_frame": peak_frames[flaw]["end"],
+                }
+            )
 
     detected.sort(key=lambda x: x["severity"], reverse=True)
     return detected
@@ -220,17 +241,25 @@ def run_sliding_window_inference(
     weights_dir: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     target_device = device or DEVICE
-    normalised_exercise, model = get_model(exercise, device=target_device, weights_dir=weights_dir)
+    normalised_exercise, model = get_model(
+        exercise, device=target_device, weights_dir=weights_dir
+    )
     class_labels = LABELS.get(normalised_exercise, LABELS["squat"])
 
     model_input = parse_frames_to_tensor(coordinates_data, device=target_device)
     model_input = _pad_input_tensor(model_input, WINDOW_SIZE)
-    logger.info("Analysing %d frames for '%s'.", model_input.shape[2], normalised_exercise)
+    logger.info(
+        "Analysing %d frames for '%s'.", model_input.shape[2], normalised_exercise
+    )
 
-    window_records = _evaluate_windows(model, model_input, normalised_exercise, class_labels)
+    window_records = _evaluate_windows(
+        model, model_input, normalised_exercise, class_labels
+    )
     peak_scores, peak_frames = _aggregate_peak_scores(class_labels, window_records)
     suppressed_flaws = _find_suppressed_flaws(class_labels, window_records)
-    detected_anomalies = _filter_detected_anomalies(peak_scores, peak_frames, suppressed_flaws)
+    detected_anomalies = _filter_detected_anomalies(
+        peak_scores, peak_frames, suppressed_flaws
+    )
 
     logger.info(
         "Inference complete: %d anomalies detected over threshold (%s).",

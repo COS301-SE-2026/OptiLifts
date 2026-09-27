@@ -663,6 +663,18 @@ export default function ArenaLeaderboardPage() {//
             }
         });
 
+        connection.on('ReceiveActivity', (activity: { arenaId?: string; eventText?: string; details?: string; userId?: string }) => {
+            if (!activity.arenaId || activity.arenaId === arenaId) {
+                if (activity.eventText && activity.userId !== user?.id) {
+                    toast.info(activity.eventText, activity.details);
+                }
+                void fetchPrivateLeaderboard();
+            }
+        });
+        connection.on('ReceiveKudos', () => {
+            //live kudos
+        });
+
         return () => {
             isCancelled = true;
             if (connection.state === signalR.HubConnectionState.Connected) {

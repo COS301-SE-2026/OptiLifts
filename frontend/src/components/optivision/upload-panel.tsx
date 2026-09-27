@@ -57,6 +57,7 @@ export function UploadPanel({ disabled, onAnalyse }: UploadPanelProps) {
               <input
                 ref={fileInputRef}
                 type="file"
+                aria-label="Upload video file"
                 accept="video/*"
                 className="sr-only"
                 onChange={handleFileChange}

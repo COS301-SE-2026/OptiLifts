@@ -3,8 +3,8 @@ import { ProfileInspectorDrawer } from "@/components/opticlash/profile-inspector
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { type ClashActivityItem, type ClashAthlete, type ClashArena } from "@/types/clash";
-import { ArrowRight, Clock, Trophy, UserPlus, Users, Flame, Heart, Plus } from "lucide-react";
+import { type ClashActivityItem, type ClashAthlete, type ClashArena, type DuelSummary, type UserDuelsResponse } from "@/types/clash";
+import { ArrowRight, Clock, Trophy, UserPlus, Users, Flame, Heart, Plus, Swords } from "lucide-react";
 import { useState, useEffect, useRef, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CreateJoinArenaModal } from "@/components/opticlash/create-join-arena-modal";
@@ -13,6 +13,8 @@ import { customFetch } from "@/lib/custom-fetch";
 import confetti from "canvas-confetti";
 import * as signalR from "@microsoft/signalr";
 import { useAuth } from "@/context/auth-context";
+import { DuelCard } from "@/components/opticlash/duel-card";
+import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 
 interface SignalRActivityPayload {
     id: string;
@@ -79,6 +81,9 @@ export default function ArenaHubPage() {
 
     const [userStanding, setUserStanding] = useState<UserStandingDto | null>(null);
     const [globalMemberCount, setGlobalMemberCount] = useState<number>(0);
+
+    const [isDuelModalOpen, setIsDuelModalOpen] = useState(false);
+    const [activeDuels, setActiveDuels] = useState<DuelSummary[]>([]);
 
     useEffect(() => {
         activityListRef.current = activityList;
@@ -162,11 +167,24 @@ export default function ArenaHubPage() {
         }
     };
 
+    const fetchDuelsPreview = async () => {
+        try {
+            const res = await customFetch('/api/clash/duels?status=Active');
+            if (res.ok) {
+                const data: UserDuelsResponse = await res.json();
+                setActiveDuels(data.duels || []);
+            }
+        } catch {
+            //keep fallback
+        }
+    };
+
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
         void fetchMyArenas();
         void fetchFeed();
         void fetchUserSnapshot();
+        void fetchDuelsPreview();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -462,6 +480,34 @@ export default function ArenaHubPage() {
                 </Card>
 
                 {/* f4: 1v1 duels section goes here */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <Swords className="w-5 h-5 text-brand" />
+                            <h3 className="font-display text-xl tracking-wide text-foreground">1v1 Duels</h3>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-sans font-bold bg-surface-2 text-muted-foreground border border-border">
+                                {activeDuels.length} Active
+                            </span>
+                        </div>
+                        <Button variant="outline" size="sm" asChild className="h-8 text-xs font-sans font-bold border-border">
+                            <Link to="/clash/duels" className="flex items-center gap-1">
+                                <span>See all</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </Button>
+                    </div>
+                    {activeDuels.length === 0 ? (
+                        <Card className="bg-surface border-border p-6 text-center text-muted-foreground font-sans text-xs">
+                            No active 1v1 duels right now. 
+                        </Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {activeDuels.slice(0, 4).map((duel) => (
+                                <DuelCard key={duel.id} duel={duel} onClick={() => navigate(`/clash/duels/${duel.id}`)}/>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <div>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -610,11 +656,16 @@ export default function ArenaHubPage() {
                 </div>
             </div>
 
-            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
+            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} 
+            onChallengeDuel={() => {
+                setIsDrawerOpen(false);
+                setIsDuelModalOpen(true);
+            }}/>
 
             {/* f3: create/join arena modal */}
             <CreateJoinArenaModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => { void fetchMyArenas(); void fetchFeed();}}/>
             {/* f4: create duel modal */}
+            <CreateDuelModal isOpen={isDuelModalOpen} onClose={() => setIsDuelModalOpen(false)} defaultFriend={selectedAthlete} onDuelCreated={() => void fetchDuelsPreview()}/>
         </div>
     )
 }

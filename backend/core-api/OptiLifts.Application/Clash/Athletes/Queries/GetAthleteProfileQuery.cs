@@ -37,5 +37,6 @@ public sealed record AthleteProfileResult(
     IReadOnlyList<RecentWorkoutDto> RecentWorkouts,
     int KudosCount,
     bool HasSentKudos,
-    bool isFriend = false
+    bool isFriend = false,
+    bool hasPendingFriendRequest = false
 );

@@ -46,6 +46,8 @@ const ProgressionPage = lazyWithReload(() => import('@/pages/progression'))
 const FriendsPage = lazyWithReload(() => import('@/pages/opticlash/friends'))
 const ArenaHubPage = lazyWithReload(() => import('@/pages/opticlash/index'))
 const ArenaLeaderboardPage = lazyWithReload(() => import('@/pages/opticlash/arena-detail'))
+const AllDuelsPage = lazyWithReload(() => import('@/pages/opticlash/duels'))
+const DuelArenaPage = lazyWithReload(() => import('@/pages/opticlash/duel-detail'))
 
 function AppLayout() {
   return (
@@ -139,6 +141,8 @@ function App() {
           <Route path="clash/friends" element={<FriendsPage />} />
           <Route path="clash" element={<ArenaHubPage />} />
           <Route path="clash/:arenaId" element={<ArenaLeaderboardPage />} />
+          <Route path="clash/duels" element={<AllDuelsPage />} />
+          <Route path="clash/duels/:duelId" element={<DuelArenaPage />} />
         </Route>
       </Route>
 

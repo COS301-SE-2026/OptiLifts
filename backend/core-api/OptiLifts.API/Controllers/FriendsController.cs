@@ -21,7 +21,7 @@ public sealed class FriendsController : ControllerBase
         _sender = sender;
     }
 
-    public sealed record SendFriendRequestApiRequest(string FriendCode);
+    public sealed record SendFriendRequestApiRequest(string? FriendCode = null, Guid? TargetUserId = null);
     public sealed record RespondFriendRequestApiRequest(bool Accept);
 
     [HttpGet("code")]
@@ -75,7 +75,7 @@ public sealed class FriendsController : ControllerBase
         {
             return Unauthorized();
         }
-        var result = await _sender.Send(new SendFriendRequestCommand(userId, request.FriendCode), cancellationToken);
+        var result = await _sender.Send(new SendFriendRequestCommand(userId, request.FriendCode, request.TargetUserId), cancellationToken);
         if (!result.Success)
         {
             return BadRequest(result);

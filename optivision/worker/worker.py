@@ -12,7 +12,11 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 import requests
 import torch
-from azure.servicebus import ServiceBusClient, ServiceBusReceiver, ServiceBusReceivedMessage
+from azure.servicebus import (
+    ServiceBusClient,
+    ServiceBusReceiver,
+    ServiceBusReceivedMessage,
+)
 from azure.storage.blob import BlobClient
 from dotenv import load_dotenv
 
@@ -31,7 +35,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("OptiVisionWorker")
 
-#config
+# config
 SERVICEBUS_CONN_STR = os.getenv("SERVICEBUS_CONNECTION_STRING")
 QUEUE_NAME = os.getenv("SERVICEBUS_QUEUE_NAME", "form-analysis-jobs")
 STORAGE_CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -40,7 +44,7 @@ NODE_SECRET = os.getenv("INTERNAL_WORKER_SECRET", "")
 HEARTBEAT_INTERVAL_SECONDS = int(os.getenv("HEARTBEAT_INTERVAL_SECONDS", "15"))
 APPLICATION_JSON = "application/json"
 
-#states
+# states
 RUNNING = True
 CURRENT_STATE = "idle"
 CURRENT_JOB_ID: Optional[str] = None
@@ -110,7 +114,6 @@ def send_heartbeat_ping(status: str, job_id: Optional[str] = None) -> bool:
 
 
 def heartbeat_daemon():
-    logger.info("Heartbeat daemon thread active (interval: %ds).", HEARTBEAT_INTERVAL_SECONDS)
     while not HEARTBEAT_STOP_EVENT.is_set():
         send_heartbeat_ping(CURRENT_STATE, CURRENT_JOB_ID)
         HEARTBEAT_STOP_EVENT.wait(HEARTBEAT_INTERVAL_SECONDS)
@@ -128,7 +131,6 @@ def notify_offline():
     }
     try:
         requests.post(url, json=payload, headers=headers, timeout=3)
-        logger.info("Deregistration sent: node marked offline in cluster.")
     except Exception:
         pass
 
@@ -136,7 +138,6 @@ def notify_offline():
 def signal_handler(signum, frame):
     global RUNNING, CURRENT_STATE
     CURRENT_STATE = "offline"
-    logger.info("\nShutdown signal received (%s). Stopping AMQP listener.", signum)
     RUNNING = False
     HEARTBEAT_STOP_EVENT.set()
     notify_offline()
@@ -153,13 +154,10 @@ def validate_config():
     if not STORAGE_CONN_STR:
         missing.append("AZURE_STORAGE_CONNECTION_STRING")
     if missing:
-        logger.error("Missing required environment variables: %s", ", ".join(missing))
         sys.exit(1)
 
 
 def download_coordinates(blob_url_or_name: str) -> Dict[str, Any]:
-    logger.info("Downloading coordinate payload from: %s", blob_url_or_name)
-
     if blob_url_or_name.startswith(("http://", "https://")):
         parsed = urlparse(blob_url_or_name)
         parts = parsed.path.lstrip("/").split("/", 1)
@@ -198,41 +196,41 @@ def report_results_to_backend(job_id: str, anomalies: List[Dict[str, Any]]):
         "detected_anomalies": anomalies,
     }
 
-    logger.info("Reporting results to Core API webhook (%s) for job %s.", webhook_url, job_id)
     response = requests.post(webhook_url, json=payload, headers=headers, timeout=30)
     response.raise_for_status()
-    logger.info("Results successfully accepted by Core API (HTTP %d).", response.status_code)
 
 
 def process_message(receiver: ServiceBusReceiver, message: ServiceBusReceivedMessage):
     global CURRENT_STATE, CURRENT_JOB_ID
     raw_body = str(message)
-    logger.info("[JOB RECEIVED] Message: %s", raw_body)
 
     try:
         data = json.loads(raw_body)
         job_id = data.get("jobId") or data.get("job_id") or data.get("JobId")
-        exercise = data.get("exercise") or data.get("exerciseType") or data.get("Exercise", "squat")
+        exercise = (
+            data.get("exercise")
+            or data.get("exerciseType")
+            or data.get("Exercise", "squat")
+        )
         blob_url = data.get("blobUrl") or data.get("blob_url") or data.get("BlobUrl")
 
         if not job_id or not blob_url:
-            raise ValueError(f"Message missing required fields ('jobId', 'blobUrl'): {data}")
+            raise ValueError(
+                f"Message missing required fields ('jobId', 'blobUrl'): {data}"
+            )
 
         CURRENT_STATE = "busy"
         CURRENT_JOB_ID = job_id
-        logger.info("Starting processing for Job ID: %s (Exercise: %s)", job_id, exercise)
         coordinates = download_coordinates(blob_url)
         anomalies = run_sliding_window_inference(exercise, coordinates)
         report_results_to_backend(job_id, anomalies)
         receiver.complete_message(message)
-        logger.info("Job %s completed successfully and acknowledged on Service Bus.", job_id)
 
-    except Exception as exc:
-        logger.exception("Failed to process message (Job error: %s). Abandoning for retry", exc)
+    except Exception:
         try:
             receiver.abandon_message(message)
-        except Exception as abandon_err:
-            logger.exception("Failed to abandon message on Service Bus: %s", abandon_err)
+        except Exception:
+            pass
     finally:
         CURRENT_STATE = "idle"
         CURRENT_JOB_ID = None
@@ -250,13 +248,6 @@ def print_banner():
     print("=" * 67)
 
 
-def check_model_weights():
-    for ex in ("squat", "bench_press", "deadlift"):
-        weights_file = WEIGHTS_DIR / f"{ex}_side.pt"
-        status = "FOUND" if weights_file.exists() else "MISSING"
-        logger.info("Model weights [%s]: %s (%s)", ex, status, weights_file.name)
-
-
 def listen_for_jobs(receiver: ServiceBusReceiver):
     while RUNNING:
         messages = receiver.receive_messages(max_message_count=1, max_wait_time=10)
@@ -270,7 +261,6 @@ def listen_for_jobs(receiver: ServiceBusReceiver):
 def main():
     validate_config()
     print_banner()
-    check_model_weights()
     heartbeat_thread = threading.Thread(target=heartbeat_daemon, daemon=True)
     heartbeat_thread.start()
     while RUNNING:
@@ -286,12 +276,16 @@ def main():
                     prefetch_count=1,
                     max_wait_time=10,
                 ) as receiver:
-                    logger.info("AMQP listener active. Worker Node ONLINE and waiting for jobs")
+                    logger.info(
+                        "AMQP listener active. Worker Node ONLINE and waiting for jobs"
+                    )
                     listen_for_jobs(receiver)
         except Exception as exc:
             if not RUNNING:
                 break
-            logger.exception("AMQP connection dropped: %s. Reconnecting in 5 seconds", exc)
+            logger.exception(
+                "AMQP connection dropped: %s. Reconnecting in 5 seconds", exc
+            )
             time.sleep(5)
 
     logger.info("OptiVision AMQP Worker Daemon shut down.")

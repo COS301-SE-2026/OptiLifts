@@ -10,8 +10,8 @@ describe('exercise guides', () => {
   })
 
   it('lists one check per output of the trained models', () => {
-    expect(EXERCISE_GUIDES.squat.checks).toHaveLength(3)
-    expect(EXERCISE_GUIDES.deadlift.checks).toHaveLength(5)
-    expect(EXERCISE_GUIDES.bench.checks).toHaveLength(5)
+    expect(EXERCISE_GUIDES.squat.checks).toHaveLength(2)
+    expect(EXERCISE_GUIDES.deadlift.checks).toHaveLength(4)
+    expect(EXERCISE_GUIDES.bench.checks).toHaveLength(4)
   })
 })

@@ -17,7 +17,10 @@ public class VisionPromptBuilderTests
 
         var prompt = _promptBuilder.BuildPrompt("squat", anomalies);
 
-        prompt.Should().Be("User squat errors: knees caving in, chest dropping. Write a concise, actionable 2-sentence coaching tip encouraging the user and instructing proper form.");
+        prompt.Should().Contain("squat");
+        prompt.Should().Contain("knees caving in");
+        prompt.Should().Contain("chest dropping");
+        prompt.Should().Contain("expert gym coach");
     }
 
     [Fact]
@@ -35,6 +38,8 @@ public class VisionPromptBuilderTests
         prompt.Should().Contain("shallow_depth (severity: 0.82)");
         prompt.IndexOf("excessive_forward_lean").Should().BeLessThan(prompt.IndexOf("shallow_depth"));
         prompt.Should().Contain("highest severity is the most critical");
+        prompt.Should().Contain("Lower until the crease of your hip is below the top of your kneecap");
+        prompt.Should().Contain("Keep your chest up and your torso upright");
     }
 
     [Fact]

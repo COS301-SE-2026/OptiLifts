@@ -21,6 +21,7 @@ const backendUrl = `https://${backendDomain}`;
 const config = new pulumi.Config();
 const postgressPassword = config.requireSecret("postgressPassword");
 const jwtSecret = config.requireSecret("jwtSecret");
+const nodeSecret = config.requireSecret("nodeSecret");
 const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
@@ -305,6 +306,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
             //make container app secrets so can inject them
             { name: "acr-password", value: acrPassword },
             { name: "jwt-secret", value: jwtSecret },
+            { name: "node-secret", value: nodeSecret },
             { name: "db-encryption-key", value: dbEncryptionKey },
             { name: "postgres-password", value: postgressPassword },
             {
@@ -365,7 +367,8 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "GOOGLE_CLIENT_SECRET", secretRef: "google-client-secret" },
                 { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }, 
                 { name: "GEMINI_API_KEY", secretRef: "gemini-api-key" },
-                { name: "GEMINI_BASE_URL", secretRef: "gemini-base-url" }
+                { name: "GEMINI_BASE_URL", secretRef: "gemini-base-url" },
+                { name: "NODE_SECRET", secretRef: "node-secret" }
             ],
             probes: [{
                 type: "Startup",

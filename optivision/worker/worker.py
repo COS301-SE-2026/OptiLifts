@@ -36,7 +36,7 @@ SERVICEBUS_CONN_STR = os.getenv("SERVICEBUS_CONNECTION_STRING")
 QUEUE_NAME = os.getenv("SERVICEBUS_QUEUE_NAME", "form-analysis-jobs")
 STORAGE_CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 CORE_API_URL = os.getenv("CORE_API_URL", "https://api.optilifts.app").rstrip("/")
-INTERNAL_SECRET = os.getenv("INTERNAL_WORKER_SECRET", "")
+NODE_SECRET = os.getenv("INTERNAL_WORKER_SECRET", "")
 HEARTBEAT_INTERVAL_SECONDS = int(os.getenv("HEARTBEAT_INTERVAL_SECONDS", "15"))
 APPLICATION_JSON = "application/json"
 
@@ -90,8 +90,8 @@ NODE_INFO = detect_hardware()
 def send_heartbeat_ping(status: str, job_id: Optional[str] = None) -> bool:
     url = f"{CORE_API_URL}/api/internal/workers/heartbeat"
     headers = {"Content-Type": APPLICATION_JSON}
-    if INTERNAL_SECRET:
-        headers["X-Internal-Secret"] = INTERNAL_SECRET
+    if NODE_SECRET:
+        headers["X-Node-Secret"] = NODE_SECRET
 
     payload = {
         "workerId": NODE_INFO["node_id"],
@@ -119,8 +119,8 @@ def heartbeat_daemon():
 def notify_offline():
     url = f"{CORE_API_URL}/api/internal/workers/offline"
     headers = {"Content-Type": APPLICATION_JSON}
-    if INTERNAL_SECRET:
-        headers["X-Internal-Secret"] = INTERNAL_SECRET
+    if NODE_SECRET:
+        headers["X-Node-Secret"] = NODE_SECRET
 
     payload = {
         "workerId": NODE_INFO["node_id"],
@@ -189,8 +189,8 @@ def report_results_to_backend(job_id: str, anomalies: List[Dict[str, Any]]):
     headers = {
         "Content-Type": APPLICATION_JSON,
     }
-    if INTERNAL_SECRET:
-        headers["X-Internal-Secret"] = INTERNAL_SECRET
+    if NODE_SECRET:
+        headers["X-Node-Secret"] = NODE_SECRET
 
     payload = {
         "jobId": job_id,

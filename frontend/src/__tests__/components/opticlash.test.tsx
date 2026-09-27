@@ -46,11 +46,15 @@ vi.mock('@/components/ui/spider-graph', () => ({
     default: ({ data }: Readonly<{ data: Record<string, number> }>) => <div data-testid="spider-graph">{JSON.stringify(data)}</div>,
 }));
 
-describe('AthleteAvtr', () => {
-    afterEach(() => {
-        cleanup();
-    });
+beforeEach(() => {
+    vi.clearAllMocks();
+});
 
+afterEach(() => {
+    cleanup();
+});
+
+describe('AthleteAvtr', () => {
     it('renders init if no avatarUrl', () => {
         render(<AthleteAvatar initials="JD" />);
         expect(screen.getByText('JD')).toBeDefined();
@@ -77,10 +81,6 @@ describe('AthleteAvtr', () => {
 });
 
 describe('ClashTabs', () => {
-    afterEach(() => {
-        cleanup();
-    });
-
     const tabs = [
         { id: 'a', label: 'Tab A', count: 3 },
         { id: 'b', label: 'Tab B' },
@@ -112,10 +112,6 @@ describe('ClashTabs', () => {
 });
 
 describe('AllTierBadges', () => {
-    afterEach(() => {
-        cleanup();
-    });
-
     it.each([
         ['Overload Master', 'Overload Master'],
         ['Diamond', 'Diamond'],
@@ -131,14 +127,6 @@ describe('AllTierBadges', () => {
 
 describe('ModelAddFriend', () => {
     const mockingFtch = customFetch as unknown as Mock;
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        cleanup();
-    });
 
     it('renders null if closed', () => {
         const { container } = render(<AddFriendModal isOpen={false} onClose={vi.fn()} />);
@@ -211,14 +199,6 @@ describe('ModelAddFriend', () => {
 
 describe('ModelCreateJoinArena', () => {
     const mockingFtch = customFetch as unknown as Mock;
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        cleanup();
-    });
 
     it('renders null if closed', () => {
         const { container } = render(<CreateJoinArenaModal isOpen={false} onClose={vi.fn()} />);
@@ -337,12 +317,7 @@ describe('ModelShareArena', () => {
     const testArena = { id: 'arena-1', name: 'Iron Squad', code: 'IRON99' };
 
     beforeEach(() => {
-        vi.clearAllMocks();
         Object.assign(navigator, { clipboard: { writeText: vi.fn() } });
-    });
-
-    afterEach(() => {
-        cleanup();
     });
 
     it('renders null if closed', () => {
@@ -459,13 +434,8 @@ describe('ProfInspDrawer', () => {
     };
 
     beforeEach(() => {
-        vi.clearAllMocks();
         mockingAuth.mockReturnValue({ user: { id: 'someone-else' } });
         mockingFtch.mockResolvedValue({ ok: false, json: async () => ({}) });
-    });
-
-    afterEach(() => {
-        cleanup();
     });
 
     it('renders null if closed', () => {

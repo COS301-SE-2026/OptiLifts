@@ -109,18 +109,22 @@ function mockFriendEps({
     return mockingFtch;
 }
 
+const mockingAuth = useAuth as unknown as Mock;
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    mockingAuth.mockReturnValue({ user: { id: 'me' } });
+});
+
+afterEach(() => {
+    cleanup();
+});
+
+const CHARLIE_REQ = { id: 'r1', fromAthleteId: 'a1', fromName: 'Charlie', fromInitials: 'CH', fromCode: 'CH123', sentAt: 'today' };
+const DANA_REQ = { id: 'r2', fromAthleteId: 'a2', fromName: 'Dana', fromInitials: 'DA', fromCode: 'DA123', sentAt: 'today' };
+const IRON_INVITE = { id: 'i1', arenaId: 'arena-1', arenaName: 'Iron Squad', invitedBNyUserId: 'u1', invitedByName: 'Eve', invitedByInitials: 'EV', status: 'Pending', createdAt: 'today' };
+
 describe('PgFriends', () => {
-    const mockingAuth = useAuth as unknown as Mock;
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockingAuth.mockReturnValue({ user: { id: 'me' } });
-    });
-
-    afterEach(() => {
-        cleanup();
-    });
-
     it('fetches friends, code on mount', async () => {
         mockFriendEps({
             friends: [{ id: 'f1', name: 'Alice', initials: 'AL', code: 'AL123', dotsScore: 300, tier: 'Gold' }],
@@ -153,7 +157,7 @@ describe('PgFriends', () => {
 
     it('switches tab, accepts req', async () => {
         mockFriendEps({
-            incoming: [{ id: 'r1', fromAthleteId: 'a1', fromName: 'Charlie', fromInitials: 'CH', fromCode: 'CH123', sentAt: 'today' }],
+            incoming: [CHARLIE_REQ],
         });
         render(<FriendsManagementPage />);
 
@@ -169,7 +173,7 @@ describe('PgFriends', () => {
 
     it('rejects req', async () => {
         mockFriendEps({
-            incoming: [{ id: 'r1', fromAthleteId: 'a1', fromName: 'Charlie', fromInitials: 'CH', fromCode: 'CH123', sentAt: 'today' }],
+            incoming: [CHARLIE_REQ],
         });
         render(<FriendsManagementPage />);
 
@@ -185,10 +189,7 @@ describe('PgFriends', () => {
 
     it('rejects all req', async () => {
         mockFriendEps({
-            incoming: [
-                { id: 'r1', fromAthleteId: 'a1', fromName: 'Charlie', fromInitials: 'CH', fromCode: 'CH123', sentAt: 'today' },
-                { id: 'r2', fromAthleteId: 'a2', fromName: 'Dana', fromInitials: 'DA', fromCode: 'DA123', sentAt: 'today' },
-            ],
+            incoming: [CHARLIE_REQ, DANA_REQ],
         });
         render(<FriendsManagementPage />);
 
@@ -204,10 +205,7 @@ describe('PgFriends', () => {
 
     it('switches tab, accepts invite', async () => {
         mockFriendEps({
-            invites: [{
-                id: 'i1', arenaId: 'arena-1', arenaName: 'Iron Squad', invitedBNyUserId: 'u1',
-                invitedByName: 'Eve', invitedByInitials: 'EV', status: 'Pending', createdAt: 'today',
-            }],
+            invites: [IRON_INVITE],
         });
         render(<FriendsManagementPage />);
 
@@ -223,10 +221,7 @@ describe('PgFriends', () => {
 
     it('declines invite', async () => {
         mockFriendEps({
-            invites: [{
-                id: 'i1', arenaId: 'arena-1', arenaName: 'Iron Squad', invitedBNyUserId: 'u1',
-                invitedByName: 'Eve', invitedByInitials: 'EV', status: 'Pending', createdAt: 'today',
-            }],
+            invites: [IRON_INVITE],
         });
         render(<FriendsManagementPage />);
 
@@ -242,10 +237,7 @@ describe('PgFriends', () => {
 
     it('declines all invites', async () => {
         mockFriendEps({
-            invites: [{
-                id: 'i1', arenaId: 'arena-1', arenaName: 'Iron Squad', invitedBNyUserId: 'u1',
-                invitedByName: 'Eve', invitedByInitials: 'EV', status: 'Pending', createdAt: 'today',
-            }],
+            invites: [IRON_INVITE],
         });
         render(<FriendsManagementPage />);
 
@@ -332,17 +324,6 @@ function mockHubEps({
 }
 
 describe('PgArenaHub', () => {
-    const mockingAuth = useAuth as unknown as Mock;
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockingAuth.mockReturnValue({ user: { id: 'me' } });
-    });
-
-    afterEach(() => {
-        cleanup();
-    });
-
     it('shows opted out prompt by default', async () => {
         mockHubEps();
         render(<ArenaHubPage />);

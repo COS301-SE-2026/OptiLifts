@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ExerGuide } from '@/components/optivision/exercise-guide'
 import { ProgressPanel } from '@/components/optivision/progress-panel'
 import { ResultPanel } from '@/components/optivision/result-panel'
+import { VideoFeedback } from '@/components/optivision/video-feedback'
 import { UploadPanel } from '@/components/optivision/upload-panel'
 import { OfflineBanner } from '@/components/ui/offline-banner'
 import { PageTitle } from '@/components/ui/page-title'
@@ -13,6 +14,7 @@ export default function FormCheckPage() {
   const { state, start, reset } = useOptiVisJob()
   const isOnline = useOnlineStatus()
   const [exercise, setExercise] = useState<VisionExercise>('squat')
+  const [vidFile, setvidFile] = useState<File | null>(null)
 
   function renderPanel() {
     switch (state.phase) {
@@ -21,6 +23,7 @@ export default function FormCheckPage() {
           <UploadPanel
             disabled={!isOnline}
             onAnalyse={(file) => {
+              setvidFile(file)
               void start(file, exercise)
             }}
           />
@@ -30,7 +33,7 @@ export default function FormCheckPage() {
       case 'polling':
         return <ProgressPanel state={state} onCancel={reset} />
       default:
-        return <ResultPanel state={state} onReset={reset} />
+        return <ResultPanel state={state} onReset={() => { setvidFile(null); reset(); }}  />
     }
   }
 
@@ -50,6 +53,9 @@ export default function FormCheckPage() {
         </div>
         <div className="col-span-12 min-w-0 lg:col-span-7">{renderPanel()}</div>
       </div>
+      {state.phase === 'completed' && state.issues && state.issues.length > 0 && (
+        <VideoFeedback issues={state.issues} videoFile={vidFile} exercise={exercise} />
+      )}
     </section>
   )
 }

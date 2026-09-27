@@ -81,7 +81,7 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
         </CardHeader>
         <CardContent className="flex flex-col gap-8">
           <div className="flex items-center gap-10 px-4">
-            
+
             {/* graph for performance*/}
             <div className="relative flex items-center justify-center h-36 w-36 shrink-0">
               <svg className="absolute top-0 left-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
@@ -99,7 +99,7 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
                 <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest mt-1.5">Score</span>
               </div>
             </div>
-            
+
             {/* the silly goose things */}
             <div className="flex flex-col gap-3 flex-1 min-w-0 pl-2">
               <CardTitle className="text-base font-bold text-foreground">Form Breakdown</CardTitle>

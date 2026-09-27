@@ -60,7 +60,7 @@ public sealed class DuelsController : ControllerBase
         }
 
         var success = await _sender.Send(new RespondToDuelCommand(userId, id, request.Accept), cancellationToken);
-        
+
         if (!success)
         {
             return NotFound(new { message = "Duel not found or already resolved" });
@@ -90,12 +90,12 @@ public sealed class DuelsController : ControllerBase
         }
 
         var res = await _sender.Send(new GetDuelDetailQuery(userId, id), cancellationToken);
-        
+
         if (res is null)
         {
             return NotFound();
         }
-        
+
         return Ok(res);
     }
 
@@ -108,7 +108,7 @@ public sealed class DuelsController : ControllerBase
         }
 
         var res = await _sender.Send(new SendDuelHypeCommand(userId, id), cancellationToken);
-        
+
         if (!res.Success)
         {
             return BadRequest(res);

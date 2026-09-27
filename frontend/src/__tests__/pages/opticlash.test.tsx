@@ -120,17 +120,31 @@ afterEach(() => {
     cleanup();
 });
 
+const ALICE_FRIEND = { id: 'f1', name: 'Alice', initials: 'AL', code: 'AL123', dotsScore: 300, tier: 'Gold' };
 const CHARLIE_REQ = { id: 'r1', fromAthleteId: 'a1', fromName: 'Charlie', fromInitials: 'CH', fromCode: 'CH123', sentAt: 'today' };
 const DANA_REQ = { id: 'r2', fromAthleteId: 'a2', fromName: 'Dana', fromInitials: 'DA', fromCode: 'DA123', sentAt: 'today' };
 const IRON_INVITE = { id: 'i1', arenaId: 'arena-1', arenaName: 'Iron Squad', invitedBNyUserId: 'u1', invitedByName: 'Eve', invitedByInitials: 'EV', status: 'Pending', createdAt: 'today' };
 
+function renderFriends(opts?: Parameters<typeof mockFriendEps>[0]) {
+    mockFriendEps(opts);
+    render(<FriendsManagementPage />);
+}
+
+async function actOnIncoming(buttonText: string) {
+    fireEvent.click(await screen.findByText('Requests'));
+    expect(await screen.findByText('Charlie')).toBeDefined();
+    fireEvent.click(screen.getByText(buttonText));
+}
+
+async function actOnInvite(buttonText: string) {
+    fireEvent.click(await screen.findByText('Arena Invites'));
+    expect(await screen.findByText('Iron Squad')).toBeDefined();
+    fireEvent.click(screen.getByText(buttonText));
+}
+
 describe('PgFriends', () => {
     it('fetches friends, code on mount', async () => {
-        mockFriendEps({
-            friends: [{ id: 'f1', name: 'Alice', initials: 'AL', code: 'AL123', dotsScore: 300, tier: 'Gold' }],
-            code: 'MYCODE',
-        });
-        render(<FriendsManagementPage />);
+        renderFriends({ friends: [ALICE_FRIEND], code: 'MYCODE' });
 
         await waitFor(() => {
             expect(screen.getByText('Alice')).toBeDefined();
@@ -139,13 +153,12 @@ describe('PgFriends', () => {
     });
 
     it('filters friends by search', async () => {
-        mockFriendEps({
+        renderFriends({
             friends: [
-                { id: 'f1', name: 'Alice', initials: 'AL', code: 'AL123', dotsScore: 300, tier: 'Gold' },
+                ALICE_FRIEND,
                 { id: 'f2', name: 'Bob', initials: 'BB', code: 'BB123', dotsScore: 250, tier: 'Silver' },
             ],
         });
-        render(<FriendsManagementPage />);
 
         await waitFor(() => {
             expect(screen.getByText('Alice')).toBeDefined();
@@ -156,15 +169,8 @@ describe('PgFriends', () => {
     });
 
     it('switches tab, accepts req', async () => {
-        mockFriendEps({
-            incoming: [CHARLIE_REQ],
-        });
-        render(<FriendsManagementPage />);
-
-        fireEvent.click(await screen.findByText('Requests'));
-        expect(await screen.findByText('Charlie')).toBeDefined();
-
-        fireEvent.click(screen.getByText('Accept Friend'));
+        renderFriends({ incoming: [CHARLIE_REQ] });
+        await actOnIncoming('Accept Friend');
 
         await waitFor(() => {
             expect(screen.queryByText('Charlie')).toBeNull();
@@ -172,15 +178,8 @@ describe('PgFriends', () => {
     });
 
     it('rejects req', async () => {
-        mockFriendEps({
-            incoming: [CHARLIE_REQ],
-        });
-        render(<FriendsManagementPage />);
-
-        fireEvent.click(await screen.findByText('Requests'));
-        expect(await screen.findByText('Charlie')).toBeDefined();
-
-        fireEvent.click(screen.getByText('Reject'));
+        renderFriends({ incoming: [CHARLIE_REQ] });
+        await actOnIncoming('Reject');
 
         await waitFor(() => {
             expect(screen.queryByText('Charlie')).toBeNull();
@@ -188,15 +187,8 @@ describe('PgFriends', () => {
     });
 
     it('rejects all req', async () => {
-        mockFriendEps({
-            incoming: [CHARLIE_REQ, DANA_REQ],
-        });
-        render(<FriendsManagementPage />);
-
-        fireEvent.click(await screen.findByText('Requests'));
-        expect(await screen.findByText('Charlie')).toBeDefined();
-
-        fireEvent.click(screen.getByText('Reject All Requests'));
+        renderFriends({ incoming: [CHARLIE_REQ, DANA_REQ] });
+        await actOnIncoming('Reject All Requests');
 
         await waitFor(() => {
             expect(screen.getByText('No pending incoming friend requests')).toBeDefined();
@@ -204,15 +196,8 @@ describe('PgFriends', () => {
     });
 
     it('switches tab, accepts invite', async () => {
-        mockFriendEps({
-            invites: [IRON_INVITE],
-        });
-        render(<FriendsManagementPage />);
-
-        fireEvent.click(await screen.findByText('Arena Invites'));
-        expect(await screen.findByText('Iron Squad')).toBeDefined();
-
-        fireEvent.click(screen.getByText('Join Arena'));
+        renderFriends({ invites: [IRON_INVITE] });
+        await actOnInvite('Join Arena');
 
         await waitFor(() => {
             expect(screen.queryByText('Iron Squad')).toBeNull();
@@ -220,15 +205,8 @@ describe('PgFriends', () => {
     });
 
     it('declines invite', async () => {
-        mockFriendEps({
-            invites: [IRON_INVITE],
-        });
-        render(<FriendsManagementPage />);
-
-        fireEvent.click(await screen.findByText('Arena Invites'));
-        expect(await screen.findByText('Iron Squad')).toBeDefined();
-
-        fireEvent.click(screen.getByText('Decline'));
+        renderFriends({ invites: [IRON_INVITE] });
+        await actOnInvite('Decline');
 
         await waitFor(() => {
             expect(screen.queryByText('Iron Squad')).toBeNull();
@@ -236,15 +214,8 @@ describe('PgFriends', () => {
     });
 
     it('declines all invites', async () => {
-        mockFriendEps({
-            invites: [IRON_INVITE],
-        });
-        render(<FriendsManagementPage />);
-
-        fireEvent.click(await screen.findByText('Arena Invites'));
-        expect(await screen.findByText('Iron Squad')).toBeDefined();
-
-        fireEvent.click(screen.getByText('Decline All Invites'));
+        renderFriends({ invites: [IRON_INVITE] });
+        await actOnInvite('Decline All Invites');
 
         await waitFor(() => {
             expect(screen.getByText('No pending arena invites.')).toBeDefined();
@@ -253,8 +224,7 @@ describe('PgFriends', () => {
 
     it('copies code to clipboard', async () => {
         Object.assign(navigator, { clipboard: { writeText: vi.fn() } });
-        mockFriendEps({ code: 'MYCODE' });
-        render(<FriendsManagementPage />);
+        renderFriends({ code: 'MYCODE' });
 
         await waitFor(() => {
             expect(screen.getByText('MYCODE')).toBeDefined();
@@ -265,8 +235,7 @@ describe('PgFriends', () => {
     });
 
     it('opens add friend modal', async () => {
-        mockFriendEps();
-        render(<FriendsManagementPage />);
+        renderFriends();
 
         await waitFor(() => {
             expect(screen.getByText('Add Friend By Code')).toBeDefined();
@@ -276,10 +245,7 @@ describe('PgFriends', () => {
     });
 
     it('opens drawer on card click', async () => {
-        mockFriendEps({
-            friends: [{ id: 'f1', name: 'Alice', initials: 'AL', code: 'AL123', dotsScore: 300, tier: 'Gold' }],
-        });
-        render(<FriendsManagementPage />);
+        renderFriends({ friends: [ALICE_FRIEND] });
 
         await waitFor(() => {
             expect(screen.getByText('Alice')).toBeDefined();
@@ -323,10 +289,16 @@ function mockHubEps({
     return mockingFtch;
 }
 
+const IRON_ARENA = { id: 'arena-1', name: 'Iron Squad', type: 'private', metricType: 'DOTS Overall', memberCount: 4 };
+
+function renderHub(opts?: Parameters<typeof mockHubEps>[0]) {
+    mockHubEps(opts);
+    render(<ArenaHubPage />);
+}
+
 describe('PgArenaHub', () => {
     it('shows opted out prompt by default', async () => {
-        mockHubEps();
-        render(<ArenaHubPage />);
+        renderHub();
 
         await waitFor(() => {
             expect(mockConn.start).toHaveBeenCalled();
@@ -336,11 +308,10 @@ describe('PgArenaHub', () => {
     });
 
     it('shows user rank when opted in with a standing', async () => {
-        mockHubEps({
+        renderHub({
             isUserOptedIn: true,
             currentUserEntry: { rank: 3, displayName: 'Test Lifter', dotsScore: 320, tier: 'Gold', tierLevel: 1 },
         });
-        render(<ArenaHubPage />);
 
         await waitFor(() => {
             expect(screen.getByText(/Rank #3 on Season League/i)).toBeDefined();
@@ -348,8 +319,7 @@ describe('PgArenaHub', () => {
     });
 
     it('toggles opt-in state on click', async () => {
-        mockHubEps({ isUserOptedIn: false });
-        render(<ArenaHubPage />);
+        renderHub({ isUserOptedIn: false });
 
         await waitFor(() => {
             expect(screen.getByText('Opted Out')).toBeDefined();
@@ -362,20 +332,14 @@ describe('PgArenaHub', () => {
     });
 
     it('shows private arenas on the private tab', async () => {
-        mockHubEps({
-            myArenas: [{ id: 'arena-1', name: 'Iron Squad', type: 'private', metricType: 'DOTS Overall', memberCount: 4 }],
-        });
-        render(<ArenaHubPage />);
+        renderHub({ myArenas: [IRON_ARENA] });
 
         fireEvent.click(await screen.findByText('Private Arenas'));
         expect(await screen.findByText('Iron Squad')).toBeDefined();
     });
 
     it('navigates to arena leaderboard on card click', async () => {
-        mockHubEps({
-            myArenas: [{ id: 'arena-1', name: 'Iron Squad', type: 'private', metricType: 'DOTS Overall', memberCount: 4 }],
-        });
-        render(<ArenaHubPage />);
+        renderHub({ myArenas: [IRON_ARENA] });
 
         fireEvent.click(await screen.findByText('Private Arenas'));
         fireEvent.click(await screen.findByText('Iron Squad'));
@@ -383,8 +347,7 @@ describe('PgArenaHub', () => {
     });
 
     it('shows empty state for live feed by default', async () => {
-        mockHubEps();
-        render(<ArenaHubPage />);
+        renderHub();
 
         await waitFor(() => {
             expect(screen.getByText(/No live activity in your arenas yet/i)).toBeDefined();
@@ -392,10 +355,9 @@ describe('PgArenaHub', () => {
     });
 
     it('sends kudos on feed item, increments count', async () => {
-        mockHubEps({
+        renderHub({
             feed: [{ id: 'act-1', arenaId: 'arena-1', userId: 'u1', userName: 'Sam', eventText: 'Hit a PR', details: '100kg squat', kudosCount: 2 }],
         });
-        render(<ArenaHubPage />);
 
         expect(await screen.findByText('Sam')).toBeDefined();
         fireEvent.click(screen.getByText('2'));
@@ -406,8 +368,7 @@ describe('PgArenaHub', () => {
     });
 
     it('opens create/join arena modal', async () => {
-        mockHubEps();
-        render(<ArenaHubPage />);
+        renderHub();
 
         await waitFor(() => {
             expect(screen.getByText('Create/Join Arena')).toBeDefined();
@@ -417,8 +378,7 @@ describe('PgArenaHub', () => {
     });
 
     it('opens drawer for own avatar', async () => {
-        mockHubEps();
-        render(<ArenaHubPage />);
+        renderHub();
 
         const avatar = await screen.findByTitle('Athlete');
         fireEvent.click(avatar);

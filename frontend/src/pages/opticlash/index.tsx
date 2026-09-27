@@ -308,7 +308,7 @@ export default function ArenaHubPage() {
 
     useEffect(() => {
         let isCancelled = false;
-        const connection = new signalR.HubConnectionBuilder().withUrl("/api/hubs/clash").withAutomaticReconnect().build();
+        const connection = new signalR.HubConnectionBuilder().withUrl("/api/hubs/clash").withAutomaticReconnect().configureLogging(signalR.LogLevel.Warning).build();
 
         connection.start().then(() => {
             if (isCancelled) {
@@ -317,7 +317,7 @@ export default function ArenaHubPage() {
             }
             myArenasRef.current.forEach((arena) => {
                 if (arena.type?.toLowerCase() === "private") {
-                    connection.invoke("JoinArena", arena.id);
+                    connection.invoke("JoinArena", arena.id).catch(() => {});
                 }
             });
         }).catch(() => {

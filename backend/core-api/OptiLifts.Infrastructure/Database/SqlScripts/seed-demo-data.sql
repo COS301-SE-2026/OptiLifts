@@ -893,7 +893,11 @@ CROSS JOIN LATERAL (VALUES
     (c.badge_code_count, '10 Workouts',   'Complete 10 workouts',        c.badge_cat_milestone, 10),
     (c.badge_code_count, '50 Workouts',   'Complete 50 workouts',        c.badge_cat_milestone, 50),
     (c.badge_code_count, 'Century Club',  'Complete 100 workouts',       c.badge_cat_milestone, 100),
-    ('streak_weeks',     'Consistent',    'Train 5 weeks in a row',      'Streak',              5)
+    ('streak_weeks',     'Consistent',    'Train 5 weeks in a row',      'Streak',              5),
+    ('dots_score',       'Gold Tier Club', 'Attain a 320+ DOTS score in the OptiClash competitive season', 'Strength', 320),
+    ('monthly_volume',   '100k Volume Titan', 'Accumulate 100,000 kg or more of volume in a single month', 'Volume', 100000),
+    ('duel_wins',        'Duel Champion', 'Win 5 head-to-head progressive overload duels', c.badge_cat_milestone, 5),
+    ('season_rank',      'Overload Master', 'Achieve Rank #1 on the Global Season League leaderboard', c.badge_cat_milestone, 1)
 ) AS v(code, name, description, category, threshold)
 ON CONFLICT (name) DO NOTHING;
 

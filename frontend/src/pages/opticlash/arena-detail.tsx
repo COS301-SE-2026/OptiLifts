@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ShareArenaModal } from "@/components/opticlash/share-arena-modal";
 import { customFetch } from "@/lib/custom-fetch";
 import { useAuth } from "@/context/auth-context";
+import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 
 const PAGE_SIZE = 10;
 interface LeaderboardAthleteDto {
@@ -41,6 +42,433 @@ interface LeaderboardApiResponse {
     currentUserEntry?: LeaderboardAthleteDto | null;
 }
 
+type ArenaMetric = 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift';
+function getFrontendMetric(backendMetric?: string): ArenaMetric {
+    const m = backendMetric?.toLowerCase() || '';
+    if (m.includes('volume')) return 'volume';
+    if (m.includes('squat')) return 'squat';
+    if (m.includes('bench')) return 'bench';
+    if (m.includes('deadlift')) return 'deadlift';
+    return 'dots';
+}
+
+function getBackendMetricName(metric: string): string {
+    switch (metric) {
+        case 'volume':
+            return 'TotalVolume';
+        case 'squat':
+            return 'SquatE1RM';
+        case 'bench':
+            return 'BenchE1RM';
+        case 'deadlift':
+            return 'DeadliftE1RM';
+        default:
+            return 'DotsOverall';
+    }
+}
+
+function getNormalisedBracketId(bracketId: string): string {
+    if (bracketId.startsWith('u') || bracketId.endsWith('p')) {
+        return bracketId;
+    }
+    return `u${bracketId}`;
+}
+
+function mapPrivateStandings(standings: unknown[]): LeaderboardAthleteDto[] {
+    return (standings as Record<string, unknown>[]).map((s) => ({
+        userId: String(s.userId),
+        rank: Number(s.rank),
+        displayName: String(s.displayName),
+        avatarUrl: typeof s.avatarUrl === 'string' ? s.avatarUrl : undefined,
+        bodyweightKg: Number(s.bodyweightKg ?? 0),
+        tier: typeof s.tier === 'string' ? s.tier : 'Unranked',
+        tierLevel: Number(s.tierLevel ?? 1),
+        dotsScore: Number(s.dotsScore ?? 0),
+        squat1RM: Number(s.squat1RM ?? 0),
+        bench1RM: Number(s.bench1RM ?? 0),
+        deadlift1RM: Number(s.deadlift1RM ?? 0),
+        totalE1RM: Number(s.totalE1RM ?? 0),
+        weeklyVolumeKg: Number(s.weeklyVolumeKg ?? 0),
+        rankTrend: Number(s.trend ?? 0),
+        isCurrentUser: Boolean(s.isCurrentUser)
+    }));
+}
+
+function getRankBadgeIcons(index: number) {
+    if (index === 1) {
+        return <Medal className="w-5 h-5 md:w-6 md:h-6 text-warning"/>;
+    }
+    if (index === 2){
+        return <Medal className="w-5 h-5 md:w-6 md:h-6 text-slate-400"/>;
+    }
+    if (index === 3){
+        return <Medal className="w-5 h-5 md:w-6 md:h-6 text-amber-700"/>;
+    }
+    return <span className="font-display text-base md:text-lg text-muted-foreground">#{index}</span>;
+}
+
+function getAthleteNameClass(isMaster: boolean, isCurrent: boolean) {
+    if (isMaster){
+        return 'text-overload-master';
+    }
+    if (isCurrent) {
+        return 'text-brand';
+    }
+    return 'text-foreground';
+}
+
+function getUserStandingStatus(currentUserStanding: LeaderboardAthleteDto | null): string {
+    if (!currentUserStanding) {
+        return 'Not ranked in this divisin yet';
+    }
+    if (currentUserStanding.rank === 1) {
+        return 'Leading Division #1';
+    }
+    return `Rank #${currentUserStanding.rank}`;
+}
+
+function renderMetricValue(athlete: LeaderboardAthleteDto, selectedMetric: ArenaMetric) {
+    switch (selectedMetric) {
+        case 'volume':
+            return <span className="font-bold text-brand font-sans text-sm md:text-base">{athlete.weeklyVolumeKg.toLocaleString()} kg</span>;
+        case 'squat':
+            return <span className="font-bold text-foreground font-sans text-sm md:text-base">{athlete.squat1RM} kg</span>;
+        case 'bench':
+            return <span className="font-bold text-foreground font-sans text-sm md:text-base">{athlete.bench1RM} kg</span>;
+        case 'deadlift':
+            return <span className="font-bold text-foreground font-sans text-sm md:text-base">{athlete.deadlift1RM} kg</span>;
+        case 'dots':
+        default:
+            return (
+                <div className="flex flex-col items-center justify-center">
+                    <span className="font-bold text-brand text-base md:text-lg font-sans">{athlete.dotsScore}</span>
+                    <span className="text-[10px] text-muted-foreground block font-sans font-semibold">DOTS</span>
+                </div>
+            );
+    }
+}
+
+interface LeaderboardTableBodyProps {
+    isLoading: boolean;
+    standings: LeaderboardAthleteDto[];
+    selectedMetric: ArenaMetric;
+    onSelectAthlete: (athlete: LeaderboardAthleteDto) => void;
+}
+
+function LeaderboardTableBody({ isLoading, standings, selectedMetric, onSelectAthlete }: Readonly<LeaderboardTableBodyProps>) {
+    if (isLoading) {
+        return (
+            <tr>
+                <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                    Loading leaderboad standings...
+                </td>
+            </tr>
+        );
+    }
+    if (standings.length === 0) {
+        return (
+            <tr>
+                <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
+                    No athletes ranked yet in this division.
+                </td>
+            </tr>
+        );
+    }
+    return standings.map((ath) => {
+        const isCurrentUser = ath.isCurrentUser;
+        const isMaster = ath.rank === 1 && ath.tier === 'Overload Master';
+        const initials = ath.displayName.slice(0, 2).toUpperCase() || 'AT';
+        return (
+            <tr key={ath.userId} onClick={() => onSelectAthlete(ath)}
+                className={`cursor-pointer transition hover:bg-surface-2/60 ${isCurrentUser ? 'bg-brand-fill/40 border-l-4 border-l-brand' : ''}
+                            ${isMaster ? 'bg-overload-master/5' : ''}`}>
+                <td className="py-4 px-4 text-center">
+                    <div className="flex justify-center items-center">
+                        {getRankBadgeIcons(ath.rank)}
+                    </div>
+                </td>
+
+                <td className="py-4 px-4">
+                    <div className="flex items-center gap-3">
+                        <AthleteAvatar initials={initials} name={ath.displayName} avatarUrl={ath.avatarUrl} isCurrentUser={isCurrentUser} size="md"/>
+                        <div>
+                            <strong className={`font-sans font-bold text-base md:text-lg block ${getAthleteNameClass(isMaster, isCurrentUser)}`}>
+                                {ath.displayName}
+                            </strong>
+                        </div>
+                    </div>
+                </td>
+
+                <td className="py-4 px-4 text-center">
+                    <TierBadge tier={ath.tier} size="md"/>
+                </td>
+
+                <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
+                    {ath.bodyweightKg} kg
+                </td>
+                <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
+                    {ath.totalE1RM} kg
+                </td>
+
+                <td className="py-4 px-4 text-center">
+                    {renderMetricValue(ath, selectedMetric)}
+                </td>
+
+                {/* trend arrow */}
+                <td className="py-4 px-4 text-center">
+                    {ath.rankTrend > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
+                            <TrendingUp className="w-3.5 h-3.5"/> +{ath.rankTrend}
+                        </span>
+                    )}
+                    {ath.rankTrend < 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
+                            <TrendingDown className="w-3.5 h-3.5"/> {ath.rankTrend}
+                        </span>
+                    )}
+                    {ath.rankTrend === 0 && (
+                        <span className="inline-flex items-center text-muted-foreground">
+                            <Minus className="w-3.5 h-3.5"/>
+                        </span>
+                    )}
+                </td>
+            </tr>
+        );
+    });
+}
+//deadlign w/ sonarqube complexity
+interface ArenaHeaderProps {
+    arenaName: string;
+    isCreator: boolean;
+    isPrivate: boolean;
+    liveArena: ClashArena | null;
+    isConcluded: boolean;
+    isRefreshing: boolean;
+    copied: boolean;
+    onRefresh: () => void;
+    onShareClick: () => void;
+    onOpenLeaveConfirm: () => void;
+}
+function ArenaHeader({
+    arenaName,
+    isCreator,
+    isPrivate,
+    liveArena,
+    isConcluded,
+    isRefreshing,
+    copied,
+    onRefresh,
+    onShareClick,
+    onOpenLeaveConfirm,
+}: Readonly<ArenaHeaderProps>) {
+    return (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground flex items-center gap-2.5">
+                        <Trophy className="w-7 h-7 md:w-8 md:h-8 text-warning shrink-0"/>
+                        <span>{arenaName}</span>
+                        {isCreator && (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-brand-fill text-brand border border-brand/30 px-2.5 py-0.5 rounded-full font-sans">
+                                Squad Creator
+                            </span>
+                        )}
+                        {isPrivate && liveArena && (
+                            isConcluded ? (
+                                <span className="text-[11px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-0.5 rounded-full font-sans">
+                                    Season Concluded
+                                </span>
+                            ) : (
+                                <span className="text-[11px] font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 px-2.5 py-0.5 rounded-full font-sans flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5"/>
+                                    {liveArena.daysRemaining ?? liveArena.durationDays} Days Left
+                                </span>
+                            )
+                        )}
+                    </h1>
+                </div>
+            </div>
+            {/* action btns */}
+            <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+                <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}
+                    className="h-8 text-xs flex items-center gap-1.5 border-border">
+                    <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`}/>
+                    <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                </Button>
+
+                {/* f3: share arena + leave arena btns */}
+                {isPrivate && (
+                    <>
+                        <Button variant={isCreator ? 'default' : 'secondary'} size="sm" onClick={onShareClick}
+                            className="h-8 text-xs flex items-center gap-2">
+                            {isCreator ? (
+                                <>
+                                    <Share2 className="w-3.5 h-3.5"/>
+                                    <span>Share Arena and Invite</span>
+                                </>
+                            ) : (
+                                <>
+                                    {copied ? <Check className="w-3.5 h-3.5 text-success"/> : <Copy className="w-3.5 h-3.5"/>}
+                                    <span>{copied ? 'Code Copied' : 'Copy Code'}</span>
+                                </>
+                            )}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={onOpenLeaveConfirm}
+                            className="h-8 text-xs flex items-center gap-1.5 border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors">
+                            <LogOut className="w-3.5 h-3.5"/>
+                            <span>Leave Arena</span>
+                        </Button>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+const METRIC_BUTTONS: { id: ArenaMetric; label: string }[] = [
+    { id: 'dots', label: 'Overall DOTS' },
+    { id: 'volume', label: 'Total Volume' },
+    { id: 'squat', label: 'Squat e1RM' },
+    { id: 'bench', label: 'Bench e1RM' },
+    { id: 'deadlift', label: 'Deadlift e1RM' },
+];
+interface ArenaFilterBarProps {
+    selectedMetric: ArenaMetric;
+    primaryMetric: ArenaMetric;
+    isPrivate: boolean;
+    selectedTimeframe: 'monthly' | 'all-time';
+    onSelectMetric: (metric: ArenaMetric) => void;
+    onSelectTimeframe: (timeframe: 'monthly' | 'all-time') => void;
+}
+
+function ArenaFilterBar({
+    selectedMetric, primaryMetric, isPrivate, selectedTimeframe, onSelectMetric,onSelectTimeframe,
+}: Readonly<ArenaFilterBarProps>) {
+    return (
+        <Card className="bg-surface border-border p-4 shadow-sm">
+            <CardContent className="p-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                    <span className="text-xs font-bold uppercase tracking-[1px] text-muted-foreground mr-2 flex items-center gap-1 shrink-0 font-sans">
+                        <Filter className="w-3.5 h-3.5"/> Metric:
+                    </span>
+                    {METRIC_BUTTONS.map(({ id, label }) => {
+                        const isSelected = selectedMetric === id;
+                        const isPrimary = primaryMetric === id;
+                        return (
+                            <Button key={id} variant={isSelected ? 'default' : 'secondary'} size="sm"
+                                onClick={() => onSelectMetric(id)} className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                <span>{label}</span>
+                                {isPrimary && (
+                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'}`}>
+                                        PRIMARY
+                                    </span>
+                                )}
+                            </Button>
+                        );
+                    })}
+                </div>
+
+                {/* timeframe month vs all time */}
+                {!isPrivate && (
+                    <div className="flex bg-surface-2 border border-border rounded-lg p-1 self-start md:self-auto shrink-0 overflow-x-auto">
+                        <button type="button" onClick={() => onSelectTimeframe('monthly')}
+                        className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap shrink-0 ${
+                            selectedTimeframe === 'monthly' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                            Monthly Season
+                        </button>
+                        <button type="button" onClick={() => onSelectTimeframe('all-time')}
+                        className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap shrink-0 ${
+                            selectedTimeframe === 'all-time' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                            All Time
+                        </button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+interface DivisionalClassSelectorProps {
+    selectedGender: 'male' | 'female';
+    activeBracket: (typeof WEIGHT_CLASS_BRACKETS)[number];
+    userWeightBracket: (typeof WEIGHT_CLASS_BRACKETS)[number];
+    currentUserStanding: LeaderboardAthleteDto | null;
+    onSelectGender: (gender: 'male' | 'female') => void;
+    onSelectBracketId: (bracketId: string) => void;
+}
+
+function DivisionalClassSelector({
+    selectedGender, activeBracket, userWeightBracket, currentUserStanding, onSelectGender, onSelectBracketId,
+}: Readonly<DivisionalClassSelectorProps>) {
+    return (
+        <Card className="bg-surface border-border p-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                    <Users className="w-4 h-4 text-brand"/>
+                    <div>
+                        <h3 className="text-sm font-bold font-sans uppercase tracking-[1px] text-foreground">
+                            Divisional Weight Class
+                        </h3>
+                        <span className="text-xs text-muted-foreground font-sans block mt-0.5">
+                            {selectedGender === 'male' ? "Men's" : "Women's"} {activeBracket.label} (
+                            {activeBracket.minKg > 0 ? `${activeBracket.minKg} - ` : 'Up to '}
+                            {activeBracket.maxKg < 999 ? `${activeBracket.maxKg} kg` : '+ kg'})
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* gender toggle */}
+                    <div className="flex bg-surface-2 border border-border rounded-lg p-1 self-start sm:self-auto shrink-0">
+                        <button type="button" onClick={() => onSelectGender('male')}
+                        className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans ${
+                            selectedGender === 'male' ? 'bg-surface text-brand shadow-sm font-extrabold' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                            Men's
+                        </button>
+                        <button type="button" onClick={() => onSelectGender('female')}
+                        className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans ${
+                            selectedGender === 'female' ? 'bg-surface text-brand shadow-sm font-extrabold' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                            Women's
+                        </button>
+                    </div>
+
+                    {/* weight class */}
+                    <div className="w-full sm:w-auto">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger variant="filter" className="w-full sm:w-[220px] bg-surface-2" aria-label="Select Weight Class Bracket">
+                                <span className="min-w-0 truncate font-sans font-semibold">
+                                    {activeBracket.label}
+                                    {currentUserStanding && userWeightBracket.id === activeBracket.id ? ' (Your Class)' : ''}
+                                </span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                                {WEIGHT_CLASS_BRACKETS.map((bracket) => {
+                                    const isUserBracket = currentUserStanding && userWeightBracket.id === bracket.id;
+                                    return (
+                                        <DropdownMenuItem key={bracket.id} onSelect={() => onSelectBracketId(bracket.id)}
+                                            className="cursor-pointer flex items-center justify-between">
+                                            <span>{bracket.label}</span>
+                                            {isUserBracket && (
+                                                <span className="text-[10px] font-bold text-brand bg-brand-fill border border-brand/30 px-1.5 py-0.2 rounded">
+                                                    YOU
+                                                </span>
+                                            )}
+                                        </DropdownMenuItem>
+                                    );
+                                })}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
+}
+
 export default function ArenaLeaderboardPage() {//
     const {arenaId} = useParams<{arenaId: string}>();
     const navigate = useNavigate();
@@ -52,7 +480,7 @@ export default function ArenaLeaderboardPage() {//
     const [totalAthletes, setTotalAthletes] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const [selectedMetric, setSelectedMetric] = useState<'dots' | 'volume' | 'squat' | 'bench' | 'deadlift'>('dots');
+    const [selectedMetric, setSelectedMetric] = useState<ArenaMetric>('dots');
     const defaultGender = user?.sex?.toLowerCase() === 'female' ? 'female' : 'male';
     const [selectedGender, setSelectedGender] = useState<'male' | 'female'>(defaultGender);
     const [selectedBracketId, setSelectedBracketId] = useState<string>('u59');
@@ -68,105 +496,60 @@ export default function ArenaLeaderboardPage() {//
     const [copied, setCopied] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
 
+    const [isDuelModalOpen, setIsDuelModalOpen] = useState<boolean>(false);
+
     const isDivisional = arenaId === 'weight-class-league';
     const isGlobal = arenaId === 'global-league';
     const isPrivate = !isDivisional && !isGlobal;
     const isCreator = (liveArena as { userRole?: string; createdById?: string})?.userRole === 'Owner' || liveArena?.createdById === user?.id;
 
     const isConcluded = isPrivate && liveArena ? (liveArena.isActive === false || (liveArena.daysRemaining !== undefined && liveArena.daysRemaining <= 0)): false;
-    const getFrontendMetric = (backendMetric?: string): 'dots' | 'volume' | 'squat' | 'bench' | 'deadlift' => {
-        const m = backendMetric?.toLowerCase() || '';
-        if (m.includes('volume')) return 'volume';
-        if (m.includes('squat')) return 'squat';
-        if (m.includes('bench')) return 'bench';
-        if (m.includes('deadlift')) return 'deadlift';
-        return 'dots';
-    };
     const primaryMetric = isPrivate ? getFrontendMetric(liveArena?.metricType) : 'dots';
 
     const activeBracket = WEIGHT_CLASS_BRACKETS.find((b) => b.id === selectedBracketId) || WEIGHT_CLASS_BRACKETS[0];
     const userWeightBracket = getWeightClassBracket(currentUserStanding?.bodyweightKg ?? 74);
 
-    //mission avoid sonarqube errors
-    const getBackendMetricName = (metric: string): string => {
-        switch (metric) {
-            case 'volume':
-                return 'TotalVolume';
-            case 'squat':
-                return 'SquatE1RM';
-            case 'bench':
-                return 'BenchE1RM';
-            case 'deadlift':
-                return 'DeadliftE1RM';
-            default:
-                return 'DotsOverall';
+    const fetchPrivateLeaderboard = async () => {
+        const res = await customFetch(`/api/clash/arenas/${arenaId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.arena) {
+            setLiveArena(data.arena);
+            if (data.arena.metricType) {
+                setSelectedMetric(getFrontendMetric(data.arena.metricType));
+            }
+        }
+        if (Array.isArray(data?.standings)) {
+            const mapped = mapPrivateStandings(data.standings);
+            setStandings(mapped);
+            setTotalAthletes(mapped.length);
+        }
+        if (data?.userStanding) {
+            setCurrentUserStanding(data.userStanding as LeaderboardAthleteDto);
         }
     };
-    const getNormalisedBracketId = (bracketId: string): string => {
-        if (bracketId.startsWith('u') || bracketId.endsWith('p')) {
-            return bracketId;
+
+    const fetchPublicLeaderboard = async () => {
+        const metricParam = getBackendMetricName(selectedMetric);
+        const normalisedBracket = getNormalisedBracketId(selectedBracketId);
+        const url = isDivisional ? `/api/clash/leaderboard/divisional?gender=${selectedGender}&bracketId=${normalisedBracket}&metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}` : `/api/clash/leaderboard/global?metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`;
+        const res = await customFetch(url);
+        if (res.ok) {
+            const data: LeaderboardApiResponse = await res.json();
+            setStandings(data.entries ?? []);
+            setTotalAthletes(data.totalCount ?? 0);
+            setCurrentUserStanding(data.currentUserEntry ?? null);
         }
-        return `u${bracketId}`;
-    }
+    };
 
     const fetchLeaderboard = async () => {
         if (!arenaId) return;
         setIsLoading(true);
-
-        const metricParam = getBackendMetricName(selectedMetric);
         try {
             if (isPrivate) {
-                const res = await customFetch(`/api/clash/arenas/${arenaId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data?.arena) {
-                        setLiveArena(data.arena);
-                        if (data.arena.metricType) {
-                            setSelectedMetric(getFrontendMetric(data.arena.metricType));
-                        }
-                    }
-                    if (Array.isArray(data?.standings)) {
-                        const mapped: LeaderboardAthleteDto[] = data.standings.map((s: Record<string, unknown>) => ({
-                            userId: String(s.userId),
-                            rank: Number(s.rank),
-                            displayName: String(s.displayName),
-                            avatarUrl: typeof s.avatarUrl === 'string' ? s.avatarUrl : undefined,
-                            bodyweightKg: Number(s.bodyweightKg ?? 0),
-                            tier: typeof s.tier === 'string' ? s.tier : 'Unranked',
-                            tierLevel: Number(s.tierLevel ?? 1),
-                            dotsScore: Number(s.dotsScore ?? 0),
-                            squat1RM: Number(s.squat1RM ?? 0),
-                            bench1RM: Number(s.bench1RM ?? 0),
-                            deadlift1RM: Number(s.deadlift1RM ?? 0),
-                            totalE1RM: Number(s.totalE1RM ?? 0),
-                            weeklyVolumeKg: Number(s.weeklyVolumeKg ?? 0),
-                            rankTrend: Number(s.trend ?? 0),
-                            isCurrentUser: Boolean(s.isCurrentUser)
-                        }));
-                        setStandings(mapped);
-                        setTotalAthletes(mapped.length);
-                    }
-                    if (data?.userStanding) {
-                        setCurrentUserStanding(data.userStanding as LeaderboardAthleteDto);
-                    }
-                }
-            } else if (isDivisional) {
-                const normalisedBracket = getNormalisedBracketId(selectedBracketId);
-                const res = await customFetch(`/api/clash/leaderboard/divisional?gender=${selectedGender}&bracketId=${normalisedBracket}&metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
-                if (res.ok) {
-                    const data: LeaderboardApiResponse = await res.json();
-                    setStandings(data.entries ?? []);
-                    setTotalAthletes(data.totalCount ?? 0);
-                    setCurrentUserStanding(data.currentUserEntry ?? null);
-                }
+                await fetchPrivateLeaderboard();
             } else {
-                const res = await customFetch(`/api/clash/leaderboard/global?metric=${metricParam}&timeframe=${selectedTimeframe}&page=${currentPage}&pageSize=${PAGE_SIZE}`);
-                if (res.ok) {
-                    const data: LeaderboardApiResponse = await res.json();
-                    setStandings(data.entries ?? []);
-                    setTotalAthletes(data.totalCount ?? 0);
-                    setCurrentUserStanding(data.currentUserEntry ?? null);
-                }
+                await fetchPublicLeaderboard();
             }
         } catch {
             toast.error('Failed to load leaderboard data', 'Connection Error');
@@ -256,141 +639,6 @@ export default function ArenaLeaderboardPage() {//
         toast.success('Leaderboard updated', 'Refreshed');
     };
 
-    const getRankBadgeIcons = (index: number) => {
-        if (index === 1) {
-            return <Medal className="w-5 h-5 md:w-6 md:h-6 text-warning"/>;
-        }
-        if (index === 2){
-            return <Medal className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />;
-        }
-        if (index === 3){
-            return <Medal className="w-5 h-5 md:w-6 md:h-6 text-amber-700" />;
-        }
-        return <span className="font-display text-base md:text-lg text-muted-foreground">#{index}</span>;
-    };
-
-     const renderMetricValue = (athlete: LeaderboardAthleteDto) => {
-        switch (selectedMetric) {
-            case 'volume':
-                return <span className="font-bold text-brand font-sans text-sm md:text-base">{athlete.weeklyVolumeKg.toLocaleString()} kg</span>;
-            case 'squat':
-                return <span className="font-bold text-foreground font-sans text-sm md:text-base">{athlete.squat1RM} kg</span>;
-            case 'bench':
-                return <span className="font-bold text-foreground font-sans text-sm md:text-base">{athlete.bench1RM} kg</span>;
-            case 'deadlift':
-                return <span className="font-bold text-foreground font-sans text-sm md:text-base">{athlete.deadlift1RM} kg</span>;
-            case 'dots':
-            default:
-                return (
-                    <div className="flex flex-col items-center justify-center">
-                        <span className="font-bold text-brand text-base md:text-lg font-sans">{athlete.dotsScore}</span>
-                        <span className="text-[10px] text-muted-foreground block font-sans font-semibold">DOTS</span>
-                    </div>
-                );
-        }
-    };
-
-    const getAthleteNameClass = (isMaster: boolean, isCurrent: boolean) => {
-        if (isMaster){
-            return 'text-overload-master';
-        }
-        if (isCurrent) {
-            return 'text-brand';
-        }
-        return 'text-foreground';
-    };
-    const renderUserStandingSTatus = () => {
-        if (!currentUserStanding) {
-            return 'Not ranked in this divisin yet';
-        }
-        if (currentUserStanding.rank === 1) {
-            return 'Leading Division #1';
-        }
-        return `Rank #${currentUserStanding.rank}`;
-    }
-
-    const renderTable = () => {
-        if (isLoading) {
-            return (
-                <tr>
-                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
-                        Loading leaderboad standings...
-                    </td>
-                </tr>
-            );
-        }
-        if (standings.length === 0) {
-            return (
-                <tr>
-                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground font-sans">
-                        No athletes ranked yet in this division.
-                    </td>
-                </tr>
-            );
-        }
-        return standings.map((ath) => {
-            const isCurrentUser = ath.isCurrentUser;
-            const isMaster = ath.rank === 1 && ath.tier === 'Overload Master';
-            const initials = ath.displayName.slice(0, 2).toUpperCase() || 'AT';
-
-            return (
-                <tr key={ath.userId} onClick={() => handleOpenAthleteDrawer(ath)}
-                    className={`cursor-pointer transition hover:bg-surface-2/60 ${isCurrentUser ? 'bg-brand-fill/40 border-l-4 border-l-brand' : ''}
-                                ${isMaster ? 'bg-overload-master/5' : ''}`}>
-                    <td className="py-4 px-4 text-center">
-                        <div className="flex justify-center items-center">
-                            {getRankBadgeIcons(ath.rank)}
-                        </div>
-                    </td>
-
-                    <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                            <AthleteAvatar initials={initials} name={ath.displayName} avatarUrl={ath.avatarUrl} isCurrentUser={isCurrentUser} size="md" />
-                            <div>
-                                <strong className={`font-sans font-bold text-base md:text-lg block ${getAthleteNameClass(isMaster, isCurrentUser)}`}>
-                                    {ath.displayName}
-                                </strong>
-                            </div>
-                        </div>
-                    </td>
-
-                    <td className="py-4 px-4 text-center">
-                        <TierBadge tier={ath.tier} size="md" />
-                    </td>
-
-                    <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
-                        {ath.bodyweightKg} kg
-                    </td>
-                    <td className="py-4 px-4 text-center font-sans font-semibold text-foreground text-sm md:text-base">
-                        {ath.totalE1RM} kg
-                    </td>
-
-                    <td className="py-4 px-4 text-center">
-                        {renderMetricValue(ath)}
-                    </td>
-
-                    {/* trend arrow */}
-                    <td className="py-4 px-4 text-center">
-                        {ath.rankTrend > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-success">
-                                <TrendingUp className="w-3.5 h-3.5" /> +{ath.rankTrend}
-                            </span>
-                        )}
-                        {ath.rankTrend < 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-xs font-sans font-bold text-brand">
-                                <TrendingDown className="w-3.5 h-3.5" /> {ath.rankTrend}
-                            </span>
-                        )}
-                        {ath.rankTrend === 0 && (
-                            <span className="inline-flex items-center text-muted-foreground">
-                                <Minus className="w-3.5 h-3.5" />
-                            </span>
-                        )}
-                    </td>
-                </tr>
-            );
-        });
-    };
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-24">
@@ -398,246 +646,30 @@ export default function ArenaLeaderboardPage() {//
                 <Link to="/clash" className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-brand uppercase tracking-[1px] mb-4 transition font-sans">
                     <ArrowLeft className="w-4 h-4"/>Back to Arenas
                 </Link>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground flex items-center gap-2.5">
-                                <Trophy className="w-7 h-7 md:w-8 md:h-8 text-warning shrink-0"/>
-                                <span>{arenaName}</span>
-                                {isCreator && (
-                                    <span className="text-[11px] font-bold uppercase tracking-wider bg-brand-fill text-brand border border-brand/30 px-2.5 py-0.5 rounded-full font-sans">
-                                        Squad Creator
-                                    </span>
-                                )}
-                                {isPrivate && liveArena && (
-                                    isConcluded ? (
-                                        <span className="text-[11px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-0.5 rounded-full font-sans">
-                                            Season Concluded
-                                        </span>
-                                    ) : (
-                                        <span className="text-[11px] font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 px-2.5 py-0.5 rounded-full font-sans flex items-center gap-1.5">
-                                            <Clock className="w-3.5 h-3.5"/>
-                                            {liveArena.daysRemaining ?? liveArena.durationDays} Days Left
-                                        </span>
-                                    )
-                                )}
-                            </h1>
-                        </div>
-                    </div>
-                    {/* action btns */}
-                    <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
-                        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}
-                        className="h-8 text-xs flex items-center gap-1.5 border-border">
-                            <RotateCw className={`w-3.5 h-3.5 ${
-                                isRefreshing ? 'animate-spin' : ''}`}/>
-                            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-                        </Button>
-
-                        {/* f3: share arena + leave arena btns */}
-                        {isPrivate && (
-                            <>
-                            <Button variant={isCreator ? 'default' : 'secondary'} size="sm" onClick={handleShareClick} 
-                            className="h-8 text-xs flex items-center gap-2">
-                                {isCreator ? (
-                                    <>
-                                        <Share2 className="w-3.5 h-3.5"/>
-                                        <span>Share Arena and Invite</span>
-                                    </>
-                                    ) : (
-                                        <>
-                                        {copied ? <Check className="w-3.5 h-3.5 text-success"/> : <Copy className="w-3.5 h-3.5"/>}
-                                        <span>{copied ? 'Code Copied' : 'Copy Code'}</span></>
-                                    )}    
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => setIsLeaveConfirmOpen(true)}
-                            className="h-8 text-xs flex items-center gap-1.5 border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors">
-                                <LogOut className="w-3.5 h-3.5"/>
-                                <span>Leave Arena</span>    
-                            </Button></>
-                        )}
-                    </div>
-                </div>
+                <ArenaHeader arenaName={arenaName} isCreator={isCreator} isPrivate={isPrivate} liveArena={liveArena} isConcluded={isConcluded} isRefreshing={isRefreshing}
+                copied={copied} onRefresh={handleRefresh} onShareClick={handleShareClick} onOpenLeaveConfirm={() => setIsLeaveConfirmOpen(true)}/>
             </div>
 
             <div className="max-w-6xl mx-auto px-4 py-4 space-y-6">
-            {/* filters */}
-                <Card className="bg-surface border-border p-4 shadow-sm">
-                    <CardContent className="p-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-                            <span className="text-xs font-bold uppercase tracking-[1px] text-muted-foreground mr-2 flex items-center gap-1 shrink-0 font-sans">
-                                <Filter className="w-3.5 h-3.5"/> Metric:
-                            </span>
-                            {/* primary metric */}
-                            <Button variant={selectedMetric === 'dots' ? 'default' : 'secondary'} size="sm" onClick={() =>{
-                                setSelectedMetric('dots');
-                                setCurrentPage(1);
-                            }}
-                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
-                                <span>Overall DOTS</span>
-                                {primaryMetric === 'dots' && (
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'dots' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                        }`}>
-                                        PRIMARY
-                                    </span>
-                                )}
-                            </Button>
-
-                            <Button variant={selectedMetric === 'volume' ? 'default' : 'secondary'} size="sm" onClick={() =>{
-                                setSelectedMetric('volume');
-                                setCurrentPage(1);
-                            }}
-                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
-                                <span>Total Volume</span>
-                                {primaryMetric === 'volume' && (
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'volume' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                        }`}>
-                                        PRIMARY
-                                    </span>
-                                )}
-                            </Button>
-
-                            <Button variant={selectedMetric === 'squat' ? 'default' : 'secondary'} size="sm" onClick={() =>{
-                                setSelectedMetric('squat');
-                                setCurrentPage(1);
-                            }}
-                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
-                                <span>Squat e1RM</span>
-                                {primaryMetric === 'squat' && (
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'squat' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                        }`}>
-                                        PRIMARY
-                                    </span>
-                                )}
-                            </Button>
-
-                            <Button variant={selectedMetric === 'bench' ? 'default' : 'secondary'} size="sm" onClick={() =>{
-                                setSelectedMetric('bench');
-                                setCurrentPage(1);
-                            }}
-                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
-                                <span>Bench e1RM</span>
-                                {primaryMetric === 'bench' && (
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'bench' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                        }`}>
-                                        PRIMARY
-                                    </span>
-                                )}
-                            </Button>
-                            <Button variant={selectedMetric === 'deadlift' ? 'default' : 'secondary'} size="sm" onClick={() =>{
-                                setSelectedMetric('deadlift');
-                                setCurrentPage(1);
-                            }}
-                            className="h-8 text-xs whitespace-nowrap flex items-center gap-1.5 shrink-0">
-                                <span>Deadlift e1RM</span>
-                                {primaryMetric === 'deadlift' && (
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wider ${selectedMetric === 'deadlift' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-brand/10 text-brand'
-                                        }`}>
-                                        PRIMARY
-                                    </span>
-                                )}
-                            </Button>
-                        </div>
-
-                        {/* timeframe month vs all time */}
-                        {!isPrivate && (
-                        <div className="flex bg-surface-2 border border-border rounded-lg p-1 self-start md:self-auto shrink-0 overflow-x-auto">
-                            <button type="button" onClick={() => {
-                                setSelectedTimeframe('monthly');
-                                setCurrentPage(1);
-                            }}
-                            className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap shrink-0 ${
-                                selectedTimeframe === 'monthly' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                            }`}>
-                                Monthly Season
-                            </button>
-                            <button type="button" onClick={() => {
-                                setSelectedTimeframe('all-time');
-                                setCurrentPage(1);
-                            }}
-                            className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap shrink-0 ${
-                                selectedTimeframe === 'all-time' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                            }`}>
-                                All Time
-                            </button>
-                        </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* for divisional ie weight class league */}
+                <ArenaFilterBar selectedMetric={selectedMetric} primaryMetric={primaryMetric} isPrivate={isPrivate} selectedTimeframe={selectedTimeframe}
+                    onSelectMetric={(metric) => {
+                        setSelectedMetric(metric);
+                        setCurrentPage(1);
+                    }}
+                    onSelectTimeframe={(timeframe) => {
+                        setSelectedTimeframe(timeframe);
+                        setCurrentPage(1);
+                    }} />
                 {isDivisional && (
-                    <Card className="bg-surface border-border p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-2.5">
-                                <Users className="w-4 h-4 text-brand"/>
-                                <div>
-                                    <h3 className="text-sm font-bold font-sans uppercase tracking-[1px] text-foreground">
-                                        Divisional Weight Class
-                                    </h3>
-                                    <span className="text-xs text-muted-foreground font-sans block mt-0.5">
-                                        {selectedGender === 'male' ? "Men's" : "Women's"} {activeBracket.label} ({activeBracket.minKg > 0 ? `${activeBracket.minKg} - ` : 'Up to '}{activeBracket.maxKg < 999 ? `${activeBracket.maxKg} kg` : '+ kg'})
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3">
-                                {/* gender toggle */}
-                                <div className="flex bg-surface-2 border border-border rounded-lg p-1 self-start sm:self-auto shrink-0">
-                                    <button type="button" onClick={() => {
-                                        setSelectedGender('male');
-                                        setCurrentPage(1);
-                                    }}
-                                    className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans ${
-                                        selectedGender === 'male' ? 'bg-surface text-brand shadow-sm font-extrabold' : 'text-muted-foreground hover:text-foreground'
-                                    }`}>
-                                        Men's
-                                    </button>
-                                    <button type="button" onClick={() => {
-                                        setSelectedGender('female');
-                                        setCurrentPage(1);
-                                    }}
-                                    className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans ${
-                                        selectedGender === 'female' ? 'bg-surface text-brand shadow-sm font-extrabold' : 'text-muted-foreground hover:text-foreground'
-                                    }`}>
-                                        Women's
-                                    </button>
-                                </div>
-
-                                {/* weight class */}
-                                <div className="w-full sm:w-auto">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger variant="filter" className="w-full sm:w-[220px] bg-surface-2" aria-label="Select Weight Class Bracket">
-                                            <span className="min-w-0 truncate font-sans font-semibold">
-                                                {activeBracket.label}
-                                                {currentUserStanding && userWeightBracket.id === activeBracket.id ? ' (Your Class)' : ''}
-                                            </span>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                                            {WEIGHT_CLASS_BRACKETS.map((bracket) => {
-                                                const isUserBracket = currentUserStanding && userWeightBracket.id === bracket.id;
-                                                return (
-                                                    <DropdownMenuItem key={bracket.id} onSelect={() => {
-                                                        setSelectedBracketId(bracket.id);
-                                                        setCurrentPage(1);
-                                                    }}
-                                                    className="cursor-pointer flex items-center justify-between">
-                                                        <span>{bracket.label}</span>
-                                                        {isUserBracket && (
-                                                            <span className="text-[10px] font-bold text-brand bg-brand-fill border border-brand/30 px-1.5 py-0.2 rounded">
-                                                                YOU
-                                                            </span>
-                                                        )}
-                                                    </DropdownMenuItem>
-                                                );
-                                            })}
-                                            {/* ... */}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
+                    <DivisionalClassSelector selectedGender={selectedGender} activeBracket={activeBracket} userWeightBracket={userWeightBracket} currentUserStanding={currentUserStanding}
+                        onSelectGender={(gender) => {
+                            setSelectedGender(gender);
+                            setCurrentPage(1);
+                        }}
+                        onSelectBracketId={(bracketId) => {
+                            setSelectedBracketId(bracketId);
+                            setCurrentPage(1);
+                        }} />
                 )}
 
                 {/* leaderboard table card */}
@@ -660,7 +692,7 @@ export default function ArenaLeaderboardPage() {//
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border text-sm md:text-base">
-                                {renderTable()}
+                                <LeaderboardTableBody isLoading={isLoading} standings={standings} selectedMetric={selectedMetric} onSelectAthlete={handleOpenAthleteDrawer}/>
                             </tbody>
                         </table>
                     </div>
@@ -715,7 +747,7 @@ export default function ArenaLeaderboardPage() {//
                                 {currentUserStanding?.dotsScore ?? 0} DOTS
                             </span>
                             <span className="text-[10px] text-success block font-sans font-semibold">
-                                {renderUserStandingSTatus()}
+                                {getUserStandingStatus(currentUserStanding)}
                             </span>
                         </div>
                         {currentUserStanding && (
@@ -729,7 +761,12 @@ export default function ArenaLeaderboardPage() {//
                 </div>
             </aside>
 
-            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}/>
+            <ProfileInspectorDrawer athlete={selectedAthlete} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}
+            onChallengeDuel={() => {
+                setIsDrawerOpen(false);
+                setIsDuelModalOpen(true);
+            }}/>
+            <CreateDuelModal isOpen={isDuelModalOpen} onClose={() => setIsDuelModalOpen(false)} defaultFriend={selectedAthlete}/>
 
             {liveArena && (
                 <>

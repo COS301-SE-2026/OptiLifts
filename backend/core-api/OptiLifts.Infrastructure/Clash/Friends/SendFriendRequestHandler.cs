@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OptiLifts.Application.Clash.Friends;
 using OptiLifts.Application.Clash.Friends.Commands;
 using OptiLifts.Domain.Clash;
+using OptiLifts.Domain.Users;
 using OptiLifts.Infrastructure.Database;
 
 namespace OptiLifts.Infrastructure.Clash.Friends;
@@ -18,16 +19,28 @@ public sealed class SendFriendRequestHandler : IRequestHandler<SendFriendRequest
 
     public async Task<SendFriendRequestResult> Handle(SendFriendRequestCommand request, CancellationToken cancellationToken)
     {
-        var targetCode = (request.FriendCode ?? string.Empty).Trim().ToUpperInvariant();
-        if (string.IsNullOrEmpty(targetCode))
+        User? receiver = null;
+        if (request.TargetUserId.HasValue && request.TargetUserId.Value != Guid.Empty)
         {
-            return new SendFriendRequestResult(false, "Friend code cannot be empty");
+            receiver = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == request.TargetUserId.Value, cancellationToken);
+            if (receiver is null)
+            {
+                return new SendFriendRequestResult(false, "User not found");
+            }
         }
-
-        var receiver = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.FriendCode == targetCode, cancellationToken);
-        if (receiver is null)
+        else
         {
-            return new SendFriendRequestResult(false, "No user found with that friend code");
+            var targetCode = (request.FriendCode ?? string.Empty).Trim().ToUpperInvariant();
+            if (string.IsNullOrEmpty(targetCode))
+            {
+                return new SendFriendRequestResult(false, "Friend code cannot be empty");
+            }
+
+            receiver = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.FriendCode == targetCode, cancellationToken);
+            if (receiver is null)
+            {
+                return new SendFriendRequestResult(false, "No user found with that friend code");
+            }
         }
 
         if (receiver.Id == request.UserId)
@@ -46,6 +59,23 @@ public sealed class SendFriendRequestHandler : IRequestHandler<SendFriendRequest
         if (pendingArli)
         {
             return new SendFriendRequestResult(false, "You have already sent a friend request to this user");
+        }
+
+        var pendingIncoming = await _db.FriendRequests.FirstOrDefaultAsync(
+            r => r.SenderId == receiver.Id && r.ReceiverId == request.UserId && r.Status == FriendshipHelpers.statusPending,
+            cancellationToken);
+
+        if (pendingIncoming is not null)
+        {
+            pendingIncoming.Status = FriendshipHelpers.statusAccepted;
+            _db.Friendships.Add(new Friendship
+            {
+                UserId1 = u1,
+                UserId2 = u2,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync(cancellationToken);
+            return new SendFriendRequestResult(true, "Friend request accepted! You are now friends", pendingIncoming.Id);
         }
 
         var friendReq = new FriendRequest

@@ -49,8 +49,15 @@ public class VisionController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> WorkerResult(
         [FromBody] VisionWorkerResult request,
+        [FromHeader(Name = "X-Node-Secret")] string? nodeSecret,
         CancellationToken cancellationToken)
     {
+        var expectedSecret = Environment.GetEnvironmentVariable("NODE_SECRET");
+        if (!string.IsNullOrEmpty(expectedSecret) && nodeSecret != expectedSecret)
+        {
+            return Unauthorized(new { message = "Invalid or missing X-Node-Secret header." });
+        }
+
         if (request == null || string.IsNullOrWhiteSpace(request.JobId))
         {
             return BadRequest(new { message = "JobId is required." });

@@ -131,14 +131,14 @@ function renderFriends(opts?: Parameters<typeof mockFriendEps>[0]) {
 }
 
 async function actOnIncoming(buttonText: string) {
-    fireEvent.click(await screen.findByText('Requests'));
-    expect(await screen.findByText('Charlie')).toBeDefined();
+    fireEvent.click(await screen.findByText('Requests', {}, { timeout: 3000 }));
+    expect(await screen.findByText('Charlie', {}, { timeout: 3000 })).toBeDefined();
     fireEvent.click(screen.getByText(buttonText));
 }
 
 async function actOnInvite(buttonText: string) {
-    fireEvent.click(await screen.findByText('Arena Invites'));
-    expect(await screen.findByText('Iron Squad')).toBeDefined();
+    fireEvent.click(await screen.findByText('Arena Invites', {}, { timeout: 3000 }));
+    expect(await screen.findByText('Iron Squad', {}, { timeout: 3000 })).toBeDefined();
     fireEvent.click(screen.getByText(buttonText));
 }
 

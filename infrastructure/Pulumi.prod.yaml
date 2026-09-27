@@ -18,3 +18,6 @@ config:
     secure: AAABAERbX7BSMHMnXSk2paMZn4jluPICb0xwFK0BeVfotur7KGYWjCl9+bMNjs1i2JsFIetrfaLrLL4ZPX8WOILhi9b+lbq9yIb+EhRsj5flactkOuJFbMx9j9C5yeloCLXgEakCl08F
   infrastructure:googleClientSecret:
     secure: AAABAArkAIMxoVBpNYn9gcrUb41N+mxWi/0JuYjgmI8pQUcIdNd//Kpz8JocokNW5CjorvGCKjVKKifluvWxqN3IiQ==
+  infrastructure:geminiApiKey:
+    secure: AAABAHfWBwUBPFb2+vOkvwUQZ+xD5JUDi8A4MWBtTncgeLkiTjIlGDG9zr7jc0whCphDannmzw7k7vPeuPLEg+jFwf134bM0VgoLJhmJ6tqHh3tYMQ==
+  infrastructure:geminiBaseUrl: https://generativelanguage.googleapis.com/

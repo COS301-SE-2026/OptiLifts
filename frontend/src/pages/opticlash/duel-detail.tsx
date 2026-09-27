@@ -61,7 +61,7 @@ export default function DuelArenaPage() {
         if(!duelId) {
             return;
         }
-        const connection = new signalR.HubConnectionBuilder().withUrl('/api/hubs/clash').withAutomaticReconnect().build();
+        const connection = new signalR.HubConnectionBuilder().withUrl('/api/hubs/clash').withAutomaticReconnect().configureLogging(signalR.LogLevel.Warning).build();
 
         hubRef.current = connection;
         connection.start().then(async () => {

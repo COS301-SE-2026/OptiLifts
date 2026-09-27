@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getWeightClassBracket, WEIGHT_CLASS_BRACKETS, type ClashAthlete, type ClashArena } from "@/types/clash";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Clock, ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, RotateCw, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Clock, ArrowLeft, Award, ChevronLeft, ChevronRight, Filter, Medal, Minus, RotateCw, TrendingDown, TrendingUp, Trophy, Users, Copy, Check, LogOut, Share2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as signalR from "@microsoft/signalr";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ShareArenaModal } from "@/components/opticlash/share-arena-modal";
@@ -115,6 +116,38 @@ function getAthleteNameClass(isMaster: boolean, isCurrent: boolean) {
         return 'text-brand';
     }
     return 'text-foreground';
+}
+
+function getMetricScore(athlete: LeaderboardAthleteDto, metric: ArenaMetric): number {
+    switch (metric) {
+        case 'volume':
+            return athlete.weeklyVolumeKg;
+        case 'squat':
+            return athlete.squat1RM;
+        case 'bench':
+            return athlete.bench1RM;
+        case 'deadlift':
+            return athlete.deadlift1RM;
+        case 'dots':
+        default:
+            return athlete.dotsScore;
+    }
+}
+function renderStandingScore(standing: LeaderboardAthleteDto | null, metric: ArenaMetric): string {
+    if (!standing) return '0 DOTS';
+    switch (metric) {
+        case 'volume':
+            return `${standing.weeklyVolumeKg.toLocaleString()} kg`;
+        case 'squat':
+            return `${standing.squat1RM} kg`;
+        case 'bench':
+            return `${standing.bench1RM} kg`;
+        case 'deadlift':
+            return `${standing.deadlift1RM} kg`;
+        case 'dots':
+        default:
+            return `${standing.dotsScore} DOTS`;
+    }
 }
 
 function getUserStandingStatus(currentUserStanding: LeaderboardAthleteDto | null): string {
@@ -456,12 +489,14 @@ export default function ArenaLeaderboardPage() {//
     const {user} = useAuth();
     
     const [liveArena, setLiveArena] = useState<ClashArena | null>(null);
-    const [standings, setStandings] = useState<LeaderboardAthleteDto[]>([]);
+    const [rawPrivateStandings, setRawPrivateStandings] = useState<LeaderboardAthleteDto[]>([]);
+    const [publicStandings, setPublicStandings] = useState<LeaderboardAthleteDto[]>([]);
     const [currentUserStanding, setCurrentUserStanding] = useState<LeaderboardAthleteDto | null>(null);
-    const [totalAthletes, setTotalAthletes] = useState<number>(0);
+    const [publicTotalAthletes, setPublicTotalAthletes] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const [selectedMetric, setSelectedMetric] = useState<ArenaMetric>('dots');
+    const initializedMetricForArenaRef = useRef<string | null | undefined>(null);
     const defaultGender = user?.sex?.toLowerCase() === 'female' ? 'female' : 'male';
     const [selectedGender, setSelectedGender] = useState<'male' | 'female'>(defaultGender);
     const [selectedBracketId, setSelectedBracketId] = useState<string>('u59');
@@ -496,14 +531,14 @@ export default function ArenaLeaderboardPage() {//
         const data = await res.json();
         if (data?.arena) {
             setLiveArena(data.arena);
-            if (data.arena.metricType) {
+            if (data.arena.metricType && initializedMetricForArenaRef.current !== arenaId) {
+                initializedMetricForArenaRef.current = arenaId;
                 setSelectedMetric(getFrontendMetric(data.arena.metricType));
             }
         }
         if (Array.isArray(data?.standings)) {
             const mapped = mapPrivateStandings(data.standings);
-            setStandings(mapped);
-            setTotalAthletes(mapped.length);
+            setRawPrivateStandings(mapped);
         }
         if (data?.userStanding) {
             setCurrentUserStanding(data.userStanding as LeaderboardAthleteDto);
@@ -517,8 +552,8 @@ export default function ArenaLeaderboardPage() {//
         const res = await customFetch(url);
         if (res.ok) {
             const data: LeaderboardApiResponse = await res.json();
-            setStandings(data.entries ?? []);
-            setTotalAthletes(data.totalCount ?? 0);
+            setPublicStandings(data.entries ?? []);
+            setPublicTotalAthletes(data.totalCount ?? 0);
             setCurrentUserStanding(data.currentUserEntry ?? null);
         }
     };
@@ -539,16 +574,100 @@ export default function ArenaLeaderboardPage() {//
         }
     };
 
+    const sortedStandings = useMemo(() => {
+        if (!isPrivate) return publicStandings;
+        const sorted = [...rawPrivateStandings].sort((a, b) => {
+            const scoreA = getMetricScore(a, selectedMetric);
+            const scoreB = getMetricScore(b, selectedMetric);
+            if (scoreB !== scoreA) return scoreB - scoreA;
+            return a.displayName.localeCompare(b.displayName);
+        });
+        return sorted.map((ath, idx) => ({ ...ath, rank: idx + 1 }));
+    }, [isPrivate, publicStandings, rawPrivateStandings, selectedMetric]);
+
+    const totalAthletes = isPrivate ? rawPrivateStandings.length : publicTotalAthletes;
+    const totalPages = Math.max(1, Math.ceil(totalAthletes / PAGE_SIZE));
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+    const displayStandings = useMemo(() => {
+        if (!isPrivate) return sortedStandings;
+        return sortedStandings.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [isPrivate, sortedStandings, startIndex]);
+
+    const displayCurrentUserStanding = useMemo(() => {
+        if (!isPrivate) return currentUserStanding;
+        return sortedStandings.find((s) => s.isCurrentUser || s.userId === user?.id) || currentUserStanding;
+    }, [isPrivate, currentUserStanding, sortedStandings, user?.id]);
+
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on dependency change
-        void fetchLeaderboard();
+        if (isPrivate) {
+            void fetchLeaderboard();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [arenaId]);
+
+    useEffect(() => {
+        if (!isPrivate) {
+            void fetchLeaderboard();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [arenaId, selectedMetric, selectedGender, selectedBracketId, currentPage, selectedTimeframe]);
 
+    useEffect(() => {
+        if (!isPrivate || !arenaId) return;
+        let isCancelled = false;
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl('/api/hubs/clash')
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Warning)
+            .build();
+
+        connection.start().then(() => {
+            if (isCancelled) {
+                void connection.stop();
+                return;
+            }
+            connection.invoke('JoinArena', arenaId).catch(() => {});
+        }).catch(() => {});
+
+        connection.on('ReceiveUserJoined', (joinedArenaId: string, userName: string) => {
+            if (joinedArenaId === arenaId) {
+                toast.success(`${userName} joined the arena!`, 'New Member');
+                void fetchPrivateLeaderboard();
+            }
+        });
+
+        connection.on('ReceiveUserLeft', (leftArenaId: string, userName: string) => {
+            if (leftArenaId === arenaId) {
+                toast.info(`${userName} left the arena`, 'Member Left');
+                void fetchPrivateLeaderboard();
+            }
+        });
+
+        connection.on('ReceiveActivity', (activity: { arenaId?: string; eventText?: string; details?: string; userId?: string }) => {
+            if (!activity.arenaId || activity.arenaId === arenaId) {
+                if (activity.eventText && activity.userId !== user?.id) {
+                    toast.info(activity.eventText, activity.details);
+                }
+                void fetchPrivateLeaderboard();
+            }
+        });
+        connection.on('ReceiveKudos', () => {
+            //live kudos
+        });
+
+        return () => {
+            isCancelled = true;
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke('LeaveArena', arenaId).catch(() => {});
+                void connection.stop();
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isPrivate, arenaId]);
+
     //sonqorqube nested ternary issues
     const arenaName = liveArena?.name || (isDivisional ? 'Divisional Weight-Class League': 'Global Season League');
-    const totalPages = Math.max(1, Math.ceil(totalAthletes / PAGE_SIZE));
-    const startIndex = (currentPage-1) * PAGE_SIZE;
 
     const handleOpenAthleteDrawer = (ath: LeaderboardAthleteDto) => {
         const initials = ath.displayName.slice(0,2).toUpperCase();
@@ -672,7 +791,7 @@ export default function ArenaLeaderboardPage() {//
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border text-sm md:text-base">
-                                <LeaderboardTableBody isLoading={isLoading} standings={standings} selectedMetric={selectedMetric} onSelectAthlete={handleOpenAthleteDrawer}/>
+                                <LeaderboardTableBody isLoading={isLoading} standings={displayStandings} selectedMetric={selectedMetric} onSelectAthlete={handleOpenAthleteDrawer}/>
                             </tbody>
                         </table>
                     </div>
@@ -716,7 +835,7 @@ export default function ArenaLeaderboardPage() {//
                                 YOUR STANDING
                             </span>
                             <strong className="text-sm font-sans font-bold text-foreground">
-                                {currentUserStanding ? `Rank #${currentUserStanding.rank} — ${currentUserStanding.displayName} (You)` : `${user?.name ?? 'You'} — Not ranked in this category yet`}
+                                {displayCurrentUserStanding ? `Rank #${displayCurrentUserStanding.rank} — ${displayCurrentUserStanding.displayName} (You)` : `${user?.name ?? 'You'} — Not ranked in this category yet`}
                             </strong>
                         </div>
                     </div>
@@ -724,14 +843,14 @@ export default function ArenaLeaderboardPage() {//
                     <div className="flex items-center gap-4">
                         <div className="text-right">
                             <span className="text-xs font-sans font-bold text-brand">
-                                {currentUserStanding?.dotsScore ?? 0} DOTS
+                                {renderStandingScore(displayCurrentUserStanding, selectedMetric)}
                             </span>
                             <span className="text-[10px] text-success block font-sans font-semibold">
-                                {getUserStandingStatus(currentUserStanding)}
+                                {getUserStandingStatus(displayCurrentUserStanding)}
                             </span>
                         </div>
-                        {currentUserStanding && (
-                        <Button variant="default" size="sm" onClick={() => handleOpenAthleteDrawer(currentUserStanding)}
+                        {displayCurrentUserStanding && (
+                        <Button variant="default" size="sm" onClick={() => handleOpenAthleteDrawer(displayCurrentUserStanding)}
                         className="h-8 text-xs">
                             Profile
                         </Button>

@@ -15,6 +15,7 @@ const LINKS = [
   { to: '/schedule',  label: 'Schedule'  },
   { to: '/clash', label: 'OptiClash' },
   { to: '/progression',   label: 'Progression'   },
+  { to: '/form-check',   label: 'OptiVision'   },
   { to: '/help',  label: 'Help'  },
   { to: '/profile',   label: 'Profile'   },
 ]

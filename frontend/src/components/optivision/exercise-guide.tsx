@@ -50,7 +50,7 @@ export function ExerGuide({ exercise, onExerciseChange, disabled }: ExerGuidProp
               width={180}
               height={180}
               onError={() => setFailedGif(guide.gifUrl)}
-              className="h-[180px] w-[180px] shrink-0 rounded-lg border border-border bg-white"
+              className="h-[180px] w-[180px] shrink-0 rounded-lg border border-border bg-white object-cover"
             />
           )}
           <div className="min-w-[8rem] flex-1">

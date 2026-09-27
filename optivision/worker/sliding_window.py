@@ -153,7 +153,7 @@ def _evaluate_windows(
             else:
                 probs = np.zeros(len(class_labels), dtype=np.float32)
 
-            window_records.append({"is_idle": idle, "probs": probs})
+            window_records.append({"is_idle": idle, "probs": probs, "start_frame": start_idx, "end_frame": end_idx})
 
     return window_records
 
@@ -161,25 +161,25 @@ def _evaluate_windows(
 def _aggregate_peak_scores(
     class_labels: List[str],
     window_records: List[Dict[str, Any]],
-) -> Dict[str, float]:
+) -> tuple:
     active_windows = [w for w in window_records if not w["is_idle"]]
     target_windows = active_windows if active_windows else window_records
     peak_scores = dict.fromkeys(class_labels, 0.0)
+    peak_frames = {label: {"start": 0, "end": 0} for label in class_labels}
 
     for w in target_windows:
         for i, prob in enumerate(w["probs"]):
             flaw = class_labels[i]
             if float(prob) > peak_scores[flaw]:
                 peak_scores[flaw] = float(prob)
+                peak_frames[flaw] = {"start": w.get("start_frame", 0), "end": w.get("end_frame", 0)}
 
-    return peak_scores
+    return peak_scores, peak_frames
 
 
 def _find_suppressed_flaws(
-    exercise: str,
     class_labels: List[str],
     window_records: List[Dict[str, Any]],
-    peak_scores: Dict[str, float],
 ) -> set:
     suppressed: set = set()
     active_windows = [w for w in window_records if not w["is_idle"]]
@@ -195,13 +195,19 @@ def _find_suppressed_flaws(
 
 def _filter_detected_anomalies(
     peak_scores: Dict[str, float],
+    peak_frames: Dict[str, Dict[str, int]],
     suppressed_flaws: set,
 ) -> List[Dict[str, Any]]:
     detected = []
     for flaw, score in peak_scores.items():
         threshold = FLAW_THRESHOLDS.get(flaw, THRESHOLD)
         if score >= threshold and flaw not in suppressed_flaws:
-            detected.append({"error": flaw, "severity": round(score, 3)})
+            detected.append({
+                "error": flaw, 
+                "severity": round(score, 3),
+                "start_frame": peak_frames[flaw]["start"],
+                "end_frame": peak_frames[flaw]["end"]
+            })
 
     detected.sort(key=lambda x: x["severity"], reverse=True)
     return detected
@@ -222,9 +228,9 @@ def run_sliding_window_inference(
     logger.info("Analysing %d frames for '%s'.", model_input.shape[2], normalised_exercise)
 
     window_records = _evaluate_windows(model, model_input, normalised_exercise, class_labels)
-    peak_scores = _aggregate_peak_scores(class_labels, window_records)
-    suppressed_flaws = _find_suppressed_flaws(normalised_exercise, class_labels, window_records, peak_scores)
-    detected_anomalies = _filter_detected_anomalies(peak_scores, suppressed_flaws)
+    peak_scores, peak_frames = _aggregate_peak_scores(class_labels, window_records)
+    suppressed_flaws = _find_suppressed_flaws(class_labels, window_records)
+    detected_anomalies = _filter_detected_anomalies(peak_scores, peak_frames, suppressed_flaws)
 
     logger.info(
         "Inference complete: %d anomalies detected over threshold (%s).",

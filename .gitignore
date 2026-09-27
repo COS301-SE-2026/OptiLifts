@@ -39,7 +39,6 @@ e2e/playwright/.cache/
 e2e/playwright/.auth/
 
 # ML Datasets and Optivision
-*.mp4
 *.avi
 *.mov
 *.mkv

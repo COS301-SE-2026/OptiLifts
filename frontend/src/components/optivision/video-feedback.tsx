@@ -53,14 +53,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h4 className="font-semibold mb-2 text-sm text-green-500">Perfect Form</h4>
-            <video src={`/perfect_${exercise}.mp4`} playsInline controls className="w-full rounded border border-border">
+            <video src={`/perfect_${exercise}.mp4`} playsInline controls className="w-full aspect-[4/5] object-contain bg-black rounded border border-border">
               <track kind="captions" srcLang="en" label="English" />
             </video>
           </div>
           <div>
             <h4 className="font-semibold mb-2 text-sm text-destructive">Your Form</h4>
             
-            <video ref={userVideoRef} playsInline controls className="w-full rounded border border-destructive">
+            <video ref={userVideoRef} playsInline controls className="w-full aspect-[4/5] object-contain bg-black rounded border border-destructive">
               <track kind="captions" srcLang="en" label="English" />
             </video>
           </div>

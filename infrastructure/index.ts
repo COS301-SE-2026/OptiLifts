@@ -216,9 +216,6 @@ const frontendApp = new app.ContainerApp("frontend", {
             targetPort: 8080,
             customDomains: customDomain(frontendDomain, frontendCert),
             traffic: [{ latestRevision: true, weight: 100 }],
-            stickySessions: {
-                affinity: "sticky",
-            },
         },
         registries: [{
             server: acrServer,

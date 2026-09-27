@@ -291,12 +291,15 @@ const coreApiApp = new app.ContainerApp("core-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: true, //give public url
             targetPort: 8080,
             customDomains: customDomain(backendDomain, backendCert),
             traffic: [{ latestRevision: true, weight: 100 }],
+            stickySessions: {
+                affinity: "sticky",
+            },
         },
 
         secrets: [

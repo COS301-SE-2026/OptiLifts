@@ -64,6 +64,30 @@ interface ProfileInspectorDrawerProps {
     onClose: () => void;
     onChallengeDuel?: (athlete: ClashAthlete) => void; //f4
 }
+function getMuscleBalanceData(
+    profile: AthleteProfileApiResponse | null,
+    athlete: ClashAthlete
+): Record<string, number> {
+    const data: Record<string, number> = {
+        Chest: 0,
+        Core: 0,
+        Shoulders: 0,
+        Arms: 0,
+        Legs: 0,
+        Back: 0,
+    };
+    if (profile?.muscleBalance30d) {
+        for (const item of profile.muscleBalance30d) {
+            if (item.muscleGroup in data) {
+                data[item.muscleGroup] = Number(item.volumeKg);
+            }
+        }
+    } else if (athlete.muscleBalance30d) {
+        Object.assign(data, athlete.muscleBalance30d);
+    }
+    return data;
+}
+
 export function ProfileInspectorDrawer({
     athlete, isOpen, onClose, onChallengeDuel,
 }: Readonly<ProfileInspectorDrawerProps>) {
@@ -174,23 +198,8 @@ export function ProfileInspectorDrawer({
         }
     };
 
-    const muscleBalanceData: Record<string, number> = {
-        Chest: 0,
-        Core: 0,
-        Shoulders: 0,
-        Arms: 0,
-        Legs: 0,
-        Back: 0,
-    };
-    if (profile?.muscleBalance30d) {
-        for (const item of profile.muscleBalance30d) {
-            if (item.muscleGroup in muscleBalanceData) {
-                muscleBalanceData[item.muscleGroup] = Number(item.volumeKg);
-            }
-        }
-    } else if (athlete.muscleBalance30d) {
-        Object.assign(muscleBalanceData, athlete.muscleBalance30d);
-    }
+    const muscleBalanceData = getMuscleBalanceData(profile, athlete);
+    
     const workoutsList = profile?.recentWorkouts?.map((w) => {
         const dateStr = w.completedAt ? new Date(w.completedAt).toLocaleDateString(): 'Recent';
         return {
@@ -391,8 +400,8 @@ export function ProfileInspectorDrawer({
                                                     <h5 className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider mt-3 font-sans">
                                                         Exercise Logs & Sets:
                                                     </h5>
-                                                    {w.exercises.map((ex, idx) => (
-                                                        <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-border/60 last:border-0 font-sans">
+                                                    {w.exercises.map((ex) => (
+                                                        <div key={ex.name} className="flex justify-between items-center text-xs py-1 border-b border-border/60 last:border-0 font-sans">
                                                             <span className="text-foreground font-medium flex items-center gap-1.5">
                                                                 <Dumbbell className="w-3.5 h-3.5 text-brand"/>{ex.name}
                                                             </span>

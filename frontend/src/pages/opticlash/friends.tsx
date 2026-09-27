@@ -14,6 +14,8 @@ import type { ClashAthlete, DuelInviteItem } from "@/types/clash";
 import { Shield, ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail, Swords } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+//literally making the tiniest change every to fix complexity yay
+const toList = <T,>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
 
 export default function FriendsManagementPage(){
     const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'invites'>('friends');
@@ -118,11 +120,11 @@ export default function FriendsManagementPage(){
             }
             if (invitesRes.ok) {
                 const data = await invitesRes.json();
-                setArenaInvites(Array.isArray(data) ? data : []);
+                setArenaInvites(toList(data));
             }
             if (duelInvitesRes.ok) {
                 const data = await duelInvitesRes.json();
-                setDuelInvites(Array.isArray(data) ? data : []);
+                setDuelInvites(toList(data));
             }
             if (privacyRes.ok) {
                 const pData = await privacyRes.json();

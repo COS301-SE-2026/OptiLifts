@@ -28,6 +28,31 @@ interface ShareArenaModalProps {
     arena: ShareableArena | null;
 }
 
+function getInviteButtonContent(isInviting: boolean, isInvited: boolean) {
+    if (isInviting) {
+        return (
+            <>
+                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                <span>Inviting...</span>
+            </>
+        );
+    }
+    if (isInvited) {
+        return (
+            <>
+                <UserCheck className="w-3 h-3 text-success mr-1" />
+                <span>Invited</span>
+            </>
+        );
+    }
+    return (
+        <>
+            <Plus className="w-3 h-3 mr-1" />
+            <span>Invite</span>
+        </>
+    );
+}
+
 export function ShareArenaModal({
     isOpen,
     onClose,
@@ -128,6 +153,46 @@ export function ShareArenaModal({
 
     const filtFriends = friends.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
+    const renderFriendsContent = () => {
+        if (isLoadingFriends) {
+            return (
+                <div className="flex items-center justify-center py-6 text-muted-foreground text-xs font-sans gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-brand"/>
+                    <span>Loading friends...</span>
+                </div>
+            );
+        }
+        if (filtFriends.length === 0) {
+            return (
+                <p className="text-xs text-muted-foreground text-center py-4 font-sans">
+                    {searchQuery ? 'No matching friends found' : 'No friends found. Add friends using their private code.'}
+                </p>
+            );
+        }
+        return filtFriends.map((f) => {
+            const isInvited = !!invitedFriendIds[f.id];
+            const isInviting = !!invitingFriendIds[f.id];
+
+            return (
+                <div key={f.id} className="pt-2 first:pt-0 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                        <AthleteAvatar initials={f.initials} name={f.name} avatarUrl={f.avatarUrl} size="sm"/>
+                        <div>
+                            <strong className="text-xs font-bold text-foreground block font-sans">{f.name}</strong>
+                            <span className="text-[10px] text-muted-foreground font-sans">{f.dotsScore} DOTS</span>
+                        </div>
+                    </div>
+
+                    <Button variant={isInvited ? 'secondary': 'default'} size="sm"
+                    onClick={() => handleInviteFriend(f.id)} disabled={isInvited || isInviting}
+                    className="h-7 px-2.5 text-[11px]">
+                        {getInviteButtonContent(isInviting, isInvited)}
+                    </Button>
+                </div>
+            );
+        });
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5">
@@ -178,53 +243,7 @@ export function ShareArenaModal({
 
                         {/* friends */}
                         <div className="max-h-48 overflow-y-auto space-y-2 pr-1 divide-y divide-border/40">
-                            {isLoadingFriends ? (
-                                <div className="flex items-center justify-center py-6 text-muted-foreground text-xs font-sans gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin text-brand"/>
-                                    <span>Loading friends...</span>
-                                </div>) : filtFriends.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground text-center py-4 font-sans">
-                                        {searchQuery ? 'No matching friends found' : 'No friends found. Add friends using their private code.'}
-                                    </p>
-                                    ) : (
-                                        filtFriends.map((f) => {
-                                            const isInvited = !!invitedFriendIds[f.id];
-                                            const isInviting = !!invitingFriendIds[f.id];
-
-                                            return (
-                                                <div key={f.id} className="pt-2 first:pt-0 flex items-center justify-between">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <AthleteAvatar initials={f.initials} name={f.name} avatarUrl={f.avatarUrl} size="sm"/>
-                                                        <div>
-                                                            <strong className="text-xs font-bold text-foreground block font-sans">{f.name}</strong>
-                                                            <span className="text-[10px] text-muted-foreground font-sans">{f.dotsScore} DOTS</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <Button variant={isInvited ? 'secondary': 'default'} size="sm"
-                                                    onClick={() => handleInviteFriend(f.id)} disabled={isInvited || isInviting}
-                                                    className="h-7 px-2.5 text-[11px]">
-                                                        {isInviting ? (
-                                                            <>
-                                                                <Loader2 className="w-3 h-3 animate-spin mr-1"/>
-                                                                <span>Inviting...</span>
-                                                            </>
-                                        ) : isInvited ? (
-                                            <>
-                                                <UserCheck className="w-3 h-3 text-success mr-1"/>
-                                                <span>Invited</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Plus className="w-3 h-3 mr-1"/>
-                                                <span>Invite</span>
-                                            </>
-                                        )}
-                                                    </Button>
-                                                    </div>
-                                            );
-                                        })
-                                    )}
+                            {renderFriendsContent()}
                         </div>
                     </div>
                 <div className="pt-3 border-t border-border flex justify-end">

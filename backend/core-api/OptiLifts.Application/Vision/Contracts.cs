@@ -92,8 +92,8 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
 
         if (reader.TokenType != JsonTokenType.StartArray)
         {
-          return list;  
-        } 
+            return list;
+        }
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
         {
@@ -144,12 +144,12 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
     {
         if (root.TryGetProperty(primary, out var p1) && p1.GetString() is string s1)
         {
-           return s1; 
-        } 
+            return s1;
+        }
         if (root.TryGetProperty(fallback, out var p2) && p2.GetString() is string s2)
         {
             return s2;
-        } 
+        }
         return string.Empty;
     }
 
@@ -158,11 +158,11 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
         if (root.TryGetProperty(primary, out var p1) && p1.TryGetDouble(out var d1))
         {
             return d1;
-        } 
+        }
         if (root.TryGetProperty(fallback, out var p2) && p2.TryGetDouble(out var d2))
         {
             return d2;
-        } 
+        }
         return 1.0;
     }
 

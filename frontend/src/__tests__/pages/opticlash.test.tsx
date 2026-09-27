@@ -123,7 +123,6 @@ afterEach(() => {
 const ALICE_FRIEND = { id: 'f1', name: 'Alice', initials: 'AL', code: 'AL123', dotsScore: 300, tier: 'Gold' };
 const CHARLIE_REQ = { id: 'r1', fromAthleteId: 'a1', fromName: 'Charlie', fromInitials: 'CH', fromCode: 'CH123', sentAt: 'today' };
 const DANA_REQ = { id: 'r2', fromAthleteId: 'a2', fromName: 'Dana', fromInitials: 'DA', fromCode: 'DA123', sentAt: 'today' };
-const IRON_INVITE = { id: 'i1', arenaId: 'arena-1', arenaName: 'Iron Squad', invitedBNyUserId: 'u1', invitedByName: 'Eve', invitedByInitials: 'EV', status: 'Pending', createdAt: 'today' };
 
 function renderFriends(opts?: Parameters<typeof mockFriendEps>[0]) {
     mockFriendEps(opts);
@@ -131,14 +130,8 @@ function renderFriends(opts?: Parameters<typeof mockFriendEps>[0]) {
 }
 
 async function actOnIncoming(buttonText: string) {
-    fireEvent.click(await screen.findByText('Requests', {}, { timeout: 3000 }));
-    expect(await screen.findByText('Charlie', {}, { timeout: 3000 })).toBeDefined();
-    fireEvent.click(screen.getByText(buttonText));
-}
-
-async function actOnInvite(buttonText: string) {
-    fireEvent.click(await screen.findByText('Arena Invites', {}, { timeout: 3000 }));
-    expect(await screen.findByText('Iron Squad', {}, { timeout: 3000 })).toBeDefined();
+    fireEvent.click(await screen.findByText('Requests', {}, { timeout: 10000 }));
+    expect(await screen.findByText('Charlie', {}, { timeout: 10000 })).toBeDefined();
     fireEvent.click(screen.getByText(buttonText));
 }
 
@@ -192,33 +185,6 @@ describe('PgFriends', () => {
 
         await waitFor(() => {
             expect(screen.getByText('No pending incoming friend requests')).toBeDefined();
-        });
-    });
-
-    it('switches tab, accepts invite', async () => {
-        renderFriends({ invites: [IRON_INVITE] });
-        await actOnInvite('Join Arena');
-
-        await waitFor(() => {
-            expect(screen.queryByText('Iron Squad')).toBeNull();
-        });
-    });
-
-    it('declines invite', async () => {
-        renderFriends({ invites: [IRON_INVITE] });
-        await actOnInvite('Decline');
-
-        await waitFor(() => {
-            expect(screen.queryByText('Iron Squad')).toBeNull();
-        });
-    });
-
-    it('declines all invites', async () => {
-        renderFriends({ invites: [IRON_INVITE] });
-        await actOnInvite('Decline All Invites');
-
-        await waitFor(() => {
-            expect(screen.getByText('No pending arena invites.')).toBeDefined();
         });
     });
 

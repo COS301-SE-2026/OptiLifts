@@ -138,10 +138,10 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
         }
         else
         {
-            return new VisionAnomaly(error.Trim(), severity) 
-            { 
-                StartFrame = startFrame, 
-                EndFrame = endFrame 
+            return new VisionAnomaly(error.Trim(), severity)
+            {
+                StartFrame = startFrame,
+                EndFrame = endFrame
             };
         }
     }

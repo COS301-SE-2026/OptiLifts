@@ -436,11 +436,11 @@ export default function FriendsManagementPage(){
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredFriends.map((friend) => (
-                            <Card key={friend.id} onClick={() => handleOpenFriendDrawer(friend)} className="bg-surface hover:bg-surface-2 transition cursor-pointer border-border group p-5 shadow-sm flex flex-col justify-between">
+                            <Card key={friend.id} className="bg-surface border-border p-5 shadow-sm flex flex-col justify-between">
                                 <CardContent className="p-0">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-3.5">
-                                            <AthleteAvatar initials={friend.initials} name={friend.name} avatarUrl={friend.avatarUrl} size="lg" className="group-hover:border-brand transition"/>
+                                            <AthleteAvatar initials={friend.initials} name={friend.name} avatarUrl={friend.avatarUrl} size="lg"/>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <strong className="font-sans font-bold text-foreground text-base">

@@ -62,6 +62,8 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
+          background_color: '#ffffff',
+          theme_color: '#CC0022',
           icons: [ //this is a placeholder for our PWA icon, replace with a 192x512px icon 
             {
               src: '/favicon.svg',

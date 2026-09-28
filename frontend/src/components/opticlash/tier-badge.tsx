@@ -25,6 +25,7 @@ export function TierBadge({
     }[size];
     switch(tier){
         case 'Overload Master':
+        case 'OverloadMaster':
             return(
                 <span className={`rounded-full font-bold bg-overload-master/15 text-overload-master border border-overload-master/50 inline-flex items-center justify-center uppercase tracking-wide font-sans ${sizeClasses} ${className}`}>
                     <Award className={iconClasses}/>

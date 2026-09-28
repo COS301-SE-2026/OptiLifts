@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig(({ mode }) => {
   const rootDir = fileURLToPath(new URL('..', import.meta.url))
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => {
         workbox: {
           inlineWorkboxRuntime: true,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          globIgnores: ['**/mediapipe/**'],
           skipWaiting: true,
           clientsClaim: true,
           runtimeCaching: [
@@ -32,11 +34,21 @@ export default defineConfig(({ mode }) => {
               // adaptImgUrl rewrites the container hostname to 127.0.0.1 before the browser fetches.
               urlPattern: ({ url }) =>
                 url.hostname.endsWith('.blob.core.windows.net') ||
-                (url.hostname === '127.0.0.1' && url.port === '10000'),
+                (url.hostname === '127.0.0.1' && url.port === '10000'),              
               handler: 'CacheFirst',
               options: {
                 cacheName: 'exercise-images',
                 expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              // mediapipe wasm + pose model are ~10MB and excluded from precache (globIgnores), so cache on first use
+              urlPattern: ({ url }) => url.pathname.startsWith('/mediapipe/'),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'mediapipe',
+                expiration: { maxEntries: 10 },
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
@@ -60,7 +72,18 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
-
+      viteStaticCopy({
+        targets: [
+          {
+            src: [
+              'node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.*',
+              'node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal.*',
+            ],
+            dest: 'mediapipe/wasm',
+            rename: { stripBase: true },
+          },
+        ],
+      }),
       env.SENTRY_AUTH_TOKEN ? sentryVitePlugin({ //only runs if env variable which is only in CD
         authToken: process.env.SENTRY_AUTH_TOKEN,
         org: "hatrock-un",

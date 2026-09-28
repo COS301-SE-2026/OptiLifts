@@ -56,11 +56,13 @@ vi.mock('@microsoft/signalr', () => ({
         const builder = {
             withUrl: () => builder,
             withAutomaticReconnect: () => builder,
+            configureLogging: () => builder,
             build: () => mockConn,
         };
         return builder;
     }),
     HubConnectionState: { Connected: 'Connected', Disconnected: 'Disconnected' },
+    LogLevel: { Warning: 3, Information: 2, Error: 4, None: 6 },
 }));
 
 function mockFriendEps({

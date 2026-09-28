@@ -243,7 +243,13 @@ dotnet test /home/u24664155/COS301/OptiLifts/backend/core-api/OptiLifts.Tests --
 - ![Qualys SSL Server Test](../images/nfr-testing/sllreport.png)
 
 ### NFR 3.4: 
-- All tests pass when running `pnpm test` which covers the tests that ensure the NFRs are met. 
+- The command run: 
+```bash
+dotnet test /home/u24664155/COS301/OptiLifts/backend/core-api/OptiLifts.Tests --filter "AuthEndpointIntegrationTests"
+```
+
+- Results: 
+- ![AuthEndpointIntegrationTests](../images/nfr-testing/nfr3-4-result.png)
 
 ### NFR 4.1: 
 - ![CI speeds](../images/nfr-testing/ci-time.png)

@@ -109,7 +109,7 @@ public class VisionControllerTests
             .ReturnsAsync(true);
 
 
-        var result = await _controller.WorkerResult(request, CancellationToken.None);
+        var result = await _controller.WorkerResult(request, "dummy-secret", CancellationToken.None);
 
 
         result.Should().BeOfType<OkObjectResult>();
@@ -130,7 +130,7 @@ public class VisionControllerTests
             .ReturnsAsync(false);
 
 
-        var result = await _controller.WorkerResult(request, CancellationToken.None);
+        var result = await _controller.WorkerResult(request, "dummy-secret", CancellationToken.None);
 
 
         result.Should().BeOfType<NotFoundObjectResult>();
@@ -147,7 +147,7 @@ public class VisionControllerTests
         };
 
 
-        var result = await _controller.WorkerResult(request, CancellationToken.None);
+        var result = await _controller.WorkerResult(request, "dummy-secret", CancellationToken.None);
 
 
         result.Should().BeOfType<BadRequestObjectResult>();

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
-    echo "Usage: ./demo_decrypt.sh <base64_encrypted_text>"
+if [[ -z "$1" ]]; then
+    echo "Usage: ./demo_decrypt.sh <base64_encrypted_text>" >&2
     exit 1
 fi
 
-if [ -z "$DB_ENCRYPTION_KEY" ]; then
-    echo "Error: DB_ENCRYPTION_KEY environment variable is not set."
+if [[ -z "$DB_ENCRYPTION_KEY" ]]; then
+    echo "Error: DB_ENCRYPTION_KEY environment variable is not set." >&2
     exit 1
 fi
 

@@ -212,13 +212,13 @@ describe('PgFriends', () => {
         expect(screen.getByText('Add Friend by their Code')).toBeDefined();
     });
 
-    it('opens drawer on card click', async () => {
+    it('opens drawer on inspect profile click', async () => {
         renderFriends({ friends: [ALICE_FRIEND] });
 
         await waitFor(() => {
             expect(screen.getByText('Alice')).toBeDefined();
         });
-        fireEvent.click(screen.getByText('Alice'));
+        fireEvent.click(screen.getByText('Inspect Profile'));
         expect(await screen.findByLabelText(/Athlete profile for Alice/i)).toBeDefined();
     });
 });

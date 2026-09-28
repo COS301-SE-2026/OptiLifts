@@ -197,7 +197,7 @@ This pattern applies wherever an object behaves differently depending on what ph
 | **NFR3.3** | Use HTTPS (TLS 1.3) for all data transmission | Azure Container Apps Managed Certificates & SSL Termination | Qualys SSL Server Test | Grade A (TLS 1.3 Active) / Pass |
 | **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
 | **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(<15 minutes) + CD(<10 minutes) |
-| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 85.7% |
+| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 87.4% line coverage |
 | **NFR5.1** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
 
 ### NFR Testing Evidence
@@ -295,6 +295,27 @@ Profile
 
 Help menu
 ![Help menu](../images/nfr-testing/lighthouse-reports/help-menu.png)
+
+OptiClash Home page
+![OptiClash home page](../images/nfr-testing/lighthouse-reports/opticlash-homepage.png)
+
+OptiClash Leagues
+![OptiClash leagues page](../images/nfr-testing/lighthouse-reports/opticlash-leagues.png)
+
+OptiClash Arenas
+![OptiClash arenas page](../images/nfr-testing/lighthouse-reports/opticlash-arena.png)
+
+OptiClash View of all Duels 
+![OptiClash duels page](../images/nfr-testing/lighthouse-reports/opticlash-all-duels.png)
+
+OptiClash Duel
+![OptiClash duel page](../images/nfr-testing/lighthouse-reports/opticlash-duel.png)
+
+OptiClash Friends
+![OptiClash friends page](../images/nfr-testing/lighthouse-reports/opticlash-friends.png)
+
+OptiVision
+![OptiVision page](../images/nfr-testing/lighthouse-reports/optivision.png)
 
 
 ### Constraints

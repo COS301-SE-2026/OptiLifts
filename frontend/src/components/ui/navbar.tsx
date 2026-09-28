@@ -1,29 +1,37 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/auth-context'
 import { getDraftFromStorage } from '@/lib/session-drafts'
-import { useEffect, useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Menu, X, User, HelpCircle } from 'lucide-react'
+import { CircularProfileImage } from '@/components/ui/circular-image'
+import { cn } from '@/lib/utils'
 
-const PUBLIC_LINKS = [
+interface NavLinkItem {
+  to: string
+  label: string
+  icon?: ReactNode
+}
+
+const PUBLIC_LINKS: NavLinkItem[] = [
   { to: '/register', label: 'Register' },
   { to: '/login', label: 'Login' },
 ]
 
-const LINKS = [
+const LINKS: NavLinkItem[] = [
+  { to: '/help',  label: 'Help', icon: <HelpCircle className="w-5 h-5" /> },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/workouts',  label: 'Workouts'  },
   { to: '/schedule',  label: 'Schedule'  },
-  { to: '/clash', label: 'OptiClash' },
   { to: '/progression',   label: 'Progression'   },
+  { to: '/clash', label: 'OptiClash' },
   { to: '/form-check',   label: 'OptiVision'   },
-  { to: '/help',  label: 'Help'  },
-  { to: '/profile',   label: 'Profile'   },
+  { to: '/profile',   label: 'Profile', icon: <User className="w-5 h-5" /> },
 ]
 
 
 export function Navbar() {
   const { pathname } = useLocation()
-  const { isAuthenticated} = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const activeDraft = getDraftFromStorage()
   const [isMenuOpen, setMenuOpen] = useState(false)
   const [lastPathname, setLastPathname] = useState(pathname)
@@ -33,7 +41,17 @@ export function Navbar() {
     setMenuOpen(false)
   }
 
-  const navigationLinks = isAuthenticated ? LINKS : PUBLIC_LINKS
+  const isProfileActive = pathname.startsWith('/profile')
+  const profileIcon = (
+    <CircularProfileImage src={user?.avatarUrl} alt={user?.name || 'Profile'}
+      className={cn('size-11 rounded-full transition-all duration-150',
+        isProfileActive ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background border-red-500' : 'border-border hover:border-foreground/50'
+      )}
+      fallbackIcon={<User className="size-6 text-muted-foreground" />}/>
+  )
+  const navigationLinks = (isAuthenticated ? LINKS : PUBLIC_LINKS).map((link) =>
+    link.to === '/profile' ? { ...link, icon: profileIcon } : link
+  )
   const homeLink = isAuthenticated ? '/dashboard' : '/'
 
   useEffect(() => {
@@ -51,11 +69,16 @@ export function Navbar() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isMenuOpen])
 
-  const linkClass = (to: string) =>
-    [
-      'px-5 py-2 font-sans text-[13px] font-semibold uppercase tracking-[1px] whitespace-nowrap no-underline transition-colors duration-150 border-b-2 -mb-[2px]',
+  const linkClass = (to: string, hasIcon?: boolean) => {
+    if (to === '/profile') {
+      return 'inline-flex items-center justify-center p-1 no-underline transition-all duration-150 rounded-full'
+    }
+    return [
+      'font-sans text-[13px] font-semibold uppercase tracking-[1px] whitespace-nowrap no-underline transition-colors duration-150 border-b-2 -mb-[2px] inline-flex items-center justify-center',
+      hasIcon ? 'px-3.5 py-2' : 'px-5 py-2',
       pathname.startsWith(to) ? 'text-brand border-brand' : 'text-muted-foreground border-transparent hover:text-foreground',
     ].join(' ')
+  }
 
   const mobileLinkClass = (to: string) =>
     [
@@ -83,9 +106,10 @@ export function Navbar() {
           </Link>
         )}
 
-        {navigationLinks.map(({ to, label }) => (
-          <Link key={to} to={to} className={linkClass(to)}>
-            {label}
+        {navigationLinks.map(({ to, label, icon }) => (
+          <Link key={to} to={to} aria-label={label} title={label}
+            className={linkClass(to, Boolean(icon))}>
+            {icon ?? label}
           </Link>
         ))}
         

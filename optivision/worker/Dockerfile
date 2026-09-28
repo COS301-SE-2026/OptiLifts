@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 
 RUN INSTALL_CMD="pip install --no-cache-dir --only-binary :all: -r requirements.txt" \
-    && eval $INSTALL_CMD \
+    && eval "$INSTALL_CMD" \
     && addgroup --system app \
     && adduser --system --group app
 

@@ -108,7 +108,7 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
                   state.issues.map((issue) => (
                     <li key={issue} className="flex items-center gap-3">
                       <XCircle className="h-4 w-4 text-destructive shrink-0" />
-                      <span className="truncate leading-tight">{issue}</span>
+                      <span className="truncate leading-tight capitalize">{issue.split('|')[0].replaceAll('_', ' ')}</span>
                     </li>
                   ))
                 ) : (

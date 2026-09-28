@@ -129,6 +129,8 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
     {
         string error = ExtractStringProperty(root, "error", "name");
         double severity = ExtractDoubleProperty(root, "severity", "confidence");
+        int startFrame = ExtractIntProperty(root, "start_frame", "startFrame");
+        int endFrame = ExtractIntProperty(root, "end_frame", "endFrame");
 
         if (string.IsNullOrWhiteSpace(error))
         {
@@ -136,7 +138,11 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
         }
         else
         {
-            return new VisionAnomaly(error.Trim(), severity);
+            return new VisionAnomaly(error.Trim(), severity) 
+            { 
+                StartFrame = startFrame, 
+                EndFrame = endFrame 
+            };
         }
     }
 
@@ -151,6 +157,19 @@ public class VisionAnomalyListJsonConverter : JsonConverter<List<VisionAnomaly>>
             return s2;
         }
         return string.Empty;
+    }
+
+    private static int ExtractIntProperty(JsonElement root, string primary, string fallback)
+    {
+        if (root.TryGetProperty(primary, out var p1) && p1.TryGetInt32(out var i1))
+        {
+            return i1;
+        }
+        if (root.TryGetProperty(fallback, out var p2) && p2.TryGetInt32(out var i2))
+        {
+            return i2;
+        }
+        return 0;
     }
 
     private static double ExtractDoubleProperty(JsonElement root, string primary, string fallback)

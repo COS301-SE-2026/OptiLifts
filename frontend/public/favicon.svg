@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 605 544">
 
-<!-- Solid white background for home screen / PWA icon -->
-<rect width="100%" height="100%" fill="#FFFFFF"/>
-
 <!-- OptiLifts logo used as favicon -->
 <path fill-rule="evenodd"
 	d="M 287,43 L 133,150 L 133,390 L 287,490 Z M 234,141 L 178,178 L 178,360 L 234,392 Z"

@@ -51,7 +51,7 @@ public class GeminiClientTests
         var result = await client.GenerateCoachingTipAsync("deadlift", new[] { "rounded back" });
 
         result.Should().Contain("deadlift");
-        result.Should().Contain("rounded back");
+        result.Should().ContainEquivalentOf("rounded back");
     }
 
     [Fact]

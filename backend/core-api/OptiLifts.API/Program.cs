@@ -115,7 +115,15 @@ builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 builder.Services.AddAiIntegrations(builder.Configuration);
 builder.Services.AddRateLimitingServices(builder.Configuration);
 
-builder.Services.AddSignalR();
+var signalRConn = builder.Configuration["SIGNALR_CONNECTION_STRING"] ?? Environment.GetEnvironmentVariable("SIGNALR_CONNECTION_STRING");
+if (!string.IsNullOrEmpty(signalRConn))
+{
+    builder.Services.AddSignalR().AddAzureSignalR(signalRConn);
+}
+else
+{
+    builder.Services.AddSignalR();
+}
 builder.Services.AddScoped<OptiLifts.Application.Clash.IClashNotifier, OptiLifts.API.Hubs.SignalRClashNotifier>();
 
 var app = builder.Build();

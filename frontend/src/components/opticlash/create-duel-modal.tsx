@@ -5,6 +5,7 @@ import { Check, Swords, X, Activity, Calendar, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const EXERCISE_OPTIONS = [
     'Barbell Back Squat',
@@ -43,6 +44,28 @@ export function CreateDuelModal({
 
     const [submitted, setSubmitted] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState<boolean>(false);
+
+    const isDirty = !submitted && (
+        exercise !== 'Barbell Back Squat' ||
+        targetType !== 'E1RMGainPercent' ||
+        durationDays !== 7 ||
+        (defaultFriend?.id ? selectedFriendId !== defaultFriend.id : (friends.length > 0 && selectedFriendId !== friends[0]?.id))
+    );
+
+    const handleModalClose = () => {
+        setSubmitted(false);
+        setIsSubmitting(false);
+        onClose();
+    };
+
+    const handleRequestClose = () => {
+        if (isDirty) {
+            setShowDiscardConfirm(true);
+        } else {
+            handleModalClose();
+        }
+    };
 
     useEffect(() => {
         if (!isOpen) {
@@ -51,7 +74,11 @@ export function CreateDuelModal({
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
-                onClose();
+                if (showDiscardConfirm) {
+                    setShowDiscardConfirm(false);
+                    return;
+                }
+                handleRequestClose();
             }
         };
         window.addEventListener("keydown", handleKeyDown);
@@ -162,15 +189,9 @@ export function CreateDuelModal({
 
     })
 
-    const handleModalClose = () => {
-        setSubmitted(false);
-        setIsSubmitting(false);
-        onClose();
-    };
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={handleModalClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full" />
+            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={handleRequestClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full" />
             <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5 cursor-default">
                 {/* modal header */}
                 <div className="flex items-center justify-between border-b border-border pb-4">
@@ -183,7 +204,7 @@ export function CreateDuelModal({
                             Start a progressive overload duel against a gym friend.
                         </p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={handleModalClose}
+                    <Button variant="ghost" size="icon" onClick={handleRequestClose}
                         className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" aria-label="Close" disabled={isSubmitting}>
                         <X className="w-4 h-4" />
                     </Button>
@@ -284,6 +305,20 @@ export function CreateDuelModal({
                             </form>
                         )}
             </Card>
+
+            <ConfirmDialog
+                isOpen={showDiscardConfirm}
+                onClose={() => setShowDiscardConfirm(false)}
+                onConfirm={() => {
+                    setShowDiscardConfirm(false);
+                    handleModalClose();
+                }}
+                title="Discard Changes?"
+                description="Are you sure? You will lose your progress."
+                confirmText="Discard"
+                cancelText="Keep Editing"
+                variant="danger"
+            />
         </div>
     );
 }

@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent
 } from './dropdown-menu'
+import { ConfirmDialog } from './confirm-dialog'
 
 const formatDateToYMD = (date: Date) =>{
     const year = date.getFullYear()
@@ -87,6 +88,17 @@ export function SelectWorkoutDialog({
     const [repeatUntil, setRepeatUntil] = useState<string>('')
     const [repeatType, setRepeatType] = useState<'Day' | 'Week'| 'Month'>('Week')
     const [scheduledTime, setScheduledTime] = useState<string>('09:00')
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+
+    const isDirty = selectedId !== null || isRepeating || scheduledTime !== '09:00'
+
+    const handleRequestClose = () => {
+        if (isDirty) {
+            setShowDiscardConfirm(true)
+        } else {
+            onClose()
+        }
+    }
 
     useEffect(()=>{
         if(isOpen) {
@@ -98,6 +110,21 @@ export function SelectWorkoutDialog({
             document.body.classList.remove('overflow-hidden')
         }
     }, [isOpen])
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                if (showDiscardConfirm) {
+                    setShowDiscardConfirm(false)
+                    return
+                }
+                handleRequestClose();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, isDirty, showDiscardConfirm]);
 
 
     if (!isOpen) {
@@ -177,13 +204,14 @@ export function SelectWorkoutDialog({
 
     return (
         <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
+            <button type="button" tabIndex={-1} aria-label="Close dialog backdrop" onClick={handleRequestClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full" disabled={isScheduling} />
             <dialog className="mx-auto w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl flex flex-col max-h-[90%] animate-in fade-in zoom-in-95 duration-200 overflow-y-auto z-50" 
             open aria-modal="true" 
                 aria-labelledby="select-workout-title">
                 <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-4">
                     <h2 id="select-workout-title" className="font-display text-2xl tracking-wide text-foreground">Select Workout</h2>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full transition-all" 
-                        onClick={onClose}
+                        onClick={handleRequestClose}
                         disabled={isScheduling}
                         aria-label="Close dialog"><X size={18}/></Button>
                 </div>
@@ -258,7 +286,7 @@ export function SelectWorkoutDialog({
         <div className="mt-6 flex justify-end gap-3 border-t border-border/60 pt-4">
                     <Button 
                         variant="secondary"
-                        onClick={onClose}
+                        onClick={handleRequestClose}
                         disabled={isScheduling}
                         className ="text-xs uppercase tracking-wider">
                             Cancel
@@ -271,6 +299,20 @@ export function SelectWorkoutDialog({
                     </Button>
                     </div>
         </dialog>
+
+        <ConfirmDialog
+            isOpen={showDiscardConfirm}
+            onClose={() => setShowDiscardConfirm(false)}
+            onConfirm={() => {
+                setShowDiscardConfirm(false);
+                onClose();
+            }}
+            title="Discard Changes?"
+            description="Are you sure? You will lose your progress."
+            confirmText="Discard"
+            cancelText="Keep Editing"
+            variant="danger"
+        />
         </div>
     )
 }

@@ -191,6 +191,7 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
             setProfileChanged(false);
             setPreferenceChanged(false);
             setSecurityChanged(false);
+            setRepRangesChanged(false);
             setProfilePicDeleted(false);
 
             setProfileError(null);
@@ -488,6 +489,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
+    const isDirty = profileChanged || preferenceChanged || securityChanged || repRangesChanged || selectedImg !== null || profilePicDeleted || (initialProfilePicUrl !== null && selectedImgUrl === null);
+
     return {
         profile, updateProfile,
         preferences, updatePreferences,
@@ -498,8 +501,8 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         profileError, preferencesError, securityError, generalError,
         handleSave,
         revertTheme,
-        repRanges, updateRepRange, repRangesError
-
+        repRanges, updateRepRange, repRangesError,
+        isDirty,
     };
 }
 
@@ -887,12 +890,11 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         profileError, preferencesError, securityError, generalError,
         handleSave,
         revertTheme, 
-        repRanges, updateRepRange, repRangesError
+        repRanges, updateRepRange, repRangesError,
+        isDirty,
     } = useSettingsLogic(isOpen, onClose);
 
-    if (!isOpen) {
-        return null;
-    }
+    const [isUnsavedConfirmOpen, setIsUnsavedConfirmOpen] = useState(false);
 
     const handleClosePopup = () => {
         // upload img but cancle
@@ -908,13 +910,41 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         onClose();
     };
 
+    const handleRequestClose = () => {
+        if (isDirty) {
+            setIsUnsavedConfirmOpen(true);
+        } else {
+            handleClosePopup();
+        }
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                if (isLogoutConfirmOpen || isDeleteConfirmOpen) return;
+                if (isUnsavedConfirmOpen) {
+                    setIsUnsavedConfirmOpen(false);
+                    return;
+                }
+                handleRequestClose();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, isDirty, isLogoutConfirmOpen, isDeleteConfirmOpen, isUnsavedConfirmOpen]);
+
+    if (!isOpen) {
+        return null;
+    }
+
     return (
         <div className="fixed top-0 lg:top-20 inset-x-0 bottom-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-4 sm:p-6">
             <button
                 type="button"
                 className="absolute inset-0 block w-full cursor-default outline-none bg-transparent"
                 aria-label="Close settings"
-                onClick={handleClosePopup}
+                onClick={handleRequestClose}
                 tabIndex={-1}
             />
 
@@ -922,7 +952,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
 
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <h2 className="text-xl font-bold font-display uppercase tracking-wider text-foreground">Settings</h2>
-                    <button onClick={handleClosePopup} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                    <button onClick={handleRequestClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
                         <X size={20} />
                     </button>
                 </div>
@@ -994,7 +1024,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                         </div>
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                            <Button type="button" variant="secondary" onClick={handleClosePopup} disabled={isSaving}>Cancel</Button>
+                            <Button type="button" variant="secondary" onClick={handleRequestClose} disabled={isSaving}>Cancel</Button>
                             <OfflineTooltip isOnline={isOnline}>
                                 <Button type="submit" disabled={isSaving || !isOnline}>{isSaving ? "Saving..." : "Save Changes"}</Button>
                             </OfflineTooltip>
@@ -1028,6 +1058,20 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
                 description="Are you sure you want to delete your account? This action cannot be undone and you will lose all of your data forever."
                 confirmText={(isDeleting) ? "Deleting..." : "Delete Account"}
                 cancelText="Cancel"
+                variant="danger"
+            />
+
+            <ConfirmDialog
+                isOpen={isUnsavedConfirmOpen}
+                onClose={() => setIsUnsavedConfirmOpen(false)}
+                onConfirm={() => {
+                    setIsUnsavedConfirmOpen(false);
+                    handleClosePopup();
+                }}
+                title="Discard Changes?"
+                description="Are you sure? You will lose your progress."
+                confirmText="Discard"
+                cancelText="Keep Editing"
                 variant="danger"
             />
         </div>

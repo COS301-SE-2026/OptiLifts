@@ -23,6 +23,7 @@ import {
 import { customFetch } from '@/lib/custom-fetch'
 import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 import { adaptImgUrl } from '@/lib/utils'
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const ensureOption = (options: readonly string[], value: string): string[] => {
   if (!value || options.includes(value)) {
@@ -152,7 +153,36 @@ export function CreateExercise({
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>(initialValues?.secondaryMuscles ?? [])
   const [activeMusclePicker, setActiveMusclePicker] = useState<"primary" | "secondary" | null>(null)
   const [muscleSearchQuery, setMuscleSearchQuery] = useState("")
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   const isOnline = useOnlineStatus()
+
+  const isDirty = useMemo(() => {
+    const initialName = initialValues?.name ?? ""
+    const initialType = initialValues?.exerciseType ?? (effectiveExerciseTypeOptions[0]?.value ?? "WeightReps")
+    const initialEquip = initialValues?.equipment ?? (effectiveEquipmentOptions[0] ?? "None")
+    const initialImg = initialValues?.imageUrl ?? null
+    const initialPrimary = initialValues?.primaryMuscle ?? null
+    const initialSecondary = initialValues?.secondaryMuscles ?? []
+
+    if (name !== initialName) return true
+    if (exerciseType !== initialType) return true
+    if (equipment !== initialEquip) return true
+    if (selectedImageFile !== null) return true
+    if (selectedImageUrl !== initialImg) return true
+    if (primaryMuscle !== initialPrimary) return true
+    if (secondaryMuscles.length !== initialSecondary.length) return true
+    if (secondaryMuscles.some((m) => !initialSecondary.includes(m))) return true
+
+    return false
+  }, [name, exerciseType, equipment, selectedImageFile, selectedImageUrl, primaryMuscle, secondaryMuscles, initialValues, effectiveExerciseTypeOptions, effectiveEquipmentOptions])
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true)
+    } else {
+      onCancel()
+    }
+  }
 
   const filteredMuscles = useMemo(() => {
     if (!muscleSearchQuery.trim()) return MUSCLE_GROUPS
@@ -207,9 +237,13 @@ export function CreateExercise({
     if (!isOpen) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (showDiscardConfirm) {
+          setShowDiscardConfirm(false)
+          return
+        }
         if (isTypePickerOpen) setIsTypePickerOpen(false)
         else if (activeMusclePicker) setActiveMusclePicker(null)
-        else onCancel()
+        else handleRequestClose()
         return
       }
 
@@ -233,7 +267,7 @@ export function CreateExercise({
 
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
-  }, [isOpen, onCancel, isTypePickerOpen, activeMusclePicker])
+  }, [isOpen, onCancel, isTypePickerOpen, activeMusclePicker, isDirty, showDiscardConfirm])
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
@@ -345,7 +379,7 @@ export function CreateExercise({
   return (
     <>
       {!isTypePickerOpen && !activeMusclePicker && (
-        <CreateExerciseBackdrop zIndexClassName="z-50" backdropClassName="bg-black/50 backdrop-blur-xs" onDismiss={onCancel} focusRed>
+        <CreateExerciseBackdrop zIndexClassName="z-50" backdropClassName="bg-black/50 backdrop-blur-xs" onDismiss={handleRequestClose} focusRed>
           <form
             ref={formRef}
             aria-labelledby="create-exercise-title"
@@ -355,7 +389,7 @@ export function CreateExercise({
           >
             <div className="mb-3.5 sm:mb-4 flex items-center justify-between gap-4 shrink-0 px-1">
               <h2 id="create-exercise-title" className="text-xl sm:text-2xl font-bold leading-none">Create Custom Exercise</h2>
-              <Button type="button" variant="icon" size="icon" aria-label="Close" onClick={onCancel} className="h-8 w-8 text-muted-foreground">
+              <Button type="button" variant="icon" size="icon" aria-label="Close" onClick={handleRequestClose} className="h-8 w-8 text-muted-foreground">
                 <X size={16} />
               </Button>
             </div>
@@ -435,7 +469,7 @@ export function CreateExercise({
             </div>
 
             <div className="mt-4 sm:mt-5 flex flex-wrap justify-end gap-2.5 sm:gap-3 shrink-0 pt-2 border-t border-border/50">
-              <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
+              <Button type="button" variant="secondary" onClick={handleRequestClose}>Cancel</Button>
               <OfflineTooltip isOnline={isOnline}>
                 <Button type="submit" disabled={!name.trim() || !primaryMuscle || isSaving || !isOnline}>Save Exercise</Button>
               </OfflineTooltip>
@@ -549,6 +583,22 @@ export function CreateExercise({
           </div>
         </CreateExerciseBackdrop>
       ) : null}
+
+      {showDiscardConfirm && (
+        <ConfirmDialog
+          isOpen={showDiscardConfirm}
+          onClose={() => setShowDiscardConfirm(false)}
+          onConfirm={() => {
+            setShowDiscardConfirm(false)
+            onCancel()
+          }}
+          title="Discard Changes?"
+          description="Are you sure? You will lose your progress."
+          confirmText="Discard"
+          cancelText="Keep Editing"
+          variant="danger"
+        />
+      )}
     </>
   )
 }

@@ -75,8 +75,8 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
     },
     {
         id: 'tut-10',
-        title: 'Otivision AI Coach',
-        description: 'Learn how to use the Otivision AI Coach to get personalised recommendations for your workouts.',
+        title: 'Optivision AI Coach',
+        description: 'Learn how to use the Optivision AI Coach to get personalised form feedback on your compound movements.',
         duration: '1:07',
         youtubeId: 'tlnTZSp_30E', fallbackVideoUrl: '',
     }

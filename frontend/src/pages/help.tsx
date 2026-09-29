@@ -72,6 +72,13 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how OptiLifts detects plateaus and regressions in your lifts, and how to swap out a stalled exercise.',
         duration: '2:05',
         youtubeId: 'z9llkYJQq5c', fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-10',
+        title: 'Otivision AI Coach',
+        description: 'Learn how to use the Otivision AI Coach to get personalised recommendations for your workouts.',
+        duration: '1:07',
+        youtubeId: 'tlnTZSp_30E', fallbackVideoUrl: '',
     }
 ]
 

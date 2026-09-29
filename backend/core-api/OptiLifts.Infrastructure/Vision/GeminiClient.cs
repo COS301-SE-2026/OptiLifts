@@ -72,12 +72,12 @@ public class GeminiClient : IGeminiClient
         var endpoint = $"v1beta/models/{TargetModel}:generateContent?key={_apiKey}";
 
         var result = await ExecuteWithRetriesAsync(endpoint, requestBody, cancellationToken);
-        
+
         if (!string.IsNullOrWhiteSpace(result))
         {
             return result;
         }
-        
+
         return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
     }
 
@@ -101,13 +101,13 @@ public class GeminiClient : IGeminiClient
                 {
                     return result.Value;
                 }
-                
+
                 if (result.ShouldRetry)
                 {
                     await Task.Delay(result.DelayMs, cancellationToken);
                     continue;
                 }
-                
+
                 return null;
             }
             catch (Exception ex) when (IsTransientException(ex))
@@ -125,10 +125,10 @@ public class GeminiClient : IGeminiClient
     }
 
     private async Task<(bool IsSuccess, string? Value, bool ShouldRetry, int DelayMs)> TryExecuteOnceAsync(
-        string endpoint, 
-        object requestBody, 
-        int attempt, 
-        int maxRetries, 
+        string endpoint,
+        object requestBody,
+        int attempt,
+        int maxRetries,
         CancellationToken cancellationToken)
     {
         using var response = await _httpClient.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
@@ -144,7 +144,7 @@ public class GeminiClient : IGeminiClient
 
         var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
         var tip = ExtractTipFromJson(jsonDoc);
-        
+
         return (true, tip, false, 0);
     }
 
@@ -155,9 +155,9 @@ public class GeminiClient : IGeminiClient
 
     private static bool IsTransientException(Exception ex)
     {
-        return ex is OperationCanceledException || 
-               ex is TimeoutException || 
-               ex is HttpRequestException || 
+        return ex is OperationCanceledException ||
+               ex is TimeoutException ||
+               ex is HttpRequestException ||
                ex is JsonException;
     }
 
@@ -170,7 +170,7 @@ public class GeminiClient : IGeminiClient
         if (!content.TryGetProperty("parts", out var parts)) return null;
         if (parts.GetArrayLength() == 0) return null;
         if (!parts[0].TryGetProperty("text", out var textProp)) return null;
-        
+
         return textProp.GetString()?.Trim();
     }
 }

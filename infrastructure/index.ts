@@ -212,7 +212,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
@@ -230,7 +230,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     },
     template: {
         scale: {
-            minReplicas: 1,
+            minReplicas: 0,
             maxReplicas: 2,
         },
         containers: [{
@@ -256,7 +256,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: false, // can only be accessed by core-api 
             targetPort: 8000,
@@ -273,7 +273,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     },
     template: {
         scale: {
-            minReplicas: 1,
+            minReplicas: 0,
             maxReplicas: 2,
         },
         containers: [{

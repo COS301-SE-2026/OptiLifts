@@ -118,7 +118,11 @@ builder.Services.AddRateLimitingServices(builder.Configuration);
 var signalRConn = builder.Configuration["SIGNALR_CONNECTION_STRING"] ?? Environment.GetEnvironmentVariable("SIGNALR_CONNECTION_STRING");
 if (!string.IsNullOrEmpty(signalRConn))
 {
-    builder.Services.AddSignalR().AddAzureSignalR(signalRConn);
+    builder.Services.AddSignalR().AddAzureSignalR(options =>
+    {
+        options.ConnectionString = signalRConn;
+        options.ServerConnectionCount = 1;
+    });
 }
 else
 {

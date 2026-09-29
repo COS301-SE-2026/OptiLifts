@@ -1,5 +1,5 @@
 import { AlertCircle, Check, KeyRound, UserPlus, X } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
@@ -24,13 +24,13 @@ export function AddFriendModal({
 
     const isDirty = friendCode.trim().length > 0 && status !== 'success';
 
-    const handleRequestClose = () => {
+    const handleRequestClose = useCallback(() => {
         if (isDirty) {
             setShowDiscardConfirm(true);
         } else {
             onClose();
         }
-    };
+    }, [isDirty, onClose]);
 
     useEffect(() => {
         if(!isOpen) {
@@ -47,7 +47,7 @@ export function AddFriendModal({
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onClose, isDirty, showDiscardConfirm]);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
     if (!isOpen){
         return null;

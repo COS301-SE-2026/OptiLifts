@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Eye, EyeOff, ImagePlus, Loader2, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -480,14 +480,14 @@ function useSettingsLogic(isOpen: boolean, onClose: () => void) {
         }
     };
 
-    const revertTheme = () => {
+    const revertTheme = useCallback(() => {
         if (initialPreferencesRef.current) {
             document.documentElement.classList.toggle(
                 "dark",
                 initialPreferencesRef.current.theme === "dark"
             );
         }
-    };
+    }, []);
 
     const isDirty = profileChanged || preferenceChanged || securityChanged || repRangesChanged || selectedImg !== null || profilePicDeleted || (initialProfilePicUrl !== null && selectedImgUrl === null);
 
@@ -896,7 +896,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
 
     const [isUnsavedConfirmOpen, setIsUnsavedConfirmOpen] = useState(false);
 
-    const handleClosePopup = () => {
+    const handleClosePopup = useCallback(() => {
         // upload img but cancle
         if (selectedImgUrl?.startsWith("blob:")) {
             URL.revokeObjectURL(selectedImgUrl);
@@ -908,15 +908,15 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         revertTheme();
 
         onClose();
-    };
+    }, [selectedImgUrl, setSelectedImg, setSelectedImgUrl, revertTheme, onClose]);
 
-    const handleRequestClose = () => {
+    const handleRequestClose = useCallback(() => {
         if (isDirty) {
             setIsUnsavedConfirmOpen(true);
         } else {
             handleClosePopup();
         }
-    };
+    }, [isDirty, handleClosePopup]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -932,7 +932,7 @@ export function UserSettingsPopup({ isOpen, onClose }: UserSettingsPopupProps) {
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, isDirty, isLogoutConfirmOpen, isDeleteConfirmOpen, isUnsavedConfirmOpen]);
+    }, [isOpen, handleRequestClose, isLogoutConfirmOpen, isDeleteConfirmOpen, isUnsavedConfirmOpen]);
 
     if (!isOpen) {
         return null;

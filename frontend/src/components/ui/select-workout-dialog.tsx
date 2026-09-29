@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from './button'
 import { X, Loader2, ChevronDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './card'
@@ -92,13 +92,13 @@ export function SelectWorkoutDialog({
 
     const isDirty = selectedId !== null || isRepeating || scheduledTime !== '09:00'
 
-    const handleRequestClose = () => {
+    const handleRequestClose = useCallback(() => {
         if (isDirty) {
             setShowDiscardConfirm(true)
         } else {
             onClose()
         }
-    }
+    }, [isDirty, onClose])
 
     useEffect(()=>{
         if(isOpen) {
@@ -124,7 +124,7 @@ export function SelectWorkoutDialog({
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, isDirty, showDiscardConfirm]);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
 
     if (!isOpen) {

@@ -1,5 +1,5 @@
 import { customFetch } from "@/lib/custom-fetch";
-import { useState, useEffect, type SyntheticEvent } from "react";
+import { useState, useEffect, useCallback, type SyntheticEvent } from "react";
 import { toast } from "../ui/alert";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -42,13 +42,13 @@ export function CreateJoinArenaModal({
 
     const isDirty = (tab === 'join' && joinCode.trim().length > 0) || (tab === 'create' && (arenaName.trim().length > 0 || metric !== ARENA_METRIC_OPTIONS[0].value || duration !== ARENA_DURATION_OPTIONS[0].value));
 
-    const handleRequestClose = () => {
+    const handleRequestClose = useCallback(() => {
         if (isDirty) {
             setShowDiscardConfirm(true);
         } else {
             onClose();
         }
-    };
+    }, [isDirty, onClose]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -63,7 +63,7 @@ export function CreateJoinArenaModal({
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, isDirty, showDiscardConfirm]);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
     if (!isOpen){
         return null;

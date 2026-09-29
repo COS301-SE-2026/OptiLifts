@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, Check, ImagePlus, Search, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -176,13 +176,13 @@ export function CreateExercise({
     return false
   }, [name, exerciseType, equipment, selectedImageFile, selectedImageUrl, primaryMuscle, secondaryMuscles, initialValues, effectiveExerciseTypeOptions, effectiveEquipmentOptions])
 
-  const handleRequestClose = () => {
+  const handleRequestClose = useCallback(() => {
     if (isDirty) {
       setShowDiscardConfirm(true)
     } else {
       onCancel()
     }
-  }
+  }, [isDirty, onCancel])
 
   const filteredMuscles = useMemo(() => {
     if (!muscleSearchQuery.trim()) return MUSCLE_GROUPS
@@ -267,7 +267,7 @@ export function CreateExercise({
 
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
-  }, [isOpen, onCancel, isTypePickerOpen, activeMusclePicker, isDirty, showDiscardConfirm])
+  }, [isOpen, isTypePickerOpen, activeMusclePicker, showDiscardConfirm, handleRequestClose])
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow

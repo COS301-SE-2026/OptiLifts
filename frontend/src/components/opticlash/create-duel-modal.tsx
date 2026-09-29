@@ -1,5 +1,5 @@
 import { customFetch } from "@/lib/custom-fetch";
-import { useEffect, useState, type SyntheticEvent } from "react";
+import { useEffect, useState, useCallback, type SyntheticEvent } from "react";
 import { toast } from "../ui/alert";
 import { Check, Swords, X, Activity, Calendar, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -53,19 +53,19 @@ export function CreateDuelModal({
         (defaultFriend?.id ? selectedFriendId !== defaultFriend.id : (friends.length > 0 && selectedFriendId !== friends[0]?.id))
     );
 
-    const handleModalClose = () => {
+    const handleModalClose = useCallback(() => {
         setSubmitted(false);
         setIsSubmitting(false);
         onClose();
-    };
+    }, [onClose]);
 
-    const handleRequestClose = () => {
+    const handleRequestClose = useCallback(() => {
         if (isDirty) {
             setShowDiscardConfirm(true);
         } else {
             handleModalClose();
         }
-    };
+    }, [isDirty, handleModalClose]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -82,6 +82,13 @@ export function CreateDuelModal({
             }
         };
         window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
 
         const fetchFriends = async () => {
             setLoadingFriends(true);
@@ -103,8 +110,7 @@ export function CreateDuelModal({
             }
         };
         void fetchFriends();
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, defaultFriend, onClose]);
+    }, [isOpen, defaultFriend]);
 
     if (!isOpen){
         return null;

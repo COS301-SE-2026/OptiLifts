@@ -1,6 +1,6 @@
 import { customFetch } from "@/lib/custom-fetch"
 import { Calendar, CheckCircle2, Loader2, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Button } from "./button"
 import { ReschedulingConfig } from "./rescheduling-config"
 import { ConfirmDialog } from "./confirm-dialog"
@@ -23,13 +23,13 @@ export function ScheduleSettingsPopup({
     const [isReschedulingDirty, setIsReschedulingDirty] = useState(false)
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
-    const handleRequestClose = () => {
+    const handleRequestClose = useCallback(() => {
         if (isReschedulingDirty) {
             setShowDiscardConfirm(true)
         } else {
             onClose()
         }
-    }
+    }, [isReschedulingDirty, onClose])
 
     useEffect(() => {
         if (!isOpen) return;
@@ -44,7 +44,7 @@ export function ScheduleSettingsPopup({
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onClose, isReschedulingDirty, showDiscardConfirm]);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
     useEffect(() => {
         if (!isOpen){

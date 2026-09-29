@@ -61,13 +61,23 @@ export default function DuelArenaPage() {
         if(!duelId) {
             return;
         }
+        let isCancelled = false;
         const connection = new signalR.HubConnectionBuilder().withUrl('/api/hubs/clash').withAutomaticReconnect().configureLogging(signalR.LogLevel.Warning).build();
 
         hubRef.current = connection;
         connection.start().then(async () => {
+            if (isCancelled) {
+                void connection.stop();
+                return;
+            }
             await connection.invoke('JoinDuel', duelId);
         }).catch(() => {
             //signalr fallback
+        });
+        connection.onreconnected(async () => {
+            if (isCancelled || !duelId) return;
+            await connection.invoke('JoinDuel', duelId).catch(() => {});
+            void fetchDetail();
         });
 
         connection.on('ReceiveDuelUpdate', (update: DuelUpdatePaylod) => {
@@ -113,6 +123,7 @@ export default function DuelArenaPage() {
         });
 
         return () => {
+            isCancelled = true;
             if (connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke('LeaveDuel', duelId).catch(() => { });
             }

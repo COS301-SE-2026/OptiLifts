@@ -47,6 +47,9 @@ const { mockConn } = vi.hoisted(() => ({
         on: vi.fn(),
         invoke: vi.fn(),
         stop: vi.fn().mockResolvedValue(undefined),
+        onreconnected: vi.fn(),
+        onreconnecting: vi.fn(),
+        onclose: vi.fn(),
         state: 'Disconnected',
     },
 }));

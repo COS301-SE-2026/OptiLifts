@@ -6,6 +6,7 @@ import * as dbforpostgresql from "@pulumi/azure-native/dbforpostgresql";
 
 import * as containerregistry from "@pulumi/azure-native/containerregistry";
 import * as app from "@pulumi/azure-native/app";
+import * as signalrservice from "@pulumi/azure-native/signalrservice";
 import * as namedotcom from "@pulumi/namedotcom";
 
 const stackName = pulumi.getStack();
@@ -211,7 +212,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
@@ -229,7 +230,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     },
     template: {
         scale: {
-            minReplicas: 1,
+            minReplicas: 0,
             maxReplicas: 2,
         },
         containers: [{
@@ -255,7 +256,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: false, // can only be accessed by core-api 
             targetPort: 8000,
@@ -272,7 +273,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     },
     template: {
         scale: {
-            minReplicas: 1,
+            minReplicas: 0,
             maxReplicas: 2,
         },
         containers: [{
@@ -284,6 +285,26 @@ const aiApiApp = new app.ContainerApp("ai-api", {
             },
         }],
     },
+});
+
+
+const signalR = new signalrservice.SignalR("sr-optilifts", {
+    resourceGroupName: resourceGroup.name,
+    sku: {
+        name: "Free_F1",
+        tier: "Free",
+        capacity: 1,
+    },
+    kind: "SignalR",
+    features: [{
+        flag: "ServiceMode",
+        value: "Default",
+    }],
+});
+
+const signalRKeys = signalrservice.listSignalRKeysOutput({
+    resourceGroupName: resourceGroup.name,
+    resourceName: signalR.name,
 });
 
 // copre-api container app
@@ -326,6 +347,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
             { name: "google-client-secret", value: googleClientSecret }, 
             { name: "gemini-api-key", value: geminiApiKey },
             { name: "gemini-base-url", value: geminiBaseUrl },
+            { name: "signalr-connection-string", value: signalRKeys.apply(keys => keys.primaryConnectionString!) },
         ],
 
         registries: [{
@@ -368,6 +390,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }, 
                 { name: "GEMINI_API_KEY", secretRef: "gemini-api-key" },
                 { name: "GEMINI_BASE_URL", secretRef: "gemini-base-url" },
+                { name: "SIGNALR_CONNECTION_STRING", secretRef: "signalr-connection-string" },
                 { name: "NODE_SECRET", secretRef: "node-secret" }
             ],
             probes: [{

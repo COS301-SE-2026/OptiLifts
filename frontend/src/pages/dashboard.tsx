@@ -212,7 +212,6 @@ export default function DashboardPage() {
     const [completedEntries, setCompletedEntries] = useState<readonly ScheduledEntry[]>([])
     const [completedWorkoutDetails, setCompletedWorkoutDetails] = useState<readonly WorkoutDetailResponse[]>([])
     const [analytics, setAnalytics] = useState<ScheduleAnalyticsResponse | null>(null)
-    const [isFetching, setIsFetching] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [refreshToken, setRefreshToken] = useState(0)
     const [isOfflineData, setIsOfflineData] = useState(false)
@@ -248,7 +247,6 @@ export default function DashboardPage() {
         }
 
         async function loadDashboard() {
-            setIsFetching(true)
             setError(null)
             setIsOfflineData(false)
 
@@ -299,10 +297,6 @@ export default function DashboardPage() {
                 setAnalytics(analyticsJson)
             } catch (loadError){
                 handleLoadErr(loadError)
-            } finally{
-                if (isActive){
-                    setIsFetching(false)
-                }
             }
         }
 
@@ -468,12 +462,6 @@ export default function DashboardPage() {
 
     return (
         <section className="mx-auto max-w-6xl px-6 py-12">
-            {isFetching && !profileData && (
-                <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                    Loading dashboard data
-                </div>
-            )}
-
             {error && (
                 <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                     {error}
@@ -487,7 +475,7 @@ export default function DashboardPage() {
             <div className="mb-8">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div>
-                        <PageTitle title={`Good Day, ${displayProfile?.name ?? 'Guest'}`} />
+                        <PageTitle title={`Good Day, ${displayProfile?.name ?? ''}`} />
                         <p className="mt-2 text-lg text-muted-foreground">
                             Upcoming Workout: <span className="font-medium text-foreground">{upcomingWorkouts[0]?.name ?? 'No workout scheduled'}</span>
                         </p>

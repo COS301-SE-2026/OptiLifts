@@ -39,42 +39,13 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 
 ### Architectural Patterns
 
-For this project we model an explicit 5-tier architecture:
-
-- Presentation Tier
-- API / Controller Tier
-- Application Tier
-- Domain Tier
-- Infrastructure / Persistence Tier
-
----
-
-#### Application Tier vs. Domain Tier Separation
-
-Clean Architecture strictly separates the **Application Tier** from the **Domain Tier**:
-
-- **Domain Tier (`OptiLifts.Domain`)**: Core enterprise business logic, entities, and calculation rules. Framework-agnostic and invariant. *(Answers: "What are the core domain rules?")*
-- **Application Tier (`OptiLifts.Application`)**: Use-case orchestration, CQRS command/query handling, Mediator dispatching, and infrastructure interfaces. *(Answers: "How does the system execute a user operation?")*
-
-This separation ensures domain rules remain 100% testable in isolation, protected from framework, database, or API changes.
-
 ---
 
 #### System Architecture Diagram
 
-```mermaid
-flowchart LR
-    Tier1["Presentation Tier"]
-    Tier2["API / Controller Tier"]
-    Tier3["Application Tier"]
-    Tier4["Domain Tier"]
-    Tier5["Infrastructure / Persistence Tier"]
+![Architecture Diagram](../images/ArchitectureDiagram.png)
 
-    Tier1 --> Tier2
-    Tier2 --> Tier3
-    Tier3 --> Tier4
-    Tier4 --> Tier5
-```
+---
 
 ### Design Patterns
 

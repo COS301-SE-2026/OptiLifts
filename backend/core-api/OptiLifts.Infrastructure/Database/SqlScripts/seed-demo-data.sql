@@ -449,6 +449,7 @@ DECLARE
     v_we uuid;
     v_ex uuid;
     v_day timestamp;
+    v_cutoff date;
     i int;
     rec record;
 BEGIN
@@ -588,12 +589,31 @@ BEGIN
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
-    -- makes it such that the user always has a 6 week long streak
-    FOR i IN 0..24 LOOP
-        v_day := NOW() - INTERVAL '42 days' + (i * INTERVAL '41 hours');
+    -- 9 weeks of Push (Mon) / Pull (Wed) / Legs (Fri) evenings up to ~2 weeks
+    -- before today, then the same routine carries on up to now so the dashboard
+    -- and profile have recent activity. The extra 2 weeks add at most 2 sessions
+    -- per workout (11 max), keeping them under the plateau engine's 12-session
+    -- window. Tue/Thu/Sun stay rest days; Sat is the Back Workout's slot.
+    v_cutoff := (NOW() - INTERVAL '14 days')::date;
+
+    FOR rec IN
+        SELECT sessions.d, (ROW_NUMBER() OVER (ORDER BY sessions.d) - 1)::int AS i
+        FROM (
+            (SELECT d FROM generate_series((v_cutoff - 70)::timestamp, v_cutoff::timestamp, INTERVAL '1 day') AS d
+             WHERE EXTRACT(ISODOW FROM d) IN (1, 3, 5)
+             ORDER BY d DESC
+             LIMIT 27)
+            UNION ALL
+            SELECT d FROM generate_series((v_cutoff + 1)::timestamp, NOW()::date::timestamp, INTERVAL '1 day') AS d
+            WHERE EXTRACT(ISODOW FROM d) IN (1, 3, 5)
+              AND d + INTERVAL '17 hours 30 minutes' + INTERVAL '65 minutes' <= NOW()
+        ) sessions
+    LOOP
+        i := rec.i;
+        v_day := rec.d + INTERVAL '17 hours 30 minutes';
         PERFORM seed_logged_workout(
             alex_id,
-            CASE WHEN i % 3 = 0 THEN v_push WHEN i % 3 = 1 THEN v_pull ELSE v_legs END,
+            CASE EXTRACT(ISODOW FROM rec.d) WHEN 1 THEN v_push WHEN 3 THEN v_pull ELSE v_legs END,
             v_day,
             v_day + INTERVAL '65 minutes',
             false,
@@ -613,9 +633,8 @@ END $$;
 -- Split" folder. Reuses the exact Progressing/Regressing/Plateau e1RM
 -- trajectories already validated for the plateau/regression detection engine,
 -- applied to exercises that aren't logged anywhere else in his history.
--- Scheduled on a fixed weekly morning slot, structurally distinct from the
--- Push/Pull/Legs rotating evening cadence, so sessions never collide on the
--- same day.
+-- Scheduled every Saturday morning, a day Push/Pull/Legs (Mon/Wed/Fri) never
+-- uses, so sessions never collide on the same day.
 -- ===========================================================================
 DO $$
 DECLARE
@@ -634,9 +653,9 @@ DECLARE
     v_log uuid;
     v_entry uuid;
     v_day timestamp;
+    v_cutoff date;
     i int;
     rec record;
-    occupied_dates date[];
 BEGIN
     SELECT c.alex_user_email, c.hex_enc, c.set_type
     INTO alex_email, hex_enc, normal_set_type
@@ -730,45 +749,24 @@ BEGIN
     FROM workout_exercises we, generate_series(1, 3) AS gs
     WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_tbar;
 
-    -- Which calendar dates Alex already has *any* logged workout on (from
-    -- Push/Pull/Legs, seeded earlier in this same script run). A pre-computed
-    -- offset list can't reliably avoid these: Push/Pull/Legs' sessions are only
-    -- ~1.7 days apart, so depending on the exact time this script happens to
-    -- run, they can occupy almost any date in their 42-day range. Querying the
-    -- real dates just created (rather than guessing) is the only way to
-    -- guarantee Dorito Workout never lands on the same day, for any run time.
-    SELECT array_agg(DISTINCT DATE(se.scheduled)) INTO occupied_dates
-    FROM scheduled_entries se
-    WHERE se.user_id = alex_id;
+    -- 24 weekly Saturday-morning sessions, the last one on or just before the
+    -- date ~2 weeks ago: i=0..11 is the baseline period, i=12..23 the 12-point
+    -- detection window (weekly gaps stay under the engine's 14-day max, and the
+    -- window end stays inside GetPlateauPageHandler's 30-day recency cutoff).
+    -- Saturdays never overlap the Mon/Wed/Fri Push/Pull/Legs sessions.
+    v_cutoff := (NOW() - INTERVAL '14 days')::date;
 
-    IF occupied_dates IS NULL THEN
-        occupied_dates := ARRAY[]::date[];
-    END IF;
-
-    -- 24 sessions on explicit days-back-from-now starting offsets: i=0..11 is
-    -- the baseline period, i=12..23 the 12-point detection window (most recent
-    -- offset only 2 days back, comfortably inside GetPlateauPageHandler's
-    -- 30-day recency cutoff). Trajectories reuse the exact
-    -- Progressing/Regressing/Plateau shapes already validated live for the
-    -- plateau/regression detection engine. Each starting offset is nudged
-    -- backward in small steps, if needed, until its calendar date is free of
-    -- every one of Alex's other logged workouts.
     FOR rec IN
-        SELECT * FROM (VALUES
-            (0, 113), (1, 108), (2, 102), (3, 96), (4, 91), (5, 85),
-            (6, 79), (7, 74), (8, 68), (9, 63), (10, 57), (11, 51),
-            (12, 29), (13, 26), (14, 24), (15, 21), (16, 19), (17, 17),
-            (18, 14), (19, 12), (20, 9), (21, 7), (22, 5), (23, 2)
-        ) AS t(i, days_back)
+        SELECT recent.d, (ROW_NUMBER() OVER (ORDER BY recent.d) - 1)::int AS i
+        FROM (
+            SELECT d FROM generate_series((v_cutoff - 175)::timestamp, v_cutoff::timestamp, INTERVAL '1 day') AS d
+            WHERE EXTRACT(ISODOW FROM d) = 6
+            ORDER BY d DESC
+            LIMIT 24
+        ) recent
     LOOP
         i := rec.i;
-        v_day := NOW() - (rec.days_back * INTERVAL '1 day') + INTERVAL '6 hours 30 minutes';
-
-        WHILE DATE(v_day) = ANY(occupied_dates) LOOP
-            v_day := v_day - INTERVAL '3 hours';
-        END LOOP;
-
-        occupied_dates := array_append(occupied_dates, DATE(v_day));
+        v_day := rec.d + INTERVAL '9 hours';
 
         INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
         VALUES (gen_random_uuid(), alex_id, v_dorito, v_day, completed_status)
@@ -858,14 +856,16 @@ BEGIN
         RETURN;
     END IF;
 
+    -- the next Tuesday (Pull) and Thursday (Push) on or after today, at 14:30
+    -- South African time, left as Scheduled (not completed)
     FOR rec IN
-        SELECT * FROM (VALUES
-            (TIMESTAMPTZ '2026-07-01 18:00:00+00', v_push),
-            (TIMESTAMPTZ '2026-07-03 18:00:00+00', v_pull),
-            (TIMESTAMPTZ '2026-07-05 10:00:00+00', v_push),
-            (TIMESTAMPTZ '2026-08-27 18:00:00+00', v_pull),
-            (TIMESTAMPTZ '2026-09-01 18:00:00+00', v_pull)
-        ) AS t(scheduled_at, workout_id)
+        SELECT ((NOW()::date + (t.isodow - EXTRACT(ISODOW FROM NOW())::int + 7) % 7) + TIME '14:30')
+                   AT TIME ZONE 'Africa/Johannesburg' AS scheduled_at,
+               t.workout_id
+        FROM (VALUES
+            (2, v_pull),
+            (4, v_push)
+        ) AS t(isodow, workout_id)
     LOOP
         INSERT INTO scheduled_entries (entry_id, user_id, workout_id, scheduled, status)
         SELECT gen_random_uuid(), alex_id, rec.workout_id, rec.scheduled_at, scheduled_status
@@ -902,7 +902,7 @@ CROSS JOIN LATERAL (VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ===========================================================================
--- Award earned badges to Alex (gymgoer@gmail.com). He has 51 workouts, so he
+-- Award earned badges to Alex (gymgoer@gmail.com). He has 51+ workouts, so he
 -- earns the three workout-count milestones + the streak badge; "Century Club"
 -- (100) is intentionally left unearned. Idempotent via unique (user_id, badge_id).
 -- ===========================================================================

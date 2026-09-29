@@ -259,6 +259,23 @@ public sealed class LeaderboardAndAthletesHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task RecalcSnap_CountsBench_WithDictionarySpelling()
+    {
+        var user = await SeedUserAsync("Dany", code1, weight: "70", sex: "Female");
+        var muscleId = await SeedMuscleAsync("Chest");
+        var benchId = await SeedExerAsync("Barbell bench press", muscleId);
+        await SeedSetAsync(user.Id, benchId, 100f, 5, DateTime.UtcNow);
+
+        var handler = new RecalculateAthleteSeasonSnapshotHandler(_db);
+        await handler.Handle(new RecalculateAthleteSeasonSnapshotCommand(user.Id), CancellationToken.None);
+
+        var snap = await _db.AthleteSeasonSnapshots.FirstOrDefaultAsync(s => s.UserId == user.Id);
+        snap.Should().NotBeNull();
+        snap!.Bench1RM.Should().BeApproximately(116.65m, 0.01m);
+        snap.TotalE1RM.Should().Be(snap.Bench1RM);
+    }
+
+    [Fact]
     public async Task GetDivLeaderboard_ReturnsEmpty_ForUnknownBracket()
     {
         var user = await SeedUserAsync("Dany", code1);

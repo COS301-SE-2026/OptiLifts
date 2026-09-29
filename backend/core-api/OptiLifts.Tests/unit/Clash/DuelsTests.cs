@@ -533,7 +533,7 @@ public sealed class DuelsTests : IDisposable
         var rival = await SeedUserAsync("Drogo", code2);
         var muscleId = await SeedMuscleAsync("Quadriceps");
         var squatId = await SeedExerAsync("Barbell Back Squat", muscleId);
-        var benchId = await SeedExerAsync("Barbell Bench Press", muscleId);
+        var benchId = await SeedExerAsync("Barbell bench press", muscleId);
         var duel = await SeedDuelAsync(challenger.Id, rival.Id, "TotalVolumeKg", exerciseId: squatId);
         var logId = await SeedSetAsync(challenger.Id, benchId, 100f, 5);
 
@@ -542,6 +542,23 @@ public sealed class DuelsTests : IDisposable
 
         var upd = await _db.Duels.FirstAsync(d => d.Id == duel.Id);
         upd.ChallengerCurrentValue.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task TelemetryAllCompoundDuelCountsBench_WithDictionarySpelling()
+    {
+        var challenger = await SeedUserAsync("Dany", code1);
+        var rival = await SeedUserAsync("Drogo", code2);
+        var muscleId = await SeedMuscleAsync("Chest");
+        var benchId = await SeedExerAsync("Barbell bench press", muscleId);
+        var duel = await SeedDuelAsync(challenger.Id, rival.Id, "TotalVolumeKg", exerciseName: "All Compound Lifts Combined");
+        var logId = await SeedSetAsync(challenger.Id, benchId, 100f, 5);
+
+        var handler = new DuelTelemetrySetLoggedNotificationHandler(_db);
+        await handler.Handle(new WorkoutCompletedNotification(challenger.Id, logId), CancellationToken.None);
+
+        var upd = await _db.Duels.FirstAsync(d => d.Id == duel.Id);
+        upd.ChallengerCurrentValue.Should().Be(500m);
     }
 
     [Fact]

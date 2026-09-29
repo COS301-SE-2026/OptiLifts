@@ -59,6 +59,29 @@ const buildExerciseFormData = (values: CreateExerciseFormData): FormData => {
   return formData
 }
 
+const trapFocus = (event: KeyboardEvent, container: HTMLElement | null): void => {
+  if (!container) return
+  const focusable = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      "a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])"
+    )
+  ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null)
+  if (focusable.length === 0) return
+
+  const first = focusable[0]
+  const last = focusable.at(-1) as HTMLElement
+  const active = document.activeElement as HTMLElement
+
+  if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+
 const submitCustomExercise = async (url: string, formData: FormData): Promise<void> => {
   const response = await customFetch(url, {
     method: "POST",
@@ -235,33 +258,27 @@ export function CreateExercise({
 
   useEffect(() => {
     if (!isOpen) return
+
+    const handleEscape = () => {
+      if (showDiscardConfirm) {
+        setShowDiscardConfirm(false)
+      } else if (isTypePickerOpen) {
+        setIsTypePickerOpen(false)
+      } else if (activeMusclePicker) {
+        setActiveMusclePicker(null)
+      } else {
+        handleRequestClose()
+      }
+    }
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (showDiscardConfirm) {
-          setShowDiscardConfirm(false)
-          return
-        }
-        if (isTypePickerOpen) setIsTypePickerOpen(false)
-        else if (activeMusclePicker) setActiveMusclePicker(null)
-        else handleRequestClose()
+        handleEscape()
         return
       }
 
       if (event.key === 'Tab') {
-        const container = formRef.current
-        if (!container) return
-        const focusable = Array.from(container.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null)
-        if (focusable.length === 0) return
-        const first = focusable[0]
-        const last = focusable.at(-1) as HTMLElement
-        const active = document.activeElement as HTMLElement
-        if (event.shiftKey && active === first) {
-          event.preventDefault()
-          last.focus()
-        } else if (!event.shiftKey && active === last) {
-          event.preventDefault()
-          first.focus()
-        }
+        trapFocus(event, formRef.current)
       }
     }
 

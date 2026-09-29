@@ -20,7 +20,7 @@ const toList = <T,>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : [
 export function formatFriendRequestDate(dateStr?: string): string {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
         return dateStr;
     }
     return new Intl.DateTimeFormat('en-US', {

@@ -57,6 +57,15 @@ export function FaqAccordion({
         setOpenId((prev) => (prev === id ? null : id));
     };
 
+    let emptyStateMessage = "Try searching for a different keyword, such as 'workout', 'schedule' or 'offline'.";
+    if (currentTag) {
+        let searchSuffix = "";
+        if (searchQuery) {
+            searchSuffix = ` and search "${searchQuery}"`;
+        }
+        emptyStateMessage = `No FAQs found matching tag "${currentTag}"${searchSuffix}.`;
+    }
+
     return (
         <div className="flex flex-col gap-4">
             {/* Tag filter bar */}
@@ -130,9 +139,7 @@ export function FaqAccordion({
                     <HelpCircle className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
                     <h3 className="font-display text-xl text-foreground mb-1">No matching FAQs found</h3>
                     <p className="text-sm text-muted-foreground">
-                        {currentTag
-                            ? `No FAQs found matching tag "${currentTag}"${searchQuery ? ` and search "${searchQuery}"` : ''}.`
-                            : "Try searching for a different keyword, such as 'workout', 'schedule' or 'offline'."}
+                        {emptyStateMessage}
                     </p>
                     {currentTag && (
                         <button
@@ -157,29 +164,20 @@ export function FaqAccordion({
                                     isOpen ? 'border-brand bg-surface shadow-md' : 'border-border bg-surface hover:border-brand/40'
                                 }`}
                             >
-                                <button
-                                    type="button"
-                                    onClick={() => toggleAccordion(item.id)}
-                                    className="w-full flex items-center justify-between p-5 text-left focus:outline-none cursor-pointer"
-                                    aria-expanded={isOpen}
-                                >
-                                    <div className="flex items-center gap-3 pr-4 flex-wrap">
-                                        <span className="font-semibold text-foreground text-base font-sans">{item.question}</span>
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
+                                <div className="w-full flex items-center justify-between p-5 text-left">
+                                    <div className="flex items-center gap-3 pr-4 flex-wrap flex-1 min-w-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleAccordion(item.id)}
+                                            className="font-semibold text-foreground text-base font-sans text-left focus:outline-none cursor-pointer hover:text-brand transition-colors"
+                                            aria-expanded={isOpen}
+                                        >
+                                            {item.question}
+                                        </button>
+                                        <button
+                                            type="button"
                                             data-testid={`faq-tag-${item.id}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleTagChange(isTagSelected ? null : item.category);
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    handleTagChange(isTagSelected ? null : item.category);
-                                                }
-                                            }}
+                                            onClick={() => handleTagChange(isTagSelected ? null : item.category)}
                                             title={`Filter by tag: ${item.category}`}
                                             className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border flex items-center gap-1 transition-colors cursor-pointer ${
                                                 isTagSelected
@@ -189,14 +187,22 @@ export function FaqAccordion({
                                         >
                                             <Tag className="h-3 w-3" />
                                             <span>{item.category}</span>
-                                        </span>
+                                        </button>
                                     </div>
-                                    <ChevronDown
-                                        className={`h-5 w-5 text-muted-foreground flex-shrink-0 transition-transform duration-200 ${
-                                            isOpen ? 'rotate-180 text-brand' : ''
-                                        }`}
-                                    />
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleAccordion(item.id)}
+                                        aria-label={isOpen ? "Collapse FAQ" : "Expand FAQ"}
+                                        aria-expanded={isOpen}
+                                        className="focus:outline-none cursor-pointer p-1 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <ChevronDown
+                                            className={`h-5 w-5 flex-shrink-0 transition-transform duration-200 ${
+                                                isOpen ? 'rotate-180 text-brand' : ''
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
                                 {isOpen && (
                                     <div className="px-5 pb-5 pt-1 text-sm text-muted-foreground border-t border-border/50 leading-relaxed font-sans">
                                         {item.answer}

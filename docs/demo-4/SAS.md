@@ -13,6 +13,7 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [Architectural Patterns](#architectural-patterns)
 	- [Design Patterns](#design-patterns)
 	- [NFR Traceability Matrix](#nfr-traceability-matrix)
+	- [NFR Testing Evidence](#nfr-testing-evidence)
 	- [Constraints](#constraints)
 
 - [Technology Requirements](#technology-requirements)
@@ -191,15 +192,15 @@ This pattern applies wherever an object behaves differently depending on what ph
 | **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 500ms (local Production overlay) | Seperation of core-api and ai-api services, asynchronous backend processing | k6 | < 500ms / Pass (164ms) |
 | **NFR1.2** | < 300% average latency degradation at 300 users (Local production overlay)| CQRS with MediatR & EF Core Connection Pooling | k6 |< 300% degradation / Pass  |
 | **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease (Local production overlay) | Azure Container Apps with Horizontal Scaling | k6 | < 1500ms / Pass |
-| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`SensitiveData_ShouldBeEncryptedAtRest_InDatabase`) | Test Passes / Pass |
+| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | openssl on an encrypted email in database | Script produces test@optilifts.com / script produced test@optilifts.com |
 | **NFR3.2** | Bcrypt password hashing with salt factor 12 | `BcryptPasswordHasher` algorithm | xUnit (`BcryptPasswordHasherTests`) | Test Passes / Pass |
 | **NFR3.3** | Use HTTPS (TLS 1.3) for all data transmission | Azure Container Apps Managed Certificates & SSL Termination | Qualys SSL Server Test | Grade A (TLS 1.3 Active) / Pass |
 | **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
 | **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(<15 minutes) + CD(<10 minutes) |
-| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 85.7% |
+| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 87.4% line coverage |
 | **NFR5.1** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
 
-#### Evidence
+### NFR Testing Evidence
 ### NFR 1.1 and NFR 1.2:
 - The commands run:
 ```bash
@@ -216,22 +217,49 @@ k6 run k6-nfr-tests/nfr2-scalability.js
 ```
 ![Theoretical](../images/nfr-testing/nfr2-1-theoretical.png)
 
-##### NFR3.1, NFR3.2, NFR 3.4: 
-- All tests pass when running `pnpm test` which covers the tests that ensure the NFRs are met. 
+### NFR3.1: 
+- Database containing the encrypted email (test@optilifts.com)
+- ![Database](../images/nfr-testing/nfr3-1-db-screenshot.png)
+- OpenSSL script used: scripts/nfr3-1-test.sh
+- OpenSSL command used: 
+```bash
+./scripts/nfr3-1-test.sh "f3J1V+mT0adInOOp/ko/GJTj0hJCWuQgnMqNIsH6Bo8MDvkm8/xrbGiGuXSK40n"
+```
 
-#### NFR 3.3: 
+Output: 
+- ![OpenSSL](../images/nfr-testing/nfr3-1-result.png)
+
+### NFR3.2:
+- The command run: 
+```bash
+dotnet test /home/u24664155/COS301/OptiLifts/backend/core-api/OptiLifts.Tests --filter "BcryptPasswordHasherTests"
+```
+
+- Results: 
+- ![BcryptPasswordHasherTests](../images/nfr-testing/nfr3-2-result.png)
+
+### NFR 3.3: 
 - Qualys SSL Server Test shows TLS 1.2 is active and the server is rated A.
 - ![Qualys SSL Server Test](../images/nfr-testing/sllreport.png)
 
-#### NFR 4.1: 
+### NFR 3.4: 
+- The command run: 
+```bash
+dotnet test /home/u24664155/COS301/OptiLifts/backend/core-api/OptiLifts.Tests --filter "AuthEndpointIntegrationTests"
+```
+
+- Results: 
+- ![AuthEndpointIntegrationTests](../images/nfr-testing/nfr3-4-result.png)
+
+### NFR 4.1: 
 - ![CI speeds](../images/nfr-testing/ci-time.png)
 - ![CD speeds](../images/nfr-testing/cd-time.png)
 
-#### NFR 4.2:
+### NFR 4.2:
 - ![Code Coverage](../images/nfr-testing/coverage.png)
 
 
-#### NFR 5.1: 
+### NFR 5.1: 
 Landing page
 ![Landing page](../images/nfr-testing/lighthouse-reports/landing-page.png)
 
@@ -267,6 +295,27 @@ Profile
 
 Help menu
 ![Help menu](../images/nfr-testing/lighthouse-reports/help-menu.png)
+
+OptiClash Home page
+![OptiClash home page](../images/nfr-testing/lighthouse-reports/opticlash-homepage.png)
+
+OptiClash Leagues
+![OptiClash leagues page](../images/nfr-testing/lighthouse-reports/opticlash-leagues.png)
+
+OptiClash Arenas
+![OptiClash arenas page](../images/nfr-testing/lighthouse-reports/opticlash-arena.png)
+
+OptiClash View of all Duels 
+![OptiClash duels page](../images/nfr-testing/lighthouse-reports/opticlash-all-duels.png)
+
+OptiClash Duel
+![OptiClash duel page](../images/nfr-testing/lighthouse-reports/opticlash-duel.png)
+
+OptiClash Friends
+![OptiClash friends page](../images/nfr-testing/lighthouse-reports/opticlash-friends.png)
+
+OptiVision
+![OptiVision page](../images/nfr-testing/lighthouse-reports/optivision.png)
 
 
 ### Constraints

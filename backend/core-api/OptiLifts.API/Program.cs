@@ -115,7 +115,19 @@ builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 builder.Services.AddAiIntegrations(builder.Configuration);
 builder.Services.AddRateLimitingServices(builder.Configuration);
 
-builder.Services.AddSignalR();
+var signalRConn = builder.Configuration["SIGNALR_CONNECTION_STRING"] ?? Environment.GetEnvironmentVariable("SIGNALR_CONNECTION_STRING");
+if (!string.IsNullOrEmpty(signalRConn))
+{
+    builder.Services.AddSignalR().AddAzureSignalR(options =>
+    {
+        options.ConnectionString = signalRConn;
+        options.InitialHubServerConnectionCount = 1;
+    });
+}
+else
+{
+    builder.Services.AddSignalR();
+}
 builder.Services.AddScoped<OptiLifts.Application.Clash.IClashNotifier, OptiLifts.API.Hubs.SignalRClashNotifier>();
 
 var app = builder.Build();
@@ -141,8 +153,6 @@ app.UseAuthentication(); //authentication middleware
 app.UseAuthorization(); //authorization middleware
 app.UseRateLimiter(); //rate limiting middleware
 app.MapControllers();
-app.MapHub<OptiLifts.API.Hubs.ClashHub>("/hubs/clash");
-app.MapHub<OptiLifts.API.Hubs.ClashHub>("/clash-hub");
 app.MapHub<OptiLifts.API.Hubs.ClashHub>("/api/hubs/clash");
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq

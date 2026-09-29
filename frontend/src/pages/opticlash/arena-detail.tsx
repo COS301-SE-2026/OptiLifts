@@ -544,6 +544,7 @@ export default function ArenaLeaderboardPage() {//
             setCurrentUserStanding(data.userStanding as LeaderboardAthleteDto);
         }
     };
+    const hasAutoSelectedRef = useRef<boolean>(false);
 
     const fetchPublicLeaderboard = async () => {
         const metricParam = getBackendMetricName(selectedMetric);
@@ -555,6 +556,15 @@ export default function ArenaLeaderboardPage() {//
             setPublicStandings(data.entries ?? []);
             setPublicTotalAthletes(data.totalCount ?? 0);
             setCurrentUserStanding(data.currentUserEntry ?? null);
+            if (isDivisional && !hasAutoSelectedRef.current && data.currentUserEntry) {
+                hasAutoSelectedRef.current = true;
+                const bracket = getWeightClassBracket(data.currentUserEntry.bodyweightKg);
+                const genderD = data.currentUserEntry.gender?.toLowerCase() === 'female' ? 'female' : 'male';
+                if (bracket.id !== selectedBracketId || genderD !== selectedGender) {
+                    setSelectedBracketId(bracket.id);
+                    setSelectedGender(genderD);
+                }
+            }
         }
     };
 
@@ -600,6 +610,10 @@ export default function ArenaLeaderboardPage() {//
     }, [isPrivate, currentUserStanding, sortedStandings, user?.id]);
 
     useEffect(() => {
+        hasAutoSelectedRef.current = false;
+    }, [arenaId]);
+
+    useEffect(() => {
         if (isPrivate) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
             void fetchLeaderboard();
@@ -631,6 +645,12 @@ export default function ArenaLeaderboardPage() {//
             }
             connection.invoke('JoinArena', arenaId).catch(() => {});
         }).catch(() => {});
+
+        connection.onreconnected(() => {
+            if (isCancelled || !arenaId) return;
+            connection.invoke('JoinArena', arenaId).catch(() => {});
+            void fetchPrivateLeaderboard();
+        });
 
         connection.on('ReceiveUserJoined', (joinedArenaId: string, userName: string) => {
             if (joinedArenaId === arenaId) {
@@ -678,6 +698,7 @@ export default function ArenaLeaderboardPage() {//
             name: ath.displayName,
             initials: initials || 'AT',
             avatarUrl: ath.avatarUrl,
+            bio: (ath.userId === user?.id ? user?.bio : (ath as { bio?: string }).bio),
             code: 'OPTICLASH',
             gender: (ath.gender as 'male' | 'female') || selectedGender,
             bodyweightKg: ath.bodyweightKg,
@@ -765,10 +786,12 @@ export default function ArenaLeaderboardPage() {//
                 {isDivisional && (
                     <DivisionalClassSelector selectedGender={selectedGender} activeBracket={activeBracket} userWeightBracket={userWeightBracket} currentUserStanding={currentUserStanding}
                         onSelectGender={(gender) => {
+                            hasAutoSelectedRef.current = true;
                             setSelectedGender(gender);
                             setCurrentPage(1);
                         }}
                         onSelectBracketId={(bracketId) => {
+                            hasAutoSelectedRef.current = true;
                             setSelectedBracketId(bracketId);
                             setCurrentPage(1);
                         }} />

@@ -17,6 +17,22 @@ import { Link } from "react-router-dom";
 //literally making the tiniest change every to fix complexity yay
 const toList = <T,>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
 
+export function formatFriendRequestDate(dateStr?: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) {
+        return dateStr;
+    }
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).format(date);
+}
+
 export default function FriendsManagementPage(){
     const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'invites'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +47,7 @@ export default function FriendsManagementPage(){
         code: string;
         dotsScore: number;
         tier: string;
+        bio?: string;
     }
     interface FriendRequestItem{
         id: string;
@@ -70,6 +87,7 @@ export default function FriendsManagementPage(){
             name: friend.name,
             initials: friend.initials || 'AT',
             avatarUrl: friend.avatarUrl,
+            bio: friend.bio,
             code: friend.code,
             gender: 'male',
             bodyweightKg: 0,
@@ -436,7 +454,7 @@ export default function FriendsManagementPage(){
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredFriends.map((friend) => (
-                            <Card key={friend.id} className="bg-surface border-border p-5 shadow-sm flex flex-col justify-between">
+                            <Card key={friend.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-5 shadow-sm flex flex-col justify-between transition-all duration-200">
                                 <CardContent className="p-0">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-3.5">
@@ -513,7 +531,7 @@ export default function FriendsManagementPage(){
                         ) : (
                     <div className="space-y-3">
                         {filteredRequests.map((req) => (
-                            <Card key={req.id} className="bg-surface border-border p-4 shadow.sm">
+                            <Card key={req.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-4 shadow-sm transition-all duration-200">
                                 <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3.5">
                                         <AthleteAvatar initials={req.fromInitials} name={req.fromName} avatarUrl={req.fromAvatarUrl} size="md"/>
@@ -527,7 +545,7 @@ export default function FriendsManagementPage(){
                                                 </span>
                                             </div>
                                             <span className="text-xs text-muted-foreground font-sans block mt-0.5">
-                                                Sent {req.sentAt}
+                                                Sent {formatFriendRequestDate(req.sentAt)}
                                             </span>
                                         </div>
                                     </div>
@@ -608,7 +626,7 @@ export default function FriendsManagementPage(){
                                         const initials = dinv.challengerName ? dinv.challengerName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
                                         const targetLabel = dinv.targetType.toLowerCase().includes('volume') ? 'Total Volume (kg)' : 'E1RM Gain (%)';
                                         return (
-                                            <Card key={dinv.id} className="bg-surface border-border p-4 shadow-sm">
+                                            <Card key={dinv.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-4 shadow-sm transition-all duration-200">
                                                 <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                     <div className="flex items-center gap-3">
                                                         <AthleteAvatar initials={initials} name={dinv.challengerName} avatarUrl={dinv.challengerAvatarUrl ?? undefined} size="md"/>
@@ -663,7 +681,7 @@ export default function FriendsManagementPage(){
                             ) : (
                                 <div className="space-y-3">
                                     {arenaInvites.map((ainv) => (
-                                        <Card key={ainv.id} className="bg-surface border-border p-4 shadow-sm">
+                                        <Card key={ainv.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-4 shadow-sm transition-all duration-200">
                                             <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
                                                     <AthleteAvatar initials={ainv.invitedByInitials} name={ainv.invitedByName}

@@ -61,13 +61,23 @@ export default function DuelArenaPage() {
         if(!duelId) {
             return;
         }
+        let isCancelled = false;
         const connection = new signalR.HubConnectionBuilder().withUrl('/api/hubs/clash').withAutomaticReconnect().configureLogging(signalR.LogLevel.Warning).build();
 
         hubRef.current = connection;
         connection.start().then(async () => {
+            if (isCancelled) {
+                void connection.stop();
+                return;
+            }
             await connection.invoke('JoinDuel', duelId);
         }).catch(() => {
             //signalr fallback
+        });
+        connection.onreconnected(async () => {
+            if (isCancelled || !duelId) return;
+            await connection.invoke('JoinDuel', duelId).catch(() => {});
+            void fetchDetail();
         });
 
         connection.on('ReceiveDuelUpdate', (update: DuelUpdatePaylod) => {
@@ -113,6 +123,7 @@ export default function DuelArenaPage() {
         });
 
         return () => {
+            isCancelled = true;
             if (connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke('LeaveDuel', duelId).catch(() => { });
             }
@@ -157,6 +168,7 @@ export default function DuelArenaPage() {
             name,
             initials,
             avatarUrl: avatarUrl || undefined,
+            bio: (athleteId === user?.id ? user?.bio : undefined),
             code: '',
             gender: 'male',
             bodyweightKg: 0,
@@ -229,7 +241,7 @@ export default function DuelArenaPage() {
             </div>
             <div className="max-w-4xl mx-auto px-4 py-4 space-y-6">
                 {/* hv card */}
-                <Card className="bg-surface border-border p-6 md:p-8 shadow-sm overflow-hidden">
+                <Card className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-6 md:p-8 shadow-sm overflow-hidden transition-all duration-200">
                     <CardContent className="p-0">
                     <div className="grid grid-cols-3 items-center text-center gap-2 md:gap-4 relative z-10">
                         <div className="flex flex-col items-center">
@@ -312,7 +324,7 @@ export default function DuelArenaPage() {
                 </CardContent>
             </Card>
 
-            <Card className="bg-surface border-border p-6 shadow-sm">
+            <Card className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-6 shadow-sm transition-all duration-200">
                 <CardContent className="p-0">
                     <h3 className="font-display text-xl tracking-wide text-foreground flex items-center gap-2 mb-4">
                         Live Duel Timeline

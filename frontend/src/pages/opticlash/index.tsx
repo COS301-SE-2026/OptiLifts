@@ -247,6 +247,7 @@ export default function ArenaHubPage() {
             name: athleteName,
             initials: athleteName.slice(0, 2).toUpperCase() || 'AT',
             avatarUrl: userStanding?.avatarUrl || user?.avatarUrl,
+            bio: user?.bio,
             code: 'OPTICLASH',
             gender: (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male'),
             bodyweightKg: userStanding?.bodyweightKg || 74,
@@ -322,6 +323,15 @@ export default function ArenaHubPage() {
             });
         }).catch(() => {
             //retry handles automatically
+        });
+        connection.onreconnected(() => {
+            if (isCancelled) return;
+            myArenasRef.current.forEach((arena) => {
+                if (arena.type?.toLowerCase() === "private") {
+                    connection.invoke("JoinArena", arena.id).catch(() => {});
+                }
+            });
+            void fetchFeed();
         });
 
         connection.on("ReceiveActivity", (newActivity: SignalRActivityPayload) => {
@@ -559,7 +569,7 @@ export default function ArenaHubPage() {
                             ) : (
                                 filtArenas.map((arena) => (                            
                                 <Card key={arena.id} onClick={() => navigate(`/clash/${arena.id}`)}
-                                className="bg-surface hover:bg-surface-2/40 border-border p-5 cursor-pointer transition shadow-sm flex flex-col justify-between group">
+                                className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-5 cursor-pointer transition-all duration-200 shadow-sm flex flex-col justify-between group">
                                     <CardContent className="p-0 flex flex-col justify-between h-full">
                                         <div>
                                             <div className="flex items-start justify-between gap-2 mb-3">

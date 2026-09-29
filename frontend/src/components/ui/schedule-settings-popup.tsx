@@ -1,8 +1,9 @@
 import { customFetch } from "@/lib/custom-fetch"
 import { Calendar, CheckCircle2, Loader2, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Button } from "./button"
 import { ReschedulingConfig } from "./rescheduling-config"
+import { ConfirmDialog } from "./confirm-dialog"
 
 type ScheduleSettingsPopupProps = Readonly<{
     isOpen: boolean
@@ -19,14 +20,31 @@ export function ScheduleSettingsPopup({
     const [isConnecting, setIsConnecting] = useState(false)
     const [syncEnabled, setSyncEnabled] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [isReschedulingDirty, setIsReschedulingDirty] = useState(false)
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+
+    const handleRequestClose = useCallback(() => {
+        if (isReschedulingDirty) {
+            setShowDiscardConfirm(true)
+        } else {
+            onClose()
+        }
+    }, [isReschedulingDirty, onClose])
+
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") onClose();
+            if (e.key === "Escape") {
+                if (showDiscardConfirm) {
+                    setShowDiscardConfirm(false)
+                    return
+                }
+                handleRequestClose();
+            }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
     useEffect(() => {
         if (!isOpen){
@@ -148,7 +166,7 @@ export function ScheduleSettingsPopup({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in p-3 sm:p-4">
-            <button type="button" tabIndex={-1} aria-label="Close settings backdrop" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
+            <button type="button" tabIndex={-1} aria-label="Close settings backdrop" onClick={handleRequestClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
             <div className="relative z-10 w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between border-b border-border p-4">
                     <div className="flex items-center gap-2">
@@ -157,7 +175,7 @@ export function ScheduleSettingsPopup({
                             Schedule Settings
                         </h2>
                     </div>
-                    <button type="button" onClick={onClose} aria-label="Close settings" className="text-muted-foreground hover:text-foreground cursor-pointer">
+                    <button type="button" onClick={handleRequestClose} aria-label="Close settings" className="text-muted-foreground hover:text-foreground cursor-pointer">
                         <X size={20}/>
                     </button>
                 </div>
@@ -223,11 +241,25 @@ export function ScheduleSettingsPopup({
                                 </div>
                             )}
                             {/* rescheduling section */}
-                            <ReschedulingConfig/>
+                            <ReschedulingConfig onDirtyChange={setIsReschedulingDirty}/>
                         </>
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showDiscardConfirm}
+                onClose={() => setShowDiscardConfirm(false)}
+                onConfirm={() => {
+                    setShowDiscardConfirm(false)
+                    onClose()
+                }}
+                title="Discard Changes?"
+                description="Are you sure? You will lose your progress."
+                confirmText="Discard"
+                cancelText="Keep Editing"
+                variant="danger"
+            />
         </div>
     )
 }

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import FriendsManagementPage from '@/pages/opticlash/friends';
+import FriendsManagementPage, { formatFriendRequestDate } from '@/pages/opticlash/friends';
 import ArenaHubPage from '@/pages/opticlash/index';
 import { customFetch } from '@/lib/custom-fetch';
 import { useAuth } from '@/context/auth-context';
@@ -47,6 +47,9 @@ const { mockConn } = vi.hoisted(() => ({
         on: vi.fn(),
         invoke: vi.fn(),
         stop: vi.fn().mockResolvedValue(undefined),
+        onreconnected: vi.fn(),
+        onreconnecting: vi.fn(),
+        onclose: vi.fn(),
         state: 'Disconnected',
     },
 }));
@@ -220,6 +223,35 @@ describe('PgFriends', () => {
         });
         fireEvent.click(screen.getByText('Inspect Profile'));
         expect(await screen.findByLabelText(/Athlete profile for Alice/i)).toBeDefined();
+    });
+
+    it('formats ISO friend request date with month, day, year and 12-hour time', () => {
+        const formatted = formatFriendRequestDate('2026-09-29T12:01:02.395311Z');
+        expect(formatted).toMatch(/^[A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2} [AP]M$/);
+        expect(formatted).toContain('Sep 29, 2026');
+    });
+
+    it('falls back gracefully for non-date strings or empty dates', () => {
+        expect(formatFriendRequestDate('today')).toBe('today');
+        expect(formatFriendRequestDate('')).toBe('');
+        expect(formatFriendRequestDate(undefined)).toBe('');
+    });
+
+    it('renders formatted date in friend request card', async () => {
+        renderFriends({
+            incoming: [{
+                id: 'r-iso',
+                fromAthleteId: 'a-iso',
+                fromName: 'Echo',
+                fromInitials: 'EC',
+                fromCode: 'EC123',
+                sentAt: '2026-09-29T12:01:02.395311Z',
+            }],
+        });
+
+        fireEvent.click(await screen.findByText('Requests', {}, { timeout: 10000 }));
+        expect(await screen.findByText('Echo', {}, { timeout: 10000 })).toBeDefined();
+        expect(screen.getByText(/Sent Sep 29, 2026/)).toBeDefined();
     });
 });
 

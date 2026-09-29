@@ -60,6 +60,7 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **Configure app preferences:** As a user, I want to access a settings menu to configure app preferences so that the platform behaves according to my personal needs (e.g., unit measurements, theme).
 *   **View past workouts:** As a user, I want to browse a history log of my past workouts so that I can review my consistency over time.
 *   **Sign out:** As a user, I want to select a sign-out button so that my account session is securely terminated on the device.
+*   **Delete account:** As a user, I want to permanently delete my account and associated data so that my personal details are scrubbed from the system.
 
 ### Active Session
 *   **Add exercise:** As a user, I want to add an exercise while a session is active so that I can adapt my training on the fly.
@@ -111,6 +112,27 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   **View tutorials:** As a user, I want to view tutorials so that I can learn how to navigate and best utilize the application's features.
 *   **View help centre and resources:** As a user, I want to access the help centre and its resources so that I can find comprehensive support documentation and contact information.
 
+### Opticlash
+*   **Create arena:** As a user, I want to create a private arena so that I can compete with my squad members in custom DOTS or volume leaderboards.
+*   **Manage arena invites:** As a user, I want to review, accept, or decline arena invitations so that I can join private squad competitions.
+*   **Manage friend requests:** As a user, I want to send friend requests via unique user codes, and accept or reject incoming requests so that I can connect with fellow lifters.
+*   **Manage duel invites:** As a user, I want to send and respond to 1v1 progressive overload duel challenges so that I can test my lifting performance directly against friends.
+*   **View duels:** As a user, I want to view active, pending, and completed 1v1 duels so that I can track target goals, volume progress, and head-to-head outcomes.
+*   **View league:** As a user, I want to view competitive leagues and tier divisions (Bronze through Diamond) so that I can see my placement among athletes.
+*   **Filter league:** As a user, I want to filter league leaderboards by gender, tier, or weight class so that I can compare myself against relevant peers.
+*   **View arena:** As a user, I want to view a specific gym arena to see participant rankings, member lists, and competition details so that I can follow squad standings.
+*   **Manage global ranking participation:** As a user, I want to toggle my participation in the global league rankings so that I can control whether my profile and scores appear on public leaderboards.
+*   **View live arena feed:** As a user, I want to monitor the live feed of activity across my arenas so that I can stay updated on recent workouts, PRs, and milestones achieved by my squad.
+*   **View profile:** As a user, I want to inspect another athlete's profile to view their tier, DOTS score, bodyweight, bio, and recent performance stats so that I can gauge their athletic achievements.
+*   **Send kudos:** As a user, I want to send kudos and cheers to friends and arena members on their achievements so that I can motivate and celebrate my fitness community.
+
+### Optivision
+*   **View exercise guide:** As a user, I want to view exercise guides with camera angles and setup requirements so that I can record my lifts correctly for computer vision form analysis.
+*   **Filter exercise guide:** As a user, I want to filter the exercise guide by equipment or movement category so that I can quickly find the instructions for my planned lift.
+*   **View analysis instructions:** As a user, I want to read comprehensive video recording and analysis instructions so that my uploaded video captures optimal landmarks for computer vision processing.
+*   **Analyse a set:** As a user, I want to record or upload a video of an exercise set so that the system automatically assesses my form, joint angles, and repetition quality.
+*   **View set analysis:** As a user, I want to view detailed feedback from the form analysis, including joint angles, repetition metrics, form scores, and corrective coaching tips so that I can improve my lifting technique and avoid injury.
+
 ## Use Cases
 
 ### Workouts Management
@@ -130,6 +152,30 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **Start time constraints workout**
 *   TUCBW the user selects a time constraint duration (e.g., 15, 30, 45, or 60 minutes) to start a workout.
 *   TUCEW the system adapts the workout session structure to fit within the specified time budget and launches the active workout session.
+
+**Start workout**
+*   TUCBW the user selects the start option on a saved workout in their library.
+*   TUCEW the system initializes the active workout session with the selected routine and navigates to the active session tracker.
+
+**Duplicate workout**
+*   TUCBW the user selects the duplicate action on an existing saved workout.
+*   TUCEW the system creates a cloned copy of the workout including all exercises and saves it as a new editable routine template.
+
+**Edit workout**
+*   TUCBW the user selects the edit option on a saved workout in the workouts library.
+*   TUCEW the system loads the workout into the Workout Editor for modification.
+
+**Delete workout**
+*   TUCBW the user selects the delete option for a workout and confirms the confirmation prompt.
+*   TUCEW the system permanently removes the workout routine from the database.
+
+**Create workout**
+*   TUCBW the user clicks the create workout button on the workouts management page.
+*   TUCEW the system navigates the user to the Workout Creator with an empty workout draft.
+
+**Search workout**
+*   TUCBW the user types a query into the search bar in the workout library.
+*   TUCEW the system dynamically filters the displayed list to show only workouts matching the query name.
 
 ### Workout Creator
 
@@ -153,6 +199,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user clicks the save button after finalising their workout routine.
 *   TUCEW the system successfully stores the new workout to the user's profile.
 
+**Create exercise**
+*   TUCBW the user selects the option to create a custom exercise while building a new workout draft.
+*   TUCEW the user specifies the custom exercise parameters and the system saves the exercise and adds it to the workout draft.
+
 ### Workout Editor
 
 **Search for exercise**
@@ -174,6 +224,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **Edit exercise**
 *   TUCBW the user selects a specific exercise within the workout to modify its parameters (e.g., changing sets, reps, or rest time).
 *   TUCEW the new parameters for that specific exercise are updated in the editor.
+
+**Create exercise**
+*   TUCBW the user chooses to create a new custom exercise while editing an existing workout routine.
+*   TUCEW the user defines the custom exercise properties and the system adds it directly to the active workout sequence.
 
 **Save changes**
 *   TUCBW the user clicks the save button to finalise their edits.
@@ -221,6 +275,26 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user initiates the Google Calendar connection process and authorizes Google OAuth permissions.
 *   TUCEW the system links the Google Calendar account, creates the dedicated OptiLifts calendar, and synchronises all upcoming scheduled workouts.
 
+**Schedule repeated workouts**
+*   TUCBW the user configures a saved workout to repeat across specified recurring days of the week.
+*   TUCEW the system populates the user's calendar with recurring instances of the workout for the selected cycle.
+
+**Change schedule view**
+*   TUCBW the user toggles the calendar view selector between daily, weekly, and monthly views.
+*   TUCEW the system adjusts the schedule display to the chosen time perspective.
+
+**View summary**
+*   TUCBW the user requests a high-level summary of their scheduled training block.
+*   TUCEW the system displays aggregated metrics including total scheduled volume, total sessions, and planned rest days.
+
+**View muscle balance chart**
+*   TUCBW the user opens the muscle balance visualization in the schedule screen.
+*   TUCEW the system renders an interactive chart showing scheduled muscular workload balance across muscle groups.
+
+**Filter by date**
+*   TUCBW the user selects a specific date or date range in the schedule planner.
+*   TUCEW the system updates the view to show only workouts scheduled within that range.
+
 ### Workout Overview
 
 **View workout**
@@ -234,6 +308,14 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **Edit workout**
 *   TUCBW the user clicks the "Edit" button on the overview screen.
 *   TUCEW the system opens the chosen workout inside the "Workout Editor."
+
+**View workout summary**
+*   TUCBW the user inspects a workout's detail page.
+*   TUCEW the system displays the high-level summary including estimated duration, exercise counts, and targeted muscle distribution.
+
+**Delete workout**
+*   TUCBW the user clicks the delete button on the workout detail page and confirms the action.
+*   TUCEW the system deletes the workout from the database and redirects the user back to their workout library.
 
 ### Profile
 
@@ -249,6 +331,14 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user submits their updated profile details.
 *   TUCEW the system securely updates and stores the new profile data.
 
+**Configure app preferences**
+*   TUCBW the user accesses the preferences section within their profile.
+*   TUCEW the user modifies app preferences (such as weight units or theme) and the system persists the settings.
+
+**View past workouts**
+*   TUCBW the user selects the past workouts history link in their profile.
+*   TUCEW the system navigates to and displays the user's completed workout logs.
+
 ### Workout View (Active Session)
 
 **Add exercise**
@@ -263,9 +353,17 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user clicks on an exercise to see instructions, past history, or a video demonstration.
 *   TUCEW the system displays the requested educational details for that exercise.
 
+**Add set**
+*   TUCBW the user taps the add set button for an exercise during an active logging session.
+*   TUCEW the system appends a new set row with default weight and rep values to the current exercise.
+
 **Log set**
 *   TUCBW the user inputs the completed reps and weight for a specific set and marks it as done.
 *   TUCEW the system records the data and highlights the set as completed.
+
+**View workout summary**
+*   TUCBW the user expands or navigates to the active session summary.
+*   TUCEW the system displays real-time session statistics, including total volume lifted, sets completed, and active duration.
 
 **End workout**
 *   TUCBW the user presses the button to finish their current active training session.
@@ -315,6 +413,10 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 *   TUCBW the user requests account deletion and confirms the irreversible action.
 *   TUCEW the system permanently wipes all of the user's personal data and credentials from the database.
 
+**View app information**
+*   TUCBW an unauthenticated visitor navigates to the application landing page.
+*   TUCEW the system presents platform information, core features, and architectural capabilities.
+
 ### Custom Exercise Overview
 
 **View exercise**
@@ -346,6 +448,110 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 **View help centre and resources**
 *   TUCBW the user clicks on the help centre and resources link.
 *   TUCEW the system opens the main help hub containing comprehensive support documentation and contact channels.
+
+### Dashboard
+
+**View today's scheduled workout**
+*   TUCBW the user opens the application and views the dashboard.
+*   TUCEW the system displays the workout routine scheduled for the current day, along with its exercise count and estimated duration.
+
+**Start today's scheduled session**
+*   TUCBW the user clicks the start workout button on today's scheduled workout card on the dashboard.
+*   TUCEW the system launches the active session tracking interface with today's scheduled workout.
+
+**View dashboard statistics**
+*   TUCBW the user views the main dashboard screen.
+*   TUCEW the system calculates and displays high-level fitness metrics, including weekly volume, consistency streaks, and recent progress indicators.
+
+**View upcoming workouts**
+*   TUCBW the user scrolls to or views the upcoming workouts section on the dashboard.
+*   TUCEW the system displays a chronological list of scheduled workouts planned for subsequent days.
+
+### Completed Workouts
+
+**View workout summary**
+*   TUCBW the user selects a completed workout log entry.
+*   TUCEW the system displays a comprehensive post-workout summary detailing total volume lifted, completion time, sets executed, and muscle groups trained.
+
+**View workout**
+*   TUCBW the user opens a specific past workout from the completed workouts list.
+*   TUCEW the system displays the full historical log with exact weights, repetitions, and performance notes recorded for each set.
+
+**Filter by week**
+*   TUCBW the user applies a weekly date filter in the completed workouts view.
+*   TUCEW the system refreshes the list to display only workouts completed during the selected week.
+
+### Opticlash
+
+**Create arena**
+*   TUCBW the user navigates to the OptiClash arenas section and clicks the create arena button.
+*   TUCEW the user specifies arena parameters (such as arena name, metric type, and privacy), and the system provisions the new private arena and generates an invite code.
+
+**Manage arena invites**
+*   TUCBW the user views pending arena invitations in the OptiClash invites tab.
+*   TUCEW the user accepts or declines an invitation, and the system updates their arena memberships accordingly.
+
+**Manage friend requests**
+*   TUCBW the user searches for an athlete by friend code or views incoming friend requests in the friends management tab.
+*   TUCEW the user dispatches a new request, or accepts or rejects an incoming request, and the system updates the user's friendship list.
+
+**Manage duel invites**
+*   TUCBW the user challenges a friend to a 1v1 duel or receives a duel challenge invitation.
+*   TUCEW the user specifies duel terms (target lift, duration, and metric) or responds to an incoming invite, and the system schedules or initializes the duel.
+
+**View duels**
+*   TUCBW the user navigates to the duels tab in OptiClash.
+*   TUCEW the system displays all active, pending, and completed 1v1 duels with real-time head-to-head performance bars and score differentials.
+
+**View league**
+*   TUCBW the user navigates to the OptiClash leagues hub.
+*   TUCEW the system displays the global competitive league standings across divisions (Bronze, Silver, Gold, Platinum, Diamond) with athlete ranks, DOTS scores, and weekly volumes.
+
+**Filter league**
+*   TUCBW the user applies filter criteria (such as gender, tier division, or bodyweight class) on the league leaderboard.
+*   TUCEW the system updates the leaderboard to display only athletes matching the selected filters.
+
+**View arena**
+*   TUCBW the user selects a private gym arena from their arena list.
+*   TUCEW the system displays the arena's leaderboard, member list, activity feed, and competitive standings.
+
+**Manage global ranking participation**
+*   TUCBW the user toggles the global leaderboard opt-in switch.
+*   TUCEW the system updates the user's privacy preference, enrolling them into or withdrawing them from public competitive rankings.
+
+**View live arena feed**
+*   TUCBW the user accesses the live feed tab within OptiClash or a specific arena.
+*   TUCEW the system streams real-time updates of squad workouts, personal records, and cheers broadcast by arena participants via WebSockets.
+
+**View profile**
+*   TUCBW the user clicks on an athlete's avatar or inspect profile button.
+*   TUCEW the system opens the profile inspector drawer showing the athlete's rank tier, DOTS score, bodyweight, bio, muscle balance, and recent workout activity.
+
+**Send kudos**
+*   TUCBW the user clicks the cheer/kudos button on a feed event or an athlete's profile inspector.
+*   TUCEW the system records the kudo, updates the event's cheer count in real time, and sends a notification to the recipient athlete.
+
+### Optivision
+
+**View exercise guide**
+*   TUCBW the user accesses the OptiVision form analysis section.
+*   TUCEW the system displays a library of supported exercises with setup guidelines, camera positioning instructions, and required joint visibility.
+
+**Filter exercise guide**
+*   TUCBW the user applies category or equipment filters within the exercise guide.
+*   TUCEW the system filters the exercise guide to display only movements matching the chosen criteria.
+
+**View analysis instructions**
+*   TUCBW the user opens the analysis instructions for a selected exercise.
+*   TUCEW the system provides detailed filming criteria, including ideal distance, lighting, tripod angle, and repetition tempo.
+
+**Analyse a set**
+*   TUCBW the user uploads or records a video of an exercise set for automated form analysis.
+*   TUCEW the system extracts landmark pose frames, transmits the payload for computer vision processing, and registers the analysis job.
+
+**View set analysis**
+*   TUCBW the user opens a completed set analysis report.
+*   TUCEW the system presents joint angles, range-of-motion metrics, rep-by-rep depth indicators, form breakdown scores, and corrective coaching feedback.
 
 ***
 
@@ -479,6 +685,51 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 3. FR9.3: The system will provide actionable recommendations when an exercise reaches a plateau or regression state.
 4. FR9.4: The system will allow the user to swap plateaued exercises across assigned workouts with alternative movements targeting the same muscle group.
 5. FR9.5: The system will display volume progression and frequency trends across completed training cycles.
+
+### Subsystem 10: OptiVision Biomechanical Form Analysis
+
+#### FR10.1: Video Capture and Landmark Extraction
+1. FR10.1.1: The system will allow the user to record or upload exercise performance videos for core compound movements (Squat, Bench Press, Deadlift).
+2. FR10.1.2: The system will extract client-side sequential 3D skeletal landmark coordinates across recorded video frames.
+3. FR10.1.3: The system will transmit landmark coordinate payloads to the server and store them in object storage using the claim-check architectural pattern.
+
+#### FR10.2: Asynchronous Distributed Analysis
+1. FR10.2.1: The system will enqueue vision analysis jobs onto a message queue for asynchronous processing.
+2. FR10.2.2: The system will distribute analysis jobs across containerized GPU worker nodes executing 1D-CNN sliding-window neural network inference.
+3. FR10.2.3: The system will automatically detect biomechanical anomalies, including joint angle deviations, knee valgus, lumbar flexion, and bar path instability.
+4. FR10.2.4: The system will generate automated, natural language coaching feedback and form correction tips using Google Gemini based on detected anomalies.
+
+#### FR10.3: Feedback and Technique Tracking
+1. FR10.3.1: The system will display a movement form quality score and a detailed list of identified technique faults with severity ratings.
+2. FR10.3.2: The system will maintain a historical log of completed form checks for user review and longitudinal technique tracking.
+
+### Subsystem 11: OptiClash Social and Gamification
+
+#### FR11.1: Social & Friend Network
+1. FR11.1.1: The system will assign each athlete a unique 6-character alphanumeric friend referral code.
+2. FR11.1.2: The system will allow users to send friend requests using another athlete's friend code.
+3. FR11.1.3: The system will allow users to view pending incoming and outgoing friend requests and accept, decline, or bulk-dismiss them.
+4. FR11.1.4: The system will maintain a mutual friends list displaying friend avatars, DOTS strength scores, and competitive tier badges.
+5. FR11.1.5: The system will allow users to remove an existing friend, dissolving the mutual connection.
+
+#### FR11.2: Private Gym Arenas & Squads
+1. FR11.2.1: The system will allow users to create private gym arenas with a custom name, scoring metric (DOTS Overall, Total Volume, or Compound 1RM), and duration (7 to 365 days).
+2. FR11.2.2: The system will generate a unique 6-character alphanumeric join code for each private arena.
+3. FR11.2.3: The system will allow athletes to join an arena by entering its 6-character join code.
+4. FR11.2.4: The system will allow arena members to invite mutual friends directly into the squad.
+5. FR11.2.5: The system will allow non-owner members to leave an arena while retaining historical activity logs.
+
+#### FR11.3: Live Activity Feed & Real-Time Telemetry
+1. FR11.3.1: The system will automatically publish squad events to an arena activity feed upon member workout completions, personal records (PRs), and tier promotions.
+2. FR11.3.2: The system will maintain an automatically pruned live feed of up to 100 recent activities per arena.
+3. FR11.3.3: The system will allow arena members to send a cheer (kudos) to an activity feed item, enforcing a one-cheer-per-user constraint.
+4. FR11.3.4: The system will broadcast live activity feed updates, PR alerts, and cheer notifications to connected squad members in real time using SignalR WebSockets.
+
+#### FR11.4: Competitive Leaderboards, Duels, and Leagues
+1. FR11.4.1: The system will dynamically calculate and display arena leaderboard standings based on the selected metric and active season window.
+2. FR11.4.2: The system will display competitor rankings with total volume, compound e1RM scores, normalized DOTS scores, rank trajectory trends, and competitive tier badges (Bronze through Overload Master).
+3. FR11.4.3: The system will support head-to-head 1v1 workout duels between friends, tracking comparative scores and declaring matchup outcomes.
+4. FR11.4.4: The system will maintain global and weight-class public leagues with rolling competitive standings.
 
 ## Non-Functional Requirements
 

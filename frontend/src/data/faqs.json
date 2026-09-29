@@ -136,5 +136,71 @@
         "category": "User Settings",
         "question": "How do I change my password or update my profile details?",
         "answer": "Navigate to User Settings > Account Security to update your name, email address, password, or security preferences."
+    },
+    {
+        "id": "faq-34",
+        "category": "User Settings",
+        "question": "What rep ranges should I do to build strength or muscle?",
+        "answer": "Your target rep range depends on your training goal: for building maximum strength, train in the 1-5 rep range using heavier weights (80-100% of 1RM) and 2-5 minutes of rest. For muscle hypertrophy (building muscle size), train in the 6-12 rep range with moderate weights (65-80% of 1RM) and 1-2 minutes of rest, pushing close to failure. For muscular endurance, use 15+ reps with lighter weights and shorter rest periods. You can set and customize target reps for any exercise in your workout routines."
+    },
+    {
+        "id": "faq-24",
+        "category": "OptiClash",
+        "question": "What is OptiClash and how does competitive lifting work?",
+        "answer": "OptiClash is OptiLifts' competitive social lifting ecosystem. Athletes can participate in global league rankings, create or join private gym arenas, challenge friends to 1v1 progressive overload duels, and share real-time achievements and cheers."
+    },
+    {
+        "id": "faq-25",
+        "category": "OptiClash",
+        "question": "How are competitive divisions and tiers structured in OptiClash?",
+        "answer": "Athletes are placed into 5 competitive tiers: Bronze, Silver, Gold, Platinum, and Diamond. Rankings are primarily determined by DOTS score (a strength-to-bodyweight coefficient formula) or weekly volume, ensuring fair competition across different weight classes."
+    },
+    {
+        "id": "faq-26",
+        "category": "OptiClash",
+        "question": "How do private Gym Arenas work and how do I join or create one?",
+        "answer": "Gym Arenas allow you to form private competitive squads with workout partners. You can create an arena choosing between DOTS Overall or Total Volume as the primary metric, and invite friends using your unique 6-character arena code."
+    },
+    {
+        "id": "faq-27",
+        "category": "OptiClash",
+        "question": "What are 1v1 Duels and how are winners decided?",
+        "answer": "In a 1v1 Duel, you challenge a friend to a head-to-head showdown on a specific exercise (e.g. Squat, Bench Press, or Deadlift). Duels last for a set duration (7, 14, or 30 days) and track either estimated 1RM gain percentage or total exercise volume."
+    },
+    {
+        "id": "faq-28",
+        "category": "OptiClash",
+        "question": "How do I add friends and send duel or arena invites?",
+        "answer": "Navigate to OptiClash > Friends. Share your unique 6-character Friend Code with other lifters, or enter their friend code to send a friend request. Once accepted, you can inspect their profile, invite them to your arenas, and challenge them to 1v1 duels."
+    },
+    {
+        "id": "faq-29",
+        "category": "OptiClash",
+        "question": "Can I opt out of global OptiClash rankings for privacy?",
+        "answer": "Yes. You can toggle participation in global rankings via the Opt-In / Opt-Out switch on the OptiClash hub. When opted out, your profile is hidden from global leaderboards, while still allowing you to compete privately within your joined arenas."
+    },
+    {
+        "id": "faq-30",
+        "category": "OptiVision",
+        "question": "What is OptiVision and how does computer vision form analysis work?",
+        "answer": "OptiVision uses automated computer vision and pose-estimation technology to analyze video recordings of your lifts. It tracks 33 body landmarks across each video frame to calculate joint angles, rep depth, bar velocity, and movement symmetry."
+    },
+    {
+        "id": "faq-31",
+        "category": "OptiVision",
+        "question": "Which exercises are supported by OptiVision form analysis?",
+        "answer": "OptiVision currently supports major compound barbell lifts: Barbell Squats, Barbell Deadlifts, and Barbell Bench Press. It provides movement-specific evaluation such as squat depth, neutral spine maintenance, and bar path alignment."
+    },
+    {
+        "id": "faq-32",
+        "category": "OptiVision",
+        "question": "How should I position my camera when recording for OptiVision?",
+        "answer": "Position your camera or smartphone horizontally at roughly waist height (0.8m to 1.2m), perpendicular (side view / 90 degrees) to your lifting station. Ensure your full body from head to feet remains unobstructed throughout the entire range of motion."
+    },
+    {
+        "id": "faq-33",
+        "category": "OptiVision",
+        "question": "How do I interpret the OptiVision form analysis report?",
+        "answer": "Each analysis report includes an overall Form Score, rep-by-rep depth indicators, maximum joint angle curves, and actionable coaching recommendations to help correct technique breakdowns and prevent injury."
     }
 ]

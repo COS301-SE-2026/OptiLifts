@@ -1,5 +1,5 @@
 import { customFetch } from "@/lib/custom-fetch";
-import { useState, type SyntheticEvent } from "react";
+import { useState, useEffect, useCallback, type SyntheticEvent } from "react";
 import { toast } from "../ui/alert";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -7,6 +7,7 @@ import { Card } from "../ui/card";
 import { KeyRound, Loader2, PlusCircle, Users, X } from "lucide-react";
 import { Input } from "../ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const ARENA_METRIC_OPTIONS = [
     {value: 'DOTSOverall', label: 'DOTS Strength-to-Weight (Recommended)'},
@@ -37,6 +38,32 @@ export function CreateJoinArenaModal({
     const [arenaName, setArenaName] = useState('');
     const [metric, setMetric] = useState<string>(ARENA_METRIC_OPTIONS[0].value);
     const [duration, setDuration] = useState<string>(ARENA_DURATION_OPTIONS[0].value);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+    const isDirty = (tab === 'join' && joinCode.trim().length > 0) || (tab === 'create' && (arenaName.trim().length > 0 || metric !== ARENA_METRIC_OPTIONS[0].value || duration !== ARENA_DURATION_OPTIONS[0].value));
+
+    const handleRequestClose = useCallback(() => {
+        if (isDirty) {
+            setShowDiscardConfirm(true);
+        } else {
+            onClose();
+        }
+    }, [isDirty, onClose]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                if (showDiscardConfirm) {
+                    setShowDiscardConfirm(false);
+                    return;
+                }
+                handleRequestClose();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
     if (!isOpen){
         return null;
@@ -132,6 +159,7 @@ export function CreateJoinArenaModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <button type="button" tabIndex={-1} aria-label="Close modal backdrop" onClick={handleRequestClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full" disabled={isSubmitting}/>
             <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
@@ -140,7 +168,7 @@ export function CreateJoinArenaModal({
                             <span>Gym Arenas</span>
                         </h3>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={onClose}
+                    <Button variant="ghost" size="icon" onClick={handleRequestClose}
                         className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" aria-label="Close" disabled={isSubmitting}>
                         <X className="w-4 h-4 hover:text-foreground" />
                     </Button>
@@ -267,6 +295,20 @@ export function CreateJoinArenaModal({
                         </form>
                     )}
             </Card>
+
+            <ConfirmDialog
+                isOpen={showDiscardConfirm}
+                onClose={() => setShowDiscardConfirm(false)}
+                onConfirm={() => {
+                    setShowDiscardConfirm(false);
+                    onClose();
+                }}
+                title="Discard Changes?"
+                description="Are you sure? You will lose your progress."
+                confirmText="Discard"
+                cancelText="Keep Editing"
+                variant="danger"
+            />
         </div>
     );
 }

@@ -7,14 +7,14 @@ export interface WeightClassBracket {
     maxKg: number;
 }
 export const WEIGHT_CLASS_BRACKETS: WeightClassBracket[] = [
-    { id: 'u59', label: '-59 kg Class', minKg: 0, maxKg: 59.0 },
+    { id: 'u59', label: '<59 kg Class', minKg: 0, maxKg: 59.0 },
     { id: 'u66', label: '66 kg Class', minKg: 59.1, maxKg: 66.0 },
     { id: 'u74', label: '74 kg Class', minKg: 66.1, maxKg: 74.0 },
     { id: 'u83', label: '83 kg Class', minKg: 74.1, maxKg: 83.0 },
     { id: 'u93', label: '93 kg Class', minKg: 83.1, maxKg: 93.0 },
     { id: 'u105', label: '105 kg Class', minKg: 93.1, maxKg: 105.0 },
     { id: 'u120', label: '120 kg Class', minKg: 105.1, maxKg: 120.0 },
-    { id: '120p', label: '120+ kg Class', minKg: 120.1, maxKg: 999.0 },
+    { id: '120p', label: '>120 kg Class', minKg: 120.1, maxKg: 999.0 },
 ];
 
 export function getWeightClassBracket(weightKg: number): WeightClassBracket {
@@ -43,6 +43,7 @@ export interface ClashAthlete {
     name: string;
     initials: string;
     avatarUrl?: string;
+    bio?: string;
     code: string;
     gender: 'male' | 'female';
     bodyweightKg: number;

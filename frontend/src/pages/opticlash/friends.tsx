@@ -436,7 +436,7 @@ export default function FriendsManagementPage(){
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredFriends.map((friend) => (
-                            <Card key={friend.id} className="bg-surface border-border p-5 shadow-sm flex flex-col justify-between">
+                            <Card key={friend.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-5 shadow-sm flex flex-col justify-between transition-all duration-200">
                                 <CardContent className="p-0">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-3.5">
@@ -513,7 +513,7 @@ export default function FriendsManagementPage(){
                         ) : (
                     <div className="space-y-3">
                         {filteredRequests.map((req) => (
-                            <Card key={req.id} className="bg-surface border-border p-4 shadow.sm">
+                            <Card key={req.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-4 shadow-sm transition-all duration-200">
                                 <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3.5">
                                         <AthleteAvatar initials={req.fromInitials} name={req.fromName} avatarUrl={req.fromAvatarUrl} size="md"/>
@@ -608,7 +608,7 @@ export default function FriendsManagementPage(){
                                         const initials = dinv.challengerName ? dinv.challengerName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'OP';
                                         const targetLabel = dinv.targetType.toLowerCase().includes('volume') ? 'Total Volume (kg)' : 'E1RM Gain (%)';
                                         return (
-                                            <Card key={dinv.id} className="bg-surface border-border p-4 shadow-sm">
+                                            <Card key={dinv.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-4 shadow-sm transition-all duration-200">
                                                 <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                     <div className="flex items-center gap-3">
                                                         <AthleteAvatar initials={initials} name={dinv.challengerName} avatarUrl={dinv.challengerAvatarUrl ?? undefined} size="md"/>
@@ -663,7 +663,7 @@ export default function FriendsManagementPage(){
                             ) : (
                                 <div className="space-y-3">
                                     {arenaInvites.map((ainv) => (
-                                        <Card key={ainv.id} className="bg-surface border-border p-4 shadow-sm">
+                                        <Card key={ainv.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-4 shadow-sm transition-all duration-200">
                                             <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
                                                     <AthleteAvatar initials={ainv.invitedByInitials} name={ainv.invitedByName}

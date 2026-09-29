@@ -43,7 +43,7 @@ export function DuelCard({
     }
     const rivalfirstname = m.rivalName ? m.rivalName.split(' ')[0] : 'Rival';
     return (
-        <Card onClick={onClick} className={`bg-surface hover:bg-surface-2/40 border-border p-5 cursor-pointer transition shadow-sm group ${className}`}>
+        <Card onClick={onClick} className={`bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-5 cursor-pointer transition-all duration-200 shadow-sm group ${className}`}>
             <CardContent className="p-0">
                 <div className="flex items-center justify-between text-xs mb-3 font-sans">
                     <span className="font-bold text-foreground uppercase tracking-wider">{duel.title}</span>

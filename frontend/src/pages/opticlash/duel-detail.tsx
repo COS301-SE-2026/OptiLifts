@@ -240,7 +240,7 @@ export default function DuelArenaPage() {
             </div>
             <div className="max-w-4xl mx-auto px-4 py-4 space-y-6">
                 {/* hv card */}
-                <Card className="bg-surface border-border p-6 md:p-8 shadow-sm overflow-hidden">
+                <Card className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-6 md:p-8 shadow-sm overflow-hidden transition-all duration-200">
                     <CardContent className="p-0">
                     <div className="grid grid-cols-3 items-center text-center gap-2 md:gap-4 relative z-10">
                         <div className="flex flex-col items-center">
@@ -323,7 +323,7 @@ export default function DuelArenaPage() {
                 </CardContent>
             </Card>
 
-            <Card className="bg-surface border-border p-6 shadow-sm">
+            <Card className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand p-6 shadow-sm transition-all duration-200">
                 <CardContent className="p-0">
                     <h3 className="font-display text-xl tracking-wide text-foreground flex items-center gap-2 mb-4">
                         Live Duel Timeline

@@ -153,8 +153,6 @@ app.UseAuthentication(); //authentication middleware
 app.UseAuthorization(); //authorization middleware
 app.UseRateLimiter(); //rate limiting middleware
 app.MapControllers();
-app.MapHub<OptiLifts.API.Hubs.ClashHub>("/hubs/clash");
-app.MapHub<OptiLifts.API.Hubs.ClashHub>("/clash-hub");
 app.MapHub<OptiLifts.API.Hubs.ClashHub>("/api/hubs/clash");
 
 //basic health check endpoint, doesn't need a controller as just a simple get rq

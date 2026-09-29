@@ -31,6 +31,7 @@ export default function FriendsManagementPage(){
         code: string;
         dotsScore: number;
         tier: string;
+        bio?: string;
     }
     interface FriendRequestItem{
         id: string;
@@ -70,6 +71,7 @@ export default function FriendsManagementPage(){
             name: friend.name,
             initials: friend.initials || 'AT',
             avatarUrl: friend.avatarUrl,
+            bio: friend.bio,
             code: friend.code,
             gender: 'male',
             bodyweightKg: 0,

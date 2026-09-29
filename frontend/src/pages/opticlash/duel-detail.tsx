@@ -157,6 +157,7 @@ export default function DuelArenaPage() {
             name,
             initials,
             avatarUrl: avatarUrl || undefined,
+            bio: (athleteId === user?.id ? user?.bio : undefined),
             code: '',
             gender: 'male',
             bodyweightKg: 0,

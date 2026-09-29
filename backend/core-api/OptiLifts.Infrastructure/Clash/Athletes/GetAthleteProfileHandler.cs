@@ -97,7 +97,8 @@ public sealed class GetAthleteProfileHandler : IRequestHandler<GetAthleteProfile
             amountOfKudos,
             hasSentKudos,
             isFriend,
-            hasPendingFriendRequest
+            hasPendingFriendRequest,
+            user.Bio
         );
     }
 

@@ -43,6 +43,7 @@ export interface ClashAthlete {
     name: string;
     initials: string;
     avatarUrl?: string;
+    bio?: string;
     code: string;
     gender: 'male' | 'female';
     bodyweightKg: number;

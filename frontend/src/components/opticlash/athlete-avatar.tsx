@@ -5,7 +5,7 @@ interface AthleteAvatarProps{
     name?: string;
     avatarUrl?: string;
     isCurrentUser?:boolean;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'auto';
     className?: string;
 }
 
@@ -19,6 +19,7 @@ export function AthleteAvatar({
         md: 'w-10 h-10 rounded-xl text-base',
         lg: 'w-12 h-12 rounded-xl text-xl',
         xl: 'w-16 h-16 rounded-2xl text-2xl',
+        auto: 'w-full h-full rounded-2xl text-2xl',
     }[size];
 
     const colourStyles = isCurrentUser ? 'bg-brand text-primary-foreground shadow-sm' : 'bg-surface-2 border border-border text-foreground';

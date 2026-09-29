@@ -9,7 +9,6 @@ import profilePageImage from '@/assets/Profile_Page.png'
 import schedulePageImage from '@/assets/Schedule_Page.png'
 import sessionPageImage from '@/assets/Session_Page.png'
 import progressionPageImage from '@/assets/Progression_Page.png'
-import optiClashPageImage from '@/assets/OptiClash_Page.png'
 import optiVisionPageImage from '@/assets/OptiVision_Page.png'
 import type { LucideIcon } from 'lucide-react'
 

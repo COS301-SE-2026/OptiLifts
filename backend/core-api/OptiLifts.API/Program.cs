@@ -121,7 +121,7 @@ if (!string.IsNullOrEmpty(signalRConn))
     builder.Services.AddSignalR().AddAzureSignalR(options =>
     {
         options.ConnectionString = signalRConn;
-        options.ServerConnectionCount = 1;
+        options.InitialHubServerConnectionCount = 1;
     });
 }
 else

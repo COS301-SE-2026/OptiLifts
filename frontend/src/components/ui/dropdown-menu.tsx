@@ -49,7 +49,7 @@ function DropdownMenuTrigger({
           className={cn(
             "flex items-center font-medium",
             variant === "default" && "size-9 justify-center rounded-lg border border-border bg-background shadow-sm",
-            variant === "filter" && "text-sm text-foreground"
+            variant === "filter" && "text-sm text-foreground min-w-0"
           )}
         >
           {children}

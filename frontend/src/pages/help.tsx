@@ -72,6 +72,38 @@ const TUTORIAL_DATA: readonly TutorialVideo[] = [
         description: 'Learn how OptiLifts detects plateaus and regressions in your lifts, and how to swap out a stalled exercise.',
         duration: '2:05',
         youtubeId: 'z9llkYJQq5c', fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-10',
+        title: 'OptiClash - Friends, Codes and Privacy',
+        description: 'Connect with lifting partners using your 6-character friend code, manage incoming requests, and configure duel privacy settings.',
+        duration: '1:02',
+        youtubeId: 'p9TEYfbeEpk',
+        fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-11',
+        title: 'OptiClash - Global Leaderboards',
+        description: 'Explore the OptiLifts Global and Divisional leagues, compete fairly using the DOTS formula across IPF weight classes, and track monthly standings.',
+        duration: '1:05',
+        youtubeId: 'jAxy9TcNNDo',
+        fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-12',
+        title: 'OptiClash - Private Arenas',
+        description: 'Create and join private gym squad arenas with custom metrics and durations, share invite codes, and cheer on teammates via the live activity feed.',
+        duration: '0:59',
+        youtubeId: 'HONF9IUNNGA',
+        fallbackVideoUrl: '',
+    },
+    {
+        id: 'tut-13',
+        title: 'OptiClash - 1v1 Duels',
+        description: 'Challenge friends to head-to-head progressive overload duels on compound lifts, track live set telemetry on a dynamic tug-of-war bar, and send hype reactions.',
+        duration: '1:12',
+        youtubeId: '6VltIV-g8SY',
+        fallbackVideoUrl: '',
     }
 ]
 

@@ -75,10 +75,10 @@ public class GeminiClient : IGeminiClient
         
         if (!string.IsNullOrWhiteSpace(result))
         {
-            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);;
+            return result;
         }
         
-        return null;
+        return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
     }
 
     private static List<VisionAnomaly> GetValidAnomalies(IEnumerable<VisionAnomaly> anomalies)

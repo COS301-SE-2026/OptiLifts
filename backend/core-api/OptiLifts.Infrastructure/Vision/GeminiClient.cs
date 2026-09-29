@@ -73,15 +73,12 @@ public class GeminiClient : IGeminiClient
 
         var result = await ExecuteWithRetriesAsync(endpoint, requestBody, cancellationToken);
         
-        if (string.IsNullOrWhiteSpace(result))
+        if (!string.IsNullOrWhiteSpace(result))
         {
-            return result;
+            return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);;
         }
-        else
-        {
-            _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
-        }
-
+        
+        return null;
     }
 
     private static List<VisionAnomaly> GetValidAnomalies(IEnumerable<VisionAnomaly> anomalies)

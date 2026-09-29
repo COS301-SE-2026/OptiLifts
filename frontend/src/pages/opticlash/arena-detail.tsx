@@ -632,6 +632,12 @@ export default function ArenaLeaderboardPage() {//
             connection.invoke('JoinArena', arenaId).catch(() => {});
         }).catch(() => {});
 
+        connection.onreconnected(() => {
+            if (isCancelled || !arenaId) return;
+            connection.invoke('JoinArena', arenaId).catch(() => {});
+            void fetchPrivateLeaderboard();
+        });
+
         connection.on('ReceiveUserJoined', (joinedArenaId: string, userName: string) => {
             if (joinedArenaId === arenaId) {
                 toast.success(`${userName} joined the arena!`, 'New Member');

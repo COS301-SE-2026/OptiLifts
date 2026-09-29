@@ -323,6 +323,15 @@ export default function ArenaHubPage() {
         }).catch(() => {
             //retry handles automatically
         });
+        connection.onreconnected(() => {
+            if (isCancelled) return;
+            myArenasRef.current.forEach((arena) => {
+                if (arena.type?.toLowerCase() === "private") {
+                    connection.invoke("JoinArena", arena.id).catch(() => {});
+                }
+            });
+            void fetchFeed();
+        });
 
         connection.on("ReceiveActivity", (newActivity: SignalRActivityPayload) => {
             const formatted = {

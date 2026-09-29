@@ -51,6 +51,12 @@ const AllDuelsPage = lazyWithReload(() => import('@/pages/opticlash/duels'))
 const DuelArenaPage = lazyWithReload(() => import('@/pages/opticlash/duel-detail'))
 
 function AppLayout() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <Navbar />

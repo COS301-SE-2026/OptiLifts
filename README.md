@@ -198,9 +198,9 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 [![Coding Standards](https://img.shields.io/badge/Coding_Standards-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/CODING_STANDARDS.md)
 [![Testing Policy](https://img.shields.io/badge/Testing_Policy-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/TESTING_POLICY.md)
 [![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/User_Manual.pdf)
-[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/demo3-brandstyle.pdf)
+[![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/demo4-brandstyle.pdf)
 [![Figma](https://img.shields.io/badge/Figma-View_Panels-B01030?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/site/xHXj3tG6pv2UuKHFgeug8s/OptiLifts--Copy-?node-id=0-1&p=f)
-[![Demo 4 Video](https://img.shields.io/badge/Demo_3-View_Video-B01030?style=for-the-badge&logo=google&logoColor=white)](https://drive.google.com/file/d/1yKSPtSmVicaUzwDjMS1FbkR9pfRA02Dt/view?usp=sharing)
+[![Demo 4 Video](https://img.shields.io/badge/Demo_4-View_Video-B01030?style=for-the-badge&logo=google&logoColor=white)](https://drive.google.com/file/d/1F_SYfZ7BmbSRSP3FV9RpjjLI6nzJbazQ/view?usp=sharing)
 
 </div>
 

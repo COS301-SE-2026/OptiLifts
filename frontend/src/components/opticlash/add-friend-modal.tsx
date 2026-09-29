@@ -1,9 +1,10 @@
 import { AlertCircle, Check, KeyRound, UserPlus, X } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { customFetch } from "@/lib/custom-fetch";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface AddFriendModalProps{
     isOpen: boolean;
@@ -19,6 +20,17 @@ export function AddFriendModal({
     const [friendCode, setFriendCode] = useState('');
     const [status, setStatus] = useState<'idle' |'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+    const isDirty = friendCode.trim().length > 0 && status !== 'success';
+
+    const handleRequestClose = useCallback(() => {
+        if (isDirty) {
+            setShowDiscardConfirm(true);
+        } else {
+            onClose();
+        }
+    }, [isDirty, onClose]);
 
     useEffect(() => {
         if(!isOpen) {
@@ -26,16 +38,20 @@ export function AddFriendModal({
         }
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape"){
-                onClose();
+                if (showDiscardConfirm) {
+                    setShowDiscardConfirm(false);
+                    return;
+                }
+                handleRequestClose();
             };
         };
-            window.addEventListener("keydown", handleKeyDown);
-            return () => window.removeEventListener("keydown", handleKeyDown);
-        }, [isOpen, onClose]);
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, handleRequestClose, showDiscardConfirm]);
 
-        if (!isOpen){
-            return null;
-        }
+    if (!isOpen){
+        return null;
+    }
 
     const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) =>{
         e.preventDefault();
@@ -82,7 +98,7 @@ export function AddFriendModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={onClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
+            <button type="button" tabIndex={-1} aria-label="Close modal" onClick={handleRequestClose} className="fixed inset-0 cursor-default bg-transparent border-none p-0 w-full h-full"/>
             <Card className="bg-surface border-border max-w-md w-full rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-150 p-6 space-y-5 cursor-default">
                 {/* modal header */}
                 <div className="flex items-center justify-between border-b border-border pb-4">
@@ -95,7 +111,7 @@ export function AddFriendModal({
                         Enter your friend's unique 6 character code to send them a friend request.
                     </p>
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={onClose}
+                <Button type="button" variant="ghost" size="icon" onClick={handleRequestClose}
                 className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" aria-label="Close">
                     <X className="w-4 h-4"/>
                 </Button>
@@ -141,6 +157,20 @@ export function AddFriendModal({
                         </form>
                     )}
             </Card>
+
+            <ConfirmDialog
+                isOpen={showDiscardConfirm}
+                onClose={() => setShowDiscardConfirm(false)}
+                onConfirm={() => {
+                    setShowDiscardConfirm(false);
+                    onClose();
+                }}
+                title="Discard Changes?"
+                description="Are you sure? You will lose your progress."
+                confirmText="Discard"
+                cancelText="Keep Editing"
+                variant="danger"
+            />
         </div>
     )
 }

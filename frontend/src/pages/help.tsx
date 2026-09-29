@@ -349,6 +349,7 @@ type ActiveTab = 'faqs' | 'set-types' | 'tutorials' | 'resources'
 export default function HelpPage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('faqs')
     const [searchQuery, setSearchQuery] = useState('')
+    const [selectedFaqTag, setSelectedFaqTag] = useState<string | null>(null)
 
     const tabs = [
         {
@@ -439,7 +440,12 @@ export default function HelpPage() {
                             <h2 className="font-display text-2xl text-foreground tracking-wide flex items-center gap-2">
                                 <span>FREQUENTLY ASKED QUESTIONS</span>
                             </h2>
-                            <FaqAccordion items={FAQ_DATA} searchQuery={searchQuery} />
+                            <FaqAccordion
+                                items={FAQ_DATA}
+                                searchQuery={searchQuery}
+                                selectedTag={selectedFaqTag}
+                                onSelectTag={setSelectedFaqTag}
+                            />
                         </div>
                     )}
                     {activeTab === 'set-types' && (

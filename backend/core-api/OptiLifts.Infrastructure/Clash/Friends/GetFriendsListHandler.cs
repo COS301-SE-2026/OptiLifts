@@ -45,7 +45,8 @@ public sealed class GetFriendsListHandler : IRequestHandler<GetFriendsListQuery,
             AvatarUrl: u.ProfileImageUrl,
             Code: u.FriendCode,
             DotsScore: snap?.DotsScore ?? 0m,
-            Tier: tier
+            Tier: tier,
+            Bio: u.Bio
             );
         }).ToList();
     }

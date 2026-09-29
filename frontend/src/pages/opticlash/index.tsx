@@ -247,6 +247,7 @@ export default function ArenaHubPage() {
             name: athleteName,
             initials: athleteName.slice(0, 2).toUpperCase() || 'AT',
             avatarUrl: userStanding?.avatarUrl || user?.avatarUrl,
+            bio: user?.bio,
             code: 'OPTICLASH',
             gender: (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male'),
             bodyweightKg: userStanding?.bodyweightKg || 74,

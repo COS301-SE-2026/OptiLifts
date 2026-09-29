@@ -17,6 +17,22 @@ import { Link } from "react-router-dom";
 //literally making the tiniest change every to fix complexity yay
 const toList = <T,>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
 
+export function formatFriendRequestDate(dateStr?: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) {
+        return dateStr;
+    }
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).format(date);
+}
+
 export default function FriendsManagementPage(){
     const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'invites'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +47,7 @@ export default function FriendsManagementPage(){
         code: string;
         dotsScore: number;
         tier: string;
+        bio?: string;
     }
     interface FriendRequestItem{
         id: string;
@@ -70,6 +87,7 @@ export default function FriendsManagementPage(){
             name: friend.name,
             initials: friend.initials || 'AT',
             avatarUrl: friend.avatarUrl,
+            bio: friend.bio,
             code: friend.code,
             gender: 'male',
             bodyweightKg: 0,
@@ -527,7 +545,7 @@ export default function FriendsManagementPage(){
                                                 </span>
                                             </div>
                                             <span className="text-xs text-muted-foreground font-sans block mt-0.5">
-                                                Sent {req.sentAt}
+                                                Sent {formatFriendRequestDate(req.sentAt)}
                                             </span>
                                         </div>
                                     </div>

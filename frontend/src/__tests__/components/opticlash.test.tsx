@@ -579,4 +579,90 @@ describe('ProfInspDrawer', () => {
         expect(screen.getByText('Squat')).toBeDefined();
         expect(screen.getByText('5 sets')).toBeDefined();
     });
+
+    it('renders friend bio underneath bodyweight', () => {
+        const athleteWithBio = { ...testAthlete, bio: 'Powerlifter and coach' };
+        render(<ProfileInspectorDrawer athlete={athleteWithBio} isOpen={true} onClose={vi.fn()} />);
+
+        const bodyweightEl = screen.getByText(/Bodyweight:/i);
+        const bioEl = screen.getByText('Powerlifter and coach');
+        expect(bioEl).toBeDefined();
+
+        expect(bodyweightEl.compareDocumentPosition(bioEl)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('renders your own bio underneath bodyweight when inspecting self', () => {
+        mockingAuth.mockReturnValue({
+            user: { id: testAthlete.id, bio: 'My personal fitness bio' },
+        });
+        render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
+
+        const bioEl = screen.getByText('My personal fitness bio');
+        expect(bioEl).toBeDefined();
+    });
+
+    it('updates bio when fetched from profile API response', async () => {
+        mockingFtch.mockImplementation(async (url: string) => {
+            if (url.includes('/profile')) {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        userId: testAthlete.id,
+                        displayName: testAthlete.name,
+                        bodyweightKg: 75,
+                        bio: 'Updated bio from server',
+                        tier: 'Gold',
+                        tierLevel: 2,
+                        dotsScore: 360,
+                        squat1RM: 100,
+                        bench1RM: 80,
+                        deadlift1RM: 140,
+                        totalE1RM: 320,
+                        weeklyVolumeKg: 3000,
+                        muscleBalance30d: [],
+                        trophies: [],
+                        recentWorkouts: [],
+                        kudosCount: 0,
+                        hasSentKudos: false,
+                    }),
+                };
+            }
+            return { ok: false, json: async () => ({}) };
+        });
+
+        render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Updated bio from server')).toBeDefined();
+        });
+    });
+
+    it('has grid layout aligning avatar vertically with name and rank line', () => {
+        const { container } = render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
+        const gridHeader = container.querySelector('.grid.grid-cols-\\[auto_1fr\\].items-stretch');
+        expect(gridHeader).toBeDefined();
+
+        const avatarWrapper = gridHeader?.querySelector('.h-full.aspect-square');
+        expect(avatarWrapper).toBeDefined();
+    });
+
+    it('locks body scroll when opened and restores scroll when closed or unmounted', () => {
+        expect(document.body.style.overflow).toBe('');
+        expect(document.body.classList.contains('overflow-hidden')).toBeFalsy();
+
+        const { unmount, rerender } = render(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
+        expect(document.body.style.overflow).toBe('hidden');
+        expect(document.body.classList.contains('overflow-hidden')).toBeTruthy();
+
+        rerender(<ProfileInspectorDrawer athlete={testAthlete} isOpen={false} onClose={vi.fn()} />);
+        expect(document.body.style.overflow).toBe('');
+        expect(document.body.classList.contains('overflow-hidden')).toBeFalsy();
+
+        rerender(<ProfileInspectorDrawer athlete={testAthlete} isOpen={true} onClose={vi.fn()} />);
+        expect(document.body.style.overflow).toBe('hidden');
+
+        unmount();
+        expect(document.body.style.overflow).toBe('');
+        expect(document.body.classList.contains('overflow-hidden')).toBeFalsy();
+    });
 });

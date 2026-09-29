@@ -698,6 +698,7 @@ export default function ArenaLeaderboardPage() {//
             name: ath.displayName,
             initials: initials || 'AT',
             avatarUrl: ath.avatarUrl,
+            bio: (ath.userId === user?.id ? user?.bio : (ath as { bio?: string }).bio),
             code: 'OPTICLASH',
             gender: (ath.gender as 'male' | 'female') || selectedGender,
             bodyweightKg: ath.bodyweightKg,

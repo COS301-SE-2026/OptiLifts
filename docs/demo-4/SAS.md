@@ -22,6 +22,7 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [Exercise Management](#exercise-management)
 	- [Workouts](#workouts)
 	- [Workout Exercises & Sets](#workout-exercises-and-sets)
+	- [Training](#training)
 	- [Scheduling](#scheduling)
 	- [Dynamic Scheduling](#dynamic-scheduling)
 	- [Google Calendar](#google-calendar)
@@ -41,42 +42,13 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 
 ### Architectural Patterns
 
-For this project we model an explicit 5-tier architecture:
-
-- Presentation Tier
-- API / Controller Tier
-- Application Tier
-- Domain Tier
-- Infrastructure / Persistence Tier
-
----
-
-#### Application Tier vs. Domain Tier Separation
-
-Clean Architecture strictly separates the **Application Tier** from the **Domain Tier**:
-
-- **Domain Tier (`OptiLifts.Domain`)**: Core enterprise business logic, entities, and calculation rules. Framework-agnostic and invariant. *(Answers: "What are the core domain rules?")*
-- **Application Tier (`OptiLifts.Application`)**: Use-case orchestration, CQRS command/query handling, Mediator dispatching, and infrastructure interfaces. *(Answers: "How does the system execute a user operation?")*
-
-This separation ensures domain rules remain 100% testable in isolation, protected from framework, database, or API changes.
-
 ---
 
 #### System Architecture Diagram
 
-```mermaid
-flowchart LR
-    Tier1["Presentation Tier"]
-    Tier2["API / Controller Tier"]
-    Tier3["Application Tier"]
-    Tier4["Domain Tier"]
-    Tier5["Infrastructure / Persistence Tier"]
+![Architecture Diagram](../images/ArchitectureDiagram.png)
 
-    Tier1 --> Tier2
-    Tier2 --> Tier3
-    Tier3 --> Tier4
-    Tier4 --> Tier5
-```
+---
 
 ### Design Patterns
 
@@ -813,6 +785,51 @@ HTTP/1.1 204 No Content
 - The browser automatically attaches the `access_token` cookie.
 - Both input fields are required; empty or missing fields return `400 Bad Request`.
 - Returns `401` if the cookie is missing or invalid.
+
+**Example Response:**
+HTTP/1.1 204 No Content
+
+---
+
+### PATCH /api/users/me/rep-ranges/{repRangeId}
+**Service Name:** User Rep Range Update Service
+
+**Description:**
+Updates the user's preferred rep-range lower and upper bounds for a specific exercise movement type (`Compound` or `Isolation`), which guides training volume suggestions and progressive overload auto-regulation.
+
+**Inputs:**
+- `repRangeId`: Guid - Identifier of the user rep-range record (path parameter).
+- `access_token` cookie: string - HTTP-only cookie identifying the authenticated user.
+- Body:
+	- `exerciseType`: string - Movement classification (`"Compound"` or `"Isolation"`).
+	- `lowerLimit`: integer - Minimum repetition target (must be >= 4 and <= `upperLimit`).
+	- `upperLimit`: integer - Maximum repetition target (must be >= `lowerLimit`).
+
+**Outputs:**
+- `204 No Content` on success.
+- `400 Bad Request` if:
+	- `lowerLimit` is less than 4 (`"Lower limit cannot be less than 4."`).
+	- `lowerLimit` exceeds `upperLimit` (`"Lower limit must be less than or equal to upper limit."`).
+	- `exerciseType` is not `"Compound"` or `"Isolation"` (`"Exercise type must be Compound or Isolation."`).
+	- A rep range configuration for this exercise type already exists on the user's profile (`{ "error": "A rep range for this exercise type already exists." }`).
+- `401 Unauthorized` if unauthenticated or cookie is missing/invalid.
+- `404 Not Found` if the rep range record does not exist or does not belong to the user.
+
+**Usage / Interaction Rules:**
+- Clients must send a PATCH request to `/api/users/me/rep-ranges/{repRangeId}` with JSON data.
+- The `lowerLimit` enforces a safety floor of 4 repetitions.
+
+**Example Request:**
+```http
+PATCH /api/users/me/rep-ranges/5c8e2f1a-9b43-4e8d-8a12-7e9b0c2d3e4f HTTP/1.1
+Content-Type: application/json
+
+{
+	"exerciseType": "Compound",
+	"lowerLimit": 6,
+	"upperLimit": 10
+}
+```
 
 **Example Response:**
 HTTP/1.1 204 No Content
@@ -1597,6 +1614,42 @@ Updates an existing completed workout log entry. Used when editing a completed p
 ```
 ---
 
+### DELETE /api/workouts/{workoutId}/logs/{logId}
+**Service Name:** Workout Log Deletion Service
+
+**Description:**
+Permanently deletes a completed workout session log and its recorded sets for the authenticated user. Automatically recalculates progressive overload recommendations and re-evaluates plateau and regression diagnosis states for all exercises affected by the removed session.
+
+**Inputs:**
+- `workoutId`: Guid - The workout identifier associated with the log (path parameter).
+- `logId`: Guid - The specific workout log identifier to delete (path parameter).
+- `access_token` cookie: string - HTTP-only cookie identifying the authenticated user.
+
+**Outputs:**
+- `200 OK` with JSON object:
+	- `message`: string - `"Workout log deleted successfully."`
+- `401 Unauthorized` if the session cookie is missing or invalid.
+- `404 Not Found` if the workout log does not exist or is not owned by the user (`{ "status": 404, "title": "Not Found", "message": "Workout log was not found for this user." }`).
+
+**Usage / Interaction Rules:**
+- Clients must send a DELETE request to `/api/workouts/{workoutId}/logs/{logId}` with the `access_token` cookie attached.
+- Cascades deletion to all child set entries in `WorkoutLogSets`.
+- Automatically invokes plateau detection and recalculates progressive overload recommendations for all distinct exercise IDs contained in the deleted session to ensure progression algorithms remain accurate.
+
+**Example Request:**
+```http
+DELETE /api/workouts/3fa85f64-5717-4562-b3fc-2c963f66afa6/logs/d3b07384-d113-4e89-8d39-e4d0d3d5f1d0 HTTP/1.1
+```
+
+**Example Response:**
+```json
+{
+	"message": "Workout log deleted successfully."
+}
+```
+
+---
+
 ## Training
 
 ### GET /api/training/plateau-page
@@ -1655,6 +1708,41 @@ Returns the authenticated user's exercises currently showing a Plateau, Regressi
 	}
 ]
 ```
+
+---
+
+### POST /api/training/acute-fatigue
+**Service Name:** Record Acute Fatigue Service
+
+**Description:**
+Records a user-reported acute muscle fatigue event for a specific muscle group. Flags the muscle group in the system's training recovery model to dynamically adapt future volume, prevent overtraining, and inform scheduling/plateau calculations.
+
+**Inputs:**
+- `access_token` cookie: string - HTTP-only cookie identifying the authenticated user.
+- Body:
+	- `muscleGroup`: string - Name of the muscle group experiencing acute fatigue (e.g., `"Chest"`, `"Quadriceps"`, `"Hamstrings"`).
+
+**Outputs:**
+- `200 OK` on success.
+- `401 Unauthorized` if the cookie is missing or invalid.
+
+**Usage / Interaction Rules:**
+- Clients must send a POST request to `/api/training/acute-fatigue` with JSON data.
+- Persists a new `TrainingEvent` entry with type `AcuteFatigueFlagged` and scope set to the requested muscle group.
+
+**Example Request:**
+```http
+POST /api/training/acute-fatigue HTTP/1.1
+Content-Type: application/json
+
+{
+	"muscleGroup": "Chest"
+}
+```
+
+**Example Response:**
+HTTP/1.1 200 OK
+
 ---
 
 ## Scheduling
@@ -3162,6 +3250,65 @@ POST /api/v1/clash/arenas/b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91/leave HTTP/1.1
 	"message": "Successfully left the arena.",
 	"isOwner": false
 }
+```
+
+---
+
+### GET /api/v1/clash/arenas/feed
+**Service Name:** User All-Arenas Activity Feed Query Service
+
+**Description:**
+Retrieves a consolidated live activity feed aggregating events across **all** private gym arenas and squads that the authenticated athlete has joined (strictly auto-pruned to the 100 most recent events). Each entry includes athlete profile metadata, PR announcements, metal bracket promotions, cheer counts, and an individualized `hasUserKudoed` indicator reflecting whether the caller has cheered the activity.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Array of `ClashActivityDto`:
+	- `id`: Guid - Unique activity record identifier.
+	- `arenaId`: string - Associated arena identifier.
+	- `userId`: Guid - Author athlete identifier.
+	- `userName`: string - Author display name.
+	- `userInitials`: string - Formatted initials for avatar fallback.
+	- `userAvatarUrl`: string | null - Profile image URL.
+	- `eventText`: string - Headline description (e.g. `"Jordan Naidoo set a new Bench Press PR!"`).
+	- `details`: string - Detail description (e.g. `"125kg x 3 (e1RM: 135.4kg)"`).
+	- `isPr`: boolean - True if the event represents an e1RM or volume personal record.
+	- `isPromotion`: boolean - True if triggered by a tier promotion.
+	- `kudosCount`: integer - Total cheers received.
+	- `hasUserKudoed`: boolean - True if the requesting user has cheered this activity.
+	- `createdAt`: datetime - Event timestamp.
+
+**Usage / Interaction Rules:**
+- Clients send a GET request to `/api/v1/clash/arenas/feed` (or alias `/api/clash/arenas/feed`).
+- Resolves all active memberships for the caller from `ArenaMembers` and returns up to 100 activities ordered chronologically descending (`CreatedAt DESC`).
+- Returns `200 OK` with an array of activities.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Request:**
+```http
+GET /api/v1/clash/arenas/feed HTTP/1.1
+```
+
+**Example Response:**
+```json
+[
+	{
+		"id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+		"arenaId": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"userId": "7ca241b1-2947-49f3-8b7a-6b45a34e0a91",
+		"userName": "Jordan Naidoo",
+		"userInitials": "JN",
+		"userAvatarUrl": "https://storage.example.com/avatars/jordan.png",
+		"eventText": "Jordan Naidoo set a new Bench Press PR!",
+		"details": "125kg x 3 (e1RM: 135.4kg)",
+		"isPr": true,
+		"isPromotion": false,
+		"kudosCount": 5,
+		"hasUserKudoed": true,
+		"createdAt": "2026-09-27T14:20:00Z"
+	}
+]
 ```
 
 ---

@@ -7,7 +7,8 @@ public sealed record FriendDto(
     string? AvatarUrl,
     string Code,
     decimal DotsScore,
-    string Tier
+    string Tier,
+    string? Bio = null
 );
 public sealed record FriendRequestDto(
     Guid Id,

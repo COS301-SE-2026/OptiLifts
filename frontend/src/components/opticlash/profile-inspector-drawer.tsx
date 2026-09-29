@@ -41,6 +41,7 @@ interface AthleteProfileApiResponse {
     userId: string;
     displayName: string;
     avatarUrl?: string;
+    bio?: string;
     bodyweightKg: number;
     tier: string;
     tierLevel: number;
@@ -129,6 +130,19 @@ export function ProfileInspectorDrawer({
             isMounted = false;
         };
     }, [isOpen, athlete?.id]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('overflow-hidden');
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.body.classList.remove('overflow-hidden');
+        };
+    }, [isOpen]);
 
     if(!isOpen || !athlete){
         return null;
@@ -226,24 +240,32 @@ export function ProfileInspectorDrawer({
     const displayName = profile?.displayName || athlete.name;
     const displayInitials = profile?.displayName ? profile.displayName.slice(0, 2).toUpperCase() : athlete.initials;
     const displayAvatarUrl = profile?.avatarUrl || athlete.avatarUrl;
+    const displayBio = profile?.bio ?? athlete.bio ?? (isCurrentUser ? user?.bio : undefined);
 
     return (
-        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-[120] flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200">
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-[120] flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-200 overscroll-contain">
             <button type="button" className="flex-1 cursor-default bg-transparent border-0 outline-none" onClick={onClose} aria-label="Close drawer backdrop"/>
             <section aria-label={`Athlete profile for ${displayName}`}
-            className="w-full max-w-lg h-full bg-surface border-l border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 text-foreground">
+            className="w-full max-w-lg h-full bg-surface border-l border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 text-foreground overscroll-contain">
                 <header className="relative bg-surface-2 p-5 border-b border-border">
                     <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4 h-8 w-8 rounded-lg" aria-label="Close">
                         <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
                     </Button>
-                    <div className="flex items-center gap-4">
-                        <AthleteAvatar initials={displayInitials} name={displayName} avatarUrl={displayAvatarUrl} isCurrentUser={isCurrentUser} size="xl"/>
-                        <div>
-                            <h2 className="font-display text-2xl tracking-wide text-foreground leading-tight">
-                                {displayName}
-                            </h2>
-                            <div className="text-xs text-muted-foreground mt-0.5 font-sans">
-                                Bodyweight: <strong className="text-foreground">{profile?.bodyweightKg ?? athlete.bodyweightKg} kg</strong>
+                    <div className="grid grid-cols-[auto_1fr] items-stretch gap-4">
+                        <div className="h-full aspect-square shrink-0">
+                            <AthleteAvatar initials={displayInitials} name={displayName} avatarUrl={displayAvatarUrl} isCurrentUser={isCurrentUser} size="auto"/>
+                        </div>
+                        <div className="flex flex-col justify-between min-w-0">
+                            <div>
+                                <h2 className="font-display text-2xl tracking-wide text-foreground leading-tight">
+                                    {displayName}
+                                </h2>
+                                <div className="text-xs text-muted-foreground mt-0.5 font-sans">
+                                    Bodyweight: <strong className="text-foreground">{profile?.bodyweightKg ?? athlete.bodyweightKg} kg</strong>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5 font-sans">
+                                    Bio: <span className="text-foreground">{displayBio ?? ''}</span>
+                                </div>
                             </div>
                             {/* tier + dots badges */}
                             <div className="flex items-center gap-2 mt-2 font-sans">
@@ -316,7 +338,7 @@ export function ProfileInspectorDrawer({
                 </div>
 
                 {/* drawer body */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-background">
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-background overscroll-contain">
                     {activeTab === 'overview' && (
                         <>
                             {/* strength benchmarks card */}

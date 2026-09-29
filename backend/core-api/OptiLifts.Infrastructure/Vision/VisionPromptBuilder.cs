@@ -82,11 +82,11 @@ public class VisionPromptBuilder : IVisionPromptBuilder
 
         if (list == null || list.Count == 0)
         {
-            return $"Great effort on your {exercise}! Maintain steady tempo and keep your core braced.";
+            return $"Good effort! Maintain steady tempo and keep your core braced.";
         }
 
-        var primary = list[0];
-        return $"Great effort on your {exercise}! Prioritize fixing {primary.Error} and keep your reps controlled.";
+        var formattedErrors = list.Select(a => FormatAnomalyName(a.Error));
+        return $"Good effort! We identified the following issues in your lift: {string.Join(", ", formattedErrors)}.";
     }
 
     public string GetFallbackCoachingTip(string exercise, IEnumerable<string>? detectedAnomalies = null)
@@ -96,5 +96,19 @@ public class VisionPromptBuilder : IVisionPromptBuilder
             .Select(a => new VisionAnomaly(a.Trim(), 1.0));
 
         return GetFallbackCoachingTip(exercise, list);
+    }
+
+    private static string FormatAnomalyName(string error)
+    {
+        if (string.IsNullOrWhiteSpace(error)) return error;
+        var words = error.Split('_', System.StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (words[i].Length > 0)
+            {
+                words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1).ToLower();
+            }
+        }
+        return string.Join(" ", words);
     }
 }

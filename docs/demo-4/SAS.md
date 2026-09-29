@@ -13,6 +13,7 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [Architectural Patterns](#architectural-patterns)
 	- [Design Patterns](#design-patterns)
 	- [NFR Traceability Matrix](#nfr-traceability-matrix)
+	- [NFR Testing Evidence](#nfr-testing-evidence)
 	- [Constraints](#constraints)
 
 - [Technology Requirements](#technology-requirements)
@@ -29,6 +30,8 @@ Whilst the SRS document explains *what* the system must do, the SAS document def
 	- [OptiVision Form Analysis](#optivision-form-analysis)
 	- [OptiClash - Social & Friend Network](#opticlash--social--friend-network)
 	- [OptiClash - Private Gym Arenas & Live Squad Feed](#opticlash--private-gym-arenas--live-squad-feed)
+	- [OptiClash - Global & Divisional Leaderboards](#opticlash--global--divisional-leaderboards)
+	- [OptiClash - 1v1 Progressive Overload Duels](#opticlash--1v1-progressive-overload-duels)
 - [Deployment](#deployment)
 	- [Deployment Diagrams](#deployment-diagrams)
 	- [CI/CD Pipeline Diagrams](#cicd-pipeline-diagrams)
@@ -163,15 +166,15 @@ This pattern applies wherever an object behaves differently depending on what ph
 | **NFR1.1** | p95 `GET /workouts` latency at 100 concurrent users < 500ms (local Production overlay) | Seperation of core-api and ai-api services, asynchronous backend processing | k6 | < 500ms / Pass (164ms) |
 | **NFR1.2** | < 300% average latency degradation at 300 users (Local production overlay)| CQRS with MediatR & EF Core Connection Pooling | k6 |< 300% degradation / Pass  |
 | **NFR2.1** | Scale from 100 to 300 users with < 10% latency decrease (Local production overlay) | Azure Container Apps with Horizontal Scaling | k6 | < 1500ms / Pass |
-| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | xUnit (`SensitiveData_ShouldBeEncryptedAtRest_InDatabase`) | Test Passes / Pass |
+| **NFR3.1** | AES-256 encryption at rest for sensitive data | EF Core Value Converters (`AesEncryptionProvider`) with a translation middleware between the database and backend | openssl on an encrypted email in database | Script produces test@optilifts.com / script produced test@optilifts.com |
 | **NFR3.2** | Bcrypt password hashing with salt factor 12 | `BcryptPasswordHasher` algorithm | xUnit (`BcryptPasswordHasherTests`) | Test Passes / Pass |
 | **NFR3.3** | Use HTTPS (TLS 1.3) for all data transmission | Azure Container Apps Managed Certificates & SSL Termination | Qualys SSL Server Test | Grade A (TLS 1.3 Active) / Pass |
 | **NFR3.4** | Prevent unauthorized access to resources | HttpOnly JWT + Endpoint Claims Validation | xUnit (`AuthEndpointIntegrationTests`) | Test Passes / Pass |
 | **NFR4.1** | CI/CD pipeline completes within 30 minutes | Pipeline setup caching and IaC Pulumi deployment in CD | GitHub Actions Logs | < 30 mins / CI(<15 minutes) + CD(<10 minutes) |
-| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 85.7% |
+| **NFR4.2** | Automated line coverage of at least 80% | Extensive Testing policy | CI pipeline coverage check | ≥ 80% / 87.4% line coverage |
 | **NFR5.1** | WCAG 2.1 AA Accessibility | Accessible UI Component Library & Tested Design Tokens | Google Lighthouse | ≥ 90% accessibility for all pages/ All pages are above 90% |
 
-#### Evidence
+### NFR Testing Evidence
 ### NFR 1.1 and NFR 1.2:
 - The commands run:
 ```bash
@@ -188,22 +191,49 @@ k6 run k6-nfr-tests/nfr2-scalability.js
 ```
 ![Theoretical](../images/nfr-testing/nfr2-1-theoretical.png)
 
-##### NFR3.1, NFR3.2, NFR 3.4: 
-- All tests pass when running `pnpm test` which covers the tests that ensure the NFRs are met. 
+### NFR3.1: 
+- Database containing the encrypted email (test@optilifts.com)
+- ![Database](../images/nfr-testing/nfr3-1-db-screenshot.png)
+- OpenSSL script used: scripts/nfr3-1-test.sh
+- OpenSSL command used: 
+```bash
+./scripts/nfr3-1-test.sh "f3J1V+mT0adInOOp/ko/GJTj0hJCWuQgnMqNIsH6Bo8MDvkm8/xrbGiGuXSK40n"
+```
 
-#### NFR 3.3: 
+Output: 
+- ![OpenSSL](../images/nfr-testing/nfr3-1-result.png)
+
+### NFR3.2:
+- The command run: 
+```bash
+dotnet test /home/u24664155/COS301/OptiLifts/backend/core-api/OptiLifts.Tests --filter "BcryptPasswordHasherTests"
+```
+
+- Results: 
+- ![BcryptPasswordHasherTests](../images/nfr-testing/nfr3-2-result.png)
+
+### NFR 3.3: 
 - Qualys SSL Server Test shows TLS 1.2 is active and the server is rated A.
 - ![Qualys SSL Server Test](../images/nfr-testing/sllreport.png)
 
-#### NFR 4.1: 
+### NFR 3.4: 
+- The command run: 
+```bash
+dotnet test /home/u24664155/COS301/OptiLifts/backend/core-api/OptiLifts.Tests --filter "AuthEndpointIntegrationTests"
+```
+
+- Results: 
+- ![AuthEndpointIntegrationTests](../images/nfr-testing/nfr3-4-result.png)
+
+### NFR 4.1: 
 - ![CI speeds](../images/nfr-testing/ci-time.png)
 - ![CD speeds](../images/nfr-testing/cd-time.png)
 
-#### NFR 4.2:
+### NFR 4.2:
 - ![Code Coverage](../images/nfr-testing/coverage.png)
 
 
-#### NFR 5.1: 
+### NFR 5.1: 
 Landing page
 ![Landing page](../images/nfr-testing/lighthouse-reports/landing-page.png)
 
@@ -239,6 +269,27 @@ Profile
 
 Help menu
 ![Help menu](../images/nfr-testing/lighthouse-reports/help-menu.png)
+
+OptiClash Home page
+![OptiClash home page](../images/nfr-testing/lighthouse-reports/opticlash-homepage.png)
+
+OptiClash Leagues
+![OptiClash leagues page](../images/nfr-testing/lighthouse-reports/opticlash-leagues.png)
+
+OptiClash Arenas
+![OptiClash arenas page](../images/nfr-testing/lighthouse-reports/opticlash-arena.png)
+
+OptiClash View of all Duels 
+![OptiClash duels page](../images/nfr-testing/lighthouse-reports/opticlash-all-duels.png)
+
+OptiClash Duel
+![OptiClash duel page](../images/nfr-testing/lighthouse-reports/opticlash-duel.png)
+
+OptiClash Friends
+![OptiClash friends page](../images/nfr-testing/lighthouse-reports/opticlash-friends.png)
+
+OptiVision
+![OptiVision page](../images/nfr-testing/lighthouse-reports/optivision.png)
 
 
 ### Constraints
@@ -3458,6 +3509,668 @@ Manages bi-directional WebSocket / SSE connections for squad activity feeds, PR 
 - `ReceiveKudos(activityId: Guid, kudosCount: int)`: Broadcast when a feed item is cheered, triggering real-time confetti animations and incrementing counters across connected squad members.
 - `ReceiveUserJoined(arenaId: string, userName: string)`: Broadcast when an athlete enrolls into the arena.
 - `ReceiveUserLeft(arenaId: string, userName: string)`: Broadcast when a member departs from the arena.
+
+---
+
+## OptiClash - Global & Divisional Leaderboards
+
+### GET /api/clash/leaderboard/global
+**Service Name:** Global Season League Leaderboard Query Service
+
+**Description:**
+Retrieves the paginated Main Open Global Season League rankings, which are ranked based on the selected competitive metric. Resolves the requesting athlete's opt-in status and where they are ranked.
+
+**Inputs:**
+- Query parameters:
+	- `metric`: string (optional, default `"DotsOverall"`) - Ranking metric (`"DotsOverall"`, `"TotalVolume"`, `"SquatE1RM"`, `"BenchE1RM"`, `"DeadliftE1RM"`).
+	- `timeframe`: string (optional, default `"monthly"`) - Ranking window.
+	- `page`: int (optional, default `1`) - Requested page number.
+	- `pageSize`: int (optional, default `10`) - Entries per page.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `LeaderboardPageResult`:
+	- `entries`: array of `LeaderboardEntryDto`:
+		- `userId`: Guid - Athlete user ID.
+		- `rank`: int - Position in the ranked standings.
+		- `displayName`: string - Athlete display name.
+		- `avatarUrl`: string | null - Profile avatar image URL.
+		- `bodyweightKg`: decimal - Athlete's snapshotted bodyweight.
+		- `tier`: string - Competitive metal bracket (e.g., `"Gold"`).
+		- `tierLevel`: int - Sub-tier level within the bracket (1-3).
+		- `dotsScore`: decimal - Seasonal DOTS score.
+		- `squat1RM`: decimal - Peak seasonal Squat e1RM.
+		- `bench1RM`: decimal - Peak seasonal Bench e1RM.
+		- `deadlift1RM`: decimal - Peak seasonal Deadlift e1RM.
+		- `totalE1RM`: decimal - Sum of the three compound e1RMs.
+		- `weeklyVolumeKg`: decimal - Rolling weekly training volume.
+		- `rankTrend`: int - Rank movement since last recalculation.
+		- `isCurrentUser`: boolean - Whether this row belongs to the requesting athlete.
+	- `totalCount`: int - Total number of opted-in ranked athletes.
+	- `page`: int - Current page number.
+	- `pageSize`: int - Entries per page.
+	- `currentUserEntry`: `LeaderboardEntryDto` | null - The caller's own standing row, present even if outside the returned page.
+	- `isUserOptedIn`: boolean - Whether the requesting athlete is currently opted in to public rankings.
+
+**Usage / Interaction Rules:**
+- Only includes athletes when `IsOptedIn = true` on the athlete's active seasonal snapshot.
+- Returns `200 OK` with an empty `entries` array if no athletes have been ranked in the leaderboard.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"entries": [
+		{
+			"userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"rank": 1,
+			"displayName": "Cailin Smith",
+			"avatarUrl": null,
+			"bodyweightKg": 74.00,
+			"tier": "Diamond",
+			"tierLevel": 2,
+			"dotsScore": 402.15,
+			"squat1RM": 180.50,
+			"bench1RM": 120.00,
+			"deadlift1RM": 220.00,
+			"totalE1RM": 520.50,
+			"weeklyVolumeKg": 12500.00,
+			"rankTrend": 1,
+			"isCurrentUser": false
+		}
+	],
+	"totalCount": 1,
+	"page": 1,
+	"pageSize": 10,
+	"currentUserEntry": null,
+	"isUserOptedIn": true
+}
+```
+
+---
+
+### GET /api/clash/leaderboard/divisional
+**Service Name:** Divisional Weight-Class League Leaderboard Query Service
+
+**Description:**
+Retrieves the paginated Divisional Weight-Class League standings which is categorised by gender and weight-class bracket.
+
+**Inputs:**
+- Query parameters:
+	- `gender`: string (required) - `"Male"` or `"Female"`.
+	- `bracketId`: string (required) - Weight-class bracket identifier (e.g., `"u74"`, `"120p"`).
+	- `metric`: string (optional, default `"DotsOverall"`) - Ranking metric.
+	- `timeframe`: string (optional, default `"monthly"`) - Ranking window.
+	- `page`: int (optional, default `1`) - Requested page number.
+	- `pageSize`: int (optional, default `10`) - Entries per page.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `LeaderboardPageResult`:
+	- `entries`: array of `LeaderboardEntryDto`:
+		- `userId`: Guid - Athlete user ID.
+		- `rank`: int - Position in the ranked standings.
+		- `displayName`: string - Athlete display name.
+		- `avatarUrl`: string | null - Profile avatar image URL.
+		- `bodyweightKg`: decimal - Athlete's snapshotted bodyweight.
+		- `tier`: string - Competitive metal bracket (e.g., `"Gold"`).
+		- `tierLevel`: int - Sub-tier level within the bracket (1-3).
+		- `dotsScore`: decimal - Seasonal DOTS score.
+		- `squat1RM`: decimal - Peak seasonal Squat e1RM.
+		- `bench1RM`: decimal - Peak seasonal Bench e1RM.
+		- `deadlift1RM`: decimal - Peak seasonal Deadlift e1RM.
+		- `totalE1RM`: decimal - Sum of the three compound e1RMs.
+		- `weeklyVolumeKg`: decimal - Rolling weekly training volume.
+		- `rankTrend`: int - Rank movement since last recalculation.
+		- `isCurrentUser`: boolean - Whether this row belongs to the requesting athlete.
+	- `totalCount`: int - Total number of opted-in ranked athletes within the bracket.
+	- `page`: int - Current page number.
+	- `pageSize`: int - Entries per page.
+	- `currentUserEntry`: `LeaderboardEntryDto` | null - The caller's own standing row within the bracket, present even if outside the returned page.
+	- `isUserOptedIn`: boolean - Whether the requesting athlete is currently opted in to public rankings.
+
+**Usage / Interaction Rules:**
+- Includes opted-in athletes whose bodyweight falls within the apropriate weight bracket.
+- Returns `200 OK` with an empty `entries` array if no athletes are ranked in that bracket.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"entries": [
+		{
+			"userId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+			"rank": 1,
+			"displayName": "Jordan Naidoo",
+			"avatarUrl": null,
+			"bodyweightKg": 73.20,
+			"tier": "Gold",
+			"tierLevel": 1,
+			"dotsScore": 355.80,
+			"squat1RM": 150.00,
+			"bench1RM": 100.00,
+			"deadlift1RM": 190.00,
+			"totalE1RM": 440.00,
+			"weeklyVolumeKg": 9800.00,
+			"rankTrend": 0,
+			"isCurrentUser": true
+		}
+	],
+	"totalCount": 1,
+	"page": 1,
+	"pageSize": 10,
+	"currentUserEntry": {
+		"userId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+		"rank": 1,
+		"displayName": "Jordan Naidoo",
+		"avatarUrl": null,
+		"bodyweightKg": 73.20,
+		"tier": "Gold",
+		"tierLevel": 1,
+		"dotsScore": 355.80,
+		"squat1RM": 150.00,
+		"bench1RM": 100.00,
+		"deadlift1RM": 190.00,
+		"totalE1RM": 440.00,
+		"weeklyVolumeKg": 9800.00,
+		"rankTrend": 0,
+		"isCurrentUser": true
+	},
+	"isUserOptedIn": true
+}
+```
+
+---
+
+### POST /api/clash/leaderboard/opt-in
+**Service Name:** Global Leaderboard Opt-In/Opt-Out Toggle Service
+
+**Description:**
+Updates the athlete's to be participating in global leaderboards and divisional leagues.
+
+**Inputs:**
+- Body:
+	- `optIn`: boolean - `true` to opt in, `false` to opt out.
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `ToggleLeaderboardOptInResult`:
+	- `success`: boolean - Whether the update succeeded.
+	- `isOptedIn`: boolean - The athlete's resulting opt-in state.
+	- `message`: string | null - Feedback description (e.g., failure reason).
+
+**Usage / Interaction Rules:**
+- Returns `400 Bad Request` if the athlete has not set their bodyweight on their profile (required for DOTS/bracket placement).
+- Also sets `IsOptedIn` on the athlete's active seasonal snapshot when present.
+- Returns `200 OK` on success.
+
+**Example Request:**
+```http
+POST /api/clash/leaderboard/opt-in HTTP/1.1
+Content-Type: application/json
+
+{
+	"optIn": true
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"isOptedIn": true,
+	"message": null
+}
+```
+
+---
+
+### GET /api/clash/athletes/{id}/profile
+**Service Name:** Athlete Profile Inspector Query Service
+
+**Description:**
+Assembles the full Profile Inspector for the selected athlete.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Target athlete's user identifier.
+- `access_token` cookie / Bearer token: Identifies the requesting athlete.
+
+**Outputs:**
+- `AthleteProfileResult`:
+	- `userId`: Guid - Target athlete's user ID.
+	- `displayName`: string - Athlete display name.
+	- `avatarUrl`: string | null - Profile avatar image URL.
+	- `bodyweightKg`: decimal - Snapshotted bodyweight.
+	- `tier`: string - Competitive metal bracket.
+	- `tierLevel`: int - Sub-tier level (1-3).
+	- `dotsScore`: decimal - Seasonal DOTS score.
+	- `squat1RM`: decimal - Peak seasonal Squat e1RM.
+	- `bench1RM`: decimal - Peak seasonal Bench e1RM.
+	- `deadlift1RM`: decimal - Peak seasonal Deadlift e1RM.
+	- `totalE1RM`: decimal - Sum of the three compound e1RMs.
+	- `weeklyVolumeKg`: decimal - Rolling weekly training volume.
+	- `muscleBalance30d`: array of `MuscleBalanceDto`:
+		- `muscleGroup`: string - One of the 6 radar axes (Chest, Core, Shoulders, Arms, Legs, Back).
+		- `volumeKg`: decimal - 30-day training volume for that muscle group.
+	- `trophies`: array of `TrophyDto`:
+		- `id`: Guid - Trophy identifier.
+		- `name`: string - Trophy name.
+		- `category`: string - Trophy category.
+		- `description`: string - Trophy description.
+		- `iconUrl`: string | null - Trophy icon image URL.
+		- `earnedAt`: datetime - Trophy award timestamp.
+	- `recentWorkouts`: array of `RecentWorkoutDto`:
+		- `logId`: Guid - Workout log identifier.
+		- `title`: string - Workout title.
+		- `notes`: string | null - Workout notes.
+		- `completedAt`: datetime | null - Completion timestamp.
+		- `volumeKg`: decimal - Total workout volume.
+		- `exercises`: array of `RecentWorkoutExerciseDto`:
+			- `exerciseName`: string - Exercise name.
+			- `sets`: int - Sets logged.
+	- `kudosCount`: int - Total profile endorsements received.
+	- `hasSentKudos`: boolean - Whether the requesting athlete has already sent kudos.
+	- `isFriend`: boolean - Whether the requesting athlete and target are mutual friends.
+	- `hasPendingFriendRequest`: boolean - Whether a friend request is pending between them.
+
+**Usage / Interaction Rules:**
+- Returns `404 Not Found` if the target athlete does not exist.
+- `recentWorkouts` and other data are only visible if the athlete's activity is available.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+	"displayName": "Cailin Smith",
+	"avatarUrl": null,
+	"bodyweightKg": 74.00,
+	"tier": "Diamond",
+	"tierLevel": 2,
+	"dotsScore": 402.15,
+	"squat1RM": 180.50,
+	"bench1RM": 120.00,
+	"deadlift1RM": 220.00,
+	"totalE1RM": 520.50,
+	"weeklyVolumeKg": 12500.00,
+	"muscleBalance30d": [
+		{ "muscleGroup": "Legs", "volumeKg": 4200.00 },
+		{ "muscleGroup": "Back", "volumeKg": 3100.00 }
+	],
+	"trophies": [],
+	"recentWorkouts": [
+		{
+			"logId": "e1f18210-9b48-4e8a-bf90-349f50e7b892",
+			"title": "Leg Day",
+			"notes": null,
+			"completedAt": "2026-09-26T10:00:00Z",
+			"volumeKg": 3000.00,
+			"exercises": [
+				{ "exerciseName": "Barbell Back Squat", "sets": 5 }
+			]
+		}
+	],
+	"kudosCount": 4,
+	"hasSentKudos": false,
+	"isFriend": true,
+	"hasPendingFriendRequest": false
+}
+```
+
+---
+
+### POST /api/clash/athletes/{id}/kudos
+**Service Name:** Send Profile Kudos Service
+
+**Description:**
+Send a one-time profile endorsement - called a kudos - from the requesting athlete to a target athlete, incrementing their kudos counter.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Target athlete's user identifier.
+- `access_token` cookie / Bearer token: Identifies the sending athlete.
+
+**Outputs:**
+- `SendProfileKudosResult`:
+	- `success`: boolean - Whether the kudos was recorded.
+	- `message`: string - Feedback description.
+
+**Usage / Interaction Rules:**
+- Enforces a `UNIQUE(TargetUserId, SenderUserId)` constraint - returns `400 Bad Request` if you try send same kudos .
+- Returns `400 Bad Request` if you try kudos yourself.
+- Returns `200 OK` on success.
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Kudos sent"
+}
+```
+
+---
+
+## OptiClash - 1v1 Progressive Overload Duels
+
+### POST /api/clash/duels
+**Service Name:** Create Duel Challenge Service
+
+**Description:**
+Sends a Duel request. Creates the duel in `Pending` status awaiting the opponent's response.
+
+**Inputs:**
+- Body:
+	- `rivalUserId`: Guid - Target friend's user ID.
+	- `exerciseName`: string - Target exercise (e.g., `"Barbell Back Squat"`).
+	- `exerciseId`: Guid | null - Linked exercise identifier, if resolvable.
+	- `targetType`: string - `"E1RMGainPercent"` or `"TotalVolumeKg"`.
+	- `durationDays`: int - `7`, `14`, or `30`.
+- `access_token` cookie / Bearer token: Identifies the challenging athlete.
+
+**Outputs:**
+- `CreateDuelChallengeResult`:
+	- `success`: boolean - Whether the challenge was created.
+	- `message`: string - Feedback description.
+	- `duelId`: Guid | null - Created duel identifier.
+
+**Usage / Interaction Rules:**
+- Rejects self-challenges, invalid `durationDays`, and invalid `targetType` (`400 Bad Request`).
+- Rejects if the two athletes aren't friends (`400 Bad Request`).
+- Rejects if the target athlete's `DuelInvitePrivacy` is set to `"None"` (`400 Bad Request`).
+- For `"TotalVolumeKg"` duels, athletes' values begin with `0`. For `"E1RMGainPercent"` duels, values start `null` and calibration happens on each athlete's first qualifying working set.
+- Returns `200 OK` on success.
+
+**Example Request:**
+```http
+POST /api/clash/duels HTTP/1.1
+Content-Type: application/json
+
+{
+	"rivalUserId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+	"exerciseName": "Barbell Back Squat",
+	"exerciseId": null,
+	"targetType": "E1RMGainPercent",
+	"durationDays": 7
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Duel challenge sent",
+	"duelId": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91"
+}
+```
+
+---
+
+### GET /api/clash/duels/invites
+**Service Name:** Pending Duel Invitations Query Service
+
+**Description:**
+Retrieves all incoming pending 1v1 duel challenges addressed to this specific athlete.
+
+**Inputs:**
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- Array of `DuelInviteDto`:
+	- `id`: Guid - Duel identifier.
+	- `challengerUserId`: Guid - Challenging athlete's user ID.
+	- `challengerName`: string - Challenger display name.
+	- `challengerAvatarUrl`: string | null - Challenger avatar image URL.
+	- `exerciseName`: string - Target exercise.
+	- `targetType`: string - `"E1RMGainPercent"` or `"TotalVolumeKg"`.
+	- `durationDays`: int - Challenge duration.
+	- `createdAt`: datetime - Challenge dispatch timestamp.
+
+**Usage / Interaction Rules:**
+- Only includes duels in `"Pending"` status where the caller is the rival.
+- Returns `200 OK` with an empty array if there are no pending invites.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+[
+	{
+		"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+		"challengerUserId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+		"challengerName": "Jordan Naidoo",
+		"challengerAvatarUrl": null,
+		"exerciseName": "Barbell Back Squat",
+		"targetType": "E1RMGainPercent",
+		"durationDays": 7,
+		"createdAt": "2026-09-26T12:05:00Z"
+	}
+]
+```
+
+---
+
+### POST /api/clash/duels/{id}/respond
+**Service Name:** Respond to Duel Challenge Service
+
+**Description:**
+Accepts or declines an incoming pending duel challenge. If accepted, begins the duel and stamps its start/end window.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Duel identifier.
+- Body:
+	- `accept`: boolean - `true` to accept, `false` to decline.
+- `access_token` cookie / Bearer token: Identifies the responding athlete.
+
+**Outputs:**
+- `success`: boolean - Processing status.
+
+**Usage / Interaction Rules:**
+- Returns `404 Not Found` if the duel does not exist, the caller is not the rival, or it is no longer `"Pending"`.
+- When accepted: sets `status = "Active"`, `startDate = now`, `endDate = now + durationDays`.
+- When declined: sets `status = "Declined"`.
+- Returns `200 OK` on successful resolution.
+
+**Example Request:**
+```http
+POST /api/clash/duels/b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91/respond HTTP/1.1
+Content-Type: application/json
+
+{
+	"accept": true
+}
+```
+
+**Example Response:**
+```json
+{
+	"success": true
+}
+```
+
+---
+
+### GET /api/clash/duels
+**Service Name:** User Duel List & KPI Summary Query Service
+
+**Description:**
+Retrieves the authenticated athlete's Active and Finished duels.
+
+**Inputs:**
+- Query parameters:
+	- `status`: string | null (optional) - Filter status (`"Active"`, `"Finished"`, or omitted/`"All"` for both).
+- `access_token` cookie / Bearer token: Identifies the authenticated athlete.
+
+**Outputs:**
+- `UserDuelsResult`:
+	- `duels`: array of `DuelSummaryDto`:
+		- `id`: Guid - Duel identifier.
+		- `title`: string - Auto-generated duel title (e.g., `"7-Day Barbell Back Squat Duel"`).
+		- `challengerUserId`: Guid - Challenging athlete's user ID.
+		- `challengerName`: string - Challenger display name.
+		- `challengerAvatarUrl`: string | null - Challenger avatar image URL.
+		- `rivalUserId`: Guid - Rival athlete's user ID.
+		- `rivalName`: string - Rival display name.
+		- `rivalAvatarUrl`: string | null - Rival avatar image URL.
+		- `exerciseName`: string - Target exercise.
+		- `targetType`: string - `"E1RMGainPercent"` or `"TotalVolumeKg"`.
+		- `status`: string - `"Active"` or `"Finished"`.
+		- `startDate`: datetime | null - Duel activation timestamp.
+		- `endDate`: datetime | null - Duel expiry timestamp.
+		- `challengerCurrentValue`: decimal - Challenger's current progress value.
+		- `rivalCurrentValue`: decimal - Rival's current progress value.
+		- `challengerBaselineValue`: decimal | null - Challenger's calibrated baseline.
+		- `rivalBaselineValue`: decimal | null - Rival's calibrated baseline.
+		- `winnerUserId`: Guid | null - Winning athlete's user ID, if concluded.
+		- `isDraw`: boolean - Whether the duel concluded in a draw.
+	- `won`: int - Total duels won by the caller.
+	- `lost`: int - Total duels lost by the caller.
+	- `active`: int - Currently active duel count.
+	- `winRatePercent`: decimal - Win rate across finished duels, rounded to 1 decimal place.
+
+**Usage / Interaction Rules:**
+- Returns `200 OK` with an empty `duels` array.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"duels": [
+		{
+			"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+			"title": "7-Day Barbell Back Squat Duel",
+			"challengerUserId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+			"challengerName": "Jordan Naidoo",
+			"challengerAvatarUrl": null,
+			"rivalUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+			"rivalName": "Cailin Smith",
+			"rivalAvatarUrl": null,
+			"exerciseName": "Barbell Back Squat",
+			"targetType": "E1RMGainPercent",
+			"status": "Active",
+			"startDate": "2026-09-26T12:10:00Z",
+			"endDate": "2026-10-03T12:10:00Z",
+			"challengerCurrentValue": 3.20,
+			"rivalCurrentValue": 0.00,
+			"challengerBaselineValue": 180.50,
+			"rivalBaselineValue": null,
+			"winnerUserId": null,
+			"isDraw": false
+		}
+	],
+	"won": 2,
+	"lost": 1,
+	"active": 1,
+	"winRatePercent": 66.7
+}
+```
+
+---
+
+### GET /api/clash/duels/{id}
+**Service Name:** Duel Detail & Timeline Query Service
+
+**Description:**
+Retrieves the full 1v1 Versus Arena view for a single duel: matchup details, tug-of-war bar and live timeline showing sets.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Duel identifier.
+- `access_token` cookie / Bearer token: Identifies the requesting athlete (must be a participant).
+
+**Outputs:**
+- `DuelDetailDto`:
+	- `id`: Guid - Duel identifier.
+	- `title`: string - Duel title.
+	- `challengerUserId`: Guid - Challenging athlete's user ID.
+	- `challengerName`: string - Challenger display name.
+	- `challengerAvatarUrl`: string | null - Challenger avatar image URL.
+	- `rivalUserId`: Guid - Rival athlete's user ID.
+	- `rivalName`: string - Rival display name.
+	- `rivalAvatarUrl`: string | null - Rival avatar image URL.
+	- `exerciseName`: string - Target exercise.
+	- `targetType`: string - `"E1RMGainPercent"` or `"TotalVolumeKg"`.
+	- `status`: string - `"Pending"`, `"Active"`, `"Finished"`, or `"Declined"`.
+	- `startDate`: datetime | null - Activation timestamp.
+	- `endDate`: datetime | null - Expiry timestamp.
+	- `challengerCurrentValue`: decimal - Challenger's current progress value.
+	- `rivalCurrentValue`: decimal - Rival's current progress value.
+	- `challengerBaselineValue`: decimal | null - Challenger's calibrated baseline.
+	- `rivalBaselineValue`: decimal | null - Rival's calibrated baseline.
+	- `winnerUserId`: Guid | null - Winning athlete's user ID, if concluded.
+	- `isDraw`: boolean - Whether the duel concluded in a draw.
+	- `timeline`: array of `DuelTimelineEventDto`:
+		- `id`: Guid - Timeline event identifier.
+		- `userId`: Guid - Athlete who triggered the event.
+		- `userName`: string - Athlete display name.
+		- `eventText`: string - Event description (e.g., `"Cailin logged Set 3: 140.0kg x 3 (PR)"`).
+		- `isPr`: boolean - Whether the logged set was a personal record.
+		- `createdAt`: datetime - Event timestamp.
+
+**Usage / Interaction Rules:**
+- Returns `404 Not Found` if the duel does not exist.
+- `timeline` is  chronological, most recent at top.
+- Returns `401 Unauthorized` if unauthenticated.
+
+**Example Response:**
+```json
+{
+	"id": "b3e94fd2-8a47-49f3-8b7a-6b45a34e0a91",
+	"title": "7-Day Barbell Back Squat Duel",
+	"challengerUserId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+	"challengerName": "Jordan Naidoo",
+	"challengerAvatarUrl": null,
+	"rivalUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+	"rivalName": "Cailin Smith",
+	"rivalAvatarUrl": null,
+	"exerciseName": "Barbell Back Squat",
+	"targetType": "E1RMGainPercent",
+	"status": "Active",
+	"startDate": "2026-09-26T12:10:00Z",
+	"endDate": "2026-10-03T12:10:00Z",
+	"challengerCurrentValue": 3.20,
+	"rivalCurrentValue": 0.00,
+	"challengerBaselineValue": 180.50,
+	"rivalBaselineValue": null,
+	"winnerUserId": null,
+	"isDraw": false,
+	"timeline": [
+		{
+			"id": "e1f18210-9b48-4e8a-bf90-349f50e7b892",
+			"userId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+			"userName": "Jordan Naidoo",
+			"eventText": "Jordan logged Set 3: 186.0kg x 3 (PR)",
+			"isPr": true,
+			"createdAt": "2026-09-27T09:15:00Z"
+		}
+	]
+}
+```
+
+---
+
+### POST /api/clash/duels/{id}/hype
+**Service Name:** Send Duel Hype Reaction Service
+
+**Description:**
+Sends a real-time hype reaction to the opponent during the active duel, it is broadcasted over the `Duel_{duelId}` SignalR group.
+
+**Inputs:**
+- `id`: Guid (path parameter) - Duel identifier.
+- `access_token` cookie / Bearer token: Identifies the sending athlete (must be a participant).
+
+**Outputs:**
+- `SendDuelHypeResult`:
+	- `success`: boolean - Whether the hype reaction was dispatched.
+	- `message`: string - Feedback description.
+
+**Usage / Interaction Rules:**
+- Returns `400 Bad Request` if duel is not `"Active"` or  caller isn't a participant.
+- Returns `200 OK` on success.
+
+**Example Response:**
+```json
+{
+	"success": true,
+	"message": "Hype sent"
+}
+```
 
 ---
 

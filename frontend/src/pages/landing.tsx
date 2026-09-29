@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, LayoutDashboard, Calendar, UserRound, TrendingUp, LineChart } from 'lucide-react'
+import { Activity, LayoutDashboard, Calendar, UserRound, TrendingUp, LineChart, Swords, ScanEye } from 'lucide-react'
 import { Navbar } from '@/components/ui/navbar'
 import { Button } from '@/components/ui/button'
 import background from '@/assets/gym.png'
@@ -9,6 +9,7 @@ import profilePageImage from '@/assets/Profile_Page.png'
 import schedulePageImage from '@/assets/Schedule_Page.png'
 import sessionPageImage from '@/assets/Session_Page.png'
 import progressionPageImage from '@/assets/Progression_Page.png'
+import optiVisionPageImage from '@/assets/OptiVision_Page.png'
 import type { LucideIcon } from 'lucide-react'
 
 type Rect = { left: number; top: number; height: number }
@@ -40,6 +41,8 @@ const CARD_TABS = [
     { Icon: Calendar, label: 'Scheduling', blurb: 'Plan upcoming sessions with structure that fits your week.', image: schedulePageImage, imageAlt: 'Scheduling page preview' },
     { Icon: Activity, label: 'Active Sessions', blurb: 'Track your live workout execution and completed sets in one flow.', image: sessionPageImage, imageAlt: 'Sessions page preview' },
     { Icon: LineChart, label: 'Progression', blurb: 'Automatically tracks every exercise for plateaus, progress, and regression, so you know exactly when to change something.', image: progressionPageImage, imageAlt: 'Progression page preview' },
+    { Icon: Swords, label: 'OptiClash', blurb: 'Compete with friends in duels or climb the rankings of public and private arenas' },
+    { Icon: ScanEye, label: 'OptiVision', blurb: 'Upload videos of your squat, bench or deadlift and get AI coaching on your form, with a score and a breakdown of what to fix.', image: optiVisionPageImage, imageAlt: 'OptiVision page preview' },
 ]
 
 const FEATS = [
@@ -48,6 +51,8 @@ const FEATS = [
     { Icon: Calendar, label: 'Scheduling', tabIndex: 2, page: 'card' as const },
     { Icon: Activity, label: 'Sessions', tabIndex: 3, page: 'card' as const },
     { Icon: LineChart, label: 'Progression', tabIndex: 4, page: 'card' as const },
+    { Icon: Swords, label: 'OptiClash', tabIndex: 5, page: 'card' as const },
+    { Icon: ScanEye, label: 'OptiVision', tabIndex: 6, page: 'card' as const },
     { Icon: TrendingUp, label: 'Progressive Overload', page: 'progressive' as const },
 ]
 

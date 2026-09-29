@@ -686,6 +686,51 @@ Traditional fitness applications act as passive digital notebooks, leaving the c
 4. FR9.4: The system will allow the user to swap plateaued exercises across assigned workouts with alternative movements targeting the same muscle group.
 5. FR9.5: The system will display volume progression and frequency trends across completed training cycles.
 
+### Subsystem 10: OptiVision Biomechanical Form Analysis
+
+#### FR10.1: Video Capture and Landmark Extraction
+1. FR10.1.1: The system will allow the user to record or upload exercise performance videos for core compound movements (Squat, Bench Press, Deadlift).
+2. FR10.1.2: The system will extract client-side sequential 3D skeletal landmark coordinates across recorded video frames.
+3. FR10.1.3: The system will transmit landmark coordinate payloads to the server and store them in object storage using the claim-check architectural pattern.
+
+#### FR10.2: Asynchronous Distributed Analysis
+1. FR10.2.1: The system will enqueue vision analysis jobs onto a message queue for asynchronous processing.
+2. FR10.2.2: The system will distribute analysis jobs across containerized GPU worker nodes executing 1D-CNN sliding-window neural network inference.
+3. FR10.2.3: The system will automatically detect biomechanical anomalies, including joint angle deviations, knee valgus, lumbar flexion, and bar path instability.
+4. FR10.2.4: The system will generate automated, natural language coaching feedback and form correction tips using Google Gemini based on detected anomalies.
+
+#### FR10.3: Feedback and Technique Tracking
+1. FR10.3.1: The system will display a movement form quality score and a detailed list of identified technique faults with severity ratings.
+2. FR10.3.2: The system will maintain a historical log of completed form checks for user review and longitudinal technique tracking.
+
+### Subsystem 11: OptiClash Social and Gamification
+
+#### FR11.1: Social & Friend Network
+1. FR11.1.1: The system will assign each athlete a unique 6-character alphanumeric friend referral code.
+2. FR11.1.2: The system will allow users to send friend requests using another athlete's friend code.
+3. FR11.1.3: The system will allow users to view pending incoming and outgoing friend requests and accept, decline, or bulk-dismiss them.
+4. FR11.1.4: The system will maintain a mutual friends list displaying friend avatars, DOTS strength scores, and competitive tier badges.
+5. FR11.1.5: The system will allow users to remove an existing friend, dissolving the mutual connection.
+
+#### FR11.2: Private Gym Arenas & Squads
+1. FR11.2.1: The system will allow users to create private gym arenas with a custom name, scoring metric (DOTS Overall, Total Volume, or Compound 1RM), and duration (7 to 365 days).
+2. FR11.2.2: The system will generate a unique 6-character alphanumeric join code for each private arena.
+3. FR11.2.3: The system will allow athletes to join an arena by entering its 6-character join code.
+4. FR11.2.4: The system will allow arena members to invite mutual friends directly into the squad.
+5. FR11.2.5: The system will allow non-owner members to leave an arena while retaining historical activity logs.
+
+#### FR11.3: Live Activity Feed & Real-Time Telemetry
+1. FR11.3.1: The system will automatically publish squad events to an arena activity feed upon member workout completions, personal records (PRs), and tier promotions.
+2. FR11.3.2: The system will maintain an automatically pruned live feed of up to 100 recent activities per arena.
+3. FR11.3.3: The system will allow arena members to send a cheer (kudos) to an activity feed item, enforcing a one-cheer-per-user constraint.
+4. FR11.3.4: The system will broadcast live activity feed updates, PR alerts, and cheer notifications to connected squad members in real time using SignalR WebSockets.
+
+#### FR11.4: Competitive Leaderboards, Duels, and Leagues
+1. FR11.4.1: The system will dynamically calculate and display arena leaderboard standings based on the selected metric and active season window.
+2. FR11.4.2: The system will display competitor rankings with total volume, compound e1RM scores, normalized DOTS scores, rank trajectory trends, and competitive tier badges (Bronze through Overload Master).
+3. FR11.4.3: The system will support head-to-head 1v1 workout duels between friends, tracking comparative scores and declaring matchup outcomes.
+4. FR11.4.4: The system will maintain global and weight-class public leagues with rolling competitive standings.
+
 ## Non-Functional Requirements
 
 ### Disclaimer

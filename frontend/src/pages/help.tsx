@@ -9,71 +9,10 @@ import { ChainLink } from "./create-workout";
 import type { WorkoutExercise } from "@/types/create-workout";
 import type { FaqItem } from "@/components/help/faq-accordion";
 import rawFaqs from "@/data/faqs.json";
+import rawTutorials from "@/data/tutorials.json";
 
 export const FAQ_DATA = rawFaqs as readonly FaqItem[];
-
-// tutorial data
-const TUTORIAL_DATA: readonly TutorialVideo[] = [
-    //NOSONAR
-    {
-        id: 'tut-1', title: 'Creating a Workout',
-        description: 'Learn how to build custom workout templates, and configure sets and reps.',
-        duration: '4:19',
-        youtubeId: 'A1WpR8i2ebo',
-        fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-2', title: 'Active Session Logging & Offline Mode',
-        description: 'A step-by-step walkthrough of starting an active workout session, logging sets, and syncing offline logs.',
-        duration: '3:36', youtubeId: 'qbOXVDvbRLU', fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-3', title: 'Weekly Schedule Management',
-        description: 'Discover how to map routines across your week and keep your fitness consistency on track.',
-        duration: '2:56', youtubeId: '7LVbhVXriP8',
-        fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-4', title: 'Editing a Workout',
-        description: 'Tutorial on how to update your workout routine, including its name, sets, reps and exercises.', duration: '1:19',
-        youtubeId: 'IpNvgS0drxo', fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-5',
-        title: 'Configuring User Settings',
-        description: 'Learn how to update your personal details, password, and app settings.',
-        duration: '1:39',
-        youtubeId: 'CBhWskDaBxE', fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-6',
-        title: 'Editing a past workout',
-        description: 'Learn how to edit a past workout session and update its details.',
-        duration: '1:41',
-        youtubeId: 'JzNjcwk9aGw', fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-7',
-        title: 'Time constraint mode',
-        description: 'Learn how to use time constraint mode for quick workouts',
-        duration: '1:19',
-        youtubeId: 'XGhp0n6mRQc', fallbackVideoUrl: '',
-    },    
-    {
-        id: 'tut-8',
-        title: 'Dynamic Rescheduling',
-        description: 'Learn how the dynamic rescheduling works and how to configure it to work for your lifestyle.',
-        duration: '4:58',
-        youtubeId: 'PngQU9Viz58', fallbackVideoUrl: '',
-    },
-    {
-        id: 'tut-9',
-        title: 'Plateau & Progression Tracking',
-        description: 'Learn how OptiLifts detects plateaus and regressions in your lifts, and how to swap out a stalled exercise.',
-        duration: '2:05',
-        youtubeId: 'z9llkYJQq5c', fallbackVideoUrl: '',
-    }
-]
+export const TUTORIAL_DATA = rawTutorials as readonly TutorialVideo[];
 
 //set type data
 const DEMO_EXERCISES: WorkoutExercise[] = [

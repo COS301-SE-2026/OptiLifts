@@ -398,9 +398,9 @@ export function ProfileInspectorDrawer({
                                 workoutsList.map((w) => {
                                     const isExpanded = expandedWorkoutId === w.id;
                                     return (
-                                        <Card key={w.id} className="bg-surface border-border shadow-sm overflow-hidden transition">
+                                        <Card key={w.id} className="bg-surface border-border hover:ring-1 hover:ring-brand hover:border-brand shadow-sm overflow-hidden transition-all duration-200">
                                             <button type="button" onClick={() => setExpandedWorkoutId(isExpanded ? null : w.id)}
-                                            className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-2 transition">
+                                            className="w-full flex items-center justify-between p-4 text-left transition">
                                                 <div>
                                                     <h4 className="font-sans text-sm font-bold text-foreground">
                                                         {w.title}

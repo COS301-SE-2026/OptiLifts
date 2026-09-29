@@ -102,5 +102,13 @@
         "duration": "1:12",
         "youtubeId": "6VltIV-g8SY",
         "fallbackVideoUrl": ""
+    },
+        {
+        "id": "tut-14",
+        "title": "Optivision AI Coach",
+        "description": "Learn how to use the Optivision AI Coach to get personalised form feedback on your compound movements.",
+        "duration": "1:07",
+        "youtubeId": "tlnTZSp_30E",
+        "fallbackVideoUrl": ""
     }
 ]

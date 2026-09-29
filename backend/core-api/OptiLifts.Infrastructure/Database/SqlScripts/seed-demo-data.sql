@@ -431,7 +431,32 @@ BEGIN
     END LOOP;
 END $$;
 
-DO $$
+-- ===========================================================================
+-- Demo athletes. Each gets Alex's full demo history (Push/Pull/Legs, Back
+-- Workout plateau trajectories, upcoming schedule, badges, PRs). weight_scale
+-- multiplies every weight so leaderboards differ, while the % trends the
+-- plateau engine uses stay identical. Accounts are created in DatabaseSeeder.
+-- ===========================================================================
+CREATE TEMP TABLE demo_athletes (
+    email text NOT NULL,
+    weight_scale real NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO demo_athletes (email, weight_scale)
+SELECT c.alex_user_email, 1.0 FROM seed_constants c
+UNION ALL
+SELECT * FROM (VALUES
+    ('maya@optilifts.com', 0.7::real),
+    ('liam@optilifts.com', 1.2::real),
+    ('zoe@optilifts.com',  0.85::real)
+) AS v(email, weight_scale);
+
+DROP FUNCTION IF EXISTS seed_demo_split;
+
+CREATE OR REPLACE FUNCTION seed_demo_split(p_email text, p_scale real)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
 DECLARE
     alex_email text;
     hex_enc text;
@@ -453,9 +478,7 @@ DECLARE
     i int;
     rec record;
 BEGIN
-    SELECT c.alex_user_email INTO alex_email
-    FROM seed_constants c
-    LIMIT 1;
+    alex_email := p_email;
 
     SELECT c.hex_enc, c.set_type
     INTO hex_enc, normal_set_type
@@ -470,7 +493,7 @@ BEGIN
     WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
 
     IF alex_id IS NULL THEN
-        RAISE NOTICE 'Alex (%) not found - run the C# seeder (dotnet run) before this script.', alex_email;
+        RAISE NOTICE 'Demo athlete (%) not found - run the C# seeder (dotnet run) before this script.', alex_email;
         RETURN;
     END IF;
 
@@ -585,7 +608,7 @@ BEGIN
         RETURNING workout_exercise_id INTO v_we;
 
         INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-        SELECT gen_random_uuid(), v_we, normal_set_type, rec.reps, rec.weight, NULL, NULL, gs, 90
+        SELECT gen_random_uuid(), v_we, normal_set_type, rec.reps, ROUND((rec.weight * p_scale * 2)::numeric) / 2, NULL, NULL, gs, 90
         FROM generate_series(1, rec.n_sets) AS gs;
     END LOOP;
 
@@ -626,7 +649,8 @@ BEGIN
             (i / 4)
         );
     END LOOP;
-END $$;
+END;
+$$;
 
 -- ===========================================================================
 -- Alex's "Dorito Workout" (back day, for that wide-lat look). Reuses his "My
@@ -636,7 +660,12 @@ END $$;
 -- Scheduled every Saturday morning, a day Push/Pull/Legs (Mon/Wed/Fri) never
 -- uses, so sessions never collide on the same day.
 -- ===========================================================================
-DO $$
+DROP FUNCTION IF EXISTS seed_demo_back_workout;
+
+CREATE OR REPLACE FUNCTION seed_demo_back_workout(p_email text, p_scale real)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
 DECLARE
     alex_email text;
     hex_enc text;
@@ -657,8 +686,10 @@ DECLARE
     i int;
     rec record;
 BEGIN
-    SELECT c.alex_user_email, c.hex_enc, c.set_type
-    INTO alex_email, hex_enc, normal_set_type
+    alex_email := p_email;
+
+    SELECT c.hex_enc, c.set_type
+    INTO hex_enc, normal_set_type
     FROM seed_constants c
     LIMIT 1;
 
@@ -666,7 +697,7 @@ BEGIN
     WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
 
     IF alex_id IS NULL THEN
-        RAISE NOTICE 'Alex (%) not found - run the C# seeder (dotnet run) before this script.', alex_email;
+        RAISE NOTICE 'Demo athlete (%) not found - run the C# seeder (dotnet run) before this script.', alex_email;
         RETURN;
     END IF;
 
@@ -735,17 +766,17 @@ BEGIN
         (gen_random_uuid(), v_dorito, v_tbar,   3);
 
     INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 6, 10, NULL, NULL, gs, 90
+    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 6, ROUND((10 * p_scale * 2)::numeric) / 2, NULL, NULL, gs, 90
     FROM workout_exercises we, generate_series(1, 3) AS gs
     WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_pullup;
 
     INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 8, 60, NULL, NULL, gs, 90
+    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 8, ROUND((60 * p_scale * 2)::numeric) / 2, NULL, NULL, gs, 90
     FROM workout_exercises we, generate_series(1, 3) AS gs
     WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_row;
 
     INSERT INTO sets (set_id, workout_exercise_id, set_type, reps, weight, duration, distance, order_index, rest_time)
-    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 10, 40, NULL, NULL, gs, 90
+    SELECT gen_random_uuid(), we.workout_exercise_id, normal_set_type, 10, ROUND((40 * p_scale * 2)::numeric) / 2, NULL, NULL, gs, 90
     FROM workout_exercises we, generate_series(1, 3) AS gs
     WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_tbar;
 
@@ -783,7 +814,7 @@ BEGIN
 
         -- Weighted pull-up: Progressing (steady rise, effort constant)
         INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
-        SELECT gen_random_uuid(), v_log, v_pullup, we.workout_exercise_id, NULL, normal_set_type, 6, 10 + i * 0.9, NULL, NULL, 90, 0, 7.5, gs, false, v_day
+        SELECT gen_random_uuid(), v_log, v_pullup, we.workout_exercise_id, NULL, normal_set_type, 6, ROUND(((10 + i * 0.9) * p_scale * 2)::numeric) / 2, NULL, NULL, 90, 0, 7.5, gs, false, v_day
         FROM workout_exercises we, generate_series(1, 3) AS gs
         WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_pullup;
 
@@ -791,7 +822,7 @@ BEGIN
         -- (recovery-style recommendation, and RpeTrendRising=true forces canSwapExercise=false)
         INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
         SELECT gen_random_uuid(), v_log, v_row, we.workout_exercise_id, NULL, normal_set_type, 8,
-            CASE WHEN i < 12 THEN 60 + i ELSE 71 - (i - 11) * 1.5 END,
+            ROUND(((CASE WHEN i < 12 THEN 60 + i ELSE 71 - (i - 11) * 1.5 END) * p_scale * 2)::numeric) / 2,
             NULL, NULL, 90, 0,
             CASE WHEN i < 12 THEN 7.0 ELSE 6.0 + (i - 12) * (4.0 / 11) END,
             gs, false, v_day
@@ -801,18 +832,24 @@ BEGIN
         -- T Bar Row: Plateau (rises 12 weeks, then flat, effort flat)
         INSERT INTO workout_log_sets (log_set_id, log_id, exercise_id, workout_exercise_id, set_id, set_type, reps, weight, duration, distance, rest_time, group_number, rpe, order_index, ai_suggested, logged_at)
         SELECT gen_random_uuid(), v_log, v_tbar, we.workout_exercise_id, NULL, normal_set_type, 10,
-            CASE WHEN i < 12 THEN 40 + i * 0.8 ELSE 48.8 END,
+            ROUND(((CASE WHEN i < 12 THEN 40 + i * 0.8 ELSE 48.8 END) * p_scale * 2)::numeric) / 2,
             NULL, NULL, 90, 0, 7.0, gs, false, v_day
         FROM workout_exercises we, generate_series(1, 3) AS gs
         WHERE we.workout_id = v_dorito AND we.exercise_dict_id = v_tbar;
     END LOOP;
-END $$;
+END;
+$$;
 
 -- ===========================================================================
 -- Alex's upcoming schedule. Reuses Alex's own workouts and stays idempotent
 -- per (user, workout, scheduled, status) row.
 -- ===========================================================================
-DO $$
+DROP FUNCTION IF EXISTS seed_demo_upcoming;
+
+CREATE OR REPLACE FUNCTION seed_demo_upcoming(p_email text)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
 DECLARE
     alex_email text;
     hex_enc text;
@@ -824,9 +861,7 @@ DECLARE
     v_push uuid;
     rec record;
 BEGIN
-    SELECT c.alex_user_email INTO alex_email
-    FROM seed_constants c
-    LIMIT 1;
+    alex_email := p_email;
 
     SELECT c.hex_enc INTO hex_enc
     FROM seed_constants c
@@ -837,7 +872,7 @@ BEGIN
     WHERE email_hash = encode(sha256(alex_email::bytea), hex_enc);
 
     IF alex_id IS NULL THEN
-        RAISE NOTICE 'Alex (%) not found - run the C# seeder (dotnet run) before this block.', alex_email;
+        RAISE NOTICE 'Demo athlete (%) not found - run the C# seeder (dotnet run) before this block.', alex_email;
         RETURN;
     END IF;
 
@@ -878,6 +913,20 @@ BEGIN
               AND se.status = scheduled_status
         );
     END LOOP;
+END;
+$$;
+
+-- seed_demo_split wipes each athlete's schedule first, so it must run before
+-- the Back Workout and upcoming schedule for that athlete
+DO $$
+DECLARE
+    athlete record;
+BEGIN
+    FOR athlete IN SELECT email, weight_scale FROM demo_athletes LOOP
+        PERFORM seed_demo_split(athlete.email, athlete.weight_scale);
+        PERFORM seed_demo_back_workout(athlete.email, athlete.weight_scale);
+        PERFORM seed_demo_upcoming(athlete.email);
+    END LOOP;
 END $$;
 
 -- ===========================================================================
@@ -902,14 +951,15 @@ CROSS JOIN LATERAL (VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ===========================================================================
--- Award earned badges to Alex (gymgoer@gmail.com). He has 51+ workouts, so he
--- earns the three workout-count milestones + the streak badge; "Century Club"
+-- Award earned badges to each demo athlete. They have 51+ workouts, so they
+-- earn the three workout-count milestones + the streak badge; "Century Club"
 -- (100) is intentionally left unearned. Idempotent via unique (user_id, badge_id).
 -- ===========================================================================
 INSERT INTO user_badges (user_badge_id, user_id, badge_id, earned_at)
 SELECT gen_random_uuid(), u.user_id, b.badge_id, NOW()
 FROM seed_constants c
-JOIN users u ON u.email_hash = encode(sha256(c.alex_user_email::bytea), c.hex_enc)
+JOIN demo_athletes da ON true
+JOIN users u ON u.email_hash = encode(sha256(da.email::bytea), c.hex_enc)
 JOIN badges b ON b.name IN ('First Workout', '10 Workouts', '50 Workouts', 'Consistent')
 ON CONFLICT (user_id, badge_id) DO NOTHING;
 
@@ -921,9 +971,8 @@ WHERE user_id IN (
     CROSS JOIN seed_constants c
     WHERE u.email_hash IN (
         encode(sha256(c.test_user_email::bytea), c.hex_enc),
-        encode(sha256(c.demo_user_email::bytea), c.hex_enc),
-        encode(sha256(c.alex_user_email::bytea), c.hex_enc)
-    )
+        encode(sha256(c.demo_user_email::bytea), c.hex_enc)
+    ) OR u.email_hash IN (SELECT encode(sha256(da.email::bytea), c.hex_enc) FROM demo_athletes da)
 );
 
 INSERT INTO exercise_prs (pr_id, user_id, exercise_id, workout_log_set_id, pr_type, pr_value, achieved_weight, achieved_reps)
@@ -933,9 +982,8 @@ WITH DemoUsers AS (
     CROSS JOIN seed_constants c
     WHERE u.email_hash IN (
         encode(sha256(c.test_user_email::bytea), c.hex_enc),
-        encode(sha256(c.demo_user_email::bytea), c.hex_enc),
-        encode(sha256(c.alex_user_email::bytea), c.hex_enc)
-    )
+        encode(sha256(c.demo_user_email::bytea), c.hex_enc)
+    ) OR u.email_hash IN (SELECT encode(sha256(da.email::bytea), c.hex_enc) FROM demo_athletes da)
 ),
 UserSets AS (
     SELECT 
@@ -1007,6 +1055,12 @@ BEGIN
     FOREACH t_email IN ARRAY target_emails LOOP
         SELECT user_id INTO target_uid FROM users WHERE email_hash = encode(sha256(t_email::bytea), 'hex');
         CONTINUE WHEN target_uid IS NULL;
+
+        -- clear the previous copy first so every seed rebuilds it instead of adding another
+        -- (logs, sets and exercises are removed with their entries and workouts via cascade)
+        DELETE FROM scheduled_entries WHERE user_id = target_uid;
+        DELETE FROM workouts WHERE user_id = target_uid;
+        DELETE FROM folders WHERE user_id = target_uid;
 
         FOR f IN SELECT * FROM folders WHERE user_id = source_uid LOOP
             new_folder_id := gen_random_uuid();

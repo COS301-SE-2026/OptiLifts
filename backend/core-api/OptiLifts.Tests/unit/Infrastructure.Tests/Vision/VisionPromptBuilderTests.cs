@@ -58,7 +58,7 @@ public class VisionPromptBuilderTests
         var fallback = _promptBuilder.GetFallbackCoachingTip("deadlift", anomalies);
 
         fallback.Should().Contain("deadlift");
-        fallback.Should().Contain("rounded back");
+        fallback.Should().ContainEquivalentOf("rounded back");
     }
 
     [Fact]

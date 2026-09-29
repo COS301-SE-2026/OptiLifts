@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -18,7 +19,7 @@ public class GeminiClient : IGeminiClient
     private readonly string _apiKey;
     private readonly IVisionPromptBuilder _promptBuilder;
     private readonly ILogger<GeminiClient>? _logger;
-    private const string TargetModel = "gemini-3.6-flash";
+    private const string TargetModel = "gemini-2.5-flash";
 
     public GeminiClient(
         HttpClient httpClient,
@@ -52,10 +53,7 @@ public class GeminiClient : IGeminiClient
         IEnumerable<VisionAnomaly> anomalies,
         CancellationToken cancellationToken = default)
     {
-        var anomaliesList = anomalies?
-            .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Error))
-            .OrderByDescending(a => a.Severity)
-            .ToList() ?? new List<VisionAnomaly>();
+        var anomaliesList = GetValidAnomalies(anomalies);
 
         if (anomaliesList.Count == 0)
         {
@@ -70,56 +68,52 @@ public class GeminiClient : IGeminiClient
             return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
         }
 
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new { parts = new[] { new { text = prompt } } }
-            }
-        };
-
+        var requestBody = new { contents = new[] { new { parts = new[] { new { text = prompt } } } } };
         var endpoint = $"v1beta/models/{TargetModel}:generateContent?key={_apiKey}";
 
+        var result = await ExecuteWithRetriesAsync(endpoint, requestBody, cancellationToken);
+        
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            return result;
+        }
+        else
+        {
+            _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
+        }
+
+    }
+
+    private static List<VisionAnomaly> GetValidAnomalies(IEnumerable<VisionAnomaly> anomalies)
+    {
+        return anomalies?
+            .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Error))
+            .OrderByDescending(a => a.Severity)
+            .ToList() ?? new List<VisionAnomaly>();
+    }
+
+    private async Task<string?> ExecuteWithRetriesAsync(string endpoint, object requestBody, CancellationToken cancellationToken)
+    {
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
             try
             {
-                using var response = await _httpClient.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
-
-                if (!response.IsSuccessStatusCode)
+                var result = await TryExecuteOnceAsync(endpoint, requestBody, attempt, maxRetries, cancellationToken);
+                if (result.IsSuccess)
                 {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger?.LogWarning("Gemini API attempt {Attempt} returned status {StatusCode}: {Error}", attempt, response.StatusCode, errorBody);
-
-                    // google api currently unavailable, back off for a bit
-                    if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && attempt < maxRetries)
-                    {
-                        await Task.Delay(1500 * attempt, cancellationToken);
-                        continue;
-                    }
-                    return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
+                    return result.Value;
                 }
-
-                var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
-                if (jsonDoc != null &&
-                    jsonDoc.RootElement.TryGetProperty("candidates", out var candidates) &&
-                    candidates.GetArrayLength() > 0 &&
-                    candidates[0].TryGetProperty("content", out var content) &&
-                    content.TryGetProperty("parts", out var parts) &&
-                    parts.GetArrayLength() > 0 &&
-                    parts[0].TryGetProperty("text", out var textProp))
+                
+                if (result.ShouldRetry)
                 {
-                    var tip = textProp.GetString()?.Trim();
-                    if (!string.IsNullOrWhiteSpace(tip))
-                    {
-                        return tip;
-                    }
+                    await Task.Delay(result.DelayMs, cancellationToken);
+                    continue;
                 }
-
-                return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
+                
+                return null;
             }
-            catch (Exception ex) when (ex is OperationCanceledException or TimeoutException or HttpRequestException or JsonException)
+            catch (Exception ex) when (IsTransientException(ex))
             {
                 _logger?.LogWarning(ex, "Gemini API attempt {Attempt} encountered an error.", attempt);
                 if (attempt < maxRetries)
@@ -127,10 +121,59 @@ public class GeminiClient : IGeminiClient
                     await Task.Delay(1500 * attempt, cancellationToken);
                     continue;
                 }
-                return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
+                return null;
             }
         }
+        return null;
+    }
 
-        return _promptBuilder.GetFallbackCoachingTip(exercise, anomaliesList);
+    private async Task<(bool IsSuccess, string? Value, bool ShouldRetry, int DelayMs)> TryExecuteOnceAsync(
+        string endpoint, 
+        object requestBody, 
+        int attempt, 
+        int maxRetries, 
+        CancellationToken cancellationToken)
+    {
+        using var response = await _httpClient.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger?.LogWarning("Gemini API attempt {Attempt} returned status {StatusCode}: {Error}", attempt, response.StatusCode, errorBody);
+
+            bool retry = ShouldRetryStatus(response.StatusCode) && attempt < maxRetries;
+            return (false, null, retry, 3000 * attempt);
+        }
+
+        var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
+        var tip = ExtractTipFromJson(jsonDoc);
+        
+        return (true, tip, false, 0);
+    }
+
+    private static bool ShouldRetryStatus(HttpStatusCode statusCode)
+    {
+        return statusCode == HttpStatusCode.ServiceUnavailable || statusCode == HttpStatusCode.TooManyRequests;
+    }
+
+    private static bool IsTransientException(Exception ex)
+    {
+        return ex is OperationCanceledException || 
+               ex is TimeoutException || 
+               ex is HttpRequestException || 
+               ex is JsonException;
+    }
+
+    private static string? ExtractTipFromJson(JsonDocument? jsonDoc)
+    {
+        if (jsonDoc == null) return null;
+        if (!jsonDoc.RootElement.TryGetProperty("candidates", out var candidates)) return null;
+        if (candidates.GetArrayLength() == 0) return null;
+        if (!candidates[0].TryGetProperty("content", out var content)) return null;
+        if (!content.TryGetProperty("parts", out var parts)) return null;
+        if (parts.GetArrayLength() == 0) return null;
+        if (!parts[0].TryGetProperty("text", out var textProp)) return null;
+        
+        return textProp.GetString()?.Trim();
     }
 }

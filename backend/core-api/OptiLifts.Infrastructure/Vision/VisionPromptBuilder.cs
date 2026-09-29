@@ -82,11 +82,11 @@ public class VisionPromptBuilder : IVisionPromptBuilder
 
         if (list == null || list.Count == 0)
         {
-            return $"Good effort! Maintain steady tempo and keep your core braced.";
+            return $"Good effort on your {exercise}! Maintain steady tempo and keep your core braced.";
         }
 
         var formattedErrors = list.Select(a => FormatAnomalyName(a.Error));
-        return $"Good effort! We identified the following issues in your lift: {string.Join(", ", formattedErrors)}.";
+        return $"Good effort on your {exercise}! We identified the following issues in your lift: {string.Join(", ", formattedErrors)}.";
     }
 
     public string GetFallbackCoachingTip(string exercise, IEnumerable<string>? detectedAnomalies = null)

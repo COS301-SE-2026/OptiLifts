@@ -138,6 +138,12 @@
         "answer": "Navigate to User Settings > Account Security to update your name, email address, password, or security preferences."
     },
     {
+        "id": "faq-34",
+        "category": "User Settings",
+        "question": "What rep ranges should I do to build strength or muscle?",
+        "answer": "Your target rep range depends on your training goal: for building maximum strength, train in the 1-5 rep range using heavier weights (80-100% of 1RM) and 2-5 minutes of rest. For muscle hypertrophy (building muscle size), train in the 6-12 rep range with moderate weights (65-80% of 1RM) and 1-2 minutes of rest, pushing close to failure. For muscular endurance, use 15+ reps with lighter weights and shorter rest periods. You can set and customize target reps for any exercise in your workout routines."
+    },
+    {
         "id": "faq-24",
         "category": "OptiClash",
         "question": "What is OptiClash and how does competitive lifting work?",

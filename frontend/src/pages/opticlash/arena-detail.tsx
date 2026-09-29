@@ -544,6 +544,7 @@ export default function ArenaLeaderboardPage() {//
             setCurrentUserStanding(data.userStanding as LeaderboardAthleteDto);
         }
     };
+    const hasAutoSelectedRef = useRef<boolean>(false);
 
     const fetchPublicLeaderboard = async () => {
         const metricParam = getBackendMetricName(selectedMetric);
@@ -555,6 +556,15 @@ export default function ArenaLeaderboardPage() {//
             setPublicStandings(data.entries ?? []);
             setPublicTotalAthletes(data.totalCount ?? 0);
             setCurrentUserStanding(data.currentUserEntry ?? null);
+            if (isDivisional && !hasAutoSelectedRef.current && data.currentUserEntry) {
+                hasAutoSelectedRef.current = true;
+                const bracket = getWeightClassBracket(data.currentUserEntry.bodyweightKg);
+                const genderD = data.currentUserEntry.gender?.toLowerCase() === 'female' ? 'female' : 'male';
+                if (bracket.id !== selectedBracketId || genderD !== selectedGender) {
+                    setSelectedBracketId(bracket.id);
+                    setSelectedGender(genderD);
+                }
+            }
         }
     };
 
@@ -598,6 +608,10 @@ export default function ArenaLeaderboardPage() {//
         if (!isPrivate) return currentUserStanding;
         return sortedStandings.find((s) => s.isCurrentUser || s.userId === user?.id) || currentUserStanding;
     }, [isPrivate, currentUserStanding, sortedStandings, user?.id]);
+
+    useEffect(() => {
+        hasAutoSelectedRef.current = false;
+    }, [arenaId]);
 
     useEffect(() => {
         if (isPrivate) {
@@ -772,10 +786,12 @@ export default function ArenaLeaderboardPage() {//
                 {isDivisional && (
                     <DivisionalClassSelector selectedGender={selectedGender} activeBracket={activeBracket} userWeightBracket={userWeightBracket} currentUserStanding={currentUserStanding}
                         onSelectGender={(gender) => {
+                            hasAutoSelectedRef.current = true;
                             setSelectedGender(gender);
                             setCurrentPage(1);
                         }}
                         onSelectBracketId={(bracketId) => {
+                            hasAutoSelectedRef.current = true;
                             setSelectedBracketId(bracketId);
                             setCurrentPage(1);
                         }} />

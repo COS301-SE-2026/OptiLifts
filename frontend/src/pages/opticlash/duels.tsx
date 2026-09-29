@@ -7,7 +7,8 @@ import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
 import { customFetch } from "@/lib/custom-fetch";
 import type { DuelSummary, UserDuelsResponse } from "@/types/clash";
-import { ArrowLeft, Plus, Trophy, Swords, Flame, CheckCircle2 } from "lucide-react";
+import { PrBadgeIcon } from "@/components/ui/pr-badge-icon";
+import { ArrowLeft, Plus, Dumbbell, Flame, Percent } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -140,66 +141,58 @@ export default function AllDuelsPage() {
             <div className="max-w-6xl mx-auto px-4 py-4 space-y-6">
                 {/* kpi stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-                    <Card className="bg-surface border-border p-4 shadow-sm">
+                    <Card className="relative overflow-hidden bg-surface border-border border-t-2 border-t-brand p-4 shadow-sm">
                         <CardContent className="p-0 flex items-center justify-between">
                             <div>
-                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-[1px]">
+                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-wider">
                                     Duels Won
                                 </span>
-                                <span className="font-display text-2xl font-bold text-success mt-0.5 block">
+                                <span className="font-display text-3xl font-bold text-foreground mt-1 block">
                                     {kpiStats.won}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-success/10 border border-success/30 flex items-center justify-center text-success">
-                                <Trophy className="w-5 h-5"/>
-                            </div>
+                            <PrBadgeIcon sizeClassName="h-7 w-7" lightClassName="opacity-80" darkClassName="opacity-80" />
                         </CardContent>
                     </Card>
-                    <Card className="bg-surface border-border p-4 shadow-sm">
+                    <Card className="relative overflow-hidden bg-surface border-border border-t-2 border-t-brand p-4 shadow-sm">
                         <CardContent className="p-0 flex items-center justify-between">
                             <div>
-                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-[1px]">
+                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-wider">
                                     Duels Lost
                                 </span>
-                                <span className="font-display text-2xl font-bold text-muted-foreground mt-0.5 block">
+                                <span className="font-display text-3xl font-bold text-muted-foreground mt-1 block">
                                     {kpiStats.lost}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-muted-foreground">
-                                <Swords className="w-5 h-5"/>
-                            </div>
+                            <Dumbbell className="w-5 h-5 text-muted-foreground/60" />
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-surface border-border p-4 shadow-sm">
+                    <Card className="relative overflow-hidden bg-surface border-border border-t-2 border-t-brand p-4 shadow-sm">
                         <CardContent className="p-0 flex items-center justify-between">
                             <div>
-                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-[1px]">
+                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-wider">
                                     Active Duels
                                 </span>
-                                <span className="font-display text-2xl font-bold text-brand mt-0.5 block">
+                                <span className="font-display text-3xl font-bold text-brand mt-1 block">
                                     {kpiStats.active}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-brand-fill border border-brand/30 flex items-center justify-center text-brand">
-                                <Flame className="w-5 h-5"/>
-                            </div>
+                            <Flame className="w-5 h-5 text-brand" />
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-surface border-border p-4 shadow-sm">
+                    <Card className="relative overflow-hidden bg-surface border-border border-t-2 border-t-brand p-4 shadow-sm">
                         <CardContent className="p-0 flex items-center justify-between">
                             <div>
-                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-[1px]">
+                                <span className="text-[11px] uppercase font-bold text-muted-foreground block font-sans tracking-wider">
                                     Win Rate
                                 </span>
-                                <span className="font-display text-2xl font-bold text-foreground mt-0.5 block">
+                                <span className="font-display text-3xl font-bold text-foreground mt-1 block">
                                     {kpiStats.winRate}%
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-muted-foreground">
-                                <CheckCircle2 className="w-5 h-5"/>
-                            </div>
+                            <Percent className="w-5 h-5 text-muted-foreground/60" />
                         </CardContent>
                     </Card>
                 </div>

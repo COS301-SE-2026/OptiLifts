@@ -235,7 +235,7 @@ public static class OptiVisionExtensions
         services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
         {
             client.BaseAddress = new Uri(geminiBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(45);
         });
 
         var aiApiUrl = configuration["AI_API_URL"] ?? configuration["AiApiBaseUrl"] ?? "http://localhost:8000";

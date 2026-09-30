@@ -25,6 +25,7 @@ const jwtSecret = config.requireSecret("jwtSecret");
 const nodeSecret = config.requireSecret("nodeSecret");
 const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
+const wipeDataToken = config.get("wipeDataToken") ?? "";
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
 const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
@@ -374,6 +375,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
                 { name: "AUTH_COOKIE_SECURE", value: "true" },
                 { name: "DEV_SEEDING", value: devSeeding },
+                { name: "WIPE_DATA_TOKEN", value: wipeDataToken },
                 { name: "FRONTEND_ORIGIN", value: frontendUrl },
                 { name: "RateLimiting__Enabled", value: rateLimitingEnabled },
                 { name: "AI_API_URL", value: pulumi.interpolate`https://${aiApiApp.configuration.apply(c => c!.ingress!.fqdn!)}` },

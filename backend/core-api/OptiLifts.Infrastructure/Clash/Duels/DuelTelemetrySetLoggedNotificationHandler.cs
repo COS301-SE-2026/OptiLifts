@@ -85,7 +85,7 @@ public sealed class DuelTelemetrySetLoggedNotificationHandler : INotificationHan
         {
             var compoundIds = await _db.Exercises
                 .Where(e => !e.IsDeleted && e.UserId == null &&
-                    (e.Name == "Barbell Back Squat" || e.Name == "Barbell Bench Press" || e.Name == "Deadlift"))
+                    (e.Name.ToLower() == "barbell back squat" || e.Name.ToLower() == "barbell bench press" || e.Name.ToLower() == "deadlift"))
                 .Select(e => e.Id)
                 .ToListAsync(cancellationToken);
 

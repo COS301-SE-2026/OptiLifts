@@ -11,7 +11,7 @@ namespace OptiLifts.Infrastructure.Clash.Leaderboard;
 public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<RecalculateAthleteSeasonSnapshotCommand>
 {
     private const string SquatExerciseName = "Barbell Back Squat";
-    private const string BenchExerciseName = "Barbell Bench Press";
+    private const string BenchExerciseName = "Barbell bench press";
     private const string DeadliftExerciseName = "Deadlift";
 
     private readonly OptiLiftsDbContext _dbContext;
@@ -91,18 +91,22 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
 
     private async Task<Dictionary<string, Guid[]>> GetCompoundExerIdsAsync(CancellationToken cancellationToken)
     {
+        var squat = SquatExerciseName.ToLowerInvariant();
+        var bench = BenchExerciseName.ToLowerInvariant();
+        var deadlift = DeadliftExerciseName.ToLowerInvariant();
+
         var exer = await _dbContext.Exercises
             .AsNoTracking()
             .Where(e => !e.IsDeleted && e.UserId == null &&
-                (e.Name == SquatExerciseName || e.Name == BenchExerciseName || e.Name == DeadliftExerciseName))
+                (e.Name.ToLower() == squat || e.Name.ToLower() == bench || e.Name.ToLower() == deadlift))
             .Select(e => new { e.Id, e.Name })
             .ToListAsync(cancellationToken);
 
         return new Dictionary<string, Guid[]>
         {
-            [SquatExerciseName] = exer.Where(e => e.Name == SquatExerciseName).Select(e => e.Id).ToArray(),
-            [BenchExerciseName] = exer.Where(e => e.Name == BenchExerciseName).Select(e => e.Id).ToArray(),
-            [DeadliftExerciseName] = exer.Where(e => e.Name == DeadliftExerciseName).Select(e => e.Id).ToArray()
+            [SquatExerciseName] = exer.Where(e => string.Equals(e.Name, SquatExerciseName, StringComparison.OrdinalIgnoreCase)).Select(e => e.Id).ToArray(),
+            [BenchExerciseName] = exer.Where(e => string.Equals(e.Name, BenchExerciseName, StringComparison.OrdinalIgnoreCase)).Select(e => e.Id).ToArray(),
+            [DeadliftExerciseName] = exer.Where(e => string.Equals(e.Name, DeadliftExerciseName, StringComparison.OrdinalIgnoreCase)).Select(e => e.Id).ToArray()
         };
     }
 

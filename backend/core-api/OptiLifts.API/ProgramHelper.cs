@@ -2,6 +2,7 @@ using System.Text;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -100,6 +101,10 @@ public static class DatabaseExtensions
         return services;
     }
 
+    // Postgres advisory lock taken during startup (the key is an arbitrary constant)
+    private const string StartupLockSql = "SELECT pg_advisory_lock(830142026)";
+    private const string StartupUnlockSql = "SELECT pg_advisory_unlock(830142026)";
+
     public static async Task ApplyDatabaseMigrationsAndSeedingAsync(this WebApplication app, IConfiguration configuration)
     {
         var runMigrations = !string.Equals(configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
@@ -107,14 +112,67 @@ public static class DatabaseExtensions
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
-            await dbContext.Database.MigrateAsync();
-
-            var seed = string.Equals(configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
-            if (seed)
+            await dbContext.Database.OpenConnectionAsync();
+            await dbContext.Database.ExecuteSqlRawAsync(StartupLockSql);
+            try
             {
-                var isE2e = string.Equals(configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
-                var blobStorage = scope.ServiceProvider.GetRequiredService<IBlobStorageService>();
-                await DatabaseSeeder.SeedAsync(dbContext, blobStorage, isE2e);
+                await dbContext.Database.MigrateAsync();
+
+                var wipeToken = configuration["WIPE_DATA_TOKEN"];
+                var wiped = false;
+                if (!string.IsNullOrWhiteSpace(wipeToken))
+                {
+                    try
+                    {
+                        wiped = await DatabaseWiper.WipeOnceAsync(dbContext, wipeToken);
+                        if (wiped)
+                        {
+                            app.Logger.LogWarning("All user data was wiped (WIPE_DATA_TOKEN {Token})", wipeToken);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        app.Logger.LogError(ex, "Data wipe failed and was rolled back, continuing startup without it");
+                    }
+                }
+
+                var seed = string.Equals(configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
+                var seedKey = SeedRuns.GetSeedKey(configuration);
+                if (seed && !wiped && seedKey is not null && await SeedRuns.HasRunAsync(dbContext, seedKey))
+                {
+                    app.Logger.LogInformation("Seeding already ran for {SeedKey}, leaving the database as it is", seedKey);
+                    seed = false;
+                }
+
+                if (seed)
+                {
+                    var isE2e = string.Equals(configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
+                    var blobStorage = scope.ServiceProvider.GetRequiredService<IBlobStorageService>();
+                    await DatabaseSeeder.SeedAsync(dbContext, blobStorage, isE2e);
+
+                    if (!isE2e)
+                    {
+                        try
+                        {
+                            var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+                            await ClashDemoSeeder.SeedAsync(dbContext, sender);
+                        }
+                        catch (Exception ex)
+                        {
+                            app.Logger.LogWarning(ex, "OptiClash demo seeding failed, continuing startup without it");
+                        }
+                    }
+
+                    if (seedKey is not null)
+                    {
+                        await SeedRuns.RecordAsync(dbContext, seedKey);
+                    }
+                }
+            }
+            finally
+            {
+                await dbContext.Database.ExecuteSqlRawAsync(StartupUnlockSql);
+                await dbContext.Database.CloseConnectionAsync();
             }
         }
     }

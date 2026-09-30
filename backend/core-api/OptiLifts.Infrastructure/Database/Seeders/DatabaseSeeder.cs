@@ -37,31 +37,43 @@ public static class DatabaseSeeder
         }
     }
 
+    // must match demo_athletes in seed-demo-data.sql
+    private static readonly string[] DemoAthleteEmails =
+    [
+        "gymgoer@gmail.com",
+        "maya@optilifts.com",
+        "liam@optilifts.com",
+        "zoe@optilifts.com"
+    ];
+
     // Runs plateau/regression detection over whatever exercises the demo account(s)
     // actually have logged history for (from seed-demo-data.sql), rather than hardcoding
     // exercise names here - so this stays correct if that SQL script's history changes.
     private static async Task RunPlateauDetectionForSeededHistoryAsync(OptiLiftsDbContext dbContext, CancellationToken cancellationToken)
     {
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail("gymgoer@gmail.com"), cancellationToken);
-        if (user is null)
-        {
-            return;
-        }
-
-        var exerciseIds = await (
-            from setLog in dbContext.WorkoutLogSets
-            join log in dbContext.WorkoutLogs on setLog.LogId equals log.Id
-            join entry in dbContext.ScheduledEntries on log.EntryId equals entry.Id
-            where entry.UserId == user.Id
-            select setLog.ExerciseId
-        ).Distinct().ToListAsync(cancellationToken);
-
         var seriesBuilder = new SeriesBuilder(dbContext);
         var plateauDetectionService = new PlateauDetectionService(seriesBuilder, dbContext);
 
-        foreach (var exerciseId in exerciseIds)
+        foreach (var email in DemoAthleteEmails)
         {
-            await plateauDetectionService.DetectAsync(user.Id, exerciseId, cancellationToken);
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.EmailHash == EmailHasher.HashEmail(email), cancellationToken);
+            if (user is null)
+            {
+                continue;
+            }
+
+            var exerciseIds = await (
+                from setLog in dbContext.WorkoutLogSets
+                join log in dbContext.WorkoutLogs on setLog.LogId equals log.Id
+                join entry in dbContext.ScheduledEntries on log.EntryId equals entry.Id
+                where entry.UserId == user.Id
+                select setLog.ExerciseId
+            ).Distinct().ToListAsync(cancellationToken);
+
+            foreach (var exerciseId in exerciseIds)
+            {
+                await plateauDetectionService.DetectAsync(user.Id, exerciseId, cancellationToken);
+            }
         }
     }
 
@@ -118,7 +130,50 @@ public static class DatabaseSeeder
                 Bio = "Loves to gym every day all day. This is their favourite app ever.",
                 Metric = true,
                 LightTheme = false
-            }, 
+            },
+            // Extra demo accounts with the same seeded history as Alex (see demo_athletes in seed-demo-data.sql)
+            new
+            {
+                Email = "maya@optilifts.com",
+                Password = "GymGoer123!",
+                DisplayName = "Maya",
+                Level = 9,
+                Weight = "63.0",
+                Height = "166",
+                Sex = "Female",
+                DateOfBirth = "2001-06-03",
+                Bio = "Early morning lifter chasing a bodyweight bench.",
+                Metric = true,
+                LightTheme = true
+            },
+            new
+            {
+                Email = "liam@optilifts.com",
+                Password = "GymGoer123!",
+                DisplayName = "Liam",
+                Level = 14,
+                Weight = "92.0",
+                Height = "188",
+                Sex = "Male",
+                DateOfBirth = "1997-11-21",
+                Bio = "Powerlifter in the off-season. Squat first, questions later.",
+                Metric = true,
+                LightTheme = false
+            },
+            new
+            {
+                Email = "zoe@optilifts.com",
+                Password = "GymGoer123!",
+                DisplayName = "Zoe",
+                Level = 7,
+                Weight = "70.0",
+                Height = "174",
+                Sex = "Female",
+                DateOfBirth = "2000-03-09",
+                Bio = "Hybrid athlete balancing runs and heavy pulls.",
+                Metric = true,
+                LightTheme = false
+            },
             //NOSONAR - for the e2e tests, is repeat code 
             new
             {
@@ -281,7 +336,7 @@ public static class DatabaseSeeder
         {
             new { Name = "Barbell Back Squat", Muscle = "Quadriceps", Secondary = new List<string> { "Hamstrings", "Glutes", "Lower Back", "Calves" } },
             new { Name = "Deadlift", Muscle = "Hamstrings", Secondary = new List<string> { "Glutes", "Lower Back", "Middle Back", "Traps", "Quadriceps", "Forearms" } },
-            new { Name = "Barbell Bench Press", Muscle = "Chest", Secondary = new List<string> { "Shoulders", "Triceps" } },
+            new { Name = "Barbell bench press", Muscle = "Chest", Secondary = new List<string> { "Shoulders", "Triceps" } },
             new { Name = "Barbell full squat", Muscle = "Quadriceps", Secondary = new List<string>() },
             new { Name = "Cable lat pulldown", Muscle = "Lats", Secondary = new List<string>() },
             new { Name = "Dumbbell incline bench press", Muscle = "Chest", Secondary = new List<string>() },

@@ -12,7 +12,7 @@ test.describe('Workout Detail Page', () => {
         await expect (page.getByText('Volume1,080 KG')).toBeVisible();
         await expect (page.getByText('Sets2')).toBeVisible();
 
-        await expect (page.getByText('Barbell Bench Press')).toBeVisible();
+        await expect (page.getByText('Barbell bench press')).toBeVisible();
         await expect (page.getByRole('paragraph').filter({ hasText: 'Chest' })).toBeVisible();
         await expect (page.getByText('160 KG x 8 reps')).toBeVisible();
 

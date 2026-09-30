@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
     readonly cancelText?: string
     readonly variant?: 'default' | 'danger'
     readonly isLoading?: boolean
+    readonly zIndexClassName?: string
 }
 
 export function ConfirmDialog({
@@ -22,11 +23,12 @@ export function ConfirmDialog({
     cancelText = 'Cancel',
     variant = 'default',
     isLoading = false,
+    zIndexClassName = 'z-[100]',
 }: ConfirmDialogProps) {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
+        <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in`}>
             <div
                 className="w-full max-w-sm rounded-lg border border-border bg-surface p-6 shadow-2xl mx-4 animate-in fade-in zoom-in-95 duration-200"
                 role="alertdialog"

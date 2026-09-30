@@ -1,10 +1,12 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as resources from "@pulumi/azure-native/resources";
 import * as storage from "@pulumi/azure-native/storage";
+import * as servicebus from "@pulumi/azure-native/servicebus";
 import * as dbforpostgresql from "@pulumi/azure-native/dbforpostgresql";
 
 import * as containerregistry from "@pulumi/azure-native/containerregistry";
 import * as app from "@pulumi/azure-native/app";
+import * as signalrservice from "@pulumi/azure-native/signalrservice";
 import * as namedotcom from "@pulumi/namedotcom";
 
 const stackName = pulumi.getStack();
@@ -20,13 +22,17 @@ const backendUrl = `https://${backendDomain}`;
 const config = new pulumi.Config();
 const postgressPassword = config.requireSecret("postgressPassword");
 const jwtSecret = config.requireSecret("jwtSecret");
+const nodeSecret = config.requireSecret("nodeSecret");
 const dbEncryptionKey = config.requireSecret("dbEncryptionKey");
 const devSeeding = config.require("devSeeding");
+const wipeDataToken = config.get("wipeDataToken") ?? "";
 const jwtExpMin = config.get("jwtExpMin") ?? "1440";
 const pgPort = config.get("pgPort") ?? "5432";
 const coreApiSentryDsn = config.getSecret("coreApiSentryDsn");
 const googleClientId = config.getSecret("googleClientId");
 const googleClientSecret = config.getSecret("googleClientSecret");
+const geminiApiKey = config.getSecret("geminiApiKey");
+const geminiBaseUrl = config.get("geminiBaseUrl");
 
 const domainStage = config.get("domainStage") ?? "none";
 const rateLimitingEnabled = config.get("rateLimitingEnabled") ?? "true";
@@ -101,6 +107,34 @@ const exercisesContainer = new storage.BlobContainer("bc-exercises", {
     accountName: storageAcc.name,
     containerName: "exercises",
     publicAccess: storage.PublicAccess.Blob, 
+});
+const optivisionpayloadsContainer = new storage.BlobContainer("bc-optivision-payloads", {
+    resourceGroupName: resourceGroup.name,
+    accountName: storageAcc.name,
+    containerName: "optivision-payloads",
+    publicAccess: storage.PublicAccess.Blob, 
+});
+
+// Azure Service Bus (Basic tier - AMQP 1.0)
+const serviceBusNamespace = new servicebus.Namespace("sb-optilifts", {
+    resourceGroupName: resourceGroup.name,
+    location: resourceGroup.location,
+    sku: {
+        name: "Basic",
+        tier: "Basic",
+    },
+});
+
+const formAnalysisQueue = new servicebus.Queue("q-form-analysis-jobs", {
+    resourceGroupName: resourceGroup.name,
+    namespaceName: serviceBusNamespace.name,
+    queueName: "form-analysis-jobs",
+});
+
+const serviceBusKeys = servicebus.listNamespaceKeysOutput({
+    resourceGroupName: resourceGroup.name,
+    namespaceName: serviceBusNamespace.name,
+    authorizationRuleName: "RootManageSharedAccessKey",
 });
 
 const storageAccKeys = storage.listStorageAccountKeysOutput({
@@ -179,7 +213,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: true, // The frontend must be accessible to users on the internet.
             targetPort: 8080,
@@ -223,7 +257,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: false, // can only be accessed by core-api 
             targetPort: 8000,
@@ -254,23 +288,47 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     },
 });
 
+
+const signalR = new signalrservice.SignalR("sr-optilifts", {
+    resourceGroupName: resourceGroup.name,
+    sku: {
+        name: "Free_F1",
+        tier: "Free",
+        capacity: 1,
+    },
+    kind: "SignalR",
+    features: [{
+        flag: "ServiceMode",
+        value: "Default",
+    }],
+});
+
+const signalRKeys = signalrservice.listSignalRKeysOutput({
+    resourceGroupName: resourceGroup.name,
+    resourceName: signalR.name,
+});
+
 // copre-api container app
 const coreApiApp = new app.ContainerApp("core-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
     configuration: {
-        activeRevisionsMode: "Multiple",
+        activeRevisionsMode: "Single",
         ingress: {
             external: true, //give public url
             targetPort: 8080,
             customDomains: customDomain(backendDomain, backendCert),
             traffic: [{ latestRevision: true, weight: 100 }],
+            stickySessions: {
+                affinity: "sticky",
+            },
         },
 
         secrets: [
             //make container app secrets so can inject them
             { name: "acr-password", value: acrPassword },
             { name: "jwt-secret", value: jwtSecret },
+            { name: "node-secret", value: nodeSecret },
             { name: "db-encryption-key", value: dbEncryptionKey },
             { name: "postgres-password", value: postgressPassword },
             {
@@ -281,9 +339,16 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 name: "storage-connection-string",
                 value: pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storageAcc.name};AccountKey=${storageAccKeys.keys[0].value};EndpointSuffix=core.windows.net`
             },
+            {
+                name: "servicebus-connection-string",
+                value: serviceBusKeys.primaryConnectionString
+            },
             { name: "core-api-sentry-dsn", value: coreApiSentryDsn },
             { name: "google-client-id", value: googleClientId },
-            { name: "google-client-secret", value: googleClientSecret }
+            { name: "google-client-secret", value: googleClientSecret }, 
+            { name: "gemini-api-key", value: geminiApiKey },
+            { name: "gemini-base-url", value: geminiBaseUrl },
+            { name: "signalr-connection-string", value: signalRKeys.apply(keys => keys.primaryConnectionString!) },
         ],
 
         registries: [{
@@ -295,7 +360,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
     },
     template: {
         scale: {
-            minReplicas: 0,
+            minReplicas: 1,
             maxReplicas: 3,
         },
         containers: [{
@@ -310,6 +375,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "POSTGRES_PASSWORD", secretRef: "postgres-password" },
                 { name: "AUTH_COOKIE_SECURE", value: "true" },
                 { name: "DEV_SEEDING", value: devSeeding },
+                { name: "WIPE_DATA_TOKEN", value: wipeDataToken },
                 { name: "FRONTEND_ORIGIN", value: frontendUrl },
                 { name: "RateLimiting__Enabled", value: rateLimitingEnabled },
                 { name: "AI_API_URL", value: pulumi.interpolate`https://${aiApiApp.configuration.apply(c => c!.ingress!.fqdn!)}` },
@@ -318,10 +384,16 @@ const coreApiApp = new app.ContainerApp("core-api", {
                 { name: "DB_ENCRYPTION_KEY", secretRef: "db-encryption-key" },
                 { name: "POSTGRES_CONNECTION_STRING", secretRef: "postgres-connection-string" },
                 { name: "CONNECTIONSTRINGS__AZURESTORAGE", secretRef: "storage-connection-string" },
+                { name: "CONNECTIONSTRINGS__SERVICEBUS", secretRef: "servicebus-connection-string" },
+                { name: "SERVICEBUS_QUEUE_NAME", value: formAnalysisQueue.name },
                 { name: "CORE_API_SENTRY_DSN", secretRef: "core-api-sentry-dsn" },
                 { name: "GOOGLE_CLIENT_ID", secretRef: "google-client-id" },
                 { name: "GOOGLE_CLIENT_SECRET", secretRef: "google-client-secret" },
-                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }
+                { name: "ASPNETCORE_ENVIRONMENT", value: "Production" }, 
+                { name: "GEMINI_API_KEY", secretRef: "gemini-api-key" },
+                { name: "GEMINI_BASE_URL", secretRef: "gemini-base-url" },
+                { name: "SIGNALR_CONNECTION_STRING", secretRef: "signalr-connection-string" },
+                { name: "NODE_SECRET", secretRef: "node-secret" }
             ],
             probes: [{
                 type: "Startup",
@@ -349,3 +421,5 @@ dnsRecord("core-api-asuid", `asuid.${hostOf(backendDomain)}`, "TXT", coreApiApp.
 
 export const frontendAzureUrl = pulumi.interpolate`https://${fqdnOf(frontendApp)}`;
 export const acrLoginServer = acr.loginServer;
+export const serviceBusConnectionString = serviceBusKeys.primaryConnectionString;
+export const formAnalysisQueueName = formAnalysisQueue.name;

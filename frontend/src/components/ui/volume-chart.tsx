@@ -139,14 +139,14 @@ export function VolumeChart({
   }
 
   return (
-    <section className={cn('flex flex-col rounded-xl bg-card p-5 text-card-foreground ring-1 ring-foreground/10 shadow-sm', className)}>
-      <div className="flex justify-between w-full mb-2">
-        <div className="text-xs font-medium text-muted-foreground pt-10">{unit}</div>   
-        <div className="flex-1 text-center pr-12">
-          <h2 className="text-3xl font-black uppercase tracking-wider text-foreground">{title}</h2>
+    <section className={cn('flex flex-col rounded-xl bg-card p-4 sm:p-5 text-card-foreground ring-1 ring-foreground/10 shadow-sm', className)}>
+      <div className="flex flex-wrap sm:flex-nowrap justify-between items-end sm:items-start w-full mb-2 gap-y-3 gap-x-2">
+        <div className="order-2 sm:order-1 text-xs font-medium text-muted-foreground self-center sm:self-auto sm:pt-10 shrink-0">{unit}</div>   
+        <div className={cn("order-1 sm:order-2 w-full sm:w-auto sm:flex-1 text-center min-w-0", showFilters && "sm:pr-12")}>
+          <h2 className="text-xl sm:text-3xl font-black uppercase tracking-wider text-foreground">{title}</h2>
         </div>
         {showFilters && (
-          <div className="flex flex-col gap-2">
+          <div className="order-3 flex flex-row sm:flex-col gap-2 shrink-0">
             <FilterDropdown
               value={resolvedPeriod}
               options={PERIOD_OPTIONS}
@@ -159,7 +159,8 @@ export function VolumeChart({
                 setInternalPeriod(nextPeriod)
               }}
               ariaLabel="Select time period"
-              className="w-36 h-9 bg-surface-2 border border-border rounded-md px-3 py-0 text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
+              align="end"
+              className="w-28 min-[380px]:w-32 sm:w-36 h-9 bg-surface-2 border border-border rounded-md px-2.5 sm:px-3 py-0 text-xs sm:text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
             {muscleOptions && muscleOptions.length > 0 && (
               <FilterDropdown
                 value={resolvedMuscleFilter}
@@ -172,7 +173,8 @@ export function VolumeChart({
                   setInternalMuscleFilter(nextValue)
                 }}
                 ariaLabel="Select muscle filter"
-                className="w-36 h-9 bg-surface-2 border border-border rounded-md px-3 py-0 text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
+                align="end"
+                className="w-28 min-[380px]:w-32 sm:w-36 h-9 bg-surface-2 border border-border rounded-md px-2.5 sm:px-3 py-0 text-xs sm:text-sm font-medium shadow-sm outline-none focus:ring-1 focus:ring-brand"/>
             )}
           </div>
         )}

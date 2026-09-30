@@ -9,6 +9,7 @@ export type AuthUser = {
     metric: boolean
     lightTheme: boolean
     sex?: string
+    bio?: string
 }
 
 export type AuthSession = {
@@ -85,11 +86,14 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
                 if (loggedin.ok) {
                     const user = await loggedin.json() as {
                         id: string;
-                        name: string;
+                        displayName?: string;
+                        name?: string;
                         email: string;
+                        profileImageUrl?: string;
                         avatarUrl?: string;
                         metric: boolean;
                         lightTheme: boolean;
+                        bio?: string;
                     };
 
                     const theme = user.lightTheme ? 'light' : 'dark';
@@ -107,11 +111,13 @@ export function AuthProvider(props: Readonly<React.PropsWithChildren<unknown>>) 
                     login({
                         user: {
                             id: user.id,
-                            name: user.name,
+                            name: user.displayName || user.name || '',
                             email: user.email,
+                            avatarUrl: user.profileImageUrl || user.avatarUrl,
                             metric: user.metric,
                             lightTheme: user.lightTheme,
                             sex: userSex,
+                            bio: user.bio,
                         }
                     });
                 } else {

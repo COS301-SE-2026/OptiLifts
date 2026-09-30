@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { customFetch } from "@/lib/custom-fetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,8 @@ interface ScheduleConfig {
 
 const ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-export function ReschedulingConfig() {
+export function ReschedulingConfig({ onDirtyChange }: Readonly<{ onDirtyChange?: (isDirty: boolean) => void }> = {}) {
+    const [initialConfig, setInitialConfig] = useState<ScheduleConfig | null>(null);
     const [config, setConfig] = useState<ScheduleConfig>({
         dynamicSchedulerEnabled: false,
         maxWorkoutsPerDay: 1,
@@ -34,10 +35,12 @@ export function ReschedulingConfig() {
                 const res = await customFetch("/api/users/me/schedule/config");
                 if (res.ok){
                     const data = await res.json();
-                    setConfig({
+                    const formatted: ScheduleConfig = {
                         ...data,
                         cycleStartDate: data.cycleStartDate ? data.cycleStartDate.split("T")[0] : new Date().toISOString().split("T")[0],
-                    });
+                    };
+                    setConfig(formatted);
+                    setInitialConfig(formatted);
                 }
             } catch (err){
                 toast.error(err instanceof Error ? err.message : 'Failed to open schedule settings', 'Error')
@@ -47,6 +50,22 @@ export function ReschedulingConfig() {
         }
         loadConfig();
     },[]);
+
+    const isDirty = useMemo(() => {
+        if (!initialConfig) return false;
+        if (config.dynamicSchedulerEnabled !== initialConfig.dynamicSchedulerEnabled) return true;
+        if (config.maxWorkoutsPerDay !== initialConfig.maxWorkoutsPerDay) return true;
+        if (config.minMuscleRestHours !== initialConfig.minMuscleRestHours) return true;
+        if (config.cycleWindowLengthDays !== initialConfig.cycleWindowLengthDays) return true;
+        if (config.cycleStartDate !== initialConfig.cycleStartDate) return true;
+        if (config.restDays.length !== initialConfig.restDays.length) return true;
+        if (config.restDays.some(d => !initialConfig.restDays.includes(d))) return true;
+        return false;
+    }, [config, initialConfig]);
+
+    useEffect(() => {
+        onDirtyChange?.(isDirty);
+    }, [isDirty, onDirtyChange]);
 
     const handleSave = async ()=>{
         setIsSaving(true);
@@ -58,6 +77,7 @@ export function ReschedulingConfig() {
             });
             if (res.ok){
                 toast.success("Rescheduling preferences updated", "Success");
+                setInitialConfig(config);
             } else {
                 toast.error("Failed to update preferences", "Error");
             }

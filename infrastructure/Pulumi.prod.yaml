@@ -6,6 +6,7 @@ config:
   infrastructure:dbEncryptionKey:
     secure: AAABAA2H+rT4uVKEFwdabUlXtlJsLtf6c1xFLs+5n309guY8ByoK7z/TzzqD3un6udRxZ5fQRn6u2sNc9O3eUWn7THUf4R3dR4ZbFQ==
   infrastructure:devSeeding: "true"
+  infrastructure:wipeDataToken: "2026-10-01"
   infrastructure:jwtExpMin: "1440"
   namedotcom:token:
     secure: AAABACBdbD8KnEgs+afV9EBIeRrnZXTw+QriLVpWrj9ewC2ozExjNCF173hfhthVr4dApv9zN7BJEFOvAswNCUsgwUf5aerj
@@ -18,3 +19,8 @@ config:
     secure: AAABAERbX7BSMHMnXSk2paMZn4jluPICb0xwFK0BeVfotur7KGYWjCl9+bMNjs1i2JsFIetrfaLrLL4ZPX8WOILhi9b+lbq9yIb+EhRsj5flactkOuJFbMx9j9C5yeloCLXgEakCl08F
   infrastructure:googleClientSecret:
     secure: AAABAArkAIMxoVBpNYn9gcrUb41N+mxWi/0JuYjgmI8pQUcIdNd//Kpz8JocokNW5CjorvGCKjVKKifluvWxqN3IiQ==
+  infrastructure:geminiApiKey:
+    secure: AAABAHfWBwUBPFb2+vOkvwUQZ+xD5JUDi8A4MWBtTncgeLkiTjIlGDG9zr7jc0whCphDannmzw7k7vPeuPLEg+jFwf134bM0VgoLJhmJ6tqHh3tYMQ==
+  infrastructure:geminiBaseUrl: https://generativelanguage.googleapis.com/
+  infrastructure:nodeSecret:
+    secure: AAABAEpLiC7ix79pn1PKEVEtzYm9Hd1a3u7vsnzhZDSNNBZPdxrxadXcQV9v/b8qEDRqaIK+ClaaMTpT0d2naw==

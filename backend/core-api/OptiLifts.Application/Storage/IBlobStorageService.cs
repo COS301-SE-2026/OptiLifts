@@ -8,4 +8,5 @@ public interface IBlobStorageService
 {
     Task<string> UploadFileAsync(Stream stream, string fileName, string contentType, string containerName, CancellationToken cancellationToken = default);
     Task DeleteFileAsync(string fileUrl, string containerName, CancellationToken cancellationToken = default);
+    Task<string> SaveVisionAnalysisFramesAsync(string jobId, string jsonPayload, CancellationToken cancellationToken = default);
 }

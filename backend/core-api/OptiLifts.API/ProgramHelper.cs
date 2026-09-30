@@ -1,8 +1,19 @@
 using System.Text;
+using Azure.Messaging.ServiceBus;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OptiLifts.Application.Auth.Abstractions;
+using OptiLifts.Application.Storage;
+using OptiLifts.Application.Vision;
 using OptiLifts.Infrastructure.Authentication;
+using OptiLifts.Infrastructure.Database;
+using OptiLifts.Infrastructure.Database.Seeders;
+using OptiLifts.Infrastructure.Storage;
+using OptiLifts.Infrastructure.Vision;
 
 namespace OptiLifts.API;
 
@@ -43,12 +54,18 @@ public static class SecurityExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
                 };
 
-                // get token from http cookie
+                // get token from http cookie or SignalR query string
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
-                        if (context.Request.Cookies.TryGetValue("access_token", out var token))
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/clash-hub") || path.StartsWithSegments("/api/hubs")))
+                        {
+                            context.Token = accessToken;
+                        }
+                        else if (context.Request.Cookies.TryGetValue("access_token", out var token))
                         {
                             context.Token = token;
                         }
@@ -58,5 +75,207 @@ public static class SecurityExtensions
             });
 
         return services;
+    }
+}
+
+public static class DatabaseExtensions
+{
+    public static IServiceCollection AddDatabaseInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration["POSTGRES_CONNECTION_STRING"];
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var dbHost = configuration["POSTGRES_HOST"];
+            var dbPort = configuration["POSTGRES_PORT"];
+            var dbName = configuration["POSTGRES_DB"];
+            var dbUser = configuration["POSTGRES_USER"];
+            var dbPass = configuration["POSTGRES_PASSWORD"];
+
+            connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
+        }
+
+        services.AddDbContext<OptiLiftsDbContext>(options =>
+            options.UseNpgsql(connectionString));
+
+        return services;
+    }
+
+    // Postgres advisory lock taken during startup (the key is an arbitrary constant)
+    private const string StartupLockSql = "SELECT pg_advisory_lock(830142026)";
+    private const string StartupUnlockSql = "SELECT pg_advisory_unlock(830142026)";
+
+    public static async Task ApplyDatabaseMigrationsAndSeedingAsync(this WebApplication app, IConfiguration configuration)
+    {
+        var runMigrations = !string.Equals(configuration["RUN_MIGRATIONS"], "false", StringComparison.OrdinalIgnoreCase);
+        if (runMigrations)
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<OptiLiftsDbContext>();
+            await dbContext.Database.OpenConnectionAsync();
+            await dbContext.Database.ExecuteSqlRawAsync(StartupLockSql);
+            try
+            {
+                await dbContext.Database.MigrateAsync();
+
+                var wipeToken = configuration["WIPE_DATA_TOKEN"];
+                var wiped = false;
+                if (!string.IsNullOrWhiteSpace(wipeToken))
+                {
+                    try
+                    {
+                        wiped = await DatabaseWiper.WipeOnceAsync(dbContext, wipeToken);
+                        if (wiped)
+                        {
+                            app.Logger.LogWarning("All user data was wiped (WIPE_DATA_TOKEN {Token})", wipeToken);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        app.Logger.LogError(ex, "Data wipe failed and was rolled back, continuing startup without it");
+                    }
+                }
+
+                var seed = string.Equals(configuration["DEV_SEEDING"], "true", StringComparison.OrdinalIgnoreCase);
+                var seedKey = SeedRuns.GetSeedKey(configuration);
+                if (seed && !wiped && seedKey is not null && await SeedRuns.HasRunAsync(dbContext, seedKey))
+                {
+                    app.Logger.LogInformation("Seeding already ran for {SeedKey}, leaving the database as it is", seedKey);
+                    seed = false;
+                }
+
+                if (seed)
+                {
+                    var isE2e = string.Equals(configuration["E2E_TESTING"], "true", StringComparison.OrdinalIgnoreCase);
+                    var blobStorage = scope.ServiceProvider.GetRequiredService<IBlobStorageService>();
+                    await DatabaseSeeder.SeedAsync(dbContext, blobStorage, isE2e);
+
+                    if (!isE2e)
+                    {
+                        try
+                        {
+                            var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+                            await ClashDemoSeeder.SeedAsync(dbContext, sender);
+                        }
+                        catch (Exception ex)
+                        {
+                            app.Logger.LogWarning(ex, "OptiClash demo seeding failed, continuing startup without it");
+                        }
+                    }
+
+                    if (seedKey is not null)
+                    {
+                        await SeedRuns.RecordAsync(dbContext, seedKey);
+                    }
+                }
+            }
+            finally
+            {
+                await dbContext.Database.ExecuteSqlRawAsync(StartupUnlockSql);
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+    }
+}
+
+public static class OptiVisionExtensions
+{
+    public static IServiceCollection AddAzureInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        var azureStorageConnection = configuration.GetConnectionString("AzureStorage");
+        if (string.IsNullOrWhiteSpace(azureStorageConnection))
+        {
+            azureStorageConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__AZURESTORAGE")
+                ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
+        }
+        if (string.IsNullOrWhiteSpace(azureStorageConnection))
+        {
+            azureStorageConnection = "UseDevelopmentStorage=true;";
+        }
+
+        services.AddSingleton(new BlobServiceClient(azureStorageConnection));
+        services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
+        services.AddScoped<IOptiVisionStorageService, OptiVisionStorageService>();
+
+        var serviceBusConnection = configuration.GetConnectionString("ServiceBus");
+        if (string.IsNullOrWhiteSpace(serviceBusConnection))
+        {
+            serviceBusConnection = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__SERVICEBUS")
+                ?? Environment.GetEnvironmentVariable("AZURE_SERVICE_BUS_CONNECTION_STRING")
+                ?? Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION_STRING");
+        }
+        if (string.IsNullOrWhiteSpace(serviceBusConnection))
+        {
+            serviceBusConnection = "Endpoint=sb://optilifts.servicebus.windows.net/;SharedAccessKeyName=SendAccess;SharedAccessKey=dummykey=;";
+        }
+
+        var serviceBusQueueName = configuration["SERVICEBUS_QUEUE_NAME"]
+            ?? configuration["SERVICE_BUS_QUEUE_NAME"]
+            ?? Environment.GetEnvironmentVariable("SERVICEBUS_QUEUE_NAME")
+            ?? Environment.GetEnvironmentVariable("SERVICE_BUS_QUEUE_NAME")
+            ?? "form-analysis-jobs";
+
+        services.AddSingleton(new ServiceBusClient(serviceBusConnection));
+        services.AddSingleton(sp => sp.GetRequiredService<ServiceBusClient>().CreateSender(serviceBusQueueName));
+
+        return services;
+    }
+
+    public static IServiceCollection AddAiIntegrations(this IServiceCollection services, IConfiguration configuration)
+    {
+        var geminiBaseUrl = configuration["GEMINI_BASE_URL"]
+            ?? Environment.GetEnvironmentVariable("GEMINI_BASE_URL")
+            ?? "https://generativelanguage.googleapis.com/";
+        if (!geminiBaseUrl.EndsWith('/'))
+        {
+            geminiBaseUrl += "/";
+        }
+
+        services.AddSingleton<IVisionPromptBuilder, VisionPromptBuilder>();
+        services.AddHttpClient<IGeminiClient, GeminiClient>(client =>
+        {
+            client.BaseAddress = new Uri(geminiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(45);
+        });
+
+        var aiApiUrl = configuration["AI_API_URL"] ?? configuration["AiApiBaseUrl"] ?? "http://localhost:8000";
+        if (!aiApiUrl.EndsWith('/'))
+        {
+            aiApiUrl += "/";
+        }
+        services.AddHttpClient("AiApi", client =>
+        {
+            client.BaseAddress = new Uri(aiApiUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        return services;
+    }
+
+    public static async Task InitializeLocalEmulatorStorageAsync(this WebApplication app)
+    {
+        var storageConnectionString = app.Configuration.GetConnectionString("AzureStorage") ?? app.Configuration["ConnectionStrings:AzureStorage"];
+        bool isLocalEmulator = storageConnectionString != null &&
+                (storageConnectionString.Contains("UseDevelopmentStorage=true") ||
+                 storageConnectionString.Contains("azurite:10000") ||
+                 storageConnectionString.Contains("127.0.0.1:10000"));
+
+        if (isLocalEmulator && !app.Environment.IsEnvironment("Testing"))
+        {
+            try
+            {
+                var blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
+                var containers = new[] { "exercises", "optivision-payloads", "profile-pictures" };
+                foreach (var container in containers)
+                {
+                    var containerClient = blobServiceClient.GetBlobContainerClient(container);
+                    await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+                }
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogWarning(ex, "Failed to initialize Azure Blob Storage containers on startup.");
+            }
+        }
     }
 }

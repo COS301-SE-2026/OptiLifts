@@ -13,8 +13,8 @@ export function ProfileOverview({ name, email, bio, profileImageUrl }: ProfileOv
       <Button variant="ghost" size="sm" className="absolute right-3 top-3 sm:right-4 sm:top-4"
         onClick={() => setIsSettingsOpen(true)}
       >
-        <span>Settings</span>
-        <Settings size={16} className="ml-2" />
+        <span className="hidden sm:inline">Settings</span>
+        <Settings size={16} className="sm:ml-2" />
       </Button>
 
       <div className="flex items-center gap-3 sm:gap-4">

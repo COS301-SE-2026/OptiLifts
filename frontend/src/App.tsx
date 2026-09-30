@@ -43,8 +43,20 @@ const DashboardPage = lazyWithReload(() => import('@/pages/dashboard'))
 const LandingPage = lazyWithReload(() => import('@/pages/landing'))
 const HelpPage = lazyWithReload(() => import('@/pages/help'))
 const ProgressionPage = lazyWithReload(() => import('@/pages/progression'))
+const FormCheckPage = lazyWithReload(() => import('@/pages/form-check'))
+const FriendsPage = lazyWithReload(() => import('@/pages/opticlash/friends'))
+const ArenaHubPage = lazyWithReload(() => import('@/pages/opticlash/index'))
+const ArenaLeaderboardPage = lazyWithReload(() => import('@/pages/opticlash/arena-detail'))
+const AllDuelsPage = lazyWithReload(() => import('@/pages/opticlash/duels'))
+const DuelArenaPage = lazyWithReload(() => import('@/pages/opticlash/duel-detail'))
 
 function AppLayout() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <Navbar />
@@ -133,6 +145,12 @@ function App() {
           <Route path="help" element={<HelpPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="past-workouts" element={<PastWorkoutsPage />} />
+          <Route path="form-check" element={<FormCheckPage />} />
+          <Route path="clash/friends" element={<FriendsPage />} />
+          <Route path="clash" element={<ArenaHubPage />} />
+          <Route path="clash/:arenaId" element={<ArenaLeaderboardPage />} />
+          <Route path="clash/duels" element={<AllDuelsPage />} />
+          <Route path="clash/duels/:duelId" element={<DuelArenaPage />} />
         </Route>
       </Route>
 

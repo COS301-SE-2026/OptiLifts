@@ -39,4 +39,4 @@ TRUNCATE
 DELETE FROM arenas WHERE arena_id NOT IN ('global-league', 'weight-class-league');
 
 -- custom exercises owned by these users are removed with them (ON DELETE CASCADE)
-DELETE FROM users;
+DELETE FROM users; --NOSONAR

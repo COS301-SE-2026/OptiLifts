@@ -360,7 +360,7 @@ const coreApiApp = new app.ContainerApp("core-api", {
     },
     template: {
         scale: {
-            minReplicas: 1,
+            minReplicas: 0,
             maxReplicas: 3,
         },
         containers: [{

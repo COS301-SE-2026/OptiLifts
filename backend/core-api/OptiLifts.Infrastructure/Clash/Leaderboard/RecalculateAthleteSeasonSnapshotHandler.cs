@@ -12,7 +12,7 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
 {
     private const string SquatExerciseName = "Barbell Back Squat";
     private const string BenchExerciseName = "Barbell bench press";
-    private const string DeadliftExerciseName = "Deadlift";
+    private const string DeadliftExerciseName = "Barbell deadlift";
 
     private readonly OptiLiftsDbContext _dbContext;
 

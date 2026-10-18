@@ -132,7 +132,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/jordan-profile.png" width="130" alt="Jordan Naidoo" />
       <br><br>
       <strong>Jordan Naidoo</strong><br>
-      <img src="https://img.shields.io/badge/Team%20Lead%20·%20DevOps-B01030?style=flat-square&logoColor=white" /><br><br>
+      <br>
       <sub>A final-year BSc Computer Science student focused on the leadership of the OptiLifts team, spearheading DevOps and getting his bench PR up for project day.</sub>
       <br><br><br>
       <a href="https://github.com/JordanNaidoo"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -144,7 +144,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/cailin-profile.png" width="130" alt="Cailin Smith" />
       <br><br>
       <strong>Cailin Smith</strong><br>
-      <img src="https://img.shields.io/badge/Frontend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
+      <br>
       <sub>Final-year BSc Computer Science student coordinating frontend development and design for OptiLifts. Best 1RM: 160kg calf raise.</sub>
       <br><br><br>
       <a href="https://github.com/CailinSmith"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -163,7 +163,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/alex-profile.png" width="130" alt="Alex Lange" />
       <br><br>
       <strong>Alex Lange</strong><br>
-      <img src="https://img.shields.io/badge/Backend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
+      <br>
       <sub>A 3rd year BSc Computer Science student with a focus on backend development for OptiLifts, and a lack of backend development in the gym.</sub>
       <br><br><br>
       <a href="https://github.com/AlexLange1st"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -175,7 +175,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/edwin-profile.png" width="130" alt="Edwin Küsel" />
       <br><br>
       <strong>Edwin Küsel</strong><br>
-      <img src="https://img.shields.io/badge/Backend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
+      <br>
       <sub>Final-year Computer Science student, focused on backend, with a passion for problem solving and hitting PRs.</sub>
       <br><br><br><br>
       <a href="https://github.com/EdwinKusel1"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -187,7 +187,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
       <img src="docs/images/ale-profile.png" width="130" alt="Alessandro Paravano" />
       <br><br>
       <strong>Alessandro Paravano</strong><br>
-      <img src="https://img.shields.io/badge/Frontend%20Lead-B01030?style=flat-square&logoColor=white" /><br><br>
+      <br>
       <sub>Final-year BSc Computer Science student handling frontend development for OptiLifts. Skips leg day in the gym, never skips a sprint.</sub>
       <br><br><br>
       <a href="https://github.com/AlessandroParavano"><img src="https://skillicons.dev/icons?i=github" width="28" /></a>&nbsp;
@@ -350,7 +350,6 @@ Builds and runs the full stack in Docker Compose. The app runs at http://localho
 pnpm start:worker:node
 ```
 Runs the form-analysis worker locally (or `pnpm start:worker:node:docker` to run it in Docker).
- via Docker Compose.
 
 </details>
 
@@ -364,19 +363,6 @@ The Core API seeds the database automatically on startup: demo accounts, exercis
 ```bash
 pnpm db:down:clean
 pnpm dev
-```
-
-</details>
-
-<details>
-
-<summary><strong>5. Seed Demo Data (Optional)</strong></summary>
-<br>
-
-The system automatically runs the seeder on startup. If you ever want to re-seed deleted/manipulated data, use the following whilst the databsase is running:
-
-```bash
-pnpm db:seed:sql
 ```
 
 </details>

@@ -135,6 +135,36 @@ public class GenerateOverloadHandlerTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task Handle_FractionalPreviousAverageWeight_RoundsToStandardEquipmentIncrement()
+    {
+        await using var testDb = await CreateTestDatabaseAsync();
+        var setup = await SeedExerciseHistoryAsync(testDb.Context, ExerciseType.WeightReps, null, "barbell", [(200f, 5), (200f, 5), (200f, 5), (200f, 5)]);
+
+        var latestLog = await testDb.Context.WorkoutLogs
+            .OrderByDescending(l => l.StartedAt)
+            .FirstAsync();
+
+        var existingSets = await testDb.Context.WorkoutLogSets
+            .Where(s => s.LogId == latestLog.Id)
+            .ToListAsync();
+        testDb.Context.WorkoutLogSets.RemoveRange(existingSets);
+
+        testDb.Context.WorkoutLogSets.AddRange(
+            new WorkoutSetLog { Id = Guid.NewGuid(), LogId = latestLog.Id, ExerciseId = setup.Exercise.Id, Type = SetType.Normal, Weight = 200f, Reps = 5, LoggedAt = DateTime.UtcNow },
+            new WorkoutSetLog { Id = Guid.NewGuid(), LogId = latestLog.Id, ExerciseId = setup.Exercise.Id, Type = SetType.Normal, Weight = 205f, Reps = 5, LoggedAt = DateTime.UtcNow },
+            new WorkoutSetLog { Id = Guid.NewGuid(), LogId = latestLog.Id, ExerciseId = setup.Exercise.Id, Type = SetType.Normal, Weight = 205f, Reps = 5, LoggedAt = DateTime.UtcNow }
+        );
+        await testDb.Context.SaveChangesAsync();
+
+        var handler = new GenerateOverloadHandler(testDb.Context);
+        await handler.Handle(new GenerateOverloadCommand(setup.UserId, setup.Exercise.Id), CancellationToken.None);
+
+        var estimation = await testDb.Context.ExerciseEstimations.SingleAsync();
+        estimation.Weight.Should().NotBeNull();
+        estimation.Weight!.Value.Should().Be(205f);
+    }
+
     private static async Task<TestDatabase> CreateTestDatabaseAsync()
     {
         var connection = new SqliteConnection("DataSource=:memory:");

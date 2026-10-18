@@ -71,16 +71,30 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 <table width="100%">
   <tr>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Progression Engine</h3>
-      <p align="center">Analyses your history and recommends precise weight and rep increments using XGBoost-powered plateau detection.</p>
+      <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine</h3>
+      <p align="center">Analyses your last few sessions and rest days to recommend precise weight and rep increments, and detects plateaus and long-term fatigue before they stall you.</p>
     </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/calendar-x.svg" width="20" height="20" style="vertical-align: middle;"> Dynamic Scheduling</h3>
-      <p align="center">Automatically re-prioritises or reschedules missed sessions to keep muscle groups balanced and recovery on track.</p>
+      <p align="center">A constraint solver (Google OR-Tools) re-prioritises or reschedules missed sessions to keep muscle groups balanced and recovery on track.</p>
     </td>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> Real-Time Adaptation</h3>
-      <p align="center">Captures your Rate of Perceived Exertion mid-session to adapt the workout in real time, preventing injury and burnout.</p>
+      <h3 align="center"><img src="docs/images/compass.svg" width="20" height="20" style="vertical-align: middle;"> Google Calendar Sync</h3>
+      <p align="center">Sync your planned sessions straight to Google Calendar so your training fits around the rest of your week.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3 align="center"><img src="docs/images/images.svg" width="20" height="20" style="vertical-align: middle;"> OptiVision</h3>
+      <p align="center">Upload a video of your squat, bench or deadlift and get AI form coaching with a score and a breakdown of what to fix.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3 align="center"><img src="docs/images/boxes.svg" width="20" height="20" style="vertical-align: middle;"> OptiClash</h3>
+      <p align="center">Compete with friends in 1v1 duels or climb seasonal leagues and private gym arenas, ranked by DOTS score.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> Progression Tracking</h3>
+      <p align="center">Every exercise is tracked for progress, plateaus and regression, so you always know when to change something.</p>
     </td>
   </tr>
 </table>
@@ -99,7 +113,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 | **CI/CD** | <img src="https://skillicons.dev/icons?i=githubactions" valign="middle" /> | GitHub Actions pipelines for automated testing, linting, and deployment. |
 | **Containerisation** | <img src="https://skillicons.dev/icons?i=docker" valign="middle" /> | Docker Compose for local development orchestration of all services. |
 | **Database** | <img src="https://skillicons.dev/icons?i=postgres" valign="middle" /> | PostgreSQL for structured relational data storage. |
-| **Testing** | | Vitest for frontend unit tests,Xunit and Pytest for backend tests, Moq and TestContainers for integration tests, Playwright for end-to-end tests.|
+| **Testing** | <img src="https://skillicons.dev/icons?i=vitest" valign="middle" /> <img src="https://cdn.simpleicons.org/pytest/0A9EDC" width="40" valign="middle" /> <img src="https://playwright.dev/img/playwright-logo.svg" width="40" valign="middle" /> | Vitest for frontend unit tests, xUnit and Pytest for backend tests, Moq and Testcontainers for integration tests, Playwright for end-to-end tests. |
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
@@ -197,7 +211,7 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 [![Architecture Specification](https://img.shields.io/badge/Architecture_Specification-View_SAS-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/SAS.md)
 [![Coding Standards](https://img.shields.io/badge/Coding_Standards-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/CODING_STANDARDS.md)
 [![Testing Policy](https://img.shields.io/badge/Testing_Policy-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/TESTING_POLICY.md)
-[![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/User_Manual.pdf)
+[![User Manual](https://img.shields.io/badge/User_Manual-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/demo-4/User-Manual.pdf)
 [![Brand Style Guide](https://img.shields.io/badge/Brand_Style_Guide-View_Doc-B01030?style=for-the-badge&logo=googledocs&logoColor=white)](docs/brand-style/demo4-brandstyle.pdf)
 [![Figma](https://img.shields.io/badge/Figma-View_Panels-B01030?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/site/xHXj3tG6pv2UuKHFgeug8s/OptiLifts--Copy-?node-id=0-1&p=f)
 [![Demo 4 Video](https://img.shields.io/badge/Demo_4-View_Video-B01030?style=for-the-badge&logo=google&logoColor=white)](https://drive.google.com/file/d/1F_SYfZ7BmbSRSP3FV9RpjjLI6nzJbazQ/view?usp=sharing)
@@ -292,6 +306,10 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password_here
 JWT_SECRET=your_jwt_secret_here
 JWT_EXP_MINUTES=1440
+DB_ENCRYPTION_KEY=your_base64_32_byte_key_here
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 </details>
@@ -300,7 +318,7 @@ JWT_EXP_MINUTES=1440
 <summary><strong>3. Install Dependencies</strong></summary>
 <br>
 
-Installs all Node modules, restores C# packages, installs the EF Core CLI, and builds the Python virtual environment:
+Installs all Node modules, restores C# packages, installs the EF Core CLI, and builds the Python virtual environments for the AI API and OptiVision:
 
 ```bash
 pnpm run setup
@@ -319,13 +337,34 @@ You can run the system locally on your machine or via Docker.
 ```bash
 pnpm dev
 ```
-Starts the frontend, .NET Core API, and Python AI API all at once.
+Starts the Docker containers (PostgreSQL, Redis, Azurite), the frontend, the .NET Core API and the Python AI API all at once. The app runs at http://localhost:5173.
 
 **Option B: Docker Development**
 ```bash
 pnpm prod
 ```
-Builds and starts the application via Docker Compose.
+Builds and runs the full stack in Docker Compose. The app runs at http://localhost:5173. Stop it with `pnpm prod:down`.
+
+**Optional: OptiVision worker**
+```bash
+pnpm start:worker:node
+```
+Runs the form-analysis worker locally (or `pnpm start:worker:node:docker` to run it in Docker).
+ via Docker Compose.
+
+</details>
+
+<details>
+
+<summary><strong>5. Demo Data</strong></summary>
+<br>
+
+The Core API seeds the database automatically on startup: demo accounts, exercises, and workout history for the demo athletes. To reset everything back to the seeded state, wipe the database volume and start again:
+
+```bash
+pnpm db:down:clean
+pnpm dev
+```
 
 </details>
 
@@ -342,25 +381,27 @@ pnpm db:seed:sql
 
 </details>
 
-
-
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
 ## <img src="docs/images/square-terminal.svg" width="24" height="24" style="vertical-align: middle;"> Commands
 
 | Command | What it does |
 | :--- | :--- |
-| `pnpm run setup` | Installs Node packages, .NET packages, and the Python virtual environment |
-| `pnpm build` | Builds the project |
-| `pnpm db` | Starts the local PostgreSQL and Redis Docker containers |
-| `pnpm db:down` | Stops the local PostgreSQL and Redis Docker containers |
-| `pnpm db:down:clean` | Stops containers and removes the database volume |
-| `pnpm db:sync` | Pushes the initial database schema to your local container |
-| `pnpm db:seed:sql` | Loads the demo workout data from the SQL script |
-| `pnpm dev` | Starts the Frontend, .NET Core API, and Python AI API all at once |
-| `pnpm test` | Runs all tests at once |
-| `pnpm test:coverage` | Runs all tests with coverage collection across frontend, backend, and AI API |
-
+| `pnpm run setup` | Installs Node packages, .NET packages, the EF Core CLI, and the Python virtual environments |
+| `pnpm dev` | Starts the Docker containers, frontend, .NET Core API, and Python AI API all at once |
+| `pnpm prod` | Builds and runs the full stack in Docker Compose |
+| `pnpm prod:down` | Stops and removes the Docker Compose stack (`prod:down:clean` also wipes volumes) |
+| `pnpm build` | Builds the frontend and the .NET backend |
+| `pnpm db` | Starts the local PostgreSQL, Redis, and Azurite containers |
+| `pnpm db:stop` / `pnpm db:start` | Pauses / resumes the local containers without removing them |
+| `pnpm db:down` | Stops and removes the local containers |
+| `pnpm db:down:clean` | Stops containers and wipes the database volume (the next start re-seeds it) |
+| `pnpm db:sync` | Applies the EF Core migrations to your local database |
+| `pnpm start:worker:node` | Runs the OptiVision form-analysis worker locally |
+| `pnpm test` | Runs the frontend, backend, and AI API unit tests |
+| `pnpm test:coverage` | Runs all unit tests with coverage collection |
+| `pnpm test:e2e` | Spins up the Docker stack and runs the Playwright end-to-end tests (`test:e2e:ui` for the interactive runner) |
+| `pnpm lint` / `pnpm lint:fix` | Lints (and auto-fixes) the frontend, backend, AI API, and OptiVision |
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

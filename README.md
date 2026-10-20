@@ -93,10 +93,10 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
 <table width="100%">
   <tr>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine</h3>
+      <h3 align="center"><img src="docs/images/trending-up.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine</h3>
       <p align="center">Adapts every upcoming session from your recent performance, prescribing the right weight and rep increases, and flags plateaued lifts so you can swap them out.</p>    </td>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/calendar-x.svg" width="20" height="20" style="vertical-align: middle;"> Dynamic Scheduling</h3>
+      <h3 align="center"><img src="docs/images/calendar-check.svg" width="20" height="20" style="vertical-align: middle;"> Dynamic Scheduling</h3>
       <p align="center">Missed a session? It is automatically re-slotted around your rest days, daily workout limit and muscle recovery, keeping your training week balanced.</p>    </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> Context-Aware Training</h3>

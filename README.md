@@ -41,6 +41,28 @@
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
+## <img src="docs/images/circle-play.svg" width="24" height="24" style="vertical-align: middle;"> Demo
+
+<div align="center">
+
+<h3>OptiLifts Trailer</h3>
+
+<a href="https://youtu.be/TRAILER_ID">
+  <img src="docs/images/trailer-thumbnail.png" width="720" alt="Watch the OptiLifts trailer on YouTube" />
+</a>
+
+<br><br>
+
+<h3>Full Demo</h3>
+
+<a href="https://youtu.be/pJrY7ZA-akw">
+  <img src="docs/images/demo-thumbnail.png" width="720" alt="Watch the full OptiLifts demo on YouTube" />
+</a>
+
+</div>
+
+<p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
+
 ## <img src="docs/images/telescope.svg" width="24" height="24" style="vertical-align: middle;"> The Problem
 
 Traditional fitness applications act as digital notebooks - they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
@@ -371,6 +393,10 @@ pnpm dev
 
 ## <img src="docs/images/square-terminal.svg" width="24" height="24" style="vertical-align: middle;"> Commands
 
+<details>
+<summary><strong>View all commands</strong></summary>
+<br>
+
 | Command | What it does |
 | :--- | :--- |
 | `pnpm run setup` | Installs Node packages, .NET packages, the EF Core CLI, and the Python virtual environments |
@@ -388,6 +414,8 @@ pnpm dev
 | `pnpm test:coverage` | Runs all unit tests with coverage collection |
 | `pnpm test:e2e` | Spins up the Docker stack and runs the Playwright end-to-end tests (`test:e2e:ui` for the interactive runner) |
 | `pnpm lint` / `pnpm lint:fix` | Lints (and auto-fixes) the frontend, backend, AI API, and OptiVision |
+
+</details>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

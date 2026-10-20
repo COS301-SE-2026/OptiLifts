@@ -33,9 +33,9 @@
 [![Last Commit](https://img.shields.io/github/last-commit/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=git&logoColor=white&label=Last%20Commit&labelColor=1C1C1F&color=B01030)](https://github.com/COS301-SE-2026/OptiLifts/commits/main)
 [![Uptime](https://img.shields.io/uptimerobot/ratio/m803591570-47d32da3e7fd2f4c530c09b5?style=for-the-badge&logo=uptimerobot&logoColor=white&labelColor=1C1C1F&color=B01030&label=Uptime)](https://stats.uptimerobot.com/65K4aFGFCx)
 
-<br>
-
-[![Open OptiLifts](https://img.shields.io/badge/Open_OptiLifts-app.optilifts.app-B01030?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=1C1C1F)](https://app.optilifts.app/)
+<p align="center">
+  <a href="https://app.optilifts.app/"><img src="docs/images/open-optilifts.svg" width="210" alt="Open OptiLifts" /></a>
+</p>
 
 
 </div>

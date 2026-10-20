@@ -94,30 +94,13 @@ OptiLifts is a workout management platform that uses AI to adapt your training b
   <tr>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine</h3>
-      <p align="center">Analyses your last few sessions and rest days to recommend precise weight and rep increments, and detects plateaus and long-term fatigue before they stall you.</p>
-    </td>
+      <p align="center">Adapts every upcoming session from your recent performance, prescribing the right weight and rep increases, and flags plateaued lifts so you can swap them out.</p>    </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/calendar-x.svg" width="20" height="20" style="vertical-align: middle;"> Dynamic Scheduling</h3>
-      <p align="center">A constraint solver (Google OR-Tools) re-prioritises or reschedules missed sessions to keep muscle groups balanced and recovery on track.</p>
-    </td>
+      <p align="center">Missed a session? It is automatically re-slotted around your rest days, daily workout limit and muscle recovery, keeping your training week balanced.</p>    </td>
     <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/compass.svg" width="20" height="20" style="vertical-align: middle;"> Google Calendar Sync</h3>
-      <p align="center">Sync your planned sessions straight to Google Calendar so your training fits around the rest of your week.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/images.svg" width="20" height="20" style="vertical-align: middle;"> OptiVision</h3>
-      <p align="center">Upload a video of your squat, bench or deadlift and get AI form coaching with a score and a breakdown of what to fix.</p>
-    </td>
-    <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/boxes.svg" width="20" height="20" style="vertical-align: middle;"> OptiClash</h3>
-      <p align="center">Compete with friends in 1v1 duels or climb seasonal leagues and private gym arenas, ranked by DOTS score.</p>
-    </td>
-    <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> Progression Tracking</h3>
-      <p align="center">Every exercise is tracked for progress, plateaus and regression, so you always know when to change something.</p>
-    </td>
+      <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> Context-Aware Training</h3>
+      <p align="center">Sessions adapt to the time you have, recovery windows shape your schedule, and rising RPE is flagged as fatigue before it becomes burnout.</p>    </td>
   </tr>
 </table>
 

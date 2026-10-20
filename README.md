@@ -32,9 +32,10 @@
 [![Issues](https://img.shields.io/github/issues/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=github&logoColor=white&label=Issues&labelColor=1C1C1F&color=D94060)](https://github.com/COS301-SE-2026/OptiLifts/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/COS301-SE-2026/OptiLifts?style=for-the-badge&logo=git&logoColor=white&label=Last%20Commit&labelColor=1C1C1F&color=B01030)](https://github.com/COS301-SE-2026/OptiLifts/commits/main)
 [![Uptime](https://img.shields.io/uptimerobot/ratio/m803591570-47d32da3e7fd2f4c530c09b5?style=for-the-badge&logo=uptimerobot&logoColor=white&labelColor=1C1C1F&color=B01030&label=Uptime)](https://stats.uptimerobot.com/65K4aFGFCx)
-<p align="center">
-  <a href="https://app.optilifts.app/" style="display:inline-block;padding:10px 18px;border:1px solid #B01030;border-radius:999px;text-decoration:none;color:#B01030;font-weight:600;">Open OptiLifts</a>
-</p>
+
+<br>
+
+[![Open OptiLifts](https://img.shields.io/badge/Open_OptiLifts-app.optilifts.app-B01030?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=1C1C1F)](https://app.optilifts.app/)
 
 
 </div>
@@ -65,13 +66,13 @@
 
 ## <img src="docs/images/telescope.svg" width="24" height="24" style="vertical-align: middle;"> The Problem
 
-Traditional fitness applications act as digital notebooks - they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
+Traditional fitness applications act as digital notebooks – they record data without ever acting on it. The burden of calculating progressive overload, recovery, and periodisation is placed entirely on the user.
 
 <table width="100%">
   <tr>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/trending-down.svg" width="20" height="20" style="vertical-align: middle;"> Plateau Effect</h3>
-      <p align="center">Without a systematic approach to progressive overload, athletes stagnate - going weeks or months without measurable improvement.</p>
+      <p align="center">Without a systematic approach to progressive overload, athletes stagnate – going weeks or months without measurable improvement.</p>
     </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/calendar-x.svg" width="20" height="20" style="vertical-align: middle;"> Rigid Plans</h3>
@@ -79,7 +80,7 @@ Traditional fitness applications act as digital notebooks - they record data wit
     </td>
     <td width="33%" valign="top">
       <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> No Context-Awareness</h3>
-      <p align="center">Apps ignore fatigue, schedule constraints, and recovery needs - forcing users to make complex athletic science decisions themselves.</p>
+      <p align="center">Apps ignore fatigue, schedule constraints, and recovery needs – forcing users to make complex athletic science decisions themselves.</p>
     </td>
   </tr>
 </table>
@@ -88,7 +89,7 @@ Traditional fitness applications act as digital notebooks - they record data wit
 
 ## <img src="docs/images/sparkles.svg" width="24" height="24" style="vertical-align: middle;"> How We Solve It
 
-OptiLifts turns your training log into a coach. Instead of just recording what you lifted, it acts on it - every feature below exists to tackle one of those three problems.
+OptiLifts turns your training log into a coach. Instead of just recording what you lifted, it acts on it – every feature below exists to tackle one of those three problems.
 
 <p align="center">
   <img src="docs/images/features-overview.png" width="100%" alt="OptiLifts features: Progressive Overload, Progression Tracking, Dynamic Scheduling, Time-Budget Sessions, Active Sessions, OptiVision, OptiClash and Dashboard" />
@@ -100,7 +101,7 @@ OptiLifts turns your training log into a coach. Instead of just recording what y
 
 ### <img src="docs/images/trending-up.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine
 
-The core of OptiLifts. After every session the engine reviews your recent performance and rest days, then updates your next workout - adding weight, adding reps or holding steady - so you keep progressing at a safe, sustainable pace.
+The core of OptiLifts. After every session the engine reviews your recent performance and rest days, then updates your next workout – adding weight, adding reps or holding steady – so you keep progressing at a safe, sustainable pace.
 
 <p align="center"><img src="frontend/src/assets/Progressive_Overload_Page.png" width="85%" alt="How the progressive overload engine works" /></p>
 
@@ -130,7 +131,7 @@ Record or upload a squat, bench or deadlift and get computer-vision form analysi
 
 ### <img src="docs/images/swords.svg" width="20" height="20" style="vertical-align: middle;"> OptiClash
 
-Turn training into competition - challenge friends to 1v1 progressive overload duels, build private gym arenas and climb DOTS-ranked leagues from Bronze to Diamond.
+Turn training into competition – challenge friends to 1v1 progressive overload duels, build private gym arenas and climb DOTS-ranked leagues from Bronze to Diamond.
 
 <p align="center"><img src="frontend/src/assets/OptiClash_Page.png" width="85%" alt="OptiClash hub" /></p>
 
@@ -151,7 +152,7 @@ Your training at a glance: completed volume, upcoming workouts, favourite exerci
 | **Frontend** | <img src="https://skillicons.dev/icons?i=react,vite" valign="middle" /> | React SPA with React Router, built and bundled by Vite with PWA support. |
 | **Core API** | <img src="https://skillicons.dev/icons?i=dotnet" valign="middle" /> | ASP.NET Core with EF Core and MediatR for clean CQRS-style command/query handling. |
 | **AI Backend** | <img src="https://skillicons.dev/icons?i=python,fastapi" valign="middle" /> | FastAPI service |
-| **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure - App Service, Container Registry, and managed PostgreSQL. |
+| **Cloud Hosting** | <img src="https://skillicons.dev/icons?i=azure" valign="middle" /> | Microsoft Azure – App Service, Container Registry, and managed PostgreSQL. |
 | **IaC** | <img src="https://cdn.simpleicons.org/pulumi/8A3391" width="40" valign="middle" /> | Pulumi for defining and provisioning all Azure infrastructure as code. |
 | **CI/CD** | <img src="https://skillicons.dev/icons?i=githubactions" valign="middle" /> | GitHub Actions pipelines for automated testing, linting, and deployment. |
 | **Containerisation** | <img src="https://skillicons.dev/icons?i=docker" valign="middle" /> | Docker Compose for local development orchestration of all services. |
@@ -162,7 +163,7 @@ Your training at a glance: completed volume, upcoming workouts, favourite exerci
 
 ## <img src="docs/images/boxes.svg" width="24" height="24" style="vertical-align: middle;"> The Team
 
-<p align="center">Team Hatrock - five athletes, one codebase.</p>
+<p align="center">Team Hatrock – five athletes, one codebase.</p>
 
 <br>
 
@@ -442,10 +443,10 @@ pnpm dev
 
 ## <img src="docs/images/heart-handshake.svg" width="24" height="24" style="vertical-align: middle;"> Acknowledgements
 
-- **EPI-USE** - our industry client, for the vision behind OptiLifts
+- **EPI-USE** – our industry client, for the vision behind OptiLifts
 - The open-source community for the incredible tools and libraries that make this possible
 - Microsoft Azure for Students sponsorship
-- **Gym Visual** - for the comprehensive exercise media assets. © Gym visual - https://gymvisual.com/
+- **Gym Visual** – for the comprehensive exercise media assets. © Gym visual – https://gymvisual.com/
 
 > **Academic Disclaimer:** OptiLifts is strictly a non-commercial Capstone project developed by Team hatrock. All exercise media is strictly used for educational purposes.
 

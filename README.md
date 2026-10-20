@@ -86,23 +86,61 @@ Traditional fitness applications act as digital notebooks - they record data wit
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 
-## <img src="docs/images/cpu.svg" width="24" height="24" style="vertical-align: middle;"> The Solution
+## <img src="docs/images/sparkles.svg" width="24" height="24" style="vertical-align: middle;"> How We Solve It
 
-OptiLifts is a workout management platform that uses AI to adapt your training before and during each session, offering intelligent suggestions to optimise your performance and ensure consistent progressive overload across every workout.
+OptiLifts turns your training log into a coach. Instead of just recording what you lifted, it acts on it - every feature below exists to tackle one of those three problems.
 
-<table width="100%">
-  <tr>
-    <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/trending-up.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine</h3>
-      <p align="center">Adapts every upcoming session from your recent performance, prescribing the right weight and rep increases, and flags plateaued lifts so you can swap them out.</p>    </td>
-    <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/calendar-check.svg" width="20" height="20" style="vertical-align: middle;"> Dynamic Scheduling</h3>
-      <p align="center">Missed a session? It is automatically re-slotted around your rest days, daily workout limit and muscle recovery, keeping your training week balanced.</p>    </td>
-    <td width="33%" valign="top">
-      <h3 align="center"><img src="docs/images/brain.svg" width="20" height="20" style="vertical-align: middle;"> Context-Aware Training</h3>
-      <p align="center">Sessions adapt to the time you have, recovery windows shape your schedule, and rising RPE is flagged as fatigue before it becomes burnout.</p>    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/images/features-overview.png" width="100%" alt="OptiLifts features: Progressive Overload, Progression Tracking, Dynamic Scheduling, Time-Budget Sessions, Active Sessions, OptiVision, OptiClash and Dashboard" />
+</p>
+
+<details>
+<summary><strong>Take the feature tour</strong></summary>
+<br>
+
+### <img src="docs/images/trending-up.svg" width="20" height="20" style="vertical-align: middle;"> Progressive Overload Engine
+
+The core of OptiLifts. After every session the engine reviews your recent performance and rest days, then updates your next workout - adding weight, adding reps or holding steady - so you keep progressing at a safe, sustainable pace.
+
+<p align="center"><img src="frontend/src/assets/Progressive_Overload_Page.png" width="85%" alt="How the progressive overload engine works" /></p>
+
+### <img src="docs/images/chart-line.svg" width="20" height="20" style="vertical-align: middle;"> Progression Tracking
+
+Every lift is tracked by estimated 1RM against your own 12-week baseline and labelled progressing, plateaued or regressing. Stalled exercises can be swapped for a suitable alternative straight from the Progression page.
+
+<p align="center"><img src="frontend/src/assets/Progression_Page.png" width="85%" alt="Progression page" /></p>
+
+### <img src="docs/images/calendar-check.svg" width="20" height="20" style="vertical-align: middle;"> Dynamic Scheduling
+
+Missed a session? The scheduler re-slots it around your fixed rest days, daily workout limit and 48-hour muscle recovery, escalating to a Google OR-Tools constraint solver when several sessions need rearranging. Your plan can sync straight to Google Calendar.
+
+<p align="center"><img src="frontend/src/assets/Schedule_Page.png" width="85%" alt="Schedule page" /></p>
+
+### <img src="docs/images/activity.svg" width="20" height="20" style="vertical-align: middle;"> Active Sessions
+
+Log weight, reps and RPE set by set as you train, add or remove exercises on the fly, and fit the whole workout into a 15, 30, 45 or 60-minute time budget when you're short on time.
+
+<p align="center"><img src="frontend/src/assets/Session_Page.png" width="85%" alt="Active session page" /></p>
+
+### <img src="docs/images/scan-eye.svg" width="20" height="20" style="vertical-align: middle;"> OptiVision
+
+Record or upload a squat, bench or deadlift and get computer-vision form analysis: joint angles, rep quality, a form score and coaching tips on what to fix.
+
+<p align="center"><img src="frontend/src/assets/OptiVision_Page.png" width="85%" alt="OptiVision form analysis" /></p>
+
+### <img src="docs/images/swords.svg" width="20" height="20" style="vertical-align: middle;"> OptiClash
+
+Turn training into competition - challenge friends to 1v1 progressive overload duels, build private gym arenas and climb DOTS-ranked leagues from Bronze to Diamond.
+
+<p align="center"><img src="frontend/src/assets/OptiClash_Page.png" width="85%" alt="OptiClash hub" /></p>
+
+### <img src="docs/images/layout-dashboard.svg" width="20" height="20" style="vertical-align: middle;"> Dashboard
+
+Your training at a glance: completed volume, upcoming workouts, favourite exercise, weekly PRs and a muscle balance chart.
+
+<p align="center"><img src="frontend/src/assets/Dashboard_Page.png" width="85%" alt="Dashboard" /></p>
+
+</details>
 
 <p align="center"><img src="docs/images/divider.svg" width="800" alt="" /></p>
 

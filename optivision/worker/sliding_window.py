@@ -155,7 +155,11 @@ def _check_squat_posture(
 
 
 def _check_deadlift_posture(
-    med_angle: float, hip_disp: float, has_wrists: bool, mean_wrist_to_sh: float, max_wrist_to_hip: float
+    med_angle: float,
+    hip_disp: float,
+    has_wrists: bool,
+    mean_wrist_to_sh: float,
+    max_wrist_to_hip: float,
 ) -> Optional[str]:
     # 1. lots of hip movement
     if med_angle < 12.0 and hip_disp < 0.05:
@@ -196,8 +200,16 @@ def detect_posture_mismatch(
 
     valid_wrists = valid_mask & (wrist_y != 0)
     has_wrists = bool(valid_wrists.sum() >= 5)
-    mean_wrist_to_sh = float(torch.mean(wrist_y[valid_wrists] - sh_y[valid_wrists])) if has_wrists else 0.0
-    max_wrist_to_hip = float(torch.max(wrist_y[valid_wrists] - hip_y[valid_wrists])) if has_wrists else 0.0
+    mean_wrist_to_sh = (
+        float(torch.mean(wrist_y[valid_wrists] - sh_y[valid_wrists]))
+        if has_wrists
+        else 0.0
+    )
+    max_wrist_to_hip = (
+        float(torch.max(wrist_y[valid_wrists] - hip_y[valid_wrists]))
+        if has_wrists
+        else 0.0
+    )
 
     norm_exercise = EXERCISE_ALIASES.get(exercise.lower(), exercise.lower())
 
@@ -205,9 +217,13 @@ def detect_posture_mismatch(
     if norm_exercise == "bench_press":
         msg = _check_bench_press_posture(med_angle)
     elif norm_exercise == "squat":
-        msg = _check_squat_posture(med_angle, has_wrists, mean_wrist_to_sh, max_wrist_to_hip)
+        msg = _check_squat_posture(
+            med_angle, has_wrists, mean_wrist_to_sh, max_wrist_to_hip
+        )
     elif norm_exercise == "deadlift":
-        msg = _check_deadlift_posture(med_angle, hip_disp, has_wrists, mean_wrist_to_sh, max_wrist_to_hip)
+        msg = _check_deadlift_posture(
+            med_angle, hip_disp, has_wrists, mean_wrist_to_sh, max_wrist_to_hip
+        )
 
     if msg:
         logger.warning("Posture mismatch for %s: %s", norm_exercise, msg)
@@ -282,7 +298,9 @@ def _evaluate_trajectory_flaw(
     unsmoothed_windows = []
     for w in target_windows:
         prob = float(w["probs"][flaw_idx])
-        if prob >= threshold and not _is_window_locally_smoothed(w, flaw_idx, target_windows):
+        if prob >= threshold and not _is_window_locally_smoothed(
+            w, flaw_idx, target_windows
+        ):
             unsmoothed_windows.append((prob, w))
 
     if not unsmoothed_windows:
@@ -331,7 +349,9 @@ def _filter_detected_anomalies(
         threshold = FLAW_THRESHOLDS.get(flaw, THRESHOLD)
 
         if flaw in TRAJECTORY_FLAWS:
-            anomaly = _evaluate_trajectory_flaw(flaw, flaw_idx, threshold, target_windows)
+            anomaly = _evaluate_trajectory_flaw(
+                flaw, flaw_idx, threshold, target_windows
+            )
         else:
             anomaly = _evaluate_standard_flaw(flaw, flaw_idx, threshold, target_windows)
 

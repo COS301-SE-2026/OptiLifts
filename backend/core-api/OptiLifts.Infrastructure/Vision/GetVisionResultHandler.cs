@@ -21,6 +21,13 @@ public class GetVisionResultHandler : IRequestHandler<GetVisionResultQuery, Visi
     private static int CalculateScore(List<string> anomalies)
     {
         if (anomalies == null || anomalies.Count == 0) return 100; //yipee
+
+        // diff exercise
+        if (anomalies.Any(a => a.StartsWith("posture_mismatch", StringComparison.OrdinalIgnoreCase)))
+        {
+            return 0;
+        }
+
         double bad = 0;
         foreach (var a in anomalies)
         {
@@ -64,6 +71,8 @@ public class GetVisionResultHandler : IRequestHandler<GetVisionResultQuery, Visi
                     var name = a;
                     var braceIndex = name.IndexOf('(');
                     if (braceIndex != -1) name = name.Substring(0, braceIndex).Trim();
+                    var pipeIndex = name.IndexOf('|');
+                    if (pipeIndex != -1) name = name.Substring(0, pipeIndex).Trim();
                     name = name.Replace('_', ' ');
                     name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(name.ToLower());
                     issuesList.Add(name);

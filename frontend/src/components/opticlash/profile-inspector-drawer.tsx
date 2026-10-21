@@ -58,6 +58,7 @@ interface AthleteProfileApiResponse {
     hasSentKudos: boolean;
     isFriend?: boolean;
     hasPendingFriendRequest?: boolean;
+    acceptsFriendRequests?: boolean;
 }
 interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
@@ -315,9 +316,15 @@ export function ProfileInspectorDrawer({
                                         <span>1v1 Duel</span>
                                     </Button>
                                 ) : (
-                                    <Button variant={sentFriendRequest ? 'secondary' : 'default'} size="sm" disabled={sentFriendRequest} onClick={handleSendFriendRequest}
-                                    className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5">
-                                        {sentFriendRequest ? (
+                                    <Button variant={sentFriendRequest ? 'secondary' : 'default'} size="sm" disabled={sentFriendRequest || profile?.acceptsFriendRequests === false} onClick={handleSendFriendRequest}
+                                    className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5"
+                                    title={profile?.acceptsFriendRequests === false ? 'This athlete is not accepting friend requests' : undefined}>
+                                        {profile?.acceptsFriendRequests === false ? (
+                                            <>
+                                                <UserPlus className="w-3.5 h-3.5 opacity-50"/>
+                                                <span>Requests Off</span>
+                                            </>
+                                        ) : sentFriendRequest ? (
                                             <>
                                                 <UserCheck className="w-3.5 h-3.5 text-success"/>
                                                 <span>Request Sent</span>

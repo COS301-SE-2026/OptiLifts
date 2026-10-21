@@ -113,6 +113,7 @@ export default function FriendsManagementPage(){
     //f4 - duel invites
     const [duelInvites, setDuelInvites] = useState<DuelInviteItem[]>([]);
     const [privacyPolicy, setPrivacyPolicy] = useState<'friends' | 'none'>('friends');
+    const [friendRequestPrivacy, setFriendRequestPrivacy] = useState<'everyone' | 'none'>('everyone');
     const [isCreateDuelOpen, setIsCreateDuelOpen] = useState(false);
     const [selectedFriendForDuel, setSelectedFriendForDuel] = useState<{ id: string; name: string; dotsScore?: number } | null>(null);
 
@@ -120,9 +121,10 @@ export default function FriendsManagementPage(){
     const fetchFriendsData = async () => {
         await Promise.resolve();
         try {
-            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes, privacyRes] = await Promise.all([
+            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes, privacyRes, friendPrivacyRes] = await Promise.all([
                 customFetch('/api/clash/friends'), customFetch('/api/clash/friends/requests'), customFetch('/api/clash/friends/code'),
                 customFetch('/api/clash/arenas/invites'), customFetch('/api/clash/duels/invites'), customFetch('/api/clash/duels/privacy'),
+                customFetch('/api/clash/friends/privacy'),
             ]);
             if (friendsRes.ok){
                 const data = await friendsRes.json();
@@ -148,6 +150,12 @@ export default function FriendsManagementPage(){
                 const pData = await privacyRes.json();
                 if (pData?.privacy) {
                     setPrivacyPolicy(pData.privacy.toLowerCase() === 'none' ? 'none' : 'friends');
+                }
+            }
+            if (friendPrivacyRes.ok) {
+                const fpData = await friendPrivacyRes.json();
+                if (fpData?.privacy) {
+                    setFriendRequestPrivacy(fpData.privacy.toLowerCase() === 'none' ? 'none' : 'everyone');
                 }
             }
         } catch {
@@ -392,6 +400,28 @@ export default function FriendsManagementPage(){
         }
     };
 
+    const handleUpdateFriendPrivacy = async (newPolicy: 'everyone' | 'none') => {
+        setFriendRequestPrivacy(newPolicy);
+        try {
+            const res = await customFetch('/api/clash/friends/privacy', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    privacy: newPolicy === 'none' ? 'None' : 'Everyone',
+                }),
+            });
+            if (res.ok) {
+                toast.info(newPolicy === 'none' ? 'Friend requests disabled (No One).' : 'Friend requests enabled (Everyone).');
+            } else {
+                toast.error('Failed to update friend request privacy setting');
+            }
+        } catch {
+            toast.error('Network error updating friend request privacy setting');
+        }
+    };
+
     const filteredFriends = friendsList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()) 
     || f.code.toLowerCase().includes(searchQuery.toLowerCase()));
     const filteredRequests = requestsLists.filter((f) => f.fromName.toLowerCase().includes(requestSearchQuery.toLowerCase()) 
@@ -509,6 +539,34 @@ export default function FriendsManagementPage(){
 
                 {activeTab === 'requests' && (
                     <div className="space-y-4">
+                        <Card className="bg-surface border-border p-4 shadow-sm">
+                            <CardContent className="p-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <Shield className="w-5 h-5 text-brand shrink-0" />
+                                    <div>
+                                        <h4 className="font-sans font-bold text-sm text-foreground">Friend Request Privacy</h4>
+                                        <p className="text-xs text-muted-foreground font-sans">
+                                            Control who can send you friend requests via your friend code or profile.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 self-start lg:self-auto flex-wrap">
+                                    <div className="flex bg-surface-2 border border-border rounded-lg p-1">
+                                        <button type="button" onClick={() => void handleUpdateFriendPrivacy('everyone')}
+                                            className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
+                                                friendRequestPrivacy === 'everyone' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                                            Everyone
+                                        </button>
+                                        <button type="button" onClick={() => void handleUpdateFriendPrivacy('none')}
+                                            className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
+                                                friendRequestPrivacy === 'none' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                                            No One
+                                        </button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="w-full max-w-md">
                                 <SearchInput placeholder="Search requests by name or code" value={requestSearchQuery} onChange={(e) => setRequestSearchQuery(e.target.value)}

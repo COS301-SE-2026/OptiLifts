@@ -121,6 +121,50 @@ export default function FriendsManagementPage(){
     const [isRemovingFriend, setIsRemovingFriend] = useState(false);
 
     //handlers
+    const handleFriendsResponses = async (
+        friendsRes: Response,
+        requestsRes: Response,
+        codeRes: Response,
+        invitesRes: Response,
+        duelInvitesRes: Response
+    ) => {
+        if (friendsRes.ok) {
+            const data = await friendsRes.json();
+            setFriendsList(data);
+        }
+        if (requestsRes.ok) {
+            const data = await requestsRes.json();
+            setRequestsLists(data.incoming ?? []);
+        }
+        if (codeRes.ok) {
+            const data = await codeRes.json();
+            setUserCode(data.code ?? '');
+        }
+        if (invitesRes.ok) {
+            const data = await invitesRes.json();
+            setArenaInvites(toList(data));
+        }
+        if (duelInvitesRes.ok) {
+            const data = await duelInvitesRes.json();
+            setDuelInvites(toList(data));
+        }
+    };
+
+    const handlePrivacyResponses = async (privacyRes: Response, friendPrivacyRes: Response) => {
+        if (privacyRes.ok) {
+            const pData = await privacyRes.json();
+            if (pData?.privacy) {
+                setPrivacyPolicy(pData.privacy.toLowerCase() === 'none' ? 'none' : 'friends');
+            }
+        }
+        if (friendPrivacyRes.ok) {
+            const fpData = await friendPrivacyRes.json();
+            if (fpData?.privacy) {
+                setFriendRequestPrivacy(fpData.privacy.toLowerCase() === 'none' ? 'none' : 'everyone');
+            }
+        }
+    };
+
     const fetchFriendsData = async () => {
         await Promise.resolve();
         try {
@@ -129,38 +173,8 @@ export default function FriendsManagementPage(){
                 customFetch('/api/clash/arenas/invites'), customFetch('/api/clash/duels/invites'), customFetch('/api/clash/duels/privacy'),
                 customFetch('/api/clash/friends/privacy'),
             ]);
-            if (friendsRes.ok){
-                const data = await friendsRes.json();
-                setFriendsList(data);
-            }
-            if (requestsRes.ok){
-                const data = await requestsRes.json();
-                setRequestsLists(data.incoming ?? []);
-            }
-            if (codeRes.ok){
-                const data = await codeRes.json();
-                setUserCode(data.code ?? '');
-            }
-            if (invitesRes.ok) {
-                const data = await invitesRes.json();
-                setArenaInvites(toList(data));
-            }
-            if (duelInvitesRes.ok) {
-                const data = await duelInvitesRes.json();
-                setDuelInvites(toList(data));
-            }
-            if (privacyRes.ok) {
-                const pData = await privacyRes.json();
-                if (pData?.privacy) {
-                    setPrivacyPolicy(pData.privacy.toLowerCase() === 'none' ? 'none' : 'friends');
-                }
-            }
-            if (friendPrivacyRes.ok) {
-                const fpData = await friendPrivacyRes.json();
-                if (fpData?.privacy) {
-                    setFriendRequestPrivacy(fpData.privacy.toLowerCase() === 'none' ? 'none' : 'everyone');
-                }
-            }
+            await handleFriendsResponses(friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes);
+            await handlePrivacyResponses(privacyRes, friendPrivacyRes);
         } catch {
             toast.error('Failed to load friends');
         }
@@ -169,6 +183,7 @@ export default function FriendsManagementPage(){
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
         void fetchFriendsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     //copying ur own code to clip

@@ -12,7 +12,7 @@ import { ClashTabs } from "@/components/opticlash/clash-tabs";
 import { customFetch } from "@/lib/custom-fetch";
 import confetti from "canvas-confetti";
 import * as signalR from "@microsoft/signalr";
-import { useAuth } from "@/context/auth-context";
+import { useAuth, type AuthUser } from "@/context/auth-context";
 import { DuelCard } from "@/components/opticlash/duel-card";
 import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 
@@ -64,6 +64,78 @@ const SYSTEM_ARENAS: ClashArena[] = [
     memberCount: 0,
   },
 ];
+
+function buildCurrentUserAthlete(
+    user: AuthUser | null,
+    userStanding: UserStandingDto | null,
+    isLeaderboardOptedIn: boolean
+): ClashAthlete {
+    const resolvedName = userStanding?.displayName || user?.name || 'You';
+    const resolvedInitials = resolvedName.slice(0, 2).toUpperCase() || 'AT';
+    const resolvedAvatarUrl = userStanding?.avatarUrl || user?.avatarUrl;
+    const isFemale = user?.sex?.toLowerCase() === 'female';
+    const gender = isFemale ? 'female' : 'male';
+    const tier = isLeaderboardOptedIn  ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked';
+
+    return {
+        id: user?.id || '',
+        name: resolvedName,
+        initials: resolvedInitials,
+        avatarUrl: resolvedAvatarUrl,
+        bio: user?.bio,
+        code: 'OPTICLASH',
+        gender,
+        bodyweightKg: userStanding?.bodyweightKg || 74,
+        squat1RM: userStanding?.squat1RM || 0,
+        bench1RM: userStanding?.bench1RM || 0,
+        deadlift1RM: userStanding?.deadlift1RM || 0,
+        totalE1RM: userStanding?.totalE1RM || 0,
+        dotsScore: userStanding?.dotsScore || 0,
+        tier,
+        tierLevel: userStanding?.tierLevel || 1,
+        rankTrend: userStanding?.rankTrend || 0,
+        weeklyVolumeKg: userStanding?.weeklyVolumeKg || 0,
+        lastWorkoutDate: new Date().toISOString(),
+        muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+        trophies: [],
+        recentWorkouts: [],
+    };
+}
+
+function buildOtherAthlete(
+    athleteId?: string,
+    athleteName?: string,
+    athleteInitials?: string,
+    athleteAvatarUrl?: string | null
+): ClashAthlete {
+    const resolvedName = athleteName || 'Athlete';
+    const resolvedInitials = athleteInitials || resolvedName.slice(0, 2).toUpperCase() || 'AT';
+    const resolvedAvatarUrl = athleteAvatarUrl || undefined;
+
+    return {
+        id: athleteId || '',
+        name: resolvedName,
+        initials: resolvedInitials,
+        avatarUrl: resolvedAvatarUrl,
+        bio: undefined,
+        code: 'OPTICLASH',
+        gender: 'male',
+        bodyweightKg: 0,
+        squat1RM: 0,
+        bench1RM: 0,
+        deadlift1RM: 0,
+        totalE1RM: 0,
+        dotsScore: 0,
+        tier: 'Unranked',
+        tierLevel: 1,
+        rankTrend: 0,
+        weeklyVolumeKg: 0,
+        lastWorkoutDate: new Date().toISOString(),
+        muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+        trophies: [],
+        recentWorkouts: [],
+    };
+}
 
 export default function ArenaHubPage() {
     const {user } = useAuth();
@@ -241,32 +313,7 @@ export default function ArenaHubPage() {
 
     const handleOpenAthlete = (athleteId?: string, athleteName?: string, athleteInitials?: string, athleteAvatarUrl?: string | null) => {
         const isCurrentUser = !athleteId || athleteId === user?.id;
-        const resolvedName = isCurrentUser ? (userStanding?.displayName || user?.name || 'You') : (athleteName || 'Athlete');
-        const resolvedInitials = isCurrentUser ? (resolvedName.slice(0, 2).toUpperCase() || 'AT') : (athleteInitials || resolvedName.slice(0, 2).toUpperCase() || 'AT');
-        const resolvedAvatarUrl = isCurrentUser ? (userStanding?.avatarUrl || user?.avatarUrl) : (athleteAvatarUrl || undefined);
-        const fallbackAthlete: ClashAthlete = {
-            id: athleteId || user?.id || '',
-            name: resolvedName,
-            initials: resolvedInitials,
-            avatarUrl: resolvedAvatarUrl,
-            bio: isCurrentUser ? user?.bio : undefined,
-            code: 'OPTICLASH',
-            gender: isCurrentUser ? (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male') : 'male',
-            bodyweightKg: isCurrentUser ? (userStanding?.bodyweightKg || 74) : 0,
-            squat1RM: isCurrentUser ? (userStanding?.squat1RM || 0) : 0,
-            bench1RM: isCurrentUser ? (userStanding?.bench1RM || 0) : 0,
-            deadlift1RM: isCurrentUser ? (userStanding?.deadlift1RM || 0) : 0,
-            totalE1RM: isCurrentUser ? (userStanding?.totalE1RM || 0) : 0,
-            dotsScore: isCurrentUser ? (userStanding?.dotsScore || 0) : 0,
-            tier: isCurrentUser ? (isLeaderboardOptedIn ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked') : 'Unranked',
-            tierLevel: isCurrentUser ? (userStanding?.tierLevel || 1) : 1,
-            rankTrend: isCurrentUser ? (userStanding?.rankTrend || 0) : 0,
-            weeklyVolumeKg: isCurrentUser ? (userStanding?.weeklyVolumeKg || 0) : 0,
-            lastWorkoutDate: new Date().toISOString(),
-            muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
-            trophies: [],
-            recentWorkouts: []
-        };
+        const fallbackAthlete = isCurrentUser ? buildCurrentUserAthlete(user, userStanding, isLeaderboardOptedIn) : buildOtherAthlete(athleteId, athleteName, athleteInitials, athleteAvatarUrl);
         setSelectedAthlete(fallbackAthlete);
         setIsDrawerOpen(true);
     };

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1512" height="860" viewBox="0 0 1512 860">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#CC0022"/>
+    </marker>
+    <style>
+      .h { font-family: 'Ubuntu Sans', sans-serif; font-stretch: condensed; font-weight: 800; letter-spacing: 1px; fill: #1A1A1A; }
+      .h.red { fill: #CC0022; }
+      .b { font-family: 'Ubuntu Sans', sans-serif; font-size: 24px; fill: #666666; }
+      .chip { font-family: 'Ubuntu Sans', sans-serif; font-size: 22px; font-weight: 700; fill: #CC0022; }
+      .num { font-family: 'Ubuntu Sans', sans-serif; font-size: 26px; font-weight: 700; fill: #fff; }
+      .card { fill: #FFFFFF; stroke: #E8DEDE; stroke-width: 2; }
+      .pill { fill: #fdecef; }
+      .line { fill: none; stroke: #CC0022; stroke-width: 4; }
+    </style>
+  </defs>
+
+  <rect width="1512" height="860" fill="#FAF8F8"/>
+
+  <g transform="translate(0 80)">
+
+  <text class="h" x="756" y="80" font-size="56" text-anchor="middle">HOW PROGRESSIVE OVERLOAD WORKS</text>
+
+  <!-- 1. LOG -->
+  <rect class="card" x="66" y="120" width="400" height="250" rx="24"/>
+  <circle cx="130" cy="178" r="24" fill="#CC0022"/>
+  <text class="num" x="130" y="187" text-anchor="middle">1</text>
+  <text class="h" x="170" y="194" font-size="44">LOG</text>
+  <text class="b" x="106" y="240">You finish a session and</text>
+  <text class="b" x="106" y="270">every set, rep and weight</text>
+  <text class="b" x="106" y="300">is recorded.</text>
+  <rect class="pill" x="106" y="318" width="320" height="40" rx="20"/>
+  <text class="chip" x="266" y="346" text-anchor="middle">3 × 8 @ 80 kg</text>
+
+  <!-- 2. ANALYSE -->
+  <rect class="card" x="556" y="120" width="400" height="250" rx="24"/>
+  <circle cx="620" cy="178" r="24" fill="#CC0022"/>
+  <text class="num" x="620" y="187" text-anchor="middle">2</text>
+  <text class="h" x="660" y="194" font-size="44">ANALYSE</text>
+  <text class="b" x="596" y="240">The engine reviews your</text>
+  <text class="b" x="596" y="270">last few sessions and the</text>
+  <text class="b" x="596" y="300">rest days in between.</text>
+  <rect class="pill" x="596" y="318" width="320" height="40" rx="20"/>
+  <text class="chip" x="756" y="346" text-anchor="middle">All target reps hit</text>
+
+  <!-- 3. ADAPT -->
+  <rect class="card" x="1046" y="120" width="400" height="250" rx="24"/>
+  <circle cx="1110" cy="178" r="24" fill="#CC0022"/>
+  <text class="num" x="1110" y="187" text-anchor="middle">3</text>
+  <text class="h" x="1150" y="194" font-size="44">ADAPT</text>
+  <text class="b" x="1086" y="240">Your next session is</text>
+  <text class="b" x="1086" y="270">updated to add weight,</text>
+  <text class="b" x="1086" y="300">add reps, or hold steady.</text>
+  <rect class="pill" x="1086" y="318" width="320" height="40" rx="20"/>
+  <text class="chip" x="1246" y="346" text-anchor="middle">Next: 3 × 8 @ 82.5 kg</text>
+
+  <!-- arrows between cards -->
+  <line class="line" x1="474" y1="245" x2="546" y2="245" marker-end="url(#arrow)"/>
+  <line class="line" x1="964" y1="245" x2="1036" y2="245" marker-end="url(#arrow)"/>
+
+  <!-- plateau / fatigue branch -->
+  <line class="line" x1="756" y1="372" x2="756" y2="424" stroke-dasharray="8 8" marker-end="url(#arrow)"/>
+  <rect x="456" y="430" width="600" height="140" rx="24" fill="#fdecef" stroke="#CC0022" stroke-width="2"/>
+  <text class="h" x="756" y="480" font-size="38" text-anchor="middle">PLATEAU OR FATIGUE?</text>
+  <text class="b" x="756" y="518" text-anchor="middle">Spotted early and handled with a deload, an</text>
+  <text class="b" x="756" y="548" text-anchor="middle">exercise swap or a new exercise recommendation.</text>
+
+  <!-- repeat loop -->
+  <path class="line" d="M1246 372 V620 H266 V378" marker-end="url(#arrow)"/>
+  <text class="h red" x="756" y="606" font-size="30" text-anchor="middle">REPEATS AFTER EVERY SESSION</text>
+  </g>
+</svg>

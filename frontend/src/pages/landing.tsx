@@ -10,6 +10,8 @@ import schedulePageImage from '@/assets/Schedule_Page.png'
 import sessionPageImage from '@/assets/Session_Page.png'
 import progressionPageImage from '@/assets/Progression_Page.png'
 import optiVisionPageImage from '@/assets/OptiVision_Page.png'
+import optiClashPageImage from '@/assets/OptiClash_Page.png'
+import progressiveOverloadImage from '@/assets/Progressive_Overload_Page.png'
 import type { LucideIcon } from 'lucide-react'
 
 type Rect = { left: number; top: number; height: number }
@@ -41,19 +43,20 @@ const CARD_TABS = [
     { Icon: Calendar, label: 'Scheduling', blurb: 'Plan upcoming sessions with structure that fits your week.', image: schedulePageImage, imageAlt: 'Scheduling page preview' },
     { Icon: Activity, label: 'Active Sessions', blurb: 'Track your live workout execution and completed sets in one flow.', image: sessionPageImage, imageAlt: 'Sessions page preview' },
     { Icon: LineChart, label: 'Progression', blurb: 'Automatically tracks every exercise for plateaus, progress, and regression, so you know exactly when to change something.', image: progressionPageImage, imageAlt: 'Progression page preview' },
-    { Icon: Swords, label: 'OptiClash', blurb: 'Compete with friends in duels or climb the rankings of public and private arenas' },
+    { Icon: Swords, label: 'OptiClash', blurb: 'Compete with friends in duels or climb the rankings of public and private arenas.', image: optiClashPageImage, imageAlt: 'OptiClash page preview' },
     { Icon: ScanEye, label: 'OptiVision', blurb: 'Upload videos of your squat, bench or deadlift and get AI coaching on your form, with a score and a breakdown of what to fix.', image: optiVisionPageImage, imageAlt: 'OptiVision page preview' },
+    { Icon: TrendingUp, label: 'Progressive Overload', blurb: 'The core of OptiLifts. By analysing your last few workouts, the engine adapts your upcoming sessions so you keep progressing at the right pace, safely and effectively. It also factors in your rest days, recommends new exercises, and detects plateaus and long-term fatigue so the right adjustments are made for you.', image: progressiveOverloadImage, imageAlt: 'How progressive overload works' },
 ]
 
 const FEATS = [
-    { Icon: LayoutDashboard, label: 'Dashboard', tabIndex: 0, page: 'card' as const },
-    { Icon: UserRound, label: 'Profile', tabIndex: 1, page: 'card' as const },
-    { Icon: Calendar, label: 'Scheduling', tabIndex: 2, page: 'card' as const },
-    { Icon: Activity, label: 'Sessions', tabIndex: 3, page: 'card' as const },
-    { Icon: LineChart, label: 'Progression', tabIndex: 4, page: 'card' as const },
-    { Icon: Swords, label: 'OptiClash', tabIndex: 5, page: 'card' as const },
-    { Icon: ScanEye, label: 'OptiVision', tabIndex: 6, page: 'card' as const },
-    { Icon: TrendingUp, label: 'Progressive Overload', page: 'progressive' as const },
+    { Icon: LayoutDashboard, label: 'Dashboard', tabIndex: 0 },
+    { Icon: UserRound, label: 'Profile', tabIndex: 1 },
+    { Icon: Calendar, label: 'Scheduling', tabIndex: 2 },
+    { Icon: Activity, label: 'Sessions', tabIndex: 3 },
+    { Icon: LineChart, label: 'Progression', tabIndex: 4 },
+    { Icon: Swords, label: 'OptiClash', tabIndex: 5 },
+    { Icon: ScanEye, label: 'OptiVision', tabIndex: 6 },
+    { Icon: TrendingUp, label: 'Progressive Overload', tabIndex: 7 },
 ]
 
 type FlyIconAnim = {
@@ -157,7 +160,6 @@ export default function LandingPage() {
     const focusSlotRef = useRef<HTMLDivElement>(null)
     const cardSectionRef = useRef<HTMLElement>(null)
     const cardFrameRef = useRef<HTMLDivElement>(null)
-    const progressiveSectionRef = useRef<HTMLElement>(null)
     const flyAnimIdRef = useRef(0)
 
     useEffect(() => {
@@ -272,6 +274,7 @@ export default function LandingPage() {
 
         const tabRect = tabButton.getBoundingClientRect()
         const focusRect = focusSlot.getBoundingClientRect()
+        if (focusRect.width === 0) return
         const nextId = flyAnimIdRef.current + 1
 
         flyAnimIdRef.current = nextId
@@ -287,14 +290,6 @@ export default function LandingPage() {
     }
 
     function handleCarouselClick(feature: (typeof FEATS)[number]) {
-        if (feature.page === 'progressive') {
-            progressiveSectionRef.current?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-            })
-            return
-        }
-
         triggerTabTransition(feature.tabIndex, { scrollToCard: true })
     }
 
@@ -390,7 +385,7 @@ export default function LandingPage() {
                 <section ref={cardSectionRef} className="scroll-mt-24 bg-surface px-6 pb-28 pt-20 sm:pt-50">
                     <div className="mx-auto max-w-6xl">
                         <div ref={cardFrameRef} className="relative overflow-visible rounded-3xl border-2 border-brand/40 bg-surface p-4 sm:p-6">
-                            <div className="absolute left-0 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3">
+                            <div className="mb-4 flex flex-wrap justify-center gap-2 md:absolute md:left-0 md:top-1/2 md:z-10 md:mb-0 md:-translate-x-1/2 md:-translate-y-1/2 md:flex-col md:flex-nowrap md:gap-3">
                                     {CARD_TABS.map(({ Icon, label }, index) => {
                                         const isActive = index === activeCardTab
 
@@ -418,9 +413,9 @@ export default function LandingPage() {
                                     })}
                             </div>
 
-                            <div className="pl-8 sm:pl-10">
-                                <div className="grid min-h-[420px] grid-cols-1 gap-6 rounded-2xl border-2 border-dashed border-brand/35 bg-surface p-6 md:min-h-[520px] md:grid-cols-[210px_1fr] md:p-8">
-                                    <div className="flex items-center justify-center">
+                            <div className="md:pl-10">
+                                <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-dashed border-brand/35 bg-surface p-4 sm:p-6 md:p-8 lg:min-h-[520px] lg:grid-cols-[210px_1fr]">
+                                    <div className="hidden items-center justify-center lg:flex">
                                         <div ref={focusSlotRef} className="relative flex h-28 w-28 items-center justify-center rounded-full border-2 border-brand bg-brand/10 text-brand md:h-32 md:w-32">
                                             <ActiveFocusIcon
                                                 key={`${activeTabMeta.label}-${activeCardTab}`}
@@ -439,12 +434,11 @@ export default function LandingPage() {
                                             {activeTabMeta.blurb}
                                         </p>
                                         <div className="mt-5 rounded-2xl border border-brand/25 bg-brand/[0.08] p-2">
-                                            <div className="h-[320px] overflow-hidden rounded-xl bg-surface md:h-[380px]">
+                                            <div className="aspect-[16/10] overflow-hidden rounded-xl bg-background">
                                                 <img
                                                     src={activeTabMeta.image}
                                                     alt={activeTabMeta.imageAlt}
-                                                    className="block h-full w-full scale-[1.06] rounded-xl object-cover object-top"
-                                                    style={{ clipPath: 'inset(0 round 0.75rem)' }}
+                                                    className="block h-full w-full object-contain"
                                                 />
                                             </div>
                                         </div>
@@ -454,20 +448,7 @@ export default function LandingPage() {
                         </div>
                     </div>
                 </section>
-
-                <section ref={progressiveSectionRef} className="scroll-mt-24 bg-surface px-6 pb-28 pt-4 sm:pt-8">
-                    <div className="mx-auto max-w-6xl rounded-3xl border-2 border-brand/40 bg-surface p-6 sm:p-8">
-                        <div className="mt-3 flex items-center justify-center gap-3">
-                            <TrendingUp size={50} strokeWidth={2.2} className="text-brand" />
-                            <h3 className="text-[clamp(28px,4vw,44px)] leading-tight text-foreground">Progressive Overload</h3>
-                        </div>
-                            <p className="mx-auto mt-4 max-w-3xl text-center font-sans text-[20px] leading-relaxed text-muted-foreground">
-                            The Progressive Overload Engine is the core Optilifts. By analyzing your performance over your last few workouts, it dynamically adapts your upcoming sessions so you're always progressing at the right pace. Built on proven scientific research, it ensures that every time you train, you are pushing yourself safely and effectively.
-                            The engine also factors in your rest days, recommends new exercises, and detects plateaus and long-term fatigue that trigger our other systems to make the right adjustments for your fitness journey.
-                        </p>
-                    </div>
-                </section>
-                
+                           
                 <footer className="border-t-2 border-brand/40 bg-surface px-6 py-10 sm:py-12">
                     <p className="mx-auto max-w-6xl text-center font-display text-[clamp(24px,4vw,42px)] leading-tight text-foreground">
                         are you ready to start your fitness journey?

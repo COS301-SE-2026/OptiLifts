@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom'
 import type { WorkoutOverviewProps } from '@/types/workout'
 import { PrBadgeIcon } from '@/components/ui/pr-badge-icon'
 
-const MAX_VISIBLE_EXERCISES = 3
+const MAX_MOBILE_EXERCISES = 5
+const MAX_DESKTOP_EXERCISES = 8
 
 export function WorkoutOverview({ href, name, exercises, prs, duration, volume, sets, className }: WorkoutOverviewProps) {
-  const visibleExercises = exercises.slice(0, MAX_VISIBLE_EXERCISES)
-  const hasMoreExercises = exercises.length > visibleExercises.length
+  const visibleExercises = exercises.slice(0, MAX_DESKTOP_EXERCISES)
+  const hasMoreOnDesktop = exercises.length > MAX_DESKTOP_EXERCISES
+  const hasMoreOnMobile = exercises.length > MAX_MOBILE_EXERCISES
   const exerciseKeyCounts = new Map<string, number>()
 
   const rootClasses = [
@@ -24,17 +26,25 @@ export function WorkoutOverview({ href, name, exercises, prs, duration, volume, 
           <div className="mt-1.5 sm:mt-2">
             <p className="text-xs sm:text-sm font-semibold text-foreground/90">Exercises:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs sm:text-sm leading-snug text-foreground/80">
-              {visibleExercises.map((exercise) => {
+              {visibleExercises.map((exercise, index) => {
                 const seenCount = exerciseKeyCounts.get(exercise) ?? 0
                 exerciseKeyCounts.set(exercise, seenCount + 1)
+                const isDesktopOnly = index >= MAX_MOBILE_EXERCISES
 
                 return (
-                  <li key={`${exercise}-${seenCount}`}>
+                  <li
+                    key={`${exercise}-${seenCount}`}
+                    className={isDesktopOnly ? 'hidden sm:list-item' : ''}
+                  >
                     <span className="block max-w-[180px] sm:max-w-[200px] truncate">{exercise}</span>
                   </li>
                 )
               })}
-              {hasMoreExercises && <li className="list-none pl-0.5 text-xs text-muted-foreground">...</li>}
+              {hasMoreOnDesktop ? (
+                <li className="list-none pl-0.5 text-xs text-muted-foreground">...</li>
+              ) : hasMoreOnMobile ? (
+                <li className="list-none pl-0.5 text-xs text-muted-foreground sm:hidden">...</li>
+              ) : null}
             </ul>
           </div>
         </div>

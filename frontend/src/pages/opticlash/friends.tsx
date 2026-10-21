@@ -7,11 +7,12 @@ import { TierBadge } from "@/components/opticlash/tier-badge";
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
 import { customFetch } from "@/lib/custom-fetch";
 import type { ClashAthlete, DuelInviteItem } from "@/types/clash";
-import { Shield, ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail, Swords } from "lucide-react";
+import { Shield, ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, UserMinus, Users, XCircle, Mail, Swords } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 //literally making the tiniest change every to fix complexity yay
@@ -116,6 +117,8 @@ export default function FriendsManagementPage(){
     const [friendRequestPrivacy, setFriendRequestPrivacy] = useState<'everyone' | 'none'>('everyone');
     const [isCreateDuelOpen, setIsCreateDuelOpen] = useState(false);
     const [selectedFriendForDuel, setSelectedFriendForDuel] = useState<{ id: string; name: string; dotsScore?: number } | null>(null);
+    const [friendToRemove, setFriendToRemove] = useState<FriendItem | null>(null);
+    const [isRemovingFriend, setIsRemovingFriend] = useState(false);
 
     //handlers
     const fetchFriendsData = async () => {
@@ -422,6 +425,28 @@ export default function FriendsManagementPage(){
         }
     };
 
+    const handleRemoveFriend = async () => {
+        if (!friendToRemove) return;
+        setIsRemovingFriend(true);
+        try {
+            const res = await customFetch(`/api/clash/friends/${friendToRemove.id}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                setFriendsList((prev) => prev.filter((f) => f.id !== friendToRemove.id));
+                toast.success(`Removed ${friendToRemove.name} from your friends`, 'Friend Removed');
+                setFriendToRemove(null);
+            } else {
+                const errData = await res.json().catch(() => null);
+                toast.error(errData?.message ?? 'Failed to remove friend');
+            }
+        } catch {
+            toast.error('Network error removing friend');
+        } finally {
+            setIsRemovingFriend(false);
+        }
+    };
+
     const filteredFriends = friendsList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()) 
     || f.code.toLowerCase().includes(searchQuery.toLowerCase()));
     const filteredRequests = requestsLists.filter((f) => f.fromName.toLowerCase().includes(requestSearchQuery.toLowerCase()) 
@@ -528,6 +553,11 @@ export default function FriendsManagementPage(){
                                         className="flex-1 h-8 text-xs flex items-center justify-center gap-1.5">
                                             <Swords className="w-3.5 h-3.5" />
                                             <span>Challenge 1v1</span>
+                                        </Button>
+                                        <Button variant="ghost" size="icon"  onClick={() => setFriendToRemove(friend)}
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                            title={`Remove ${friend.name} from friends`} aria-label={`Remove ${friend.name} from friends`}>
+                                            <UserMinus className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -791,6 +821,11 @@ export default function FriendsManagementPage(){
                     setIsCreateDuelOpen(true);
                 }}/>
                 <CreateDuelModal isOpen={isCreateDuelOpen} onClose={() => setIsCreateDuelOpen(false)} defaultFriend={selectedFriendForDuel} onDuelCreated={() => void fetchFriendsData()}/>
+            <ConfirmDialog isOpen={Boolean(friendToRemove)} onClose={() => setFriendToRemove(null)}
+                onConfirm={handleRemoveFriend} title="Remove Friend"
+                description={`Are you sure you want to remove ${friendToRemove?.name ?? 'this user'} from your friends? They will no longer appear on your friends list.`}
+                confirmText="Remove Friend" cancelText="Cancel"
+                variant="danger" isLoading={isRemovingFriend}/>
         </div>
     );
 }

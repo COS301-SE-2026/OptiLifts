@@ -271,6 +271,33 @@ public sealed class ArenasControllerTests
     }
 
     [Fact]
+    public async Task RemoveKudos_ShouldReturnOk_WhenSuccessful()
+    {
+        var userId = Guid.NewGuid();
+        var activityId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender.Setup(s => s.Send(It.Is<RemoveActivityKudosCommand>(c => c.ActivityId == activityId && c.UserId == userId), It.IsAny<CancellationToken>())).ReturnsAsync(new RemoveActivityKudosResult(true, 4, "Cheer removed"));
+
+        var controller = CreateController(sender, userId);
+        var actionResult = await controller.RemoveKudos(activityId, CancellationToken.None);
+        var result = actionResult.Result as OkObjectResult;
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RemoveKudos_ShouldReturnBadRequest_WhenNotCheered()
+    {
+        var userId = Guid.NewGuid();
+        var activityId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender.Setup(s => s.Send(It.IsAny<RemoveActivityKudosCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(new RemoveActivityKudosResult(false, 3, "Not cheered"));
+
+        var controller = CreateController(sender, userId);
+        var actionResult = await controller.RemoveKudos(activityId, CancellationToken.None);
+        actionResult.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task RespondToInvite_ShouldReturnOk_WhenSuccess()
     {
         var userId = Guid.NewGuid();

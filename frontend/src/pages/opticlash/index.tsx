@@ -239,32 +239,34 @@ export default function ArenaHubPage() {
         }
     };
 
-    const handleOpenAthlete = (athleteId?: string) => {
-        const athId = athleteId || user?.id || '';
-        const athleteName = userStanding?.displayName || user?.name || 'You';
+    const handleOpenAthlete = (athleteId?: string, athleteName?: string, athleteInitials?: string, athleteAvatarUrl?: string | null) => {
+        const isCurrentUser = !athleteId || athleteId === user?.id;
+        const resolvedName = isCurrentUser ? (userStanding?.displayName || user?.name || 'You') : (athleteName || 'Athlete');
+        const resolvedInitials = isCurrentUser ? (resolvedName.slice(0, 2).toUpperCase() || 'AT') : (athleteInitials || resolvedName.slice(0, 2).toUpperCase() || 'AT');
+        const resolvedAvatarUrl = isCurrentUser ? (userStanding?.avatarUrl || user?.avatarUrl) : (athleteAvatarUrl || undefined);
         const fallbackAthlete: ClashAthlete = {
-            id: athId,
-            name: athleteName,
-            initials: athleteName.slice(0, 2).toUpperCase() || 'AT',
-            avatarUrl: userStanding?.avatarUrl || user?.avatarUrl,
-            bio: user?.bio,
+            id: athleteId || user?.id || '',
+            name: resolvedName,
+            initials: resolvedInitials,
+            avatarUrl: resolvedAvatarUrl,
+            bio: isCurrentUser ? user?.bio : undefined,
             code: 'OPTICLASH',
-            gender: (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male'),
-            bodyweightKg: userStanding?.bodyweightKg || 74,
-            squat1RM: userStanding?.squat1RM || 0,
-            bench1RM: userStanding?.bench1RM || 0,
-            deadlift1RM: userStanding?.deadlift1RM || 0,
-            totalE1RM: userStanding?.totalE1RM || 0,
-            dotsScore: userStanding?.dotsScore || 0,
-            tier: isLeaderboardOptedIn ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked',
-            tierLevel: userStanding?.tierLevel || 1,
-            rankTrend: userStanding?.rankTrend || 0,
-            weeklyVolumeKg: userStanding?.weeklyVolumeKg || 0,
+            gender: isCurrentUser ? (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male') : 'male',
+            bodyweightKg: isCurrentUser ? (userStanding?.bodyweightKg || 74) : 0,
+            squat1RM: isCurrentUser ? (userStanding?.squat1RM || 0) : 0,
+            bench1RM: isCurrentUser ? (userStanding?.bench1RM || 0) : 0,
+            deadlift1RM: isCurrentUser ? (userStanding?.deadlift1RM || 0) : 0,
+            totalE1RM: isCurrentUser ? (userStanding?.totalE1RM || 0) : 0,
+            dotsScore: isCurrentUser ? (userStanding?.dotsScore || 0) : 0,
+            tier: isCurrentUser ? (isLeaderboardOptedIn ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked') : 'Unranked',
+            tierLevel: isCurrentUser ? (userStanding?.tierLevel || 1) : 1,
+            rankTrend: isCurrentUser ? (userStanding?.rankTrend || 0) : 0,
+            weeklyVolumeKg: isCurrentUser ? (userStanding?.weeklyVolumeKg || 0) : 0,
             lastWorkoutDate: new Date().toISOString(),
             muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
             trophies: [],
             recentWorkouts: []
-        }
+        };
         setSelectedAthlete(fallbackAthlete);
         setIsDrawerOpen(true);
     };
@@ -272,7 +274,24 @@ export default function ArenaHubPage() {
     //f3-5: handle feed kudos
     const handleFeedKudos = async (e:MouseEvent<HTMLButtonElement>, activityId: string) => {
         e.stopPropagation();
-        if (!kudosGivenMap[activityId]) {
+        if (kudosGivenMap[activityId]) {
+            setKudosGivenMap((prev) => ({
+                ...prev,
+                [activityId]: false
+            }));
+            setActivityList((prev) => prev.map((item) => item.id === activityId ? {
+                ...item,
+                kudosCount: Math.max(0, item.kudosCount - 1)
+            } : item));
+
+            try {
+                await customFetch(`/api/clash/activities/${activityId}/kudos`, {
+                    method: 'DELETE',
+                });
+            } catch {
+                //nonblocking
+            }
+        } else {
             setKudosGivenMap((prev) => ({
                 ...prev,
                 [activityId]: true
@@ -632,7 +651,7 @@ export default function ArenaHubPage() {
                             activityList.map((act) => (
                                 <div key={act.id}
                                 className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition">
-                                    <button type="button" onClick={() => handleOpenAthlete(act.athleteId)}
+                                    <button type="button" onClick={() => handleOpenAthlete(act.athleteId, act.athleteName, act.athleteInitials, act.athleteAvatarUrl)}
                                     className="flex items-center gap-3.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg">
 
                                         <AthleteAvatar initials={act.athleteInitials} name={act.athleteName} avatarUrl={act.athleteAvatarUrl} size="md"/>

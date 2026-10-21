@@ -150,39 +150,60 @@ export function ProfileInspectorDrawer({
 
     const isCurrentUser = user?.id === athlete.id;
     const isAlreadyFriend = profile?.isFriend ?? false;
+    const displayName = profile?.displayName || athlete.name;
 
     const handleKudos = async (e: MouseEvent<HTMLButtonElement>) => {
-        if(hasGivenKudos || isSubmittingKudos) {
+        if(isSubmittingKudos) {
             return;
         }
-        const rect = e.currentTarget?.getBoundingClientRect();
         setIsSubmittingKudos(true);
-        try {
-            const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
-                method: 'POST',
-            });
-            if (res.ok) {
-                setKudosCount((prev) => prev + 1);
-                setHasGivenKudos(true);
-                toast.success(`You sent kudos to ${athlete.name}`, 'Kudos Delivered');
-                if (rect) {
-                    const x = (rect.left + rect.width / 2) / window.innerWidth;
-                    const y = (rect.top + rect.height / 2) / window.innerHeight;
-                    confetti({
-                        particleCount: 35,
-                        spread: 60,
-                        origin: {x,y},
-                        colors: ['#CC0022', '#B35C00', '#FF9800', '#FFFFFF'],
-                    });
+        if (hasGivenKudos) {
+            try {
+                const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
+                    method: 'DELETE',
+                });
+                if (res.ok) {
+                    setKudosCount((prev) => Math.max(0, prev - 1));
+                    setHasGivenKudos(false);
+                    toast.info(`Kudos removed for ${displayName}`);
+                } else {
+                    const errData = await res.json().catch(() => null);
+                    toast.error(errData?.message ?? 'Failed to remove kudos');
                 }
-            } else {
-                const errData = await res.json().catch(() => null);
-                toast.error(errData?.message ?? 'Failed to send kudos');
+            } catch {
+                toast.error('Network error removing kudos');
+            } finally {
+                setIsSubmittingKudos(false);
             }
-        } catch {
-            toast.error('Network error sending kudos');
-        } finally {
-            setIsSubmittingKudos(false);
+        } else {
+            const rect = e.currentTarget?.getBoundingClientRect();
+            try {
+                const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
+                    method: 'POST',
+                });
+                if (res.ok) {
+                    setKudosCount((prev) => prev + 1);
+                    setHasGivenKudos(true);
+                    toast.success(`You sent kudos to ${displayName}`, 'Kudos Delivered');
+                    if (rect) {
+                        const x = (rect.left + rect.width / 2) / window.innerWidth;
+                        const y = (rect.top + rect.height / 2) / window.innerHeight;
+                        confetti({
+                            particleCount: 35,
+                            spread: 60,
+                            origin: {x,y},
+                            colors: ['#CC0022', '#B35C00', '#FF9800', '#FFFFFF'],
+                        });
+                    }
+                } else {
+                    const errData = await res.json().catch(() => null);
+                    toast.error(errData?.message ?? 'Failed to send kudos');
+                }
+            } catch {
+                toast.error('Network error sending kudos');
+            } finally {
+                setIsSubmittingKudos(false);
+            }
         }
     };
 
@@ -237,7 +258,6 @@ export function ProfileInspectorDrawer({
         earnedAt: t.earnedAt,
     })) ?? athlete.trophies;
 
-    const displayName = profile?.displayName || athlete.name;
     const displayInitials = profile?.displayName ? profile.displayName.slice(0, 2).toUpperCase() : athlete.initials;
     const displayAvatarUrl = profile?.avatarUrl || athlete.avatarUrl;
     const displayBio = profile?.bio ?? athlete.bio ?? (isCurrentUser ? user?.bio : undefined);
@@ -279,7 +299,7 @@ export function ProfileInspectorDrawer({
 
                     {/* action bar */}
                     <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-border">
-                        <Button variant="secondary" size="sm" onClick={handleKudos} disabled={hasGivenKudos || isSubmittingKudos || isCurrentUser}
+                        <Button variant="secondary" size="sm" onClick={handleKudos} disabled={isSubmittingKudos || isCurrentUser}
                         className={`flex-1 min-w-[100px] h-8 text-xs font-semibold ${hasGivenKudos ? 'border border-brand text-brand' : ''}`}>
                             <Heart className={`w-3.5 h-3.5 mr-1 ${hasGivenKudos ? 'fill-brand text-brand': ''}`}/>
                             <span>{kudosCount} Kudos</span>

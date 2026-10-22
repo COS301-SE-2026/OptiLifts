@@ -11,6 +11,18 @@ export function WorkoutOverview({ href, name, exercises, prs, duration, volume, 
   const hasMoreOnMobile = exercises.length > MAX_MOBILE_EXERCISES
   const exerciseKeyCounts = new Map<string, number>()
 
+  const moreIndicator = (() => {
+    if (hasMoreOnDesktop) {
+      return <li className="list-none pl-0.5 text-xs text-muted-foreground">...</li>
+    }
+
+    if (hasMoreOnMobile) {
+      return <li className="list-none pl-0.5 text-xs text-muted-foreground sm:hidden">...</li>
+    }
+
+    return null
+  })()
+
   const rootClasses = [
     'flex h-full flex-col justify-between rounded-xl border border-border bg-surface-2 px-3.5 py-3 text-left shadow-sm transition-shadow hover:shadow-md sm:px-4 sm:py-3.5',
     className,
@@ -40,11 +52,7 @@ export function WorkoutOverview({ href, name, exercises, prs, duration, volume, 
                   </li>
                 )
               })}
-              {hasMoreOnDesktop ? (
-                <li className="list-none pl-0.5 text-xs text-muted-foreground">...</li>
-              ) : hasMoreOnMobile ? (
-                <li className="list-none pl-0.5 text-xs text-muted-foreground sm:hidden">...</li>
-              ) : null}
+              {moreIndicator}
             </ul>
           </div>
         </div>

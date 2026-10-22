@@ -21,9 +21,8 @@ public static class ClashDemoSeeder
     private const string ArenaName = "Demo Squad";
     private const string PendingRequesterEmail = "demo2@optilifts.com";
 
-    // must be exactly "Deadlift": the all-compound duel only counts Barbell Back Squat,
-    // Barbell Bench Press and Deadlift (see DuelTelemetrySetLoggedNotificationHandler)
-    private const string DuelExerciseName = "Deadlift";
+    //see DuelTelemetrySetLoggedNotificationHandler
+    private const string DuelExerciseName = "Barbell deadlift";
     private const string CompoundDuelName = "All Compound Lifts Combined";
 
     private static readonly string[] AthleteEmails =

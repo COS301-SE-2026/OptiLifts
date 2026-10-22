@@ -503,6 +503,12 @@ describe('ProfInspDrawer', () => {
         await waitFor(() => {
             expect(screen.getByText('1 Kudos')).toBeDefined();
         });
+
+        fireEvent.click(screen.getByText('1 Kudos'));
+
+        await waitFor(() => {
+            expect(screen.getByText('0 Kudos')).toBeDefined();
+        });
     });
 
     it('sends req, shows sent', async () => {

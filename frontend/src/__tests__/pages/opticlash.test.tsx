@@ -365,6 +365,12 @@ describe('PgArenaHub', () => {
         await waitFor(() => {
             expect(screen.getByText('3')).toBeDefined();
         });
+
+        fireEvent.click(screen.getByText('3'));
+
+        await waitFor(() => {
+            expect(screen.getByText('2')).toBeDefined();
+        });
     });
 
     it('opens create/join arena modal', async () => {

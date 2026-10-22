@@ -39,6 +39,22 @@ public sealed class AthletesController : ControllerBase
         return Ok(res);
     }
 
+    [HttpDelete("{id:guid}/kudos")]
+    public async Task<ActionResult<RemoveProfileKudosResult>> RemoveKudos(
+        [FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var res = await _sender.Send(new RemoveProfileKudosCommand(userId, id), cancellationToken);
+        if (!res.Success)
+        {
+            return BadRequest(res);
+        }
+        return Ok(res);
+    }
+
     private bool TryGetUserId(out Guid userId)
     {
         var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);

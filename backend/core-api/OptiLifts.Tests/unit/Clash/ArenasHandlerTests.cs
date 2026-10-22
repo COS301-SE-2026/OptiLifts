@@ -431,6 +431,45 @@ public sealed class ArenasHandlerTests : IDisposable
         duplicateResult.Message.Should().Contain("already cheered");
     }
 
+    [Fact]
+    public async Task RemoveActivityKudos_ShouldDecrementKudos_AndNotBroadcast()
+    {
+        var user1 = await SeedUserAsync("Yara2", "YAR602");
+        var user2 = await SeedUserAsync("Zack2", "ZAC602");
+
+        var createResult = await new CreateArenaHandler(_db, _notifierMock.Object).Handle(new CreateArenaCommand("Cheer Squad 2", "DotsOverall", 30, user1.Id), CancellationToken.None);
+        var activity = await _db.ClashActivities.FirstAsync(a => a.ArenaId == createResult.Arena!.Id);
+        var sendHandler = new SendActivityKudosHandler(_db, _notifierMock.Object);
+        await sendHandler.Handle(new SendActivityKudosCommand(activity.Id, user2.Id), CancellationToken.None);
+
+        _notifierMock.Invocations.Clear();
+
+        var removeHandler = new RemoveActivityKudosHandler(_db);
+        var removeResult = await removeHandler.Handle(new RemoveActivityKudosCommand(activity.Id, user2.Id), CancellationToken.None);
+        removeResult.Success.Should().BeTrue();
+        removeResult.KudosCount.Should().Be(0);
+
+        var updatedActivity = await _db.ClashActivities.FirstAsync(a => a.Id == activity.Id);
+        updatedActivity.KudosCount.Should().Be(0);
+
+        var kudosInDb = await _db.ClashActivityKudos.AnyAsync(k => k.ActivityId == activity.Id && k.SenderUserId == user2.Id);
+        kudosInDb.Should().BeFalse();
+        _notifierMock.Verify(n => n.BroadcastKudosAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RemoveActivityKudos_ShouldFail_WhenNotCheeredYet()
+    {
+        var user1 = await SeedUserAsync("Yara3", "YAR603");
+        var user2 = await SeedUserAsync("Zack3", "ZAC603");
+
+        var createResult = await new CreateArenaHandler(_db, _notifierMock.Object).Handle(new CreateArenaCommand("Cheer Squad 3", "DotsOverall", 30, user1.Id), CancellationToken.None);
+        var activity = await _db.ClashActivities.FirstAsync(a => a.ArenaId == createResult.Arena!.Id);
+        var removeHandler = new RemoveActivityKudosHandler(_db);
+        var result = await removeHandler.Handle(new RemoveActivityKudosCommand(activity.Id, user2.Id), CancellationToken.None);
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("not cheered");
+    }
 
     [Fact]
     public async Task AutoPruning_ShouldRetainOnly100LatestActivities()

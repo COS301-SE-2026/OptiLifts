@@ -39,5 +39,6 @@ public sealed record AthleteProfileResult(
     bool HasSentKudos,
     bool isFriend = false,
     bool hasPendingFriendRequest = false,
-    string? Bio = null
+    string? Bio = null,
+    bool acceptsFriendRequests = true
 );

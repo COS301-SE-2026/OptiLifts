@@ -284,4 +284,28 @@ public sealed class FriendsControllerTests
         result.Should().BeOfType<UnauthorizedResult>();
     }
 
+    [Fact]
+    public async Task GetPrivacy_ShouldReturnOk()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender.Setup(s => s.Send(It.Is<GetFriendRequestPrivacyQuery>(q => q.UserId == userId), It.IsAny<CancellationToken>())).ReturnsAsync("Everyone");
+
+        var controller = CreateController(sender, userId);
+        var result = await controller.GetPrivacy(CancellationToken.None);
+        result.Result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task UpdatePrivacy_ShouldReturnOk()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender.Setup(s => s.Send(It.Is<UpdateFriendRequestPrivacyCommand>(q => q.UserId == userId && q.Privacy == "None"), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var controller = CreateController(sender, userId);
+        var result = await controller.UpdatePrivacy(new FriendsController.UpdateFriendPrivacyApiRequest("None"), CancellationToken.None);
+        result.Should().BeOfType<OkObjectResult>();
+    }
+
 }

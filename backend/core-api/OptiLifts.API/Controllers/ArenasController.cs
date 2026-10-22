@@ -209,6 +209,31 @@ public sealed class ArenasController : ControllerBase
         return Ok(result);
     }
 
+    [HttpDelete("/api/v1/clash/activities/{id:guid}/kudos")]
+    [HttpDelete("/api/clash/activities/{id:guid}/kudos")]
+    public async Task<ActionResult<RemoveActivityKudosResult>> RemoveKudos(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var command = new RemoveActivityKudosCommand(id, userId);
+        var result = await _sender.Send(command, cancellationToken);
+
+        if (!result.Success)
+        {
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(result);
+            }
+            return BadRequest(result);
+        }
+        return Ok(result);
+    }
+
     [HttpPost("invites/{id:guid}/respond")]
     public async Task<IActionResult> RespondToInvite(
         [FromRoute] Guid id,

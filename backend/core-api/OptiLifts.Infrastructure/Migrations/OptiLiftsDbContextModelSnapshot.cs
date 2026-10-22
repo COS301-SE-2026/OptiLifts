@@ -931,6 +931,14 @@ namespace OptiLifts.Infrastructure.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("friend_code");
 
+                    b.Property<string>("FriendRequestPrivacy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Everyone")
+                        .HasColumnName("friend_request_privacy");
+
                     b.Property<bool>("GlobalLeaderboardOptIn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

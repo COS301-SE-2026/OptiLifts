@@ -48,6 +48,11 @@ public sealed class SendFriendRequestHandler : IRequestHandler<SendFriendRequest
             return new SendFriendRequestResult(false, "You cannot send a friend request to yourself");
         }
 
+        if (receiver.FriendRequestPrivacy == "None")
+        {
+            return new SendFriendRequestResult(false, "This athlete is not accepting friend requests");
+        }
+
         var (u1, u2) = FriendshipHelpers.toCanonOrder(request.UserId, receiver.Id);
         var areFriends = await _db.Friendships.AsNoTracking().AnyAsync(f => f.UserId1 == u1 && f.UserId2 == u2, cancellationToken);
         if (areFriends)

@@ -7,11 +7,12 @@ import { TierBadge } from "@/components/opticlash/tier-badge";
 import { toast } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageTitle } from "@/components/ui/page-title";
 import { SearchInput } from "@/components/ui/search-input";
 import { customFetch } from "@/lib/custom-fetch";
 import type { ClashAthlete, DuelInviteItem } from "@/types/clash";
-import { Shield, ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, Users, XCircle, Mail, Swords } from "lucide-react";
+import { Shield, ArrowLeft, Check, CheckCircle2, Copy, Trash2, UserPlus, UserMinus, Users, XCircle, Mail, Swords } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 //literally making the tiniest change every to fix complexity yay
@@ -113,43 +114,67 @@ export default function FriendsManagementPage(){
     //f4 - duel invites
     const [duelInvites, setDuelInvites] = useState<DuelInviteItem[]>([]);
     const [privacyPolicy, setPrivacyPolicy] = useState<'friends' | 'none'>('friends');
+    const [friendRequestPrivacy, setFriendRequestPrivacy] = useState<'everyone' | 'none'>('everyone');
     const [isCreateDuelOpen, setIsCreateDuelOpen] = useState(false);
     const [selectedFriendForDuel, setSelectedFriendForDuel] = useState<{ id: string; name: string; dotsScore?: number } | null>(null);
+    const [friendToRemove, setFriendToRemove] = useState<FriendItem | null>(null);
+    const [isRemovingFriend, setIsRemovingFriend] = useState(false);
 
     //handlers
+    const handleFriendsResponses = async (
+        friendsRes: Response,
+        requestsRes: Response,
+        codeRes: Response,
+        invitesRes: Response,
+        duelInvitesRes: Response
+    ) => {
+        if (friendsRes.ok) {
+            const data = await friendsRes.json();
+            setFriendsList(data);
+        }
+        if (requestsRes.ok) {
+            const data = await requestsRes.json();
+            setRequestsLists(data.incoming ?? []);
+        }
+        if (codeRes.ok) {
+            const data = await codeRes.json();
+            setUserCode(data.code ?? '');
+        }
+        if (invitesRes.ok) {
+            const data = await invitesRes.json();
+            setArenaInvites(toList(data));
+        }
+        if (duelInvitesRes.ok) {
+            const data = await duelInvitesRes.json();
+            setDuelInvites(toList(data));
+        }
+    };
+
+    const handlePrivacyResponses = async (privacyRes: Response, friendPrivacyRes: Response) => {
+        if (privacyRes.ok) {
+            const pData = await privacyRes.json();
+            if (pData?.privacy) {
+                setPrivacyPolicy(pData.privacy.toLowerCase() === 'none' ? 'none' : 'friends');
+            }
+        }
+        if (friendPrivacyRes.ok) {
+            const fpData = await friendPrivacyRes.json();
+            if (fpData?.privacy) {
+                setFriendRequestPrivacy(fpData.privacy.toLowerCase() === 'none' ? 'none' : 'everyone');
+            }
+        }
+    };
+
     const fetchFriendsData = async () => {
         await Promise.resolve();
         try {
-            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes, privacyRes] = await Promise.all([
+            const [friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes, privacyRes, friendPrivacyRes] = await Promise.all([
                 customFetch('/api/clash/friends'), customFetch('/api/clash/friends/requests'), customFetch('/api/clash/friends/code'),
                 customFetch('/api/clash/arenas/invites'), customFetch('/api/clash/duels/invites'), customFetch('/api/clash/duels/privacy'),
+                customFetch('/api/clash/friends/privacy'),
             ]);
-            if (friendsRes.ok){
-                const data = await friendsRes.json();
-                setFriendsList(data);
-            }
-            if (requestsRes.ok){
-                const data = await requestsRes.json();
-                setRequestsLists(data.incoming ?? []);
-            }
-            if (codeRes.ok){
-                const data = await codeRes.json();
-                setUserCode(data.code ?? '');
-            }
-            if (invitesRes.ok) {
-                const data = await invitesRes.json();
-                setArenaInvites(toList(data));
-            }
-            if (duelInvitesRes.ok) {
-                const data = await duelInvitesRes.json();
-                setDuelInvites(toList(data));
-            }
-            if (privacyRes.ok) {
-                const pData = await privacyRes.json();
-                if (pData?.privacy) {
-                    setPrivacyPolicy(pData.privacy.toLowerCase() === 'none' ? 'none' : 'friends');
-                }
-            }
+            await handleFriendsResponses(friendsRes, requestsRes, codeRes, invitesRes, duelInvitesRes);
+            await handlePrivacyResponses(privacyRes, friendPrivacyRes);
         } catch {
             toast.error('Failed to load friends');
         }
@@ -158,6 +183,7 @@ export default function FriendsManagementPage(){
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, not a state-adjustment effect
         void fetchFriendsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     //copying ur own code to clip
@@ -392,6 +418,50 @@ export default function FriendsManagementPage(){
         }
     };
 
+    const handleUpdateFriendPrivacy = async (newPolicy: 'everyone' | 'none') => {
+        setFriendRequestPrivacy(newPolicy);
+        try {
+            const res = await customFetch('/api/clash/friends/privacy', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    privacy: newPolicy === 'none' ? 'None' : 'Everyone',
+                }),
+            });
+            if (res.ok) {
+                toast.info(newPolicy === 'none' ? 'Friend requests disabled (No One).' : 'Friend requests enabled (Everyone).');
+            } else {
+                toast.error('Failed to update friend request privacy setting');
+            }
+        } catch {
+            toast.error('Network error updating friend request privacy setting');
+        }
+    };
+
+    const handleRemoveFriend = async () => {
+        if (!friendToRemove) return;
+        setIsRemovingFriend(true);
+        try {
+            const res = await customFetch(`/api/clash/friends/${friendToRemove.id}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                setFriendsList((prev) => prev.filter((f) => f.id !== friendToRemove.id));
+                toast.success(`Removed ${friendToRemove.name} from your friends`, 'Friend Removed');
+                setFriendToRemove(null);
+            } else {
+                const errData = await res.json().catch(() => null);
+                toast.error(errData?.message ?? 'Failed to remove friend');
+            }
+        } catch {
+            toast.error('Network error removing friend');
+        } finally {
+            setIsRemovingFriend(false);
+        }
+    };
+
     const filteredFriends = friendsList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()) 
     || f.code.toLowerCase().includes(searchQuery.toLowerCase()));
     const filteredRequests = requestsLists.filter((f) => f.fromName.toLowerCase().includes(requestSearchQuery.toLowerCase()) 
@@ -499,6 +569,11 @@ export default function FriendsManagementPage(){
                                             <Swords className="w-3.5 h-3.5" />
                                             <span>Challenge 1v1</span>
                                         </Button>
+                                        <Button variant="ghost" size="icon"  onClick={() => setFriendToRemove(friend)}
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                            title={`Remove ${friend.name} from friends`} aria-label={`Remove ${friend.name} from friends`}>
+                                            <UserMinus className="w-4 h-4" />
+                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -509,6 +584,34 @@ export default function FriendsManagementPage(){
 
                 {activeTab === 'requests' && (
                     <div className="space-y-4">
+                        <Card className="bg-surface border-border p-4 shadow-sm">
+                            <CardContent className="p-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <Shield className="w-5 h-5 text-brand shrink-0" />
+                                    <div>
+                                        <h4 className="font-sans font-bold text-sm text-foreground">Friend Request Privacy</h4>
+                                        <p className="text-xs text-muted-foreground font-sans">
+                                            Control who can send you friend requests via your friend code or profile.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 self-start lg:self-auto flex-wrap">
+                                    <div className="flex bg-surface-2 border border-border rounded-lg p-1">
+                                        <button type="button" onClick={() => void handleUpdateFriendPrivacy('everyone')}
+                                            className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
+                                                friendRequestPrivacy === 'everyone' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                                            Everyone
+                                        </button>
+                                        <button type="button" onClick={() => void handleUpdateFriendPrivacy('none')}
+                                            className={`px-3 py-1 text-xs font-bold uppercase tracking-[1px] rounded-md transition font-sans whitespace-nowrap ${
+                                                friendRequestPrivacy === 'none' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                                            No One
+                                        </button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="w-full max-w-md">
                                 <SearchInput placeholder="Search requests by name or code" value={requestSearchQuery} onChange={(e) => setRequestSearchQuery(e.target.value)}
@@ -733,6 +836,11 @@ export default function FriendsManagementPage(){
                     setIsCreateDuelOpen(true);
                 }}/>
                 <CreateDuelModal isOpen={isCreateDuelOpen} onClose={() => setIsCreateDuelOpen(false)} defaultFriend={selectedFriendForDuel} onDuelCreated={() => void fetchFriendsData()}/>
+            <ConfirmDialog isOpen={Boolean(friendToRemove)} onClose={() => setFriendToRemove(null)}
+                onConfirm={handleRemoveFriend} title="Remove Friend"
+                description={`Are you sure you want to remove ${friendToRemove?.name ?? 'this user'} from your friends? They will no longer appear on your friends list.`}
+                confirmText="Remove Friend" cancelText="Cancel"
+                variant="danger" isLoading={isRemovingFriend}/>
         </div>
     );
 }

@@ -141,6 +141,37 @@ public sealed class FriendsHandlerTests : IDisposable
         saved.Status.Should().Be(FriendshipHelpers.statusPending);
     }
 
+    [Fact]
+    public async Task SendFriendRequest_ShouldFail_WhenReceiverHasPrivacyNone()
+    {
+        var user = await SeedUserAsync("DanyPriv", "PRV001");
+        var user2 = await SeedUserAsync("IonosPriv", "PRV002");
+        user2.FriendRequestPrivacy = "None";
+        await _db.SaveChangesAsync();
+
+        var handler = new SendFriendRequestHandler(_db);
+        var result = await handler.Handle(new SendFriendRequestCommand(user.Id, "PRV002"), CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("This athlete is not accepting friend requests");
+    }
+
+    [Fact]
+    public async Task GetAndUpdateFriendRequestPrivacy_ShouldWork()
+    {
+        var user = await SeedUserAsync("AryaPriv", "PRV003");
+
+        var getHandler = new GetFriendRequestPrivacyHandler(_db);
+        var privacy = await getHandler.Handle(new GetFriendRequestPrivacyQuery(user.Id), CancellationToken.None);
+        privacy.Should().Be("Everyone");
+
+        var updateHandler = new UpdateFriendRequestPrivacyHandler(_db);
+        var ok = await updateHandler.Handle(new UpdateFriendRequestPrivacyCommand(user.Id, "None"), CancellationToken.None);
+        ok.Should().BeTrue();
+        var updated = await getHandler.Handle(new GetFriendRequestPrivacyQuery(user.Id), CancellationToken.None);
+        updated.Should().Be("None");
+    }
+
     //RespondToFriendRequestHandler tests - all passing
     [Fact]
     public async Task RespondToRequest_SHouldFail_WhenUserNotFound()

@@ -12,7 +12,7 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
 {
     private const string SquatExerciseName = "Barbell Back Squat";
     private const string BenchExerciseName = "Barbell bench press";
-    private const string DeadliftExerciseName = "Deadlift";
+    private const string DeadliftExerciseName = "Barbell deadlift";
 
     private readonly OptiLiftsDbContext _dbContext;
 
@@ -167,27 +167,20 @@ public sealed class RecalculateAthleteSeasonSnapshotHandler : IRequestHandler<Re
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private static (string Tier, int TierLevel) DetermineTier(decimal dotsScore)
+    private static (string Tier, int TierLevel) DetermineTier(decimal dotsScore) => dotsScore switch
     {
-        if (dotsScore >= 450.0m)
-        {
-            return ("Overload Master", 1);
-        }
-
-        var band = dotsScore switch
-        {
-            >= 380.0m => ("Diamond", 380.0m, 450.0m),
-            >= 320.0m => ("Gold", 320.0m, 380.0m),
-            >= 280.0m => ("Silver", 280.0m, 320.0m),
-            _ => ("Bronze", 0m, 280.0m)
-        };
-
-        var span = band.Item3 - band.Item2;
-        var pos = Math.Clamp(dotsScore - band.Item2, 0m, span);
-        var thirdWidth = span / 3m;
-
-        var tierLvl = pos < thirdWidth ? 3 : pos < thirdWidth * 2 ? 2 : 1;
-
-        return (band.Item1, tierLvl);
-    }
+        >= 465.0m => ("Overload Master", 1),
+        >= 414.0m => ("Diamond", 1),
+        >= 366.0m => ("Diamond", 2),
+        >= 320.0m => ("Diamond", 3),
+        >= 276.0m => ("Gold", 1),
+        >= 235.0m => ("Gold", 2),
+        >= 196.0m => ("Gold", 3),
+        >= 159.0m => ("Silver", 1),
+        >= 123.0m => ("Silver", 2),
+        >= 90.0m => ("Silver", 3),
+        >= 58.0m => ("Bronze", 1),
+        >= 28.0m => ("Bronze", 2),
+        _ => ("Bronze", 3)
+    };
 }

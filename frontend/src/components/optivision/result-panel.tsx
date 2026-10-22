@@ -43,9 +43,14 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
     phaseOutput = state.coachSummary;
   }
 
+  const isMismatch = state.phase === 'completed' && Boolean(state.issues?.some(i => i.toLowerCase().includes('posture mismatch')));
+
   let score = 100;
   if (state.phase === 'completed'){
-    score = state.score;
+    score = 0;
+    if (!isMismatch){
+      score = state.score;
+    }
   }
 
   let scoreColour = 'text-green-500';
@@ -62,8 +67,12 @@ export function ResultPanel({ state, onReset }: ResultPanelProps) {
         <CardHeader className="px-5 py-4">
           <CardTitle className="text-base font-bold text-foreground">
             <div className="flex flex-row items-center gap-2">
-              <Brain className="h-5 w-5 text-brand shrink-0" aria-hidden="true"/>
-              <span>AI Coach Feedback</span>
+              {isMismatch ? (
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" aria-hidden="true"/>
+              ) : (
+                <Brain className="h-5 w-5 text-brand shrink-0" aria-hidden="true"/>
+              )}
+              <span>{isMismatch ? 'Exercise Posture Alert' : 'AI Coach Feedback'}</span>
             </div>
           </CardTitle>
         </CardHeader>

@@ -402,7 +402,7 @@ export function ProfileInspectorDrawer({
                         <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
                     </Button>
                     <div className="grid grid-cols-[auto_1fr] items-stretch gap-4">
-                        <div className="h-full aspect-square shrink-0">
+                        <div className="h-full aspect-square shrink-0 max-w-24 max-h-24">
                             <AthleteAvatar initials={displayInitials} name={displayName} avatarUrl={displayAvatarUrl} isCurrentUser={isCurrentUser} size="auto"/>
                         </div>
                         <div className="flex flex-col justify-between min-w-0">

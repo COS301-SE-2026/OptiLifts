@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useAuth } from '@/context/auth-context'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, Dumbbell, Link2, ArrowLeft, AlertCircle, Timer } from 'lucide-react'
+import { Plus, Dumbbell, Link2, ArrowLeft, AlertCircle, Timer, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExerciseCard } from '@/components/ui/exercise-card'
@@ -30,6 +30,7 @@ import { formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
 import { DEFAULT_EQUIPMENT_OPTIONS } from '@/constants/equipment'
 import { Checkbox } from '@/components/ui/checkbox'
+import { toast } from '@/components/ui/alert'
 
 type CatalogExercise = {
   id: string
@@ -141,7 +142,7 @@ async function getErrorMessage(res: Response, fallback: string): Promise<string>
   try {
     if ((res.headers.get('content-type') ?? '').includes('application/json')) {
       const data = await res.json()
-      const msg = data?.message ?? data?.detail ?? data?.title    
+      const msg = data?.message ?? data?.detail ?? data?.title ?? (Array.isArray(data?.errors) ? data.errors[0] : undefined)
       if (typeof msg === 'string' && msg.trim()) return msg
     }
   }
@@ -251,6 +252,8 @@ export default function CreateWorkoutPage() {
   const [workoutName, setWorkoutName] = useState('')
   const [exercises, setExercises] = useState<SelectedWorkoutExercise[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+  const [pendingNavTo, setPendingNavTo] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<(typeof MUSCLE_OPTIONS)[number]>('All Muscles')
@@ -347,6 +350,36 @@ export default function CreateWorkoutPage() {
     }
   }, [hasUnsavedChanges, saving])
 
+  useEffect(() => {
+    if (!hasUnsavedChanges || saving) {
+      return
+    }
+
+    const interceptNavbar = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return
+      }
+
+      const anchor = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor || (anchor.target && anchor.target !== '_self')) {
+        return
+      }
+
+      const url = new URL(anchor.href, window.location.origin)
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) {
+        return
+      }
+
+      event.preventDefault()
+
+      setPendingNavTo(url.pathname + url.search)
+      setShowDiscardConfirm(true)
+    }
+
+    document.addEventListener('click', interceptNavbar, true)
+    return () => document.removeEventListener('click', interceptNavbar, true)
+  }, [hasUnsavedChanges, saving])
+
   const toggleLink = (index: number) =>
     setExercises(prev => {
       setHasUnsavedChanges(true)
@@ -425,7 +458,11 @@ export default function CreateWorkoutPage() {
       return prev.map(e => e.id === id ? { ...e, sets } : e)
     })
 
-  const addExercise = (exercise: CatalogExercise) =>
+  const addExercise = (exercise: CatalogExercise) => {
+    setSearchQuery('')
+    setSelectedMuscle('All Muscles')
+    setSelectedEquipment('All Equipment')
+    setCustomOnly(false)
     setExercises(prev => {
       setHasUnsavedChanges(true)
       return [
@@ -441,6 +478,7 @@ export default function CreateWorkoutPage() {
         },
       ]
     })
+  }
 
   const handleExerciseSaved = useCallback(async (updatedExerciseId?: string, oldExerciseId?: string) => {
     const refreshedExercises = await fetchExercises()
@@ -471,10 +509,17 @@ export default function CreateWorkoutPage() {
     )
   }, [fetchExercises])
 
+  const segments = buildSegs(exercises)
+  const hasUnequalSets = segments.some(
+    seg => seg.kind === 'group' && new Set(seg.members.map(m => m.exercise.sets.length)).size > 1
+  )
+
   const saveWorkout = async () => {
     if (!workoutName.trim() || !isAuthenticated) return
-    
-    const segments = buildSegs(exercises)
+    if (hasUnequalSets) {
+      toast.warning('Exercises in a Superset or Circuit must have an equal number of sets.', 'Unequal sets')
+      return
+    }
 
     const groups: CreateWorkoutGroupPayload[] = segments.flatMap(seg => {
       if (seg.kind !== 'group') return []
@@ -621,7 +666,14 @@ export default function CreateWorkoutPage() {
               <Button 
                 variant="text"
                 size="sm"
-                onClick={() => navigate('/workouts')}
+                onClick={() => {
+                  if (hasUnsavedChanges) {
+                    setPendingNavTo('/workouts')
+                    setShowDiscardConfirm(true)
+                  } else {
+                    navigate('/workouts')
+                  }
+                }}
                 className="ml-0 flex items-center gap-1 self-start p-0 text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -653,7 +705,7 @@ export default function CreateWorkoutPage() {
           </div>
           <div className="max-h-[calc(100dvh-15rem)] overflow-y-auto pr-1">
           <div className="flex flex-col gap-3">
-            {buildSegs(exercises).map((seg, si, segs) => {
+            {segments.map((seg, si, segs) => {
               const lastIndex = seg.kind === 'single' ? seg.index : seg.members.at(-1)!.index
               const chainAfter = si < segs.length - 1
                 ? <ChainLink linked={false} onClick={() => toggleLink(lastIndex)} />
@@ -681,7 +733,7 @@ export default function CreateWorkoutPage() {
                         <span className="text-xs font-bold uppercase tracking-[1px] text-brand">{type}</span>
                         {unequalSets && (
                           <span className="group relative flex cursor-pointer">
-                            <AlertCircle className="h-4 w-4" />
+                            <AlertCircle className="h-4 w-4 text-warning" />
                             <span className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden 
                               w-52 rounded-md border border-border bg-surface px-2 py-1 text-xs font-normal 
                               normal-case leading-snug tracking-normal text-foreground shadow-md group-hover:block"
@@ -802,12 +854,68 @@ export default function CreateWorkoutPage() {
         onClose={() => setDetailsExerciseId(null)}
         onChanged={handleExerciseSaved}
       />
-     {isCreateExerciseOpen && (
+      {isCreateExerciseOpen && (
         <CreateExercise
           isOpen={true}
           onCancel={() => setIsCreateExerciseOpen(false)}
           onSaved={handleExerciseSaved}
         />
+      )}
+      {showDiscardConfirm && (
+        <div className="fixed inset-x-0 bottom-0 top-0 lg:top-20 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Stay"
+            className="absolute inset-0 bg-black/50 backdrop-blur-xs"
+            onClick={() => {
+              setShowDiscardConfirm(false)
+              setPendingNavTo(null)
+            }}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-bold text-foreground">Discard changes?</h2>
+              <button
+                type="button"
+                aria-label="Stay"
+                onClick={() => {
+                  setShowDiscardConfirm(false)
+                  setPendingNavTo(null)
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              If you go back now, your unsaved changes will be lost.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  setShowDiscardConfirm(false)
+                  setHasUnsavedChanges(false)
+                  navigate(pendingNavTo ?? '/workouts')
+                  setPendingNavTo(null)
+                }}
+              >
+                Discard
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1"
+                onClick={() => {
+                  setShowDiscardConfirm(false)
+                  setPendingNavTo(null)
+                }}
+              >
+                Keep Editing
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, MoreHorizontal, User, X, Timer } from 'lucide-react'
+import { ChevronDown, Trash2, User, X, Timer } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { NumericalUnderscoreInput, Input } from '@/components/ui/input'
@@ -226,16 +226,16 @@ export function ExerciseCard({ exercise, restTime, onRemove, onSetsChange, onRes
         </div>
 
         {!readOnly && onRemove && (
-          <DropdownMenu>
-            <DropdownMenuTrigger variant="plain" className="p-1">
-              <MoreHorizontal className="w-4 h-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-auto min-w-[10rem]">
-              <DropdownMenuItem variant="destructive" onClick={() => onRemove?.(exercise.id)}>
-                Remove exercise
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            type="button"
+            variant="icon"
+            size="icon"
+            aria-label="Remove exercise"
+            className="border-0 bg-transparent text-muted-foreground hover:text-destructive hover:bg-surface-2 cursor-pointer shrink-0"
+            onClick={() => onRemove(exercise.id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         )}
       </div>
 

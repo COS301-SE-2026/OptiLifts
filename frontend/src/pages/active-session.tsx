@@ -22,7 +22,7 @@ import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { adaptImgUrl } from '@/lib/utils'
+import { adaptImgUrl, useInterceptNavigation } from '@/lib/utils'
 import { buildLabels, formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
 import { TapHint } from '@/components/ui/tap-hint'
@@ -1042,36 +1042,10 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
-  useEffect(() => {
-    if (isEditMode || !workoutId || exercises.length === 0) {
-      return
-    }
-
-    const interceptNavbar = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return
-      }
-
-      const anchor = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
-      if (!anchor || (anchor.target && anchor.target !== '_self')) {
-        return
-      }
-
-      const url = new URL(anchor.href, window.location.origin)
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) {
-        return
-      }
-
-      event.preventDefault()
-
-      setPendingNavTo(url.pathname + url.search)
-      setExitOpen(true)
-    }
-
-    document.addEventListener('click', interceptNavbar, true)
-    return () => document.removeEventListener('click', interceptNavbar, true)
-
-  }, [isEditMode, workoutId, exercises.length])
+  useInterceptNavigation(!isEditMode && !!workoutId && exercises.length > 0, (targetPath) => {
+    setPendingNavTo(targetPath)
+    setExitOpen(true)
+  })
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
   const restRem = restTimer ? Math.max(0, Math.round((restTimer.endsAt - nowMs) / 1000)) : null

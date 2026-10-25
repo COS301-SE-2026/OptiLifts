@@ -25,6 +25,7 @@ import {
 import type { WorkoutExercise, SetType, ExerciseSet } from '@/types/create-workout'
 import type { MuscleName } from '@/types/workout'
 import { customFetch } from '@/lib/custom-fetch'
+import { useInterceptNavigation } from '@/lib/utils'
 import { inputWeight, outputWeight } from '@/lib/weight-utils'
 import { formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import { MUSCLE_GROUPS } from '@/constants/muscles'
@@ -350,35 +351,10 @@ export default function CreateWorkoutPage() {
     }
   }, [hasUnsavedChanges, saving])
 
-  useEffect(() => {
-    if (!hasUnsavedChanges || saving) {
-      return
-    }
-
-    const interceptNavbar = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return
-      }
-
-      const anchor = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
-      if (!anchor || (anchor.target && anchor.target !== '_self')) {
-        return
-      }
-
-      const url = new URL(anchor.href, window.location.origin)
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) {
-        return
-      }
-
-      event.preventDefault()
-
-      setPendingNavTo(url.pathname + url.search)
-      setShowDiscardConfirm(true)
-    }
-
-    document.addEventListener('click', interceptNavbar, true)
-    return () => document.removeEventListener('click', interceptNavbar, true)
-  }, [hasUnsavedChanges, saving])
+  useInterceptNavigation(hasUnsavedChanges && !saving, (targetPath) => {
+    setPendingNavTo(targetPath)
+    setShowDiscardConfirm(true)
+  })
 
   const toggleLink = (index: number) =>
     setExercises(prev => {

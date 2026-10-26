@@ -22,7 +22,7 @@ import { useOnlineStatus, OfflineTooltip } from '@/lib/use-online-status'
 import type { WorkoutLogDetailResponse } from '@/types/workout-log-detail'
 import type { WorkoutDetailResponse } from '@/types/workout-detail'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { adaptImgUrl } from '@/lib/utils'
+import { adaptImgUrl, useInterceptNavigation } from '@/lib/utils'
 import { buildLabels, formatClock, REST_PRESETS } from '@/lib/exercise-format'
 import confetti from 'canvas-confetti'
 import { TapHint } from '@/components/ui/tap-hint'
@@ -115,6 +115,8 @@ type WorkoutDetailsResponse = Readonly<{
       restTime: number
       previousWeight?: number | null
       previousReps?: number | null
+      previousDuration?: number | null
+      previousDistance?: number | null
     }>
     groupId?: string | null
     groupType?: string | null
@@ -232,13 +234,37 @@ const getSetPlaceholder = (set: SetData, key: 'kg' | 'reps' | 'duration' | 'dist
   return undefined
 }
 
+const ZERO_INVALID_FIELDS: ReadonlySet<string> = new Set(['reps', 'time', 'distance'])
+
+function isSetMissingRequiredFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
+  return cols.some((col) => {
+    const val = set[FIELD_TO_SET_KEY[col.field]]
+
+    if (val === '') {
+      return true
+    }
+
+    return ZERO_INVALID_FIELDS.has(col.field) && Number(val) <= 0
+  })
+}
+
+function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
+  if (!set.completed) {
+    return false
+  }
+
+  return isSetMissingRequiredFields(set, cols)
+}
+
 function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR, onUpdate, onRemove, onRestStart, onToggle, onFieldEdit }: SetRowProps) {
   const setField = (key: 'kg' | 'reps' | 'duration' | 'distance' | 'rpe', raw: string) => {
     const numeric = raw === '' ? '' : Number(raw)
     const clamped = clampSetField(key, numeric)
-    onUpdate((current) => ({ ...current, [key]: clamped, completed: false }))
+    onUpdate((current) => ({ ...current, [key]: clamped, completed: key === 'rpe' ? current.completed : false }))
     onFieldEdit(key, clamped === '' ? '' : String(clamped))
   }
+
+  const canComplete = !isSetMissingRequiredFields(commitSetDefaults(set), columns)
 
   return (
     <div
@@ -290,10 +316,14 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
           <Button
             variant="icon"
             size="icon"
-            className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand'}`}
+            disabled={!set.completed && !canComplete}
+            className={`relative h-7 w-7 rounded-md border-border transition-colors before:absolute before:-inset-x-2 before:-inset-y-1 before:content-[''] ${set.completed ? 'bg-brand text-primary-foreground hover:bg-brand' : 'bg-surface-2 hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed'}`}
             onClick={() => {
               const willComplete = !set.completed
               const nextSet = willComplete ? commitSetDefaults({ ...set, completed: true }) : { ...set, completed: false }
+              if (willComplete && isSetMissingRequiredFields(nextSet, columns)) {
+                return
+              }
               onUpdate(() => nextSet)
               if (willComplete) {
                 onRestStart(nextSet)
@@ -318,14 +348,41 @@ function SetRow({ set, setLabel, columns, gridTemplate, gridTemplateMobile, isPR
   )
 }
 
-const buildPreviousText = (kg: number | null, reps: number | null) => {
-  if (kg == null && reps == null) {
+const buildPreviousText = (
+  exerciseType: string,
+  kg: number | null,
+  reps: number | null,
+  duration: number | null = null,
+  distance: number | null = null,
+) => {
+  const cols = getColumns(exerciseType)
+  const hasAny = cols.some((col) => {
+    if (col.field === 'kg') return kg != null
+    if (col.field === 'reps') return reps != null
+    if (col.field === 'time') return duration != null
+    if (col.field === 'distance') return distance != null
+    return false
+  })
+
+  if (!hasAny) {
     return '-'
   }
 
-  const kgPart = kg == null ? '-' : `${kg}KG`
-  const repsPart = reps == null ? '-' : `${reps}`
-  return `${kgPart} x ${repsPart}`
+  return cols
+    .map((col) => {
+      if (col.field === 'kg') {
+        if (kg == null) return '-'
+        if (exerciseType === 'WeightedBodyWeight' || exerciseType === 'AssistedWeightReps') {
+          return `${col.label[0]}${kg}${col.label.slice(1)}`
+        }
+        return `${kg}${col.label}`
+      }
+      if (col.field === 'reps') return reps == null ? '-' : `${reps}`
+      if (col.field === 'time') return duration == null ? '-' : `${duration}s`
+      if (col.field === 'distance') return distance == null ? '-' : `${distance}${col.label}`
+      return '-'
+    })
+    .join(' x ')
 }
 
 type SessionSegment =
@@ -376,21 +433,33 @@ function buildSessionSegs(exercises: ExerciseData[]): SessionSegment[] {
 const toSessSet = (
   set: WorkoutDetailsResponse['exercises'][number]['sets'][number],
   estimation: WorkoutDetailsResponse['exercises'][number]['estimation'],
-): SetData => ({
-  id: set.id,
-  sourceSetId: set.id,
-  type: set.type,
-  previous: buildPreviousText(set.previousWeight ?? null, set.previousReps ?? null),
-  kg: set.type === 'Normal' && estimation?.weight != null ? estimation.weight : set.weight ?? '',
-  reps: set.type === 'Normal' && estimation ? estimation.reps : set.reps ?? '',
-  rpe: '',
-  duration: set.duration ?? '',
-  distance: set.distance ?? '',
-  restTime: set.restTime,
-  completed: false,
-  targetKg: set.weight ?? '',
-  targetReps: set.reps ?? '',
-})
+  exerciseType: string,
+): SetData => {
+  const cols = getColumns(exerciseType)
+  const hasKg = cols.some((col) => col.field === 'kg')
+  const rawKg = set.type === 'Normal' && estimation?.weight != null ? estimation.weight : set.weight ?? ''
+  return {
+    id: set.id,
+    sourceSetId: set.id,
+    type: set.type,
+    previous: buildPreviousText(
+      exerciseType,
+      set.previousWeight ?? null,
+      set.previousReps ?? null,
+      set.previousDuration ?? null,
+      set.previousDistance ?? null,
+    ),
+    kg: hasKg ? rawKg : '',
+    reps: set.type === 'Normal' && estimation ? estimation.reps : set.reps ?? '',
+    rpe: '',
+    duration: set.duration ?? '',
+    distance: set.distance ?? '',
+    restTime: set.restTime,
+    completed: false,
+    targetKg: hasKg ? (set.weight ?? '') : '',
+    targetReps: set.reps ?? '',
+  }
+}
 
 const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): ExerciseData => ({
   id: exercise.id,
@@ -410,7 +479,7 @@ const toSessExercise = (exercise: WorkoutDetailsResponse['exercises'][number]): 
   hasWeightRecommendation: exercise.estimation?.weight != null,
   sets: [...exercise.sets]
     .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map((set) => toSessSet(set, exercise.estimation ?? null)),
+    .map((set) => toSessSet(set, exercise.estimation ?? null, exercise.exerciseType)),
 })
 
 const backfillImage = (exercise: ExerciseData, images: Map<string, string | null>): ExerciseData => {
@@ -569,24 +638,6 @@ const buildSetPayloads = (exerciseSets: SetData[], groupNumber: number): Workout
   }
 
   return sets
-}
-
-const ZERO_INVALID_FIELDS: ReadonlySet<string> = new Set(['reps', 'time', 'distance'])
-
-function hasBlankReqFields(set: SetData, cols: ReturnType<typeof getColumns>): boolean {
-  if (!set.completed) {
-    return false
-  }
-
-  return cols.some((col) => {
-    const val = set[FIELD_TO_SET_KEY[col.field]]
-
-    if (val === '') {
-      return true
-    }
-
-    return ZERO_INVALID_FIELDS.has(col.field) && Number(val) <= 0
-  })
 }
 
 function exerciseGotBlanks(exercise: ExerciseData): boolean {
@@ -813,7 +864,7 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
               id: s.id,
               sourceSetId: s.setId ?? s.id,
               type: (s.type as SetType) ?? 'Normal',
-              previous: buildPreviousText(s.weight, s.reps),
+              previous: buildPreviousText(ex.exerciseType, s.weight, s.reps, s.duration, s.distance),
               kg: s.weight ?? '',
               reps: s.reps ?? '',
               rpe: s.rpe ?? '',
@@ -991,36 +1042,10 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
 
   //listener on whole doc for any sort of clicks that link to other pages
   //prompts the keep/discard dialog 
-  useEffect(() => {
-    if (isEditMode || !workoutId || exercises.length === 0) {
-      return
-    }
-
-    const interceptNavbar = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return
-      }
-
-      const anchor = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
-      if (!anchor || (anchor.target && anchor.target !== '_self')) {
-        return
-      }
-
-      const url = new URL(anchor.href, window.location.origin)
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) {
-        return
-      }
-
-      event.preventDefault()
-
-      setPendingNavTo(url.pathname + url.search)
-      setExitOpen(true)
-    }
-
-    document.addEventListener('click', interceptNavbar, true)
-    return () => document.removeEventListener('click', interceptNavbar, true)
-
-  }, [isEditMode, workoutId, exercises.length])
+  useInterceptNavigation(!isEditMode && !!workoutId && exercises.length > 0, (targetPath) => {
+    setPendingNavTo(targetPath)
+    setExitOpen(true)
+  })
 
   const secElaps = startedAtMs == null ? 0 : Math.max(0, Math.floor((nowMs - startedAtMs) / 1000))
   const restRem = restTimer ? Math.max(0, Math.round((restTimer.endsAt - nowMs) / 1000)) : null
@@ -1570,8 +1595,11 @@ export default function ActiveSessionPage({ mode = 'active' }: ActiveSessionProp
                 }}
                 onFieldEdit={(key, raw) => {
                   if (set.completed) {
-                    checkAcuteFatigue(exercise, set, true, { [key]: raw === '' ? '' : Number(raw) })
-                    clearPrForSet(set.id)
+                    const willRemainCompleted = key === 'rpe'
+                    checkAcuteFatigue(exercise, set, willRemainCompleted, { [key]: raw === '' ? '' : Number(raw) })
+                    if (!willRemainCompleted) {
+                      clearPrForSet(set.id)
+                    }
                   }
                 }}
               />

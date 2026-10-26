@@ -299,6 +299,13 @@ public sealed class WorkoutsController : ControllerBase
         {
             return Unauthorized();
         }
+
+        var errors = CreateWorkoutValidator.Validate(request);
+        if (errors.Count > 0)
+        {
+            return BadRequest(new { errors });
+        }
+
         var command = new UpdateWorkoutCommand(
             workoutId,
             userId,

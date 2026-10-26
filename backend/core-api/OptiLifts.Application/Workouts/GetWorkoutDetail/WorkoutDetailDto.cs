@@ -10,7 +10,9 @@ public sealed record WorkoutSetDto(
     int OrderIndex,
     int RestTime,
     float? PreviousWeight = null,
-    int? PreviousReps = null
+    int? PreviousReps = null,
+    int? PreviousDuration = null,
+    float? PreviousDistance = null
 );
 
 public sealed record ExerciseEstimationDto(float? Weight, int Reps);

@@ -9,6 +9,8 @@ export type WorkoutDetailSet = Readonly<{
   restTime: number
   previousWeight?: number | null
   previousReps?: number | null
+  previousDuration?: number | null
+  previousDistance?: number | null
 }>
 
 export type WorkoutDetailExercise = Readonly<{

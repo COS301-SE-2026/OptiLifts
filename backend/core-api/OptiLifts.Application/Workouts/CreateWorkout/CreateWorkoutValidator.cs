@@ -1,9 +1,28 @@
+using OptiLifts.Application.Workouts.UpdateWorkout;
 using OptiLifts.Domain.Workouts;
 
 namespace OptiLifts.Application.Workouts.CreateWorkout;
 
 public static class CreateWorkoutValidator
 {
+    public static IReadOnlyList<string> Validate(UpdateWorkoutRequest request)
+    {
+        var exercises = (request.Exercises ?? [])
+            .Select(e => new CreateWorkoutExerciseRequest(
+                e.ExerciseId,
+                e.OrderIndex,
+                e.GroupKey,
+                (e.Sets ?? []).Select(s => new CreateWorkoutSetRequest(
+                    s.Type, s.Reps, s.Weight, s.Duration, s.Distance, s.OrderIndex, s.RestTime)).ToList()))
+            .ToList();
+
+        var groups = (request.Groups ?? [])
+            .Select(g => new CreateWorkoutGroupRequest(g.GroupKey, g.Type, g.RestTime))
+            .ToList();
+
+        return Validate(new CreateWorkoutRequest(request.FolderId, request.Name, exercises, groups));
+    }
+
     public static IReadOnlyList<string> Validate(CreateWorkoutRequest request)
     {
         var errors = new List<string>();

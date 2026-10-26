@@ -92,15 +92,11 @@ export function LoginPage() {
                 autoComplete="current-password"
               />
 
-              <Link to="/forgot-password" className="text-sm text-brand no-underline hover:underline text-right">
-                Forgot Password?
-              </Link>
-
               <Button
                 type="submit"
                 variant="default"
                 disabled={!isFormValid || isSubmitting}
-                className={`w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
+                className={`w-full max-w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
               >
                 {isSubmitting ? 'LOGGING IN...' : 'LOGIN'}
               </Button>

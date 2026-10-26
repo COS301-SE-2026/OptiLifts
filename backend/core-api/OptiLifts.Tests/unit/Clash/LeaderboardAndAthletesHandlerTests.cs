@@ -219,6 +219,43 @@ public sealed class LeaderboardAndAthletesHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task RemoveKudos_Fails_WhenRemovingFromSelf()
+    {
+        var user = await SeedUserAsync("Jon", "JON009");
+        var handler = new RemoveProfileKudosHandler(_db);
+        var res = await handler.Handle(new RemoveProfileKudosCommand(user.Id, user.Id), CancellationToken.None);
+        res.Success.Should().BeFalse();
+        res.Message.Should().Be("You cannot remove kudos from yourself");
+    }
+
+    [Fact]
+    public async Task RemoveKudos_Fails_WhenNotSentYet()
+    {
+        var user = await SeedUserAsync("Jon", "JON010");
+        var target = await SeedUserAsync("Ygritte", "YGR010");
+        var handler = new RemoveProfileKudosHandler(_db);
+        var res = await handler.Handle(new RemoveProfileKudosCommand(user.Id, target.Id), CancellationToken.None);
+        res.Success.Should().BeFalse();
+        res.Message.Should().Be("You have not sent kudos to this athlete");
+    }
+
+    [Fact]
+    public async Task RemoveKudos_Succeeds_AndRemovesRecord()
+    {
+        var user = await SeedUserAsync("Jon", "JON011");
+        var target = await SeedUserAsync("Ygritte", "YGR011");
+        _db.AthleteProfileKudos.Add(new AthleteProfileKudos { TargetUserId = target.Id, SenderUserId = user.Id });
+        await _db.SaveChangesAsync();
+
+        var handler = new RemoveProfileKudosHandler(_db);
+        var res = await handler.Handle(new RemoveProfileKudosCommand(user.Id, target.Id), CancellationToken.None);
+        res.Success.Should().BeTrue();
+        res.Message.Should().Be("Kudos removed");
+        var saved = await _db.AthleteProfileKudos.CountAsync(k => k.TargetUserId == target.Id && k.SenderUserId == user.Id);
+        saved.Should().Be(0);
+    }
+
+    [Fact]
     public async Task RecalcSnap_DoesNothing_WhenUserNotFound()
     {
         var handler = new RecalculateAthleteSeasonSnapshotHandler(_db);

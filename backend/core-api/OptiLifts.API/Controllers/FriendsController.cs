@@ -23,6 +23,40 @@ public sealed class FriendsController : ControllerBase
 
     public sealed record SendFriendRequestApiRequest(string? FriendCode = null, Guid? TargetUserId = null);
     public sealed record RespondFriendRequestApiRequest(bool Accept);
+    public sealed record UpdateFriendPrivacyApiRequest(string Privacy);
+
+    [HttpGet("privacy")]
+    public async Task<ActionResult<object>> GetPrivacy(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var privacy = await _sender.Send(new GetFriendRequestPrivacyQuery(userId), cancellationToken);
+        return Ok(new
+        {
+            privacy
+        });
+    }
+
+    [HttpPut("privacy")]
+    public async Task<IActionResult> UpdatePrivacy([FromBody] UpdateFriendPrivacyApiRequest request, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+        var ok = await _sender.Send(new UpdateFriendRequestPrivacyCommand(userId, request.Privacy), cancellationToken);
+        if (!ok)
+        {
+            return NotFound();
+        }
+        return Ok(new
+        {
+            success = true,
+            privacy = request.Privacy
+        });
+    }
 
     [HttpGet("code")]
     public async Task<ActionResult<object>> GetMyCode(CancellationToken cancellationToken)

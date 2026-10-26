@@ -33,7 +33,6 @@ services:
     build:
       context: ./backend/core-api
       dockerfile: Dockerfile
-      network: host
     extra_hosts:
       - "host.docker.internal:host-gateway"
       
@@ -77,7 +76,6 @@ services:
     build:
       context: ./backend/ai-api
       dockerfile: Dockerfile
-      network: host
     expose:
       - "8000"
     restart: unless-stopped
@@ -86,7 +84,6 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      network: host
       args:
         - VITE_API_BASE=/api
         - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}

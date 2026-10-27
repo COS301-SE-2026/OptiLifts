@@ -48,7 +48,7 @@
 
 <h3>OptiLifts Trailer</h3>
 
-<a href="https://youtu.be/TRAILER_ID">
+<a href="https://youtu.be/mW37gNACEb0">
   <img src="docs/images/trailer-thumbnail.png" width="720" alt="Watch the OptiLifts trailer on YouTube" />
 </a>
 

@@ -43,14 +43,20 @@ jobs:
         cache: 'pip' 
         cache-dependency-path: 'backend/ai-api/requirements.txt'
 
+    - name: Get OS Version
+      id: os-version
+      run: |
+        . /etc/os-release
+        echo "id=${ID}-${VERSION_ID}" >> "$GITHUB_OUTPUT"
+
     - name: Cache Playwright Browsers
       id: playwright-cache
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-all-${{ hashFiles('pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-${{ steps.os-version.outputs.id }}-playwright-all-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-playwright-all
+          ${{ runner.os }}-${{ steps.os-version.outputs.id }}-playwright-all-
 
     - name: Install Dependencies
       run: pnpm install --frozen-lockfile && pnpm run setup

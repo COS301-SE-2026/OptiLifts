@@ -166,19 +166,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell full squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0043-qXTaZnJ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell glute bridge",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -4297,6 +4284,20 @@
     "ExerciseType": "BodyweightReps",
     "PrimaryMuscle": "Abdominals",
     "SecondaryMuscles": [],
+    "ImageUrl": "",
+    "Attribution": ""
+  },
+  {
+    "Name": "Barbell Back Squat",
+    "Mechanic": "compound",
+    "Equipment": "Barbell",
+    "ExerciseType": "WeightReps",
+    "PrimaryMuscle": "Quadriceps",
+    "SecondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "Lower Back"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   }

@@ -638,7 +638,7 @@ export default function CreateWorkoutPage() {
         <div className="col-span-12 lg:col-span-7 flex min-w-0 flex-col gap-6 lg:h-full lg:min-h-0">
 
           <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
+            <div className="flex w-full min-w-0 flex-col gap-1">
               <Button 
                 variant="text"
                 size="sm"
@@ -656,8 +656,8 @@ export default function CreateWorkoutPage() {
                 <span>Back to Workouts</span>
               </Button>
               <PageTitle title={isEdit ? "Edit Workout" : "Create Workout"}/>
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1 w-80">
+              <div className="flex w-full items-end gap-2 sm:gap-3">
+                <div className="flex min-w-0 flex-1 sm:flex-none sm:w-80 flex-col gap-1">
                   <label htmlFor="workout-name" className="text-xs font-semibold uppercase tracking-[1px] text-muted-foreground font-sans">
                     Workout Name
                   </label>
@@ -672,7 +672,7 @@ export default function CreateWorkoutPage() {
                     }}
                   />
                 </div>
-                <Button variant="default" size="sm" className="self-end h-8" disabled={!workoutName.trim() || saving} onClick={saveWorkout}>
+                <Button variant="default" size="sm" className="h-8 shrink-0 px-3 text-xs sm:px-4 sm:text-[0.8rem]" disabled={!workoutName.trim() || saving} onClick={saveWorkout}>
                   {saving ? 'Saving…' : 'Save Workout'}
                 </Button>
               </div>

@@ -77,14 +77,14 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             exercises);
     }
 
-    private async Task<Dictionary<Guid, List<(float? Weight, int? Reps)>>> GetPreviousPerformanceByWorkoutExerciseIdAsync(
+    private async Task<Dictionary<Guid, List<(float? Weight, int? Reps, int? Duration, float? Distance)>>> GetPreviousPerformanceByWorkoutExerciseIdAsync(
         Guid userId,
         Guid[] workoutExerciseIds,
         CancellationToken cancellationToken)
     {
         if (workoutExerciseIds.Length == 0)
         {
-            return new Dictionary<Guid, List<(float?, int?)>>();
+            return new Dictionary<Guid, List<(float?, int?, int?, float?)>>();
         }
 
         var loggedSets = await (
@@ -102,7 +102,9 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 log.StartedAt,
                 loggedSet.OrderIndex,
                 loggedSet.Weight,
-                loggedSet.Reps
+                loggedSet.Reps,
+                loggedSet.Duration,
+                loggedSet.Distance
             })
             .ToListAsync(cancellationToken);
 
@@ -117,13 +119,13 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             pair => loggedSets
                 .Where(row => row.WorkoutExerciseId == pair.Key && row.Id == pair.Value)
                 .OrderBy(row => row.OrderIndex)
-                .Select(row => ((float?)row.Weight, (int?)row.Reps))
+                .Select(row => ((float?)row.Weight, (int?)row.Reps, row.Duration, row.Distance))
                 .ToList());
     }
 
     private async Task<Dictionary<Guid, List<WorkoutSetDto>>> GetSetsByWorkoutExerciseIdAsync(
         Guid[] workoutExerciseIds,
-        Dictionary<Guid, List<(float? Weight, int? Reps)>> previousByWorkoutExerciseId,
+        Dictionary<Guid, List<(float? Weight, int? Reps, int? Duration, float? Distance)>> previousByWorkoutExerciseId,
         CancellationToken cancellationToken)
     {
         var setsByWorkoutExerciseId = new Dictionary<Guid, List<WorkoutSetDto>>();
@@ -160,20 +162,22 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
                 workoutSet.OrderIndex,
                 workoutSet.RestTime,
                 previous.Weight,
-                previous.Reps));
+                previous.Reps,
+                previous.Duration,
+                previous.Distance));
         }
 
         return setsByWorkoutExerciseId;
     }
 
-    private static (float? Weight, int? Reps) GetPreviousForPosition(
-        Dictionary<Guid, List<(float? Weight, int? Reps)>> previousByWorkoutExerciseId,
+    private static (float? Weight, int? Reps, int? Duration, float? Distance) GetPreviousForPosition(
+        Dictionary<Guid, List<(float? Weight, int? Reps, int? Duration, float? Distance)>> previousByWorkoutExerciseId,
         Guid workoutExerciseId,
         int position)
     {
         if (!previousByWorkoutExerciseId.TryGetValue(workoutExerciseId, out var previousSets) || previousSets.Count == 0)
         {
-            return (null, null);
+            return (null, null, null, null);
         }
 
         var clampedIndex = Math.Min(position, previousSets.Count - 1);
@@ -673,7 +677,7 @@ public sealed class GetWorkoutDetailHandler : IRequestHandler<GetWorkoutDetailQu
             int orderIndex = 1;
             return recentSets
                 .Take(maxSetsPerExercise)
-                .Select(rs => new WorkoutSetDto(Guid.NewGuid(), "Normal", rs.Reps, rs.Weight, rs.Duration, rs.Distance, orderIndex++, 90, rs.Weight, rs.Reps))
+                .Select(rs => new WorkoutSetDto(Guid.NewGuid(), "Normal", rs.Reps, rs.Weight, rs.Duration, rs.Distance, orderIndex++, 90, rs.Weight, rs.Reps, rs.Duration, rs.Distance))
                 .ToList();
         }
 

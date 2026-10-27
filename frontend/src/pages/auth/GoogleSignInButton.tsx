@@ -208,13 +208,19 @@ export function GoogleSignInButton({
       ensureGoogleInitialized(effectiveClientId)
 
       containerRef.current.innerHTML = ''
+      const containerWidth = containerRef.current.clientWidth
+      const effectiveWidth =
+        typeof width === 'number' && containerWidth > 0
+          ? Math.min(width, containerWidth)
+          : width
+
       window.google.accounts.id.renderButton(containerRef.current, {
         type: 'standard',
         theme: resolvedTheme,
         size,
         text,
         shape,
-        width,
+        width: effectiveWidth,
         logo_alignment: 'left',
       })
 

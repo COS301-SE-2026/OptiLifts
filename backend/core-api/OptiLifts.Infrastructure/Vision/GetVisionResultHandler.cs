@@ -21,6 +21,13 @@ public class GetVisionResultHandler : IRequestHandler<GetVisionResultQuery, Visi
     private static int CalculateScore(List<string> anomalies)
     {
         if (anomalies == null || anomalies.Count == 0) return 100; //yipee
+
+        // diff exercise
+        if (anomalies.Any(a => a.StartsWith("posture_mismatch", StringComparison.OrdinalIgnoreCase)))
+        {
+            return 0;
+        }
+
         double bad = 0;
         foreach (var a in anomalies)
         {
@@ -42,6 +49,27 @@ public class GetVisionResultHandler : IRequestHandler<GetVisionResultQuery, Visi
         return Math.Max(0, score);
     }
 
+    private static string FormatAnomalyName(string raw)
+    {
+        var name = raw;
+        var braceIndex = name.IndexOf('(');
+        if (braceIndex != -1) name = name.Substring(0, braceIndex).Trim();
+        var pipeIndex = name.IndexOf('|');
+        if (pipeIndex != -1) name = name.Substring(0, pipeIndex).Trim();
+        name = name.Replace('_', ' ');
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(name.ToLower());
+    }
+
+    private static List<string> FormatIssuesList(List<string>? anomalies)
+    {
+        if (anomalies == null || anomalies.Count == 0)
+            return new List<string>();
+
+        return anomalies
+            .Select(FormatAnomalyName)
+            .ToList();
+    }
+
     public async Task<VisionResultResponse?> Handle(GetVisionResultQuery query, CancellationToken cancellationToken)
     {
         if (query == null || string.IsNullOrWhiteSpace(query.JobId))
@@ -56,26 +84,12 @@ public class GetVisionResultHandler : IRequestHandler<GetVisionResultQuery, Visi
 
         if (job.Status == VisionJobStatus.Completed)
         {
-            var issuesList = new List<string>();
-            if (job.DetectedAnomalies != null)
-            {
-                foreach (var a in job.DetectedAnomalies)
-                {
-                    var name = a;
-                    var braceIndex = name.IndexOf('(');
-                    if (braceIndex != -1) name = name.Substring(0, braceIndex).Trim();
-                    name = name.Replace('_', ' ');
-                    name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(name.ToLower());
-                    issuesList.Add(name);
-                }
-            }
-
             return new VisionResultResponse
             {
                 Status = "completed",
                 CoachSummary = job.CoachSummary,
                 Score = CalculateScore(job.DetectedAnomalies),
-                Issues = issuesList
+                Issues = FormatIssuesList(job.DetectedAnomalies)
             };
         }
 

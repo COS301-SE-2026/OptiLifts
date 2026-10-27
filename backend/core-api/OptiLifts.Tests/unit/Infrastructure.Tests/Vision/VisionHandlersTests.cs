@@ -193,6 +193,68 @@ public class VisionHandlersTests : IDisposable
     }
 
     [Fact]
+    public async Task ProcessWorkerResultHandler_WhenPostureMismatch_ShortCircuitsGeminiAndSetsGuidance()
+    {
+        var job = new VisionAnalysisJob
+        {
+            JobId = "job_mismatch_test",
+            UserId = "user_mismatch",
+            Exercise = "squat",
+            View = "side",
+            BlobUrl = "http://example.com/blob.json",
+            Status = VisionJobStatus.Pending
+        };
+        _dbContext.VisionAnalysisJobs.Add(job);
+        await _dbContext.SaveChangesAsync();
+
+        var mockGemini = new Mock<IGeminiClient>();
+        var handler = new ProcessWorkerResultHandler(_dbContext, mockGemini.Object);
+
+        var workerResult = new VisionWorkerResult
+        {
+            JobId = "job_mismatch_test",
+            Success = true,
+            DetectedAnomalies = new List<VisionAnomaly> { new("posture_mismatch", 1.0) }
+        };
+
+        var handled = await handler.Handle(new ProcessWorkerResultCommand(workerResult), CancellationToken.None);
+
+        handled.Should().BeTrue();
+        var updatedJob = await _dbContext.VisionAnalysisJobs.FirstOrDefaultAsync(j => j.JobId == "job_mismatch_test");
+        updatedJob.Should().NotBeNull();
+        updatedJob!.Status.Should().Be(VisionJobStatus.Completed);
+        updatedJob.CoachSummary.Should().Contain("Incorrect exercise detected");
+        mockGemini.Verify(g => g.GenerateCoachingTipAsync(It.IsAny<string>(), It.IsAny<IEnumerable<VisionAnomaly>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetVisionResultHandler_WhenPostureMismatch_ReturnsZeroScoreAndFormatsIssue()
+    {
+        var job = new VisionAnalysisJob
+        {
+            JobId = "job_mismatch_query",
+            UserId = "user_q",
+            Exercise = "squat",
+            View = "side",
+            BlobUrl = "http://example.com/blob.json",
+            Status = VisionJobStatus.Completed,
+            CoachSummary = "Incorrect exercise detected.",
+            DetectedAnomalies = new List<string> { "posture_mismatch|0" }
+        };
+        _dbContext.VisionAnalysisJobs.Add(job);
+        await _dbContext.SaveChangesAsync();
+
+        var handler = new GetVisionResultHandler(_dbContext);
+
+        var result = await handler.Handle(new GetVisionResultQuery("job_mismatch_query"), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Status.Should().Be("completed");
+        result.Score.Should().Be(0);
+        result.Issues.Should().Contain("Posture Mismatch");
+    }
+
+    [Fact]
     public async Task GetVisionResultHandler_WhenNotFound_ReturnsNull()
     {
         var handler = new GetVisionResultHandler(_dbContext);

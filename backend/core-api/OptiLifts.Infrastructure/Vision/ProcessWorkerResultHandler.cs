@@ -49,13 +49,24 @@ public class ProcessWorkerResultHandler : IRequestHandler<ProcessWorkerResultCom
                 .Select(a => a.ToString())
                 .ToList() ?? new List<string>();
 
-            var coachingTip = await _geminiClient.GenerateCoachingTipAsync(
-                job.Exercise,
-                result.DetectedAnomalies ?? Enumerable.Empty<VisionAnomaly>(),
-                cancellationToken);
+            bool isMismatch = result.DetectedAnomalies?
+                .Any(a => string.Equals(a.Error, "posture_mismatch", StringComparison.OrdinalIgnoreCase)) ?? false;
 
-            job.CoachSummary = coachingTip;
-            job.Status = VisionJobStatus.Completed;
+            if (isMismatch)
+            {
+                job.CoachSummary = $"Incorrect exercise detected. Your body orientation and posture do not match a {job.Exercise}. Please check your camera angle and ensure you are performing the selected exercise.";
+                job.Status = VisionJobStatus.Completed;
+            }
+            else
+            {
+                var coachingTip = await _geminiClient.GenerateCoachingTipAsync(
+                    job.Exercise,
+                    result.DetectedAnomalies ?? Enumerable.Empty<VisionAnomaly>(),
+                    cancellationToken);
+
+                job.CoachSummary = coachingTip;
+                job.Status = VisionJobStatus.Completed;
+            }
         }
         else
         {

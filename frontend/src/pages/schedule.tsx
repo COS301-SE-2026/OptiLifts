@@ -609,7 +609,7 @@ export default function SchedulePage() {
                             todayStart.setHours(0,0,0,0)
                             const dayStart = new Date(day.date)
                             dayStart.setHours(0,0,0,0)
-                            const isBeforeToday = dayStart < todayStart
+                            // const isBeforeToday = dayStart < todayStart
 
                             return (
                                 <div key={day.name} className="flex items-stretch gap-4 min-h-[110px]">
@@ -631,8 +631,8 @@ export default function SchedulePage() {
                                         <EmptyDayCard
                                             fullName={day.fullName}
                                             onClick={() => handleAddClick(day.date)}
-                                            disabled={isBeforeToday || !isOnline}
-                                            // disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
+                                            // disabled={isBeforeToday || !isOnline}
+                                            disabled={!isOnline}//temp -> undo this comment if wanting to check dynamic scheduler and comment out the above line
                                             title={!isOnline ? OFFLINE_HINT : undefined}
                                         />
                                     )}
@@ -1021,7 +1021,8 @@ function MonthViewCalendar({
                     today.setHours(0,0,0,0)
                     const cellDateStart = new Date(cell.date)
                     cellDateStart.setHours(0,0,0,0)
-                    const isBeforeToday = cellDateStart < today //ensure cannot schedule
+                    // const isBeforeToday = cellDateStart < today //ensure cannot schedule
+                    const isBeforeToday = false //this is for demoing purposes on project day
 
                     let circleClass = "flex size-9 items-center justify-center rounded-full text-sm font-bold transition-all"
                     if (isCompleted) {

@@ -40,6 +40,7 @@ public class User
     //f1 - friendship feature
     public string FriendCode { get; set; } = GenerateFriendCode();
     public string DuelInvitePrivacy { get; set; } = "Friends";
+    public string FriendRequestPrivacy { get; set; } = "Everyone";
     public bool GlobalLeaderboardOptIn { get; set; } = false;
 
     public static string GenerateFriendCode()

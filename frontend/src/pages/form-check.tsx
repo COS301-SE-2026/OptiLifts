@@ -53,7 +53,7 @@ export default function FormCheckPage() {
         </div>
         <div className="col-span-12 min-w-0 lg:col-span-7">{renderPanel()}</div>
       </div>
-      {state.phase === 'completed' && state.issues && state.issues.length > 0 && (
+      {state.phase === 'completed' && state.issues && state.issues.length > 0 && !state.issues.some(i => i.toLowerCase().includes('posture mismatch')) && (
         <VideoFeedback issues={state.issues} videoFile={vidFile} exercise={exercise} />
       )}
     </section>

@@ -56,7 +56,10 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen)
     if (isOpen) {
+      setSearchQuery('')
       setSelectedMuscle(initialMuscle && MUSCLE_OPTS.includes(initialMuscle) ? initialMuscle : 'All Muscles')
+      setSelectedEquipment('All Equipment')
+      setCustomOnly(false)
     }
   }
 
@@ -206,7 +209,13 @@ export function ExercisePickerDialog({ isOpen, onClose, onSelect, title = 'Add E
                     variant="icon"
                     size="icon"
                     aria-label={`Add ${ex.name}`}
-                    onClick={() => onSelect(ex)}
+                    onClick={() => {
+                      setSearchQuery('')
+                      setSelectedMuscle('All Muscles')
+                      setSelectedEquipment('All Equipment')
+                      setCustomOnly(false)
+                      onSelect(ex)
+                    }}
                     className="size-6 rounded-md border-border bg-surface-2 text-foreground hover:bg-border"
                   >
                     <Plus size={12} />

@@ -141,7 +141,7 @@ export function RegisterPage() {
                 type="submit"
                 variant="default"
                 disabled={!isFormValid || isSubmitting}
-                className={`w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
+                className={`w-full max-w-80 justify-center justify-self-center ${(isFormValid && !isSubmitting) ? '' : 'opacity-60 cursor-not-allowed'}`}
               >
                 {isSubmitting ? 'REGISTERING...' : 'REGISTER'}
               </Button>

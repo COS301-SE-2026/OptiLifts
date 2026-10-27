@@ -166,19 +166,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell full squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Calves"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0043-qXTaZnJ.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Barbell glute bridge",
     "Mechanic": "compound",
     "Equipment": "Barbell",
@@ -289,7 +276,7 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Barbell Bulgarian Split Squat",
+    "Name": "Barbell bulgarian split squat",
     "Mechanic": "compound",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -1107,19 +1094,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Cable seated row",
-    "Mechanic": "compound",
-    "Equipment": "Cable",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Upper Back",
-    "SecondaryMuscles": [
-      "Biceps",
-      "Forearms"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0861-fUBheHs.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Cable shrug",
     "Mechanic": "isolation",
     "Equipment": "Cable",
@@ -1441,19 +1415,6 @@
       "Glutes"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0284-u5ESqzH.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Donkey calf raise",
-    "Mechanic": "isolation",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [
-      "Hamstrings",
-      "Glutes"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/1253-C9LuR4A.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -2550,18 +2511,6 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Incline push-up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [
-      "Triceps"
-    ],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/3785-F7vjXqT.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
     "Name": "Incline reverse grip push-up",
     "Mechanic": "compound",
     "Equipment": "None",
@@ -3132,16 +3081,6 @@
       "Triceps"
     ],
     "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0725-MUic5zN.jpg",
-    "Attribution": "© Gym visual — https://gymvisual.com/"
-  },
-  {
-    "Name": "Dumbbell Single leg calf raise",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [],
-    "ImageUrl": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/0727-fKZgDEO.jpg",
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
@@ -3843,47 +3782,32 @@
     "Attribution": "© Gym visual — https://gymvisual.com/"
   },
   {
-    "Name": "Dumbbell Chest Fly",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Incline Dumbbell Chest Fly",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": [],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Dumbbell Pullover",
+    "Name": "Dumbbell pullover",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Lats"],
+    "SecondaryMuscles": [
+      "Lats"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Chest Dip",
+    "Name": "Chest dip",
     "Mechanic": "compound",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
     "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Triceps", "Shoulders"],
+    "SecondaryMuscles": [
+      "Triceps",
+      "Shoulders"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Pec Deck",
+    "Name": "Pec deck",
     "Mechanic": "isolation",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
@@ -3893,27 +3817,33 @@
     "Attribution": ""
   },
   {
-    "Name": "Chest Press Machine",
+    "Name": "Chest press machine",
     "Mechanic": "compound",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Triceps", "Shoulders"],
+    "SecondaryMuscles": [
+      "Triceps",
+      "Shoulders"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Incline Chest Press Machine",
+    "Name": "Incline chest press machine",
     "Mechanic": "compound",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Triceps", "Shoulders"],
+    "SecondaryMuscles": [
+      "Triceps",
+      "Shoulders"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Cable Crossover",
+    "Name": "Cable crossover",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -3923,7 +3853,7 @@
     "Attribution": ""
   },
   {
-    "Name": "High-to-Low Cable Fly",
+    "Name": "High-to-low cable fly",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -3933,7 +3863,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Low-to-High Cable Fly",
+    "Name": "Low-to-high cable fly",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -3943,107 +3873,46 @@
     "Attribution": ""
   },
   {
-    "Name": "Push-Up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Triceps", "Shoulders"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Incline Push-Up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Triceps", "Shoulders"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Decline Push-Up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Chest",
-    "SecondaryMuscles": ["Triceps", "Shoulders"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Barbell Bent-Over Row",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Single-Arm Dumbbell Row",
+    "Name": "Single-arm dumbbell row",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
+    "SecondaryMuscles": [
+      "Biceps",
+      "Middle Back"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "T-Bar Row",
-    "Mechanic": "compound",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Pull-Up",
+    "Name": "Neutral-grip pull-up",
     "Mechanic": "compound",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
     "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
+    "SecondaryMuscles": [
+      "Biceps",
+      "Middle Back"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Chin-Up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Neutral-Grip Pull-Up",
-    "Mechanic": "compound",
-    "Equipment": "None",
-    "ExerciseType": "BodyweightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Single-Arm Lat Pulldown",
+    "Name": "Single-arm lat pulldown",
     "Mechanic": "compound",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
+    "SecondaryMuscles": [
+      "Biceps",
+      "Middle Back"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Straight-Arm Cable Pulldown",
+    "Name": "Straight-arm cable pulldown",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4053,57 +3922,55 @@
     "Attribution": ""
   },
   {
-    "Name": "Machine Assisted Pull-Up",
-    "Mechanic": "compound",
-    "Equipment": "Machine",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Lats",
-    "SecondaryMuscles": ["Biceps", "Middle Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Seated Dumbbell Shoulder Press",
+    "Name": "Seated dumbbell shoulder press",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Shoulders",
-    "SecondaryMuscles": ["Triceps"],
+    "SecondaryMuscles": [
+      "Triceps"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Arnold Press",
+    "Name": "Arnold press",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Shoulders",
-    "SecondaryMuscles": ["Triceps"],
+    "SecondaryMuscles": [
+      "Triceps"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Smith Machine Shoulder Press",
+    "Name": "Smith machine shoulder press",
     "Mechanic": "compound",
     "Equipment": "Smith machine",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Shoulders",
-    "SecondaryMuscles": ["Triceps"],
+    "SecondaryMuscles": [
+      "Triceps"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Machine Shoulder Press",
+    "Name": "Machine shoulder press",
     "Mechanic": "compound",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Shoulders",
-    "SecondaryMuscles": ["Triceps"],
+    "SecondaryMuscles": [
+      "Triceps"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Lean-Away Cable Lateral Raise",
+    "Name": "Lean-away cable lateral raise",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4113,7 +3980,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Rear Delt Dumbbell Fly",
+    "Name": "Rear delt dumbbell fly",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
@@ -4123,7 +3990,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Reverse Pec Deck",
+    "Name": "Reverse pec deck",
     "Mechanic": "isolation",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
@@ -4133,7 +4000,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Machine Rear Delt Fly",
+    "Name": "Machine rear delt fly",
     "Mechanic": "isolation",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
@@ -4143,7 +4010,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Face Pull",
+    "Name": "Face pull",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4153,7 +4020,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Barbell Bicep Curl",
+    "Name": "Barbell bicep curl",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -4163,7 +4030,7 @@
     "Attribution": ""
   },
   {
-    "Name": "EZ-Bar Bicep Curl",
+    "Name": "Ez-bar bicep curl",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -4173,7 +4040,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Dumbbell Alternate Bicep Curl",
+    "Name": "Dumbbell alternate bicep curl",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
@@ -4183,17 +4050,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Close-Grip Barbell Bench Press",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Triceps",
-    "SecondaryMuscles": ["Chest", "Shoulders"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Lying Triceps Extension",
+    "Name": "Lying triceps extension",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -4203,7 +4060,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Triceps Rope Pushdown",
+    "Name": "Triceps rope pushdown",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4213,7 +4070,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Straight-Bar Triceps Pushdown",
+    "Name": "Straight-bar triceps pushdown",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4223,7 +4080,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Overhead Dumbbell Triceps Extension",
+    "Name": "Overhead dumbbell triceps extension",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
@@ -4233,7 +4090,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Cable Overhead Rope Triceps Extension",
+    "Name": "Cable overhead rope triceps extension",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4243,7 +4100,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Dumbbell Kickback",
+    "Name": "Dumbbell kickback",
     "Mechanic": "isolation",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
@@ -4253,7 +4110,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Barbell Wrist Curl",
+    "Name": "Barbell wrist curl",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -4263,7 +4120,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Barbell Reverse Wrist Curl",
+    "Name": "Barbell reverse wrist curl",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
@@ -4273,67 +4130,58 @@
     "Attribution": ""
   },
   {
-    "Name": "Reverse Grip EZ-Bar Curl",
+    "Name": "Reverse grip ez-bar curl",
     "Mechanic": "isolation",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Forearms",
-    "SecondaryMuscles": ["Biceps"],
+    "SecondaryMuscles": [
+      "Biceps"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Barbell Back Squat",
-    "Mechanic": "compound",
-    "Equipment": "Barbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": ["Hamstrings", "Glutes", "Lower Back"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Bulgarian Split Squat",
+    "Name": "Walking lunges",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": ["Hamstrings", "Glutes"],
+    "SecondaryMuscles": [
+      "Hamstrings",
+      "Glutes"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Walking Lunges",
+    "Name": "Reverse lunge",
     "Mechanic": "compound",
     "Equipment": "Dumbbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": ["Hamstrings", "Glutes"],
+    "SecondaryMuscles": [
+      "Hamstrings",
+      "Glutes"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Reverse Lunge",
-    "Mechanic": "compound",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": ["Hamstrings", "Glutes"],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Pendulum Squat",
+    "Name": "Pendulum squat",
     "Mechanic": "compound",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Quadriceps",
-    "SecondaryMuscles": ["Hamstrings", "Glutes"],
+    "SecondaryMuscles": [
+      "Hamstrings",
+      "Glutes"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Seated Adductor Machine",
+    "Name": "Seated adductor machine",
     "Mechanic": "isolation",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
@@ -4343,22 +4191,26 @@
     "Attribution": ""
   },
   {
-    "Name": "Barbell Hip Thrust",
+    "Name": "Barbell hip thrust",
     "Mechanic": "compound",
     "Equipment": "Barbell",
     "ExerciseType": "WeightReps",
     "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": ["Hamstrings"],
+    "SecondaryMuscles": [
+      "Hamstrings"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Single-Leg Hip Thrust",
+    "Name": "Single-leg hip thrust",
     "Mechanic": "compound",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
     "PrimaryMuscle": "Glutes",
-    "SecondaryMuscles": ["Hamstrings"],
+    "SecondaryMuscles": [
+      "Hamstrings"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
@@ -4368,12 +4220,15 @@
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
     "PrimaryMuscle": "Lower Back",
-    "SecondaryMuscles": ["Hamstrings", "Glutes"],
+    "SecondaryMuscles": [
+      "Hamstrings",
+      "Glutes"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   },
   {
-    "Name": "Cable Kickback",
+    "Name": "Cable kickback",
     "Mechanic": "isolation",
     "Equipment": "Cable",
     "ExerciseType": "WeightReps",
@@ -4383,7 +4238,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Seated Abductor Machine",
+    "Name": "Seated abductor machine",
     "Mechanic": "isolation",
     "Equipment": "Machine",
     "ExerciseType": "WeightReps",
@@ -4393,7 +4248,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Nordic Hamstring Curl",
+    "Name": "Nordic hamstring curl",
     "Mechanic": "compound",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
@@ -4403,17 +4258,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Single-Leg Dumbbell Calf Raise",
-    "Mechanic": "isolation",
-    "Equipment": "Dumbbell",
-    "ExerciseType": "WeightReps",
-    "PrimaryMuscle": "Calves",
-    "SecondaryMuscles": [],
-    "ImageUrl": "",
-    "Attribution": ""
-  },
-  {
-    "Name": "Ab Wheel Rollout",
+    "Name": "Ab wheel rollout",
     "Mechanic": "isolation",
     "Equipment": "Other",
     "ExerciseType": "BodyweightReps",
@@ -4423,7 +4268,7 @@
     "Attribution": ""
   },
   {
-    "Name": "Hanging Knee Raise",
+    "Name": "Hanging knee raise",
     "Mechanic": "isolation",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
@@ -4433,12 +4278,26 @@
     "Attribution": ""
   },
   {
-    "Name": "Decline Sit-Up",
+    "Name": "Decline sit-up",
     "Mechanic": "isolation",
     "Equipment": "None",
     "ExerciseType": "BodyweightReps",
     "PrimaryMuscle": "Abdominals",
     "SecondaryMuscles": [],
+    "ImageUrl": "",
+    "Attribution": ""
+  },
+  {
+    "Name": "Barbell Back Squat",
+    "Mechanic": "compound",
+    "Equipment": "Barbell",
+    "ExerciseType": "WeightReps",
+    "PrimaryMuscle": "Quadriceps",
+    "SecondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "Lower Back"
+    ],
     "ImageUrl": "",
     "Attribution": ""
   }

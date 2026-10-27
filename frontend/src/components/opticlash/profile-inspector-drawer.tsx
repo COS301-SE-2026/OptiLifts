@@ -58,6 +58,7 @@ interface AthleteProfileApiResponse {
     hasSentKudos: boolean;
     isFriend?: boolean;
     hasPendingFriendRequest?: boolean;
+    acceptsFriendRequests?: boolean;
 }
 interface ProfileInspectorDrawerProps {
     athlete: ClashAthlete | null;
@@ -87,6 +88,160 @@ function getMuscleBalanceData(
         Object.assign(data, athlete.muscleBalance30d);
     }
     return data;
+}
+
+function useBodyScrollLock(isOpen: boolean) {
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('overflow-hidden');
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.body.classList.remove('overflow-hidden');
+        };
+    }, [isOpen]);
+}
+
+function getWorkoutsList(profile: AthleteProfileApiResponse | null, athlete: ClashAthlete) {
+    if (!profile?.recentWorkouts) {
+        return athlete.recentWorkouts;
+    }
+    return profile.recentWorkouts.map((w) => {
+        const dateStr = w.completedAt ? new Date(w.completedAt).toLocaleDateString() : 'Recent';
+        return {
+            id: w.logId,
+            title: w.title,
+            date: dateStr,
+            durationMins: 0,
+            volumeKg: Number(w.volumeKg),
+            exercises: w.exercises.map((ex) => ({
+                name: ex.exerciseName,
+                sets: `${ex.sets} sets`,
+            })),
+        };
+    });
+}
+
+function getTrophiesList(profile: AthleteProfileApiResponse | null, athlete: ClashAthlete) {
+    if (!profile?.trophies) {
+        return athlete.trophies;
+    }
+    return profile.trophies.map((t) => ({
+        id: t.id,
+        name: t.name,
+        category: t.category,
+        description: t.description,
+        earnedAt: t.earnedAt,
+    }));
+}
+
+interface FriendRequestActionButtonProps {
+    acceptsFriendRequests?: boolean;
+    sentFriendRequest: boolean;
+    onSendRequest: () => void;
+}
+
+function FriendRequestActionButton({
+    acceptsFriendRequests,
+    sentFriendRequest,
+    onSendRequest,
+}: Readonly<FriendRequestActionButtonProps>) {
+    const isRequestsOff = acceptsFriendRequests === false;
+
+    let buttonContent = (
+        <>
+            <UserPlus className="w-3.5 h-3.5"/>
+            <span>Add Friend</span>
+        </>
+    );
+
+    if (isRequestsOff) {
+        buttonContent = (
+            <>
+                <UserPlus className="w-3.5 h-3.5 opacity-50"/>
+                <span>Requests Off</span>
+            </>
+        );
+    } else if (sentFriendRequest) {
+        buttonContent = (
+            <>
+                <UserCheck className="w-3.5 h-3.5 text-success"/>
+                <span>Request Sent</span>
+            </>
+        );
+    }
+
+    return (
+        <Button variant={sentFriendRequest ? 'secondary' : 'default'} size="sm" disabled={sentFriendRequest || isRequestsOff} onClick={onSendRequest}
+            className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5" title={isRequestsOff ? 'This athlete is not accepting friend requests' : undefined}>
+            {buttonContent}
+        </Button>
+    );
+}
+
+interface TrophiesModalProps {
+    displayName: string;
+    trophies: Array<{
+        id: string;
+        name: string;
+        category: string;
+        description: string;
+        earnedAt?: string;
+    }>;
+    onClose: () => void;
+}
+
+function TrophiesModal({ displayName, trophies, onClose }: Readonly<TrophiesModalProps>) {
+    return (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <Card className="bg-surface border-border max-w-md w-full p-6 text-center relative shadow-2xl">
+                <Button variant="ghost" size="icon" onClick={onClose}
+                    className="absolute top-4 right-4 h-8 w-8" aria-label="Close">
+                    <X className="w-4 h-4"/>
+                </Button>
+
+                <div className="w-14 h-14 rounded-full bg-brand-fill border border-brand/30 flex items-center justify-center mx-auto mb-3 text-brand">
+                    <Trophy className="w-7 h-7"/>
+                </div>
+                <h3 className="font-display text-2xl tracking-wide text-foreground">
+                    {displayName}&apos;s Trophies
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5 font-sans">
+                    Earned milestones and competitive season badges
+                </p>
+
+                <div className="my-5 space-y-2.5 text-left max-h-80 overflow-y-auto pr-1">
+                    {trophies.length > 0 ? (
+                        trophies.map((t) => (
+                            <div key={t.id} className="p-3 bg-surface-2 rounded-xl border border-border flex items-start gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shrink-0">
+                                    <Medal className="w-5 h-5"/>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <strong className="font-bold text-foreground font-sans truncate">{t.name}</strong>
+                                        <span className="text-[11px] text-muted-foreground font-sans">{t.category}</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground font-sans mt-0.5">{t.description}</p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-4 bg-surface-2 rounded-xl border border-border text-center text-xs text-muted-foreground font-sans">
+                            No trophy milestones earned yet for this athlete
+                        </div>
+                    )}
+                </div>
+
+                <Button variant="default" onClick={onClose} className="w-full">
+                    Close Trophies
+                </Button>
+            </Card>
+        </div>
+    );
 }
 
 export function ProfileInspectorDrawer({
@@ -131,18 +286,7 @@ export function ProfileInspectorDrawer({
         };
     }, [isOpen, athlete?.id]);
 
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        document.body.classList.add('overflow-hidden');
-
-        return () => {
-            document.body.style.overflow = previousOverflow;
-            document.body.classList.remove('overflow-hidden');
-        };
-    }, [isOpen]);
+    useBodyScrollLock(isOpen);
 
     if(!isOpen || !athlete){
         return null;
@@ -150,13 +294,27 @@ export function ProfileInspectorDrawer({
 
     const isCurrentUser = user?.id === athlete.id;
     const isAlreadyFriend = profile?.isFriend ?? false;
+    const displayName = profile?.displayName || athlete.name;
 
-    const handleKudos = async (e: MouseEvent<HTMLButtonElement>) => {
-        if(hasGivenKudos || isSubmittingKudos) {
-            return;
+    const handleRemoveKudos = async () => {
+        try {
+            const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                setKudosCount((prev) => Math.max(0, prev - 1));
+                setHasGivenKudos(false);
+                toast.info(`Kudos removed for ${displayName}`);
+            } else {
+                const errData = await res.json().catch(() => null);
+                toast.error(errData?.message ?? 'Failed to remove kudos');
+            }
+        } catch {
+            toast.error('Network error removing kudos');
         }
-        const rect = e.currentTarget?.getBoundingClientRect();
-        setIsSubmittingKudos(true);
+    };
+
+    const handleAddKudos = async (rect?: DOMRect) => {
         try {
             const res = await customFetch(`/api/clash/athletes/${athlete.id}/kudos`, {
                 method: 'POST',
@@ -164,7 +322,7 @@ export function ProfileInspectorDrawer({
             if (res.ok) {
                 setKudosCount((prev) => prev + 1);
                 setHasGivenKudos(true);
-                toast.success(`You sent kudos to ${athlete.name}`, 'Kudos Delivered');
+                toast.success(`You sent kudos to ${displayName}`, 'Kudos Delivered');
                 if (rect) {
                     const x = (rect.left + rect.width / 2) / window.innerWidth;
                     const y = (rect.top + rect.height / 2) / window.innerHeight;
@@ -181,6 +339,20 @@ export function ProfileInspectorDrawer({
             }
         } catch {
             toast.error('Network error sending kudos');
+        }
+    };
+
+    const handleKudos = async (e: MouseEvent<HTMLButtonElement>) => {
+        if(isSubmittingKudos) {
+            return;
+        }
+        setIsSubmittingKudos(true);
+        try {
+            if (hasGivenKudos) {
+                await handleRemoveKudos();
+            } else {
+                await handleAddKudos(e.currentTarget?.getBoundingClientRect());
+            }
         } finally {
             setIsSubmittingKudos(false);
         }
@@ -213,31 +385,9 @@ export function ProfileInspectorDrawer({
     };
 
     const muscleBalanceData = getMuscleBalanceData(profile, athlete);
-    
-    const workoutsList = profile?.recentWorkouts?.map((w) => {
-        const dateStr = w.completedAt ? new Date(w.completedAt).toLocaleDateString(): 'Recent';
-        return {
-            id: w.logId,
-            title: w.title,
-            date: dateStr,
-            durationMins:0,
-            volumeKg: Number(w.volumeKg),
-            exercises: w.exercises.map((ex) => ({
-                name: ex.exerciseName,
-                sets: `${ex.sets} sets`,
-            })),
-        };
-    }) ?? athlete.recentWorkouts;
+    const workoutsList = getWorkoutsList(profile, athlete);
+    const trophiesList = getTrophiesList(profile, athlete);
 
-    const trophiesList = profile?.trophies?.map((t) => ({
-        id: t.id,
-        name: t.name,
-        category: t.category,
-        description: t.description,
-        earnedAt: t.earnedAt,
-    })) ?? athlete.trophies;
-
-    const displayName = profile?.displayName || athlete.name;
     const displayInitials = profile?.displayName ? profile.displayName.slice(0, 2).toUpperCase() : athlete.initials;
     const displayAvatarUrl = profile?.avatarUrl || athlete.avatarUrl;
     const displayBio = profile?.bio ?? athlete.bio ?? (isCurrentUser ? user?.bio : undefined);
@@ -252,7 +402,7 @@ export function ProfileInspectorDrawer({
                         <X className="w-4 h-4 text-muted-foreground hover:text-foreground"/>
                     </Button>
                     <div className="grid grid-cols-[auto_1fr] items-stretch gap-4">
-                        <div className="h-full aspect-square shrink-0">
+                        <div className="h-full aspect-square shrink-0 max-w-24 max-h-24">
                             <AthleteAvatar initials={displayInitials} name={displayName} avatarUrl={displayAvatarUrl} isCurrentUser={isCurrentUser} size="auto"/>
                         </div>
                         <div className="flex flex-col justify-between min-w-0">
@@ -279,7 +429,7 @@ export function ProfileInspectorDrawer({
 
                     {/* action bar */}
                     <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-border">
-                        <Button variant="secondary" size="sm" onClick={handleKudos} disabled={hasGivenKudos || isSubmittingKudos || isCurrentUser}
+                        <Button variant="secondary" size="sm" onClick={handleKudos} disabled={isSubmittingKudos || isCurrentUser}
                         className={`flex-1 min-w-[100px] h-8 text-xs font-semibold ${hasGivenKudos ? 'border border-brand text-brand' : ''}`}>
                             <Heart className={`w-3.5 h-3.5 mr-1 ${hasGivenKudos ? 'fill-brand text-brand': ''}`}/>
                             <span>{kudosCount} Kudos</span>
@@ -295,21 +445,8 @@ export function ProfileInspectorDrawer({
                                         <span>1v1 Duel</span>
                                     </Button>
                                 ) : (
-                                    <Button variant={sentFriendRequest ? 'secondary' : 'default'} size="sm" disabled={sentFriendRequest} onClick={handleSendFriendRequest}
-                                    className="flex-1 min-w-[100px] h-8 text-xs flex items-center justify-center gap-1.5">
-                                        {sentFriendRequest ? (
-                                            <>
-                                                <UserCheck className="w-3.5 h-3.5 text-success"/>
-                                                <span>Request Sent</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <UserPlus className="w-3.5 h-3.5"/>
-                                                <span>Add Friend</span>
-                                            </>
-                                        )}
-                                    </Button>
-                            )}
+                                    <FriendRequestActionButton acceptsFriendRequests={profile?.acceptsFriendRequests} sentFriendRequest={sentFriendRequest} onSendRequest={handleSendFriendRequest}/>
+                                )}
                             </>
                         )}
 
@@ -443,52 +580,7 @@ export function ProfileInspectorDrawer({
 
             {/* trophies + achievments modal */}
             {showTrophiesModal && (
-                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <Card className="bg-surface border-border max-w-md w-full p-6 text-center relative shadow-2xl">
-                        <Button variant="ghost" size="icon" onClick={() => setShowTrophiesModal(false)}
-                            className="absolute top-4 right-4 h-8 w-8" aria-label="Close">
-                            <X className="w-4 h-4"/>
-                        </Button>
-
-                        <div className="w-14 h-14 rounded-full bg-brand-fill border border-brand/30 flex items-center justify-center mx-auto mb-3 text-brand">
-                            <Trophy className="w-7 h-7"/>
-                        </div>
-                        <h3 className="font-display text-2xl tracking-wide text-foreground">
-                            {displayName}&apos;s Trophies
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5 font-sans">
-                            Earned milestones and competitive season badges
-                        </p>
-
-                        <div className="my-5 space-y-2.5 text-left max-h-80 overflow-y-auto pr-1">
-                            {trophiesList.length > 0 ? (
-                                trophiesList.map((t) => (
-                                    <div key={t.id} className="p-3 bg-surface-2 rounded-xl border border-border flex items-start gap-3">
-                                        <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shrink-0">
-                                            <Medal className="w-5 h-5"/>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between text-xs">
-                                                <strong className="font-bold text-foreground font-sans truncate">{t.name}</strong>
-                                                <span className="text-[11px] text-muted-foreground font-sans">{t.category}</span>
-                                            </div>
-                                            <p className="text-[11px] text-muted-foreground font-sans mt-0.5">{t.description}</p>
-                                        </div>
-                                    </div>
-                                ))
-                            ):(
-                                <div className="p-4 bg-surface-2 rounded-xl border border-border text-center text-xs text-muted-foreground font-sans">
-                                    No trophy milestones earned yet for this athlete
-                                </div>
-                            )}
-                        </div>
-
-                        <Button variant="default" onClick={() => setShowTrophiesModal(false)} 
-                        className="w-full">
-                            Close Trophies
-                        </Button>
-                    </Card>
-                </div>
+                <TrophiesModal displayName={displayName} trophies={trophiesList} onClose={() => setShowTrophiesModal(false)}/>
             )}
 
         </div>

@@ -12,7 +12,7 @@ import { ClashTabs } from "@/components/opticlash/clash-tabs";
 import { customFetch } from "@/lib/custom-fetch";
 import confetti from "canvas-confetti";
 import * as signalR from "@microsoft/signalr";
-import { useAuth } from "@/context/auth-context";
+import { useAuth, type AuthUser } from "@/context/auth-context";
 import { DuelCard } from "@/components/opticlash/duel-card";
 import { CreateDuelModal } from "@/components/opticlash/create-duel-modal";
 
@@ -64,6 +64,78 @@ const SYSTEM_ARENAS: ClashArena[] = [
     memberCount: 0,
   },
 ];
+
+function buildCurrentUserAthlete(
+    user: AuthUser | null,
+    userStanding: UserStandingDto | null,
+    isLeaderboardOptedIn: boolean
+): ClashAthlete {
+    const resolvedName = userStanding?.displayName || user?.name || 'You';
+    const resolvedInitials = resolvedName.slice(0, 2).toUpperCase() || 'AT';
+    const resolvedAvatarUrl = userStanding?.avatarUrl || user?.avatarUrl;
+    const isFemale = user?.sex?.toLowerCase() === 'female';
+    const gender = isFemale ? 'female' : 'male';
+    const tier = isLeaderboardOptedIn  ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked';
+
+    return {
+        id: user?.id || '',
+        name: resolvedName,
+        initials: resolvedInitials,
+        avatarUrl: resolvedAvatarUrl,
+        bio: user?.bio,
+        code: 'OPTICLASH',
+        gender,
+        bodyweightKg: userStanding?.bodyweightKg || 74,
+        squat1RM: userStanding?.squat1RM || 0,
+        bench1RM: userStanding?.bench1RM || 0,
+        deadlift1RM: userStanding?.deadlift1RM || 0,
+        totalE1RM: userStanding?.totalE1RM || 0,
+        dotsScore: userStanding?.dotsScore || 0,
+        tier,
+        tierLevel: userStanding?.tierLevel || 1,
+        rankTrend: userStanding?.rankTrend || 0,
+        weeklyVolumeKg: userStanding?.weeklyVolumeKg || 0,
+        lastWorkoutDate: new Date().toISOString(),
+        muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+        trophies: [],
+        recentWorkouts: [],
+    };
+}
+
+function buildOtherAthlete(
+    athleteId?: string,
+    athleteName?: string,
+    athleteInitials?: string,
+    athleteAvatarUrl?: string | null
+): ClashAthlete {
+    const resolvedName = athleteName || 'Athlete';
+    const resolvedInitials = athleteInitials || resolvedName.slice(0, 2).toUpperCase() || 'AT';
+    const resolvedAvatarUrl = athleteAvatarUrl || undefined;
+
+    return {
+        id: athleteId || '',
+        name: resolvedName,
+        initials: resolvedInitials,
+        avatarUrl: resolvedAvatarUrl,
+        bio: undefined,
+        code: 'OPTICLASH',
+        gender: 'male',
+        bodyweightKg: 0,
+        squat1RM: 0,
+        bench1RM: 0,
+        deadlift1RM: 0,
+        totalE1RM: 0,
+        dotsScore: 0,
+        tier: 'Unranked',
+        tierLevel: 1,
+        rankTrend: 0,
+        weeklyVolumeKg: 0,
+        lastWorkoutDate: new Date().toISOString(),
+        muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
+        trophies: [],
+        recentWorkouts: [],
+    };
+}
 
 export default function ArenaHubPage() {
     const {user } = useAuth();
@@ -239,32 +311,9 @@ export default function ArenaHubPage() {
         }
     };
 
-    const handleOpenAthlete = (athleteId?: string) => {
-        const athId = athleteId || user?.id || '';
-        const athleteName = userStanding?.displayName || user?.name || 'You';
-        const fallbackAthlete: ClashAthlete = {
-            id: athId,
-            name: athleteName,
-            initials: athleteName.slice(0, 2).toUpperCase() || 'AT',
-            avatarUrl: userStanding?.avatarUrl || user?.avatarUrl,
-            bio: user?.bio,
-            code: 'OPTICLASH',
-            gender: (user?.sex?.toLowerCase() === 'female' ? 'female' : 'male'),
-            bodyweightKg: userStanding?.bodyweightKg || 74,
-            squat1RM: userStanding?.squat1RM || 0,
-            bench1RM: userStanding?.bench1RM || 0,
-            deadlift1RM: userStanding?.deadlift1RM || 0,
-            totalE1RM: userStanding?.totalE1RM || 0,
-            dotsScore: userStanding?.dotsScore || 0,
-            tier: isLeaderboardOptedIn ? ((userStanding?.tier as ClashAthlete['tier']) || 'Bronze') : 'Unranked',
-            tierLevel: userStanding?.tierLevel || 1,
-            rankTrend: userStanding?.rankTrend || 0,
-            weeklyVolumeKg: userStanding?.weeklyVolumeKg || 0,
-            lastWorkoutDate: new Date().toISOString(),
-            muscleBalance30d: { Chest: 0, Core: 0, Shoulders: 0, Arms: 0, Legs: 0, Back: 0 },
-            trophies: [],
-            recentWorkouts: []
-        }
+    const handleOpenAthlete = (athleteId?: string, athleteName?: string, athleteInitials?: string, athleteAvatarUrl?: string | null) => {
+        const isCurrentUser = !athleteId || athleteId === user?.id;
+        const fallbackAthlete = isCurrentUser ? buildCurrentUserAthlete(user, userStanding, isLeaderboardOptedIn) : buildOtherAthlete(athleteId, athleteName, athleteInitials, athleteAvatarUrl);
         setSelectedAthlete(fallbackAthlete);
         setIsDrawerOpen(true);
     };
@@ -272,7 +321,24 @@ export default function ArenaHubPage() {
     //f3-5: handle feed kudos
     const handleFeedKudos = async (e:MouseEvent<HTMLButtonElement>, activityId: string) => {
         e.stopPropagation();
-        if (!kudosGivenMap[activityId]) {
+        if (kudosGivenMap[activityId]) {
+            setKudosGivenMap((prev) => ({
+                ...prev,
+                [activityId]: false
+            }));
+            setActivityList((prev) => prev.map((item) => item.id === activityId ? {
+                ...item,
+                kudosCount: Math.max(0, item.kudosCount - 1)
+            } : item));
+
+            try {
+                await customFetch(`/api/clash/activities/${activityId}/kudos`, {
+                    method: 'DELETE',
+                });
+            } catch {
+                //nonblocking
+            }
+        } else {
             setKudosGivenMap((prev) => ({
                 ...prev,
                 [activityId]: true
@@ -632,7 +698,7 @@ export default function ArenaHubPage() {
                             activityList.map((act) => (
                                 <div key={act.id}
                                 className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition">
-                                    <button type="button" onClick={() => handleOpenAthlete(act.athleteId)}
+                                    <button type="button" onClick={() => handleOpenAthlete(act.athleteId, act.athleteName, act.athleteInitials, act.athleteAvatarUrl)}
                                     className="flex items-center gap-3.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg">
 
                                         <AthleteAvatar initials={act.athleteInitials} name={act.athleteName} avatarUrl={act.athleteAvatarUrl} size="md"/>

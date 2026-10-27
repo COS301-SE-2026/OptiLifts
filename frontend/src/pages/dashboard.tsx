@@ -254,6 +254,7 @@ export default function DashboardPage() {
                 const today = startOfDay(new Date())
                 const endDate = new Date(today)
                 endDate.setDate(endDate.getDate() + 30)
+                const currentWeekStart = startOfWeek(today)
                 const completedRangeStart = new Date(today)
                 completedRangeStart.setFullYear(completedRangeStart.getFullYear() - 1)
                 completedRangeStart.setDate(1)
@@ -264,7 +265,7 @@ export default function DashboardPage() {
                     customFetch('/api/profile/overview', { headers: { Accept: 'application/json' }}),
                     customFetch(`/api/users/me/schedule?startDate=${today.toISOString()}&endDate=${endDate.toISOString()}` , { headers: { Accept: 'application/json' }}),
                     customFetch(`/api/users/me/schedule?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
-                    customFetch(`/api/users/me/schedule/analytics?startDate=${completedRangeStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
+                    customFetch(`/api/users/me/schedule/analytics?startDate=${currentWeekStart.toISOString()}&endDate=${completedRangeEnd.toISOString()}&status=Completed`, { headers: { Accept: 'application/json' }}),
                 ])
 
                 assertAllOk([profileResponse, scheduleResponse, completedResponse, analyticsResponse])
@@ -421,21 +422,12 @@ export default function DashboardPage() {
             Back: 0,
         }
 
-        let totalSetsAll = 0
-
         analytics?.muscleDistribution.forEach((item) => {
             const mapped = MUSCLE_CATEGORY_MAP[item.muscleGroup]
             if (mapped) {
                 values[mapped] += item.setCount
             }
-            totalSetsAll += item.setCount
         })
-
-        if (totalSetsAll > 0){
-            MUSCLE_KEYS.forEach((key) => {
-                values[key] = Math.round((values[key] / totalSetsAll) * 100)
-            })
-        }
 
         return values
     }, [analytics])

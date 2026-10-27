@@ -89,13 +89,22 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
             return null;
         }
 
-        int weightedCalculatedReps = E1RMCalculator.ReverseEpleyReps(predictedMetric, previousWeight.Value, exercise.Mechanic, exercise.ExerciseType, bodyweightForWeighted);
+        float roundedPrevWeight = IsMachineExercise(exercise)
+            ? (float)Math.Round(previousWeight.Value)
+            : (float)Math.Round(previousWeight.Value / WeightedIncrementKg) * WeightedIncrementKg;
+
+        if (exercise.ExerciseType == ExerciseType.WeightReps && roundedPrevWeight <= 0)
+        {
+            roundedPrevWeight = IsMachineExercise(exercise) ? 1f : WeightedIncrementKg;
+        }
+
+        int weightedCalculatedReps = E1RMCalculator.ReverseEpleyReps(predictedMetric, roundedPrevWeight, exercise.Mechanic, exercise.ExerciseType, bodyweightForWeighted);
 
         //Check if newly calculated reps is in range 
         //if yes, reps are in range, keep same weight and use new reps.
         if (IsRepsInRange(weightedCalculatedReps, lowerLimit, upperLimit))
         {
-            return CreateWeightedRecommendation(previousWeight.Value, weightedCalculatedReps, exercise, bodyweightForWeighted);
+            return CreateWeightedRecommendation(roundedPrevWeight, weightedCalculatedReps, exercise, bodyweightForWeighted);
         }
 
         //if no, attempt weight increase at lower rep limit.
@@ -104,10 +113,10 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
         if (IsMachineExercise(exercise))
         {
             float truncatedTargetWeight = (float)Math.Truncate(predictedTargetWeight);
-            if (truncatedTargetWeight <= previousWeight.Value)
+            if (truncatedTargetWeight <= roundedPrevWeight)
             {
                 int forcedRepIncrease = GetForcedRepIncrease(weightedCalculatedReps, upperLimit);
-                return CreateWeightedRecommendation(previousWeight.Value, forcedRepIncrease, exercise, bodyweightForWeighted);
+                return CreateWeightedRecommendation(roundedPrevWeight, forcedRepIncrease, exercise, bodyweightForWeighted);
             }
 
             return CreateWeightedRecommendation(truncatedTargetWeight, lowerLimit, exercise, bodyweightForWeighted);
@@ -118,10 +127,10 @@ public class GenerateOverloadHandler : IRequestHandler<GenerateOverloadCommand, 
         float roundedTargetWeight = (float)Math.Floor(predictedTargetWeight / WeightedIncrementKg) * WeightedIncrementKg;
 
         //If no valid increment step increase is possible, increase reps regardless of upper rep range limit.
-        if (roundedTargetWeight <= previousWeight.Value)
+        if (roundedTargetWeight <= roundedPrevWeight)
         {
             int forcedRepIncrease = GetForcedRepIncrease(weightedCalculatedReps, upperLimit);
-            return CreateWeightedRecommendation(previousWeight.Value, forcedRepIncrease, exercise, bodyweightForWeighted);
+            return CreateWeightedRecommendation(roundedPrevWeight, forcedRepIncrease, exercise, bodyweightForWeighted);
         }
 
         return CreateWeightedRecommendation(roundedTargetWeight, lowerLimit, exercise, bodyweightForWeighted);

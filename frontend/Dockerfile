@@ -30,10 +30,10 @@ RUN --mount=type=secret,id=sentry_auth_token \
 
 FROM nginxinc/nginx-unprivileged:1.25
 ENV NGINX_BACKEND_URL=http://core-api:8080
-ENV NGINX_AUTH_RATE_LIMIT=5r/s
-ENV NGINX_GENERAL_RATE_LIMIT=30r/s
-ENV NGINX_AUTH_BURST=10
-ENV NGINX_GENERAL_BURST=50
+ENV NGINX_AUTH_RATE_LIMIT=10r/s
+ENV NGINX_GENERAL_RATE_LIMIT=60r/s
+ENV NGINX_AUTH_BURST=20
+ENV NGINX_GENERAL_BURST=100
 COPY frontend/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 

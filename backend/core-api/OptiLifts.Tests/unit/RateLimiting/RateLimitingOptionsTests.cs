@@ -16,15 +16,15 @@ public sealed class RateLimitingOptionsTests
 
         // Assert
         options.Enabled.Should().BeTrue();
-        options.DefaultPermitLimit.Should().Be(100);
+        options.DefaultPermitLimit.Should().Be(200);
         options.DefaultWindowSeconds.Should().Be(60);
-        options.AuthPermitLimit.Should().Be(15);
+        options.AuthPermitLimit.Should().Be(30);
         options.AuthWindowSeconds.Should().Be(60);
-        options.AiPermitLimit.Should().Be(20);
+        options.AiPermitLimit.Should().Be(40);
         options.AiWindowSeconds.Should().Be(60);
-        options.CalendarPermitLimit.Should().Be(300);
+        options.CalendarPermitLimit.Should().Be(600);
         options.CalendarWindowSeconds.Should().Be(60);
-        options.SchedulePermitLimit.Should().Be(300);
+        options.SchedulePermitLimit.Should().Be(600);
         options.ScheduleWindowSeconds.Should().Be(60);
         options.QueueLimit.Should().Be(0);
     }

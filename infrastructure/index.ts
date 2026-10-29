@@ -43,7 +43,7 @@ if (!imageTag) {
 }
 
 const resourceGroup = new resources.ResourceGroup("rgoptilifts", {
-    location: "SouthAfricaNorth"
+    location: "switzerlandnorth"
 });
 
 // create azure container registry
@@ -186,6 +186,10 @@ const pgFirewallConfig = new dbforpostgresql.FirewallRule("pgfw-optilifts", {
 const containerAppEnv = new app.ManagedEnvironment("cae-optilifts", {
     resourceGroupName: resourceGroup.name,
     location: resourceGroup.location,
+    workloadProfiles: [{
+        name: "Consumption",
+        workloadProfileType: "Consumption",
+    }],
 });
 
 const managedCert = (name: string, subjectName: string) =>
@@ -212,6 +216,7 @@ const customDomain = (domain: string, cert?: app.ManagedCertificate) => domainSt
 const frontendApp = new app.ContainerApp("frontend", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
+    workloadProfileName: "Consumption",
     configuration: {
         activeRevisionsMode: "Single",
         ingress: {
@@ -231,7 +236,7 @@ const frontendApp = new app.ContainerApp("frontend", {
     },
     template: {
         scale: {
-            minReplicas: 0,
+            minReplicas: 1,
             maxReplicas: 2,
         },
         containers: [{
@@ -256,6 +261,7 @@ const frontendApp = new app.ContainerApp("frontend", {
 const aiApiApp = new app.ContainerApp("ai-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
+    workloadProfileName: "Consumption",
     configuration: {
         activeRevisionsMode: "Single",
         ingress: {
@@ -274,7 +280,7 @@ const aiApiApp = new app.ContainerApp("ai-api", {
     },
     template: {
         scale: {
-            minReplicas: 0,
+            minReplicas: 1,
             maxReplicas: 2,
         },
         containers: [{
@@ -312,6 +318,7 @@ const signalRKeys = signalrservice.listSignalRKeysOutput({
 const coreApiApp = new app.ContainerApp("core-api", {
     resourceGroupName: resourceGroup.name,
     managedEnvironmentId: containerAppEnv.id,
+    workloadProfileName: "Consumption",
     configuration: {
         activeRevisionsMode: "Single",
         ingress: {
@@ -319,9 +326,6 @@ const coreApiApp = new app.ContainerApp("core-api", {
             targetPort: 8080,
             customDomains: customDomain(backendDomain, backendCert),
             traffic: [{ latestRevision: true, weight: 100 }],
-            stickySessions: {
-                affinity: "sticky",
-            },
         },
 
         secrets: [
